@@ -13,7 +13,6 @@ function AddedDevices() {
   const filteredRequests = Object.values(
     requests.data?.data?.booking || [],
   ).filter((item) => item.b_options.type === 'order');
-  console.log(filteredRequests);
   const onDeviceUpdate = (e) => requests.refetch();
 
   useEffect(() => {

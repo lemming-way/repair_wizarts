@@ -58,7 +58,7 @@ const deleteRequest = (requestId) =>
 const getRequestById = (requestId) =>
   appFetch('submission/request/' + requestId);
 const getClientRequests = () => {
-  return appFetch('drive', {
+  return appFetch(' drive', {
     body: {
       u_a_role: 1,
     },
@@ -98,7 +98,8 @@ const getClientRequestsTestData = () => {
   });
 };
 
-const getMasterRequests = () => appFetch('submission/requests');
+const getMasterRequests = () => appFetch('drive', { body: { u_a_role: 1 } });
+// appFetch('drive', { body: { u_a_role: 2 } }),
 
 const getMasterPersonalRequests = () => appFetch('submission/master-requests');
 
