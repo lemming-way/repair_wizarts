@@ -1,7 +1,7 @@
-import appFetch from "../utilities/appFetch"
-import { removeToken } from "./token.service"
+import appFetch from '../utilities/appFetch';
+import { removeToken } from './token.service';
 
-const getUser = () => appFetch("user/me")
+const getUser = () => appFetch('user/me');
 // Method to fetch the current user data
 // const getUserTestData = () => {
 //     return new Promise((resolve) => {
@@ -24,124 +24,136 @@ const getUser = () => appFetch("user/me")
 //     });
 // }; ###
 
-const getUserUnreadMessages = () => appFetch("user/unread-messages")
+const getUserUnreadMessages = () => appFetch('user/unread-messages');
 
-const getMasterByUsername = (username) => appFetch("user/master/" + username)
+const getMasterByUsername = (username) => appFetch('user/master/' + username);
 
-const getMasterRepairs = () => appFetch("service/master-repairs")
+const getMasterRepairs = () => appFetch('service/master-repairs');
 
-const getClientById = (id) =>
-    appFetch("user/client/" + id)
+const getClientById = (id) => appFetch('user/client/' + id);
 
 const updateUser = (data, id) => {
-    const formData = new FormData()
-    formData.append("file", "")
-    formData.append("data", JSON.stringify(data))
-
-    return appFetch("user/update/" + id, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "multipart/form-data"
-        },
-        body: formData
-    })
-}
+  // Для клиента:
+  // 				"u_role"				идентификатор роли пользователя (менять между 1,2,5)
+  // 				"u_name"				имя пользователя
+  // 				"u_family"				фамилия пользователя
+  // 				"u_middle"				отчество пользователя
+  // 				"u_phone"				телефон пользователя или null
+  // 				"u_email"				емейл пользователя или null
+  // 				"u_photo"				изображение, кодированое в base64 строку
+  // 				"u_lang"				идентификатор языка, выбранного пользователем или null		data.lang
+  // 				"u_currency"			iso4217 код валюты, выбранной пользователем или null		data.currencies
+  // 				"ref_code"				реферальный код
+  // 				"u_details"				архив дополнительных параметров
+  return appFetch('user' + id, {
+    body: {
+      data: JSON.stringify({
+        u_name: data.name,
+        u_family: data.family,
+        u_phone: data.phone,
+        u_email: data.u_email,
+      }),
+    },
+  });
+};
 
 const updateUserPhoto = (data, id) => {
-    const formData = new FormData()
-    formData.append("file", data)
-    formData.append("data", JSON.stringify({ }))
+  const formData = new FormData();
+  formData.append('file', data);
+  formData.append('data', JSON.stringify({}));
 
-    return appFetch("user/update/" + id, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "multipart/form-data"
-        },
-        body: formData
-    })
-}
+  return appFetch('user/update/' + id, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    body: formData,
+  });
+};
 
 const updateMasterPictures = (userId, payload) => {
-    const form = new FormData()
-    form.append("data", JSON.stringify({ }))
+  const form = new FormData();
+  form.append('data', JSON.stringify({}));
 
-    if (!payload.length) {
-        form.append("pictures", [])
-    }
-    payload.forEach((v) => form.append("pictures", v))
+  if (!payload.length) {
+    form.append('pictures', []);
+  }
+  payload.forEach((v) => form.append('pictures', v));
 
-    return appFetch("user/update/" + userId, {
-        method: "PATCH",
-        headers: {
-            "Content-Type": "multipart/form-data",
-        },
-        body: form
-    })
-}
+  return appFetch('user/update/' + userId, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    body: form,
+  });
+};
 
 const deleteUser = async () => {
-    const result = await appFetch("user/delete-account", { method: "DELETE" })
-    removeToken()
-    return result
-}
+  const result = await appFetch('user/delete-account', { method: 'DELETE' });
+  removeToken();
+  return result;
+};
 
-const createUserCustomService = (data) => appFetch("service/repair_type", {
-    method: "POST",
-    body: JSON.stringify(data)
-})
+const createUserCustomService = (data) =>
+  appFetch('service/repair_type', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 
 const updateUserService = (data, id) =>
-    appFetch("service/master-repair/" + id, {
-        method: "PATCH",
-        body: JSON.stringify(data)
-    })
+  appFetch('service/master-repair/' + id, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
 
-const getUserMode = () =>
-    JSON.parse(localStorage.getItem("isMaster"))
+const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
 
-const setUserMode = (mode) =>
-    localStorage.setItem("isMaster", mode)
+const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
 
 const recoverPassword = (payload) =>
-    appFetch("user/recover-password", {
-        method: "POST",
-        body: JSON.stringify(payload)
-    })
+  appFetch('user/recover-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
 const recoverPasswordVerify = (payload) =>
-    appFetch(`user/verify-password-recovery/${payload.code}?user_id=${payload.user}`, {
-        method: "POST"
-    })
+  appFetch(
+    `user/verify-password-recovery/${payload.code}?user_id=${payload.user}`,
+    {
+      method: 'POST',
+    },
+  );
 
 const recoverPasswordSend = (payload) =>
-    appFetch("user/change-password", {
-        method: "POST",
-        body: JSON.stringify(payload)
-    })
+  appFetch('user/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 
 const keepUserAuthorized = (v) =>
-    localStorage.setItem("keepAuthorized", JSON.stringify(v))
+  localStorage.setItem('keepAuthorized', JSON.stringify(v));
 
 const getKeepUserAuthorized = () =>
-    JSON.parse(localStorage.getItem("keepAuthorized"))
+  JSON.parse(localStorage.getItem('keepAuthorized'));
 
 export {
-    getUser,
-    getUserUnreadMessages,
-    getClientById,
-    getMasterRepairs,
-    updateUser,
-    updateUserService,
-    updateMasterPictures,
-    deleteUser,
-    createUserCustomService,
-    updateUserPhoto,
-    getMasterByUsername,
-    getUserMode,
-    setUserMode,
-    recoverPassword,
-    recoverPasswordVerify,
-    recoverPasswordSend,
-    keepUserAuthorized,
-    getKeepUserAuthorized
-}
+  getUser,
+  getUserUnreadMessages,
+  getClientById,
+  getMasterRepairs,
+  updateUser,
+  updateUserService,
+  updateMasterPictures,
+  deleteUser,
+  createUserCustomService,
+  updateUserPhoto,
+  getMasterByUsername,
+  getUserMode,
+  setUserMode,
+  recoverPassword,
+  recoverPasswordVerify,
+  recoverPasswordSend,
+  keepUserAuthorized,
+  getKeepUserAuthorized,
+};
