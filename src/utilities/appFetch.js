@@ -67,14 +67,18 @@ const appFetch = async (location, init = {}) => {
   try {
     const token = getToken();
     const response = await fetch(BASE_URL + location, {
-      method: 'POST',
+      method: init.method || 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: new URLSearchParams({
-        ...(token ? { token: token?.token, u_hash: token?.hash } : {}),
-        ...init.body,
-      }).toString(),
+      ...(init.method === 'GET'
+        ? {}
+        : {
+            body: new URLSearchParams({
+              ...(token ? { token: token?.token, u_hash: token?.hash } : {}),
+              ...init.body,
+            }).toString(),
+          }),
     });
     const data = await response.json();
     if (response.ok) {

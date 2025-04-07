@@ -1,7 +1,7 @@
 import appFetch from '../utilities/appFetch';
-import { removeToken } from './token.service';
+import { getToken, removeToken } from './token.service';
 
-const getUser = () => appFetch('user/me');
+const getUser = () => appFetch('user/authorized');
 // Method to fetch the current user data
 // const getUserTestData = () => {
 //     return new Promise((resolve) => {
@@ -32,30 +32,36 @@ const getMasterRepairs = () => appFetch('service/master-repairs');
 
 const getClientById = (id) => appFetch('user/client/' + id);
 
-const updateUser = (data, id) => {
-  // Для клиента:
-  // 				"u_role"				идентификатор роли пользователя (менять между 1,2,5)
-  // 				"u_name"				имя пользователя
-  // 				"u_family"				фамилия пользователя
-  // 				"u_middle"				отчество пользователя
-  // 				"u_phone"				телефон пользователя или null
-  // 				"u_email"				емейл пользователя или null
-  // 				"u_photo"				изображение, кодированое в base64 строку
-  // 				"u_lang"				идентификатор языка, выбранного пользователем или null		data.lang
-  // 				"u_currency"			iso4217 код валюты, выбранной пользователем или null		data.currencies
-  // 				"ref_code"				реферальный код
-  // 				"u_details"				архив дополнительных параметров
-  return appFetch('user' + id, {
+const updateUser = (data, id) =>
+  appFetch('user', {
     body: {
       data: JSON.stringify({
         u_name: data.name,
-        u_family: data.family,
+        u_family: data.lastname,
         u_phone: data.phone,
-        u_email: data.u_email,
+        u_email: data.email,
       }),
     },
   });
-};
+const updatePassword = (data) =>
+  appFetch('newpass', {
+    body: {
+      password: data.password,
+      new_password: data.new_password,
+    },
+  });
+// Для клиента:
+// 				"u_role"				идентификатор роли пользователя (менять между 1,2,5)
+// 				"u_name"				имя пользователя
+// 				"u_family"				фамилия пользователя
+// 				"u_middle"				отчество пользователя
+// 				"u_phone"				телефон пользователя или null
+// 				"u_email"				емейл пользователя или null
+// 				"u_photo"				изображение, кодированое в base64 строку
+// 				"u_lang"				идентификатор языка, выбранного пользователем или null		data.lang
+// 				"u_currency"			iso4217 код валюты, выбранной пользователем или null		data.currencies
+// 				"ref_code"				реферальный код
+// 				"u_details"				архив дополнительных параметров
 
 const updateUserPhoto = (data, id) => {
   const formData = new FormData();
@@ -156,4 +162,5 @@ export {
   recoverPasswordSend,
   keepUserAuthorized,
   getKeepUserAuthorized,
+  updatePassword,
 };

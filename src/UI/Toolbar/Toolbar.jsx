@@ -29,10 +29,10 @@ const Toolbar = () => {
   const user = useSelector(selectUser);
 
   const [isOpen, setIsOpen] = useState(false);
+  console.log(ui.isAuthorized);
   const toggleMenu = () => {
     console.log('click');
     console.log(isOpen);
-
     setIsOpen((prevState) => !prevState);
   };
 
@@ -78,101 +78,101 @@ const Toolbar = () => {
           />
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
-        {/* <div className="header__profile"> */}
-        {ui.isAuthorized ? (
-          <div className="header__profile">
-            {ui.isMaster ? (
-              <Link
-                to={'/client/requests/create/title'}
-                className="header__button"
-              >
-                Дать задание
-              </Link>
-            ) : (
-              <Link
-                to={'/client/requests/create/title'}
-                className="header__button"
-              >
-                Заказать на бирже
-              </Link>
-            )}
+        <div className="header__profile">
+          {ui.isAuthorized ? (
+            <div className="header__profile">
+              {ui.isMaster ? (
+                <Link
+                  to={'/client/requests/create/title'}
+                  className="header__button"
+                >
+                  Дать задание
+                </Link>
+              ) : (
+                <Link
+                  to={'/client/requests/create/title'}
+                  className="header__button"
+                >
+                  Заказать на бирже
+                </Link>
+              )}
 
-            <a className="header__icons" href="tel:+79697148750">
-              <img src="/img/icons/phone.svg" alt="" />
-            </a>
-            <Link
-              to={ui.isMaster ? '/master/chat' : '/client/chat'}
-              className="header__icons"
-              style={{ display: 'flex', position: 'relative' }}
-              onClick={() => {
-                setVisibleCountry(false);
-                setVisibleSetout(false);
-              }}
-            >
-              <img className="" src="/img/icons/message.svg" alt="" />
-              {/* {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>} */}
-              <div className="chat-message-counter">1</div>
-            </Link>
-            <div
-              className="yosetout"
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setVisibleSetout(!visibleSetout);
-                setVisibleCountry(false);
-              }}
-            >
-              <img
-                src={
-                  user.avatar
-                    ? SERVER_PATH + user.avatar
-                    : '/img/icons/avatar.png'
-                }
-                width="40px"
-                height="40px"
-                alt=""
-                style={{
-                  borderRadius: '20px',
-                  objectFit: 'cover',
-                  border: '2px solid white',
-                  scale: '1.2',
-                  marginLeft: '5px',
-                  marginRight: '5px',
+              <a className="header__icons" href="tel:+79697148750">
+                <img src="/img/icons/phone.svg" alt="" />
+              </a>
+              <Link
+                to={ui.isMaster ? '/master/chat' : '/client/chat'}
+                className="header__icons"
+                style={{ display: 'flex', position: 'relative' }}
+                onClick={() => {
+                  setVisibleCountry(false);
+                  setVisibleSetout(false);
                 }}
-              />
-              <div className="dropdownuser_arrow-wrap">
+              >
+                <img className="" src="/img/icons/message.svg" alt="" />
+                {/* {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>} */}
+                <div className="chat-message-counter">1</div>
+              </Link>
+              <div
+                className="yosetout"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  setVisibleSetout(!visibleSetout);
+                  setVisibleCountry(false);
+                }}
+              >
                 <img
-                  src="/img/dropdownuser.png"
-                  className="dropdownuser_arrow"
+                  src={
+                    user.avatar
+                      ? SERVER_PATH + user.avatar
+                      : '/img/icons/avatar.png'
+                  }
+                  width="40px"
+                  height="40px"
                   alt=""
+                  style={{
+                    borderRadius: '20px',
+                    objectFit: 'cover',
+                    border: '2px solid white',
+                    scale: '1.2',
+                    marginLeft: '5px',
+                    marginRight: '5px',
+                  }}
                 />
-              </div>
+                <div className="dropdownuser_arrow-wrap">
+                  <img
+                    src="/img/dropdownuser.png"
+                    className="dropdownuser_arrow"
+                    alt=""
+                  />
+                </div>
 
-              {/* {visibleSetout ? <DropdownSetout /> : null} */}
-              <div className="bldropdown">
-                <DropdownSetout />
+                {/* {visibleSetout ? <DropdownSetout /> : null} */}
+                <div className="bldropdown">
+                  <DropdownSetout />
+                </div>
+                {/* </Link> */}
               </div>
-              {/* </Link> */}
+              <>
+                <p className="master__moneys">
+                  <>
+                    {ui.isMaster ? (
+                      <>parseFloat(user.master[0].balance).toFixed(2)₽</>
+                    ) : null}
+                  </>
+                </p>
+                <div className="master__moneys__full">
+                  <Link to="/master/wallet">Пополнить баланс</Link>
+                </div>
+              </>
             </div>
-            <>
-              <p className="master__moneys">
-                <>
-                  {ui.isMaster ? (
-                    <>parseFloat(user.master[0].balance).toFixed(2)₽</>
-                  ) : null}
-                </>
-              </p>
-              <div className="master__moneys__full">
-                <Link to="/master/wallet">Пополнить баланс</Link>
-              </div>
-            </>
-          </div>
-        ) : (
-          // Вынесла в отдельный компонент кнопки, чтобы сократить код
-          <div className="header__visible-mobile">
-            <ToolbarButtons />
-          </div>
-        )}
-        {/* </div> */}
+          ) : (
+            // Вынесла в отдельный компонент кнопки, чтобы сократить код
+            <div className="header__visible-mobile">
+              <ToolbarButtons />
+            </div>
+          )}
+        </div>
       </div>
 
       <div

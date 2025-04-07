@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
-import { updateUser } from '../../services/user.service';
+import { updatePassword, updateUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
 
 function ProfileFH() {
-  const user = useSelector(selectUser);
-
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -19,10 +19,10 @@ function ProfileFH() {
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    name: '',
-    lastname: '',
-    phone: '',
-    email: '',
+    name: user.u_name || '',
+    lastname: user.u_family || '',
+    phone: user.u_phone || '',
+    email: user.u_email || '',
   });
 
   const getFormAttrs = (field) => {
@@ -37,27 +37,40 @@ function ProfileFH() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    updateUser(form, user.id)
-      .then(() => {
+    updateUser(form, user.u_id)
+      .then((v) => {
         setSucceeded(true);
         setError('');
-        console.log(form);
+        console.log(v);
       })
       .catch((err) => {
         setSucceeded(false);
         setError(err.message);
       });
-  };
-
-  useEffect(() => {
-    if (user.name) {
-      const obj = {};
-
-      for (const key of Object.keys(form)) obj[key] = user[key];
-
-      setForm(obj);
+    if (form.password.length > 0 && form.new_password.length > 0) {
+      updatePassword(form)
+        .then((v) => {
+          setSucceeded(true);
+          setError('');
+          console.log(v);
+        })
+        .catch((err) => {
+          setSucceeded(false);
+          setError(err.message);
+        });
     }
-  }, [user, form]);
+  };
+  useEffect(() => {
+    if (Object.keys(user) && !form.name) {
+      setForm({
+        name: user.u_name,
+        lastname: user.u_family,
+        phone: user.u_phone,
+        email: user.u_email,
+      });
+    }
+  }, [user]);
+
   useEffect(() => {
     document.title = 'Настройки';
   }, []);
@@ -137,12 +150,17 @@ function ProfileFH() {
           <VerificationInput
             isEmail
             isConfirmed={user.is_email_verified}
+            value={form.email || ''}
             {...getFormAttrs('email')}
           />
           <div className={style.input_wrap}>
             <input
               type={visiblePassword ? 'text' : 'password'}
-              placeholder="Новый пароль"
+              value={form.password}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, password: e.target.value }))
+              }
+              placeholder="Текущий пароль"
             />
             <img
               src={
@@ -157,8 +175,12 @@ function ProfileFH() {
           </div>
           <div className={style.input_wrap}>
             <input
+              value={form.new_password}
               type={visiblePasswordConfirm ? 'text' : 'password'}
-              placeholder="Подтверждение пароля"
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, new_password: e.target.value }))
+              }
+              placeholder="Новый пароль"
             />
             <img
               src={
