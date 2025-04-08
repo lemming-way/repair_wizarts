@@ -34,8 +34,10 @@ function MyOrdersMaster() {
   ).filter(
     (item) =>
       item.b_options?.type === 'order' &&
-      item.b_options?.status.includes(statusEnum[window.location.hash]),
+      item.b_options?.status.includes(statusEnum[window.location.hash]) &&
+      item.c_options,
   );
+  console.log(filteredRequests);
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
 
   return (
@@ -94,9 +96,15 @@ function MyOrdersMaster() {
                         {/* Добавляем ключ для каждого элемента списка */}
                         <td>
                           <img
-                            src="/img/icons/icomoon-free_pencil.svg"
+                            src={item.b_options.author.photo}
                             alt=""
-                            style={{ marginRight: '10px', cursor: 'pointer' }}
+                            style={{
+                              marginRight: '10px',
+                              cursor: 'pointer',
+                              width: 70,
+                              borderRadius: 20,
+                              height: 70,
+                            }}
                             onClick={() => setVisibleModalEdit(true)}
                           />
                           <Link

@@ -26,10 +26,10 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
 
   const ui = useSelector(selectUI);
-  const user = useSelector(selectUser);
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
 
   const [isOpen, setIsOpen] = useState(false);
-  console.log(ui.isAuthorized);
   const toggleMenu = () => {
     console.log('click');
     console.log(isOpen);
@@ -122,11 +122,7 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={
-                    user.avatar
-                      ? SERVER_PATH + user.avatar
-                      : '/img/icons/avatar.png'
-                  }
+                  src={user.u_photo ? user.u_photo : '/img/icons/avatar.png'}
                   width="40px"
                   height="40px"
                   alt=""

@@ -20,6 +20,7 @@ const createRequest = (payload) => {
             name: token.user?.u_name,
             email: token.user?.u_email,
             phone: token.user?.u_phone,
+            photo: token.user?.u_photo,
           },
           status: 'Активно',
           type: 'order',
@@ -58,7 +59,7 @@ const deleteRequest = (requestId) =>
 const getRequestById = (requestId) =>
   appFetch('submission/request/' + requestId);
 const getClientRequests = () => {
-  return appFetch(' drive', {
+  return appFetch('drive', {
     body: {
       u_a_role: 1,
     },

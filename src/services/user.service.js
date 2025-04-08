@@ -63,19 +63,14 @@ const updatePassword = (data) =>
 // 				"ref_code"				реферальный код
 // 				"u_details"				архив дополнительных параметров
 
-const updateUserPhoto = (data, id) => {
-  const formData = new FormData();
-  formData.append('file', data);
-  formData.append('data', JSON.stringify({}));
-
-  return appFetch('user/update/' + id, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'multipart/form-data',
+const updateUserPhoto = (photo, id) =>
+  appFetch('user', {
+    body: {
+      data: JSON.stringify({
+        u_photo: photo,
+      }),
     },
-    body: formData,
   });
-};
 
 const updateMasterPictures = (userId, payload) => {
   const form = new FormData();
