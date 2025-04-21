@@ -4,6 +4,7 @@ import { selectUser } from '../../slices/user.slice';
 import { updatePassword, updateUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
+import appFetch from '../../utilities/appFetch';
 
 function ProfileFH() {
   const user =
@@ -15,7 +16,6 @@ function ProfileFH() {
   //     "/client/settings/finance",
   //     "/client/settings/balance",
   // ]
-
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -43,11 +43,12 @@ function ProfileFH() {
         setError('');
         console.log(v);
       })
+      .catch((err) => console.log(err))
       .catch((err) => {
         setSucceeded(false);
         setError(err.message);
       });
-    if (form.password.length > 0 && form.new_password.length > 0) {
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
       updatePassword(form)
         .then((v) => {
           setSucceeded(true);

@@ -23,10 +23,10 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
     setAuthorization(state, action) {
-      console.log(action);
       state.isAuthorized = action.payload;
     },
     setMaster(state, action) {
+      localStorage.setItem('isMaster', action.payload);
       state.isMaster = action.payload;
     },
     setLoading(state, action) {

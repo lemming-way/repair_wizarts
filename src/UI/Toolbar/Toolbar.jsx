@@ -150,13 +150,13 @@ const Toolbar = () => {
                 {/* </Link> */}
               </div>
               <>
-                <p className="master__moneys">
+                {/* <p className="master__moneys">
                   <>
                     {ui.isMaster ? (
                       <>parseFloat(user.master[0].balance).toFixed(2)₽</>
                     ) : null}
                   </>
-                </p>
+                </p> */}
                 <div className="master__moneys__full">
                   <Link to="/master/wallet">Пополнить баланс</Link>
                 </div>
@@ -192,7 +192,11 @@ const Toolbar = () => {
 
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
-      <div className={styles.toolbar_burger2} onClick={toggleMenu}>
+      <div
+        className={styles.toolbar_burger2}
+        onClick={toggleMenu}
+        style={{ display: ui.isAuthorized ? 'none' : 'block' }}
+      >
         <div className={styles.toolbar_burger2_icon}></div>
       </div>
       {isOpen && (

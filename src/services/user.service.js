@@ -32,17 +32,23 @@ const getMasterRepairs = () => appFetch('service/master-repairs');
 
 const getClientById = (id) => appFetch('user/client/' + id);
 
-const updateUser = (data, id) =>
-  appFetch('user', {
+const updateUser = (data, id) => {
+  const formattedDetails = Object.entries(data.details || {}).map(
+    ([key, value]) => ['=', [key], value],
+  );
+  return appFetch('user', {
     body: {
       data: JSON.stringify({
         u_name: data.name,
         u_family: data.lastname,
         u_phone: data.phone,
         u_email: data.email,
+        u_description: data.u_description,
+        ...(data.details ? { u_details: formattedDetails } : {}),
       }),
     },
   });
+};
 const updatePassword = (data) =>
   appFetch('newpass', {
     body: {

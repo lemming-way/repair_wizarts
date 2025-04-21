@@ -28,6 +28,7 @@ function MyOrdersMaster() {
   const userRequests = useService(getClientRequests, []);
   const [contendCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchFilter, setSearchFilter] = useState('');
   const filteredRequests = Object.values(
     otherRequests.data?.data?.booking || [],
     userRequests.data?.data?.booking || [],
@@ -35,11 +36,9 @@ function MyOrdersMaster() {
     (item) =>
       item.b_options?.type === 'order' &&
       item.b_options?.status.includes(statusEnum[window.location.hash]) &&
-      item.c_options,
+      item.b_options.title.toLowerCase().includes(searchFilter.toLowerCase()),
   );
-  console.log(filteredRequests);
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
-
   return (
     <>
       {isVisibleModalEdit && (
@@ -54,6 +53,8 @@ function MyOrdersMaster() {
             <div className={style.search_wrap}>
               <input
                 className={style.search_input}
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
                 type="text"
                 placeholder="поиск.."
               />
@@ -70,7 +71,6 @@ function MyOrdersMaster() {
 
         <div className={style.content_wrap}>
           <NavigationOrdersClient />
-
           <div className={style.table_wrap}>
             <table className={style.table}>
               <thead>
@@ -89,10 +89,17 @@ function MyOrdersMaster() {
                     currentPage * contendCount,
                   )
                   .map((item, index) => {
+                    const StyleEnum = {
+                      'В работе': 'status_working',
+                      Отменено: 'status_cancel',
+                      Активно: 'status_ok',
+                    };
+                    const currentStatusStyleClass =
+                      StyleEnum[item.b_options.status];
                     return (
                       <tr key={item.b_id}>
                         {' '}
-                        <td>{index + 1}</td>
+                        <td>{item.b_options.title}</td>
                         {/* Добавляем ключ для каждого элемента списка */}
                         <td>
                           <img
@@ -114,7 +121,7 @@ function MyOrdersMaster() {
                                 : '/client/requests/my_order/' + item.b_id
                             }
                           >
-                            {item.b_options?.title}
+                            {item.b_options?.author.name}
                           </Link>
                         </td>
                         <td>
@@ -131,10 +138,12 @@ function MyOrdersMaster() {
                           />
                           {item.b_options?.author?.name}
                         </td>
-                        <td>{item.b_options?.description}</td>
                         <td>{item.b_options?.client_price}</td>
+                        {/* <td>{item.b_options?.client_price}</td> */}
                         <td>
-                          <p className={style.status_ok}>выполнено</p>
+                          <p className={style[currentStatusStyleClass]}>
+                            {item.b_options.status}
+                          </p>
                         </td>
                       </tr>
                     );
@@ -145,89 +154,66 @@ function MyOrdersMaster() {
 
           {/* для мобильной */}
           <div className={style.cards__wrap}>
-            <div className={style.card_block}>
-              <Link
-                to={
-                  window.location.pathname.includes('/master')
-                    ? '/master/requests/my_order/1'
-                    : '/client/requests/my_order/1'
-                }
-              >
-                Название устройства
-              </Link>
-              <p className={style.card__date}>13 января, 22:26</p>
-              <div className={style.card__line}></div>
-              <div className={style.card__row}>
-                <div className={style.card__profile}>
-                  <img
-                    src="/img/profile.png"
-                    alt=""
-                    style={{ marginRight: '10px' }}
-                  />
-                  Ник
-                </div>
-                <div className={style.card__col}>
-                  <p className={style.status_working}>в работе</p>
-                  <p className={style.card__price}>2000 руб</p>
-                </div>
-              </div>
-            </div>
-
-            <div className={style.card_block}>
-              <Link
-                to={
-                  window.location.pathname.includes('/master')
-                    ? '/master/requests/my_order/1'
-                    : '/client/requests/my_order/1'
-                }
-              >
-                Название устройства
-              </Link>
-              <p className={style.card__date}>13 января, 22:26</p>
-              <div className={style.card__line}></div>
-              <div className={style.card__row}>
-                <div className={style.card__profile}>
-                  <img
-                    src="/img/profile.png"
-                    alt=""
-                    style={{ marginRight: '10px' }}
-                  />
-                  Ник
-                </div>
-                <div className={style.card__col}>
-                  <p className={style.status_ok}>выполнено</p>
-                  <p className={style.card__price}>2000 руб</p>
-                </div>
-              </div>
-            </div>
-
-            <div className={style.card_block}>
-              <Link
-                to={
-                  window.location.pathname.includes('/master')
-                    ? '/master/requests/my_order/1'
-                    : '/client/requests/my_order/1'
-                }
-              >
-                Название устройства
-              </Link>
-              <p className={style.card__date}>13 января, 22:26</p>
-              <div className={style.card__line}></div>
-              <div className={style.card__row}>
-                <div className={style.card__profile}>
-                  <img
-                    src="/img/profile.png"
-                    alt=""
-                    style={{ marginRight: '10px' }}
-                  />
-                  Ник
-                </div>
-                <div className={style.card__col}>
-                  <p className={style.status_cancel}>выполнено</p>
-                  <p className={style.card__price}>2000 руб</p>
-                </div>
-              </div>
-            </div>
+            {filteredRequests
+              .slice(
+                (currentPage - 1) * contendCount,
+                currentPage * contendCount,
+              )
+              .map((item, index) => {
+                const StyleEnum = {
+                  'В работе': 'status_working',
+                  Отменено: 'status_cancel',
+                  Активно: 'status_ok',
+                };
+                const currentStatusStyleClass =
+                  StyleEnum[item.b_options.status];
+                return (
+                  <div className={style.card_block} key={item.b_id}>
+                    <Link
+                      to={
+                        window.location.pathname.includes('/master')
+                          ? `/master/requests/my_order/${item.b_id}`
+                          : `/client/requests/my_order/${item.b_id}`
+                      }
+                    >
+                      {item.b_options?.title}
+                    </Link>
+                    <p className={style.card__date}>
+                      {new Intl.DateTimeFormat('ru-RU', {
+                        day: 'numeric',
+                        month: 'long',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }).format(new Date(item.b_created))}
+                    </p>
+                    <div className={style.card__line}></div>
+                    <div className={style.card__row}>
+                      <div className={style.card__profile}>
+                        <img
+                          src={item.b_options.author.photo}
+                          alt=""
+                          style={{
+                            cursor: 'pointer',
+                            width: 40,
+                            borderRadius: 20,
+                            height: 40,
+                            marginRight: 10,
+                          }}
+                        />
+                        {item.b_options.author.name}
+                      </div>
+                      <div className={style.card__col}>
+                        <p className={style[currentStatusStyleClass]}>
+                          {item.b_options.status}
+                        </p>
+                        <p className={style.card__price}>
+                          {item.b_options.client_price} руб
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
 
           <div className={style.pagination_wrap}>

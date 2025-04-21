@@ -1,5 +1,5 @@
-import React, {useRef, useState} from 'react';
-import { default as ReactSelect, components, InputAction } from "react-select";
+import React, { useRef, useState } from 'react';
+import { default as ReactSelect, components, InputAction } from 'react-select';
 import './MultiSelect.scss';
 
 export type Option = {
@@ -8,15 +8,15 @@ export type Option = {
 };
 
 const MultiSelect = (props: any) => {
-  const [selectInput, setSelectInput] = useState<string>("");
+  const [selectInput, setSelectInput] = useState<string>('');
   const isAllSelected = useRef<boolean>(false);
-  const selectAllLabel = useRef<string>("Выбрать все");
-  const allOption = { value: "*", label: selectAllLabel.current };
-
-  const filterOptions = (options: Option[], input: string) =>
-    options?.filter(({ label }: Option) =>
-      label.toLowerCase().includes(input.toLowerCase())
+  const selectAllLabel = useRef<string>('Выбрать все');
+  const allOption = { value: '*', label: selectAllLabel.current };
+  const filterOptions = (options: Option[], input: string) => {
+    return options?.filter(({ label }: Option) =>
+      label.toLowerCase().includes(input.toLowerCase()),
     );
+  };
 
   const comparator = (v1: Option, v2: Option) =>
     (v1.value as number) - (v2.value as number);
@@ -26,7 +26,7 @@ const MultiSelect = (props: any) => {
 
   const Option = (props: any) => (
     <components.Option {...props}>
-      {props.value === "*" &&
+      {props.value === '*' &&
       !isAllSelected.current &&
       filteredSelectedOptions?.length > 0 ? (
         <input
@@ -44,7 +44,7 @@ const MultiSelect = (props: any) => {
           onChange={() => {}}
         />
       )}
-      <label style={{ marginLeft: "5px" }}>{props.label}</label>
+      <label style={{ marginLeft: '5px' }}>{props.label}</label>
     </components.Option>
   );
 
@@ -55,7 +55,7 @@ const MultiSelect = (props: any) => {
           {props.children}
         </components.Input>
       ) : (
-        <div style={{ borderBottom: "1px dotted gray", margin: '10px 15px' }}>
+        <div style={{ borderBottom: '1px dotted gray', margin: '10px 15px' }}>
           <components.Input autoFocus={props.selectProps.menuIsOpen} {...props}>
             {props.children}
           </components.Input>
@@ -65,20 +65,20 @@ const MultiSelect = (props: any) => {
   );
 
   const customFilterOption = ({ value, label }: Option, input: string) =>
-    (value !== "*" && label.toLowerCase().includes(input.toLowerCase())) ||
-    (value === "*" && filteredOptions?.length > 0);
+    (value !== '*' && label.toLowerCase().includes(input.toLowerCase())) ||
+    (value === '*' && filteredOptions?.length > 0);
 
   const onInputChange = (
     inputValue: string,
-    event: { action: InputAction }
+    event: { action: InputAction },
   ) => {
-    if (event.action === "input-change") setSelectInput(inputValue);
-    else if (event.action === "menu-close" && selectInput !== "")
-      setSelectInput("");
+    if (event.action === 'input-change') setSelectInput(inputValue);
+    else if (event.action === 'menu-close' && selectInput !== '')
+      setSelectInput('');
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if ((e.key === " " || e.key === "Enter") && !selectInput)
+    if ((e.key === ' ' || e.key === 'Enter') && !selectInput)
       e.preventDefault();
   };
 
@@ -88,31 +88,31 @@ const MultiSelect = (props: any) => {
       !isAllSelected.current &&
       (selected[selected.length - 1].value === allOption.value ||
         JSON.stringify(filteredOptions) ===
-        JSON.stringify(selected.sort(comparator)))
+          JSON.stringify(selected.sort(comparator)))
     )
       return props.onChange(
         [
           ...(props.value ?? []),
-          ...props.options.filter(
+          ...props.options?.filter(
             ({ label }: Option) =>
               label.toLowerCase().includes(selectInput?.toLowerCase()) &&
-              (props.value ?? []).filter((opt: Option) => opt.label === label)
-                .length === 0
+              (props.value ?? [])?.filter((opt: Option) => opt.label === label)
+                .length === 0,
           ),
-        ].sort(comparator)
+        ].sort(comparator),
       );
     else if (
       selected.length > 0 &&
       selected[selected.length - 1].value !== allOption.value &&
       JSON.stringify(selected.sort(comparator)) !==
-      JSON.stringify(filteredOptions)
+        JSON.stringify(filteredOptions)
     )
       return props.onChange(selected);
     else
       return props.onChange([
         ...props.value?.filter(
           ({ label }: Option) =>
-            !label.toLowerCase().includes(selectInput?.toLowerCase())
+            !label.toLowerCase().includes(selectInput?.toLowerCase()),
         ),
       ]);
   };
@@ -120,16 +120,16 @@ const MultiSelect = (props: any) => {
   const customStyles = {
     multiValueLabel: (def: any) => ({
       ...def,
-      backgroundColor: "lightgray",
+      backgroundColor: 'lightgray',
     }),
     multiValueRemove: (def: any) => ({
       ...def,
-      backgroundColor: "lightgray",
+      backgroundColor: 'lightgray',
     }),
     valueContainer: (base: any) => ({
       ...base,
-      maxHeight: "100px",
-      overflow: "auto",
+      maxHeight: '100px',
+      overflow: 'auto',
       // padding: '15px 20px',
     }),
     option: (styles: any, { isSelected, isFocused }: any) => {
@@ -139,10 +139,10 @@ const MultiSelect = (props: any) => {
           isSelected && !isFocused
             ? null
             : isFocused && !isSelected
-              ? styles.backgroundColor
-              : isFocused && isSelected
-                ? "#DEEBFF"
-                : null,
+            ? styles.backgroundColor
+            : isFocused && isSelected
+            ? '#DEEBFF'
+            : null,
         color: isSelected ? null : null,
       };
     },
@@ -159,7 +159,7 @@ const MultiSelect = (props: any) => {
         selectAllLabel.current = `Все (${filteredOptions.length}) выбраны`;
       else
         selectAllLabel.current = `${filteredSelectedOptions?.length} / ${filteredOptions.length} выбраны`;
-    } else selectAllLabel.current = "Выбрать все";
+    } else selectAllLabel.current = 'Выбрать все';
 
     allOption.label = selectAllLabel.current;
 
@@ -177,7 +177,7 @@ const MultiSelect = (props: any) => {
           ...props.components,
         }}
         filterOption={customFilterOption}
-        menuPlacement={props.menuPlacement ?? "auto"}
+        menuPlacement={props.menuPlacement ?? 'auto'}
         styles={customStyles}
         isMulti
         closeMenuOnSelect={false}
@@ -199,7 +199,7 @@ const MultiSelect = (props: any) => {
         Input: Input,
         ...props.components,
       }}
-      menuPlacement={props.menuPlacement ?? "auto"}
+      menuPlacement={props.menuPlacement ?? 'auto'}
       onKeyDown={onKeyDown}
       tabSelectsValue={false}
       hideSelectedOptions={true}

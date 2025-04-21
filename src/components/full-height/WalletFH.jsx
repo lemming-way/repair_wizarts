@@ -28,21 +28,26 @@ function App() {
       setError('Файл не выбран');
       return;
     }
-
     try {
       const base64 = await convertToBase64(file);
       await updateUserPhoto(base64, user.id);
 
       setSucceeded(true);
       setError('');
-      setPreviewUrl(base64); // обновляем превью аватара
-      inputRef.current.value = ''; // очищаем input
+      setPreviewUrl(base64);
+      inputRef.current.value = '';
     } catch (err) {
       setSucceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');
     }
   };
-
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const base64 = await convertToBase64(file);
+      setPreviewUrl(base64); // 👈 показываем новое фото сразу
+    }
+  };
   const convertToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -78,6 +83,7 @@ function App() {
             accept="image/png, image/jpeg"
             id="upfile"
             ref={inputRef}
+            onChange={handleFileChange}
             style={{ display: 'none' }}
           />
           <div className="block-btn bgpuherpte df">

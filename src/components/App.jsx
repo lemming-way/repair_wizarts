@@ -195,11 +195,9 @@ function App() {
                   path="feedback/:id"
                   element={<ProfileFeedbackMaster />}
                 />
-
                 {/* чат связан с бэком */}
                 {/* <Route path="chat" element={<FChat />} /> */}
                 {/* <Route path="chat/:id" element={<FChat />} /> */}
-
                 {/* Чат без связи с бэком, только заготовка */}
                 <Route path="chat" element={<FChatKirill />} />
                 <Route path="chat/:id" element={<FChatKirill />} />
@@ -230,7 +228,7 @@ function App() {
                     <Route path="services" element={<Services />} />
                     <Route path="finance" element={<Finance />} />
                     <Route path="balance" element={<Balance />} />
-                    <Route path="photo" element={<Photo />} />
+                    <Route path="photo" element={<WalletFH />} />
                   </Route>
                   <Route path="orders">
                     <Route index element={<Applications />} />
