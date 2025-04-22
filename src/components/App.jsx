@@ -241,7 +241,7 @@ function App() {
 
                   <Route path="requests">
                     <Route index element={<AllOrders />} />
-                    <Route path="offer" element={<Offer />} />
+                    <Route path="offer/:id" element={<Offer />} />
                     <Route path="orders" element={<Orders />} />
                     <Route path="personal" element={<PersonalRequests />} />
                     {/* <Route path=":id" element={<MyOrders />} /> */}

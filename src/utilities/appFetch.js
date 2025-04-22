@@ -68,6 +68,7 @@ const appFetch = async (location, init = {}) => {
     const token = getToken();
     const response = await fetch(BASE_URL + location, {
       method: init.method || 'POST',
+      // credentials: 'include',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },

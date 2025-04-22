@@ -13,6 +13,7 @@ import {
   recoverPasswordVerify,
 } from '../../services/user.service';
 import { setToken } from '../../services/token.service';
+import appFetch from '../../utilities/appFetch';
 
 const RecoveryState = {
   IDLE: 0,
@@ -160,6 +161,12 @@ function AuthLogin() {
 
     try {
       const response = await login(phone, password);
+      const userProfile = await appFetch('//user/authorized/car', {
+        body: {
+          u_hash: response.data.u_hash,
+          token: response.data.token,
+        },
+      });
       console.log(response);
       if (response.code === '404')
         return setError('Не правильный номер телефона или пароль');
@@ -168,10 +175,14 @@ function AuthLogin() {
       } else {
         keepUserAuthorized(false);
       }
+      console.log(userProfile);
       setToken({
         hash: response.data.u_hash,
         token: response.data.token,
-        user: response.auth_user,
+        user: {
+          ...response.auth_user,
+          c_id: Object.values(userProfile.data.car || {})[0].c_id,
+        },
       });
       dispatch(fetchUser());
       navigate('/');

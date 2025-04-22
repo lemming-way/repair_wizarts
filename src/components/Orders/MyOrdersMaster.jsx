@@ -24,20 +24,34 @@ const statusEnum = {
 };
 
 function MyOrdersMaster() {
-  const otherRequests = useService(getMasterRequests, []);
   const userRequests = useService(getClientRequests, []);
   const [contendCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchFilter, setSearchFilter] = useState('');
-  const filteredRequests = Object.values(
-    otherRequests.data?.data?.booking || [],
-    userRequests.data?.data?.booking || [],
-  ).filter(
-    (item) =>
-      item.b_options?.type === 'order' &&
-      item.b_options?.status.includes(statusEnum[window.location.hash]) &&
-      item.b_options.title.toLowerCase().includes(searchFilter.toLowerCase()),
-  );
+  const rawRequests = [
+    ...Object.values(userRequests.data?.data?.booking || {}),
+  ];
+
+  const filteredRequests = rawRequests
+    .filter(
+      (item) =>
+        item.b_options?.type === 'order' &&
+        item.b_options?.status.includes(statusEnum[window.location.hash]) &&
+        item.b_options.title.toLowerCase().includes(searchFilter.toLowerCase()),
+    )
+    .flatMap((item) => {
+      if (!Array.isArray(item.drivers) || item.drivers.length === 0) {
+        return [item]; // обязательно возвращаем массив!
+      }
+
+      // Дублируем item для каждого водителя
+      return item.drivers.map((driver) => ({
+        ...item,
+        drivers: driver, // заменяем массив драйверов на одного
+      }));
+    });
+
+  console.log(filteredRequests);
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
   return (
     <>
@@ -103,7 +117,7 @@ function MyOrdersMaster() {
                         {/* Добавляем ключ для каждого элемента списка */}
                         <td>
                           <img
-                            src={item.b_options.author.photo}
+                            src={item.drivers.c_options.author.photo}
                             alt=""
                             style={{
                               marginRight: '10px',
@@ -121,12 +135,15 @@ function MyOrdersMaster() {
                                 : '/client/requests/my_order/' + item.b_id
                             }
                           >
-                            {item.b_options?.author.name}
+                            {item.c_options?.author.name || 'Anton'}
                           </Link>
                         </td>
                         <td>
                           <img
-                            src={SERVER_PATH + item.b_options?.author?.avatar}
+                            src={
+                              item.b_options?.author?.photo +
+                              '/img/img-camera.png'
+                            }
                             alt=""
                             style={{
                               marginRight: '10px',

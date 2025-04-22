@@ -14,7 +14,6 @@ export default function PaginationPages({
     } else {
       // добавляем первую страницу
       pages.push(1);
-
       if (currentPage > 4) pages.push('...');
 
       const start = Math.max(2, currentPage - 1);
