@@ -164,9 +164,11 @@ function MyOrder() {
   const onSubmit = async (winnerId, orderId) => {
     try {
       const answer = await appFetch(`/drive/get/${orderId}`, {
-        u_a_role: 1,
-        u_id: winnerId,
-        action: 'set_performer',
+        body: {
+          u_a_role: 1,
+          u_id: winnerId,
+          action: 'set_performer',
+        },
       });
       console.log(answer);
     } catch (error) {
@@ -706,7 +708,7 @@ function MyOrder() {
                     </tr>
                     <tr>
                       <td className={styles.light_text}>Ваша деятельность: </td>
-                      <td>{item.c_options.author.u_details.main_business}</td>
+                      <td>{item.c_options.author?.u_details?.main_business}</td>
                     </tr>
                     <tr>
                       <td className={styles.light_text}>
@@ -716,7 +718,7 @@ function MyOrder() {
                     </tr>
                     <tr>
                       <td className={styles.light_text}>Основной бизнес: </td>
-                      <td>{item.c_options.author.u_details.main_business}</td>
+                      <td>{item.c_options.author.u_details?.main_business}</td>
                     </tr>
                   </table>
                   <div className={styles.col}>

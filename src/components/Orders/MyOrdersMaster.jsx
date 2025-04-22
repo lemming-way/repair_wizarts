@@ -37,7 +37,10 @@ function MyOrdersMaster() {
       (item) =>
         item.b_options?.type === 'order' &&
         item.b_options?.status.includes(statusEnum[window.location.hash]) &&
-        item.b_options.title.toLowerCase().includes(searchFilter.toLowerCase()),
+        item.b_options.title
+          .toLowerCase()
+          .includes(searchFilter.toLowerCase()) &&
+        item.drivers !== undefined,
     )
     .flatMap((item) => {
       if (!Array.isArray(item.drivers) || item.drivers.length === 0) {
@@ -45,9 +48,10 @@ function MyOrdersMaster() {
       }
       return item.drivers.map((driver) => ({
         ...item,
-        drivers: driver, //
+        drivers: driver,
       }));
     });
+  console.log(filteredRequests);
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
   return (
     <>
