@@ -41,17 +41,13 @@ function MyOrdersMaster() {
     )
     .flatMap((item) => {
       if (!Array.isArray(item.drivers) || item.drivers.length === 0) {
-        return [item]; // обязательно возвращаем массив!
+        return [item];
       }
-
-      // Дублируем item для каждого водителя
       return item.drivers.map((driver) => ({
         ...item,
-        drivers: driver, // заменяем массив драйверов на одного
+        drivers: driver, //
       }));
     });
-
-  console.log(filteredRequests);
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
   return (
     <>
@@ -117,7 +113,10 @@ function MyOrdersMaster() {
                         {/* Добавляем ключ для каждого элемента списка */}
                         <td>
                           <img
-                            src={item.drivers.c_options.author.photo}
+                            src={
+                              item.drivers?.c_options.author?.photo ||
+                              '/img/img-camera.png'
+                            }
                             alt=""
                             style={{
                               marginRight: '10px',
@@ -141,7 +140,7 @@ function MyOrdersMaster() {
                         <td>
                           <img
                             src={
-                              item.b_options?.author?.photo +
+                              item.b_options?.author?.photo ||
                               '/img/img-camera.png'
                             }
                             alt=""
