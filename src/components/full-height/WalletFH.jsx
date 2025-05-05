@@ -31,6 +31,7 @@ function App() {
     try {
       const base64 = await convertToBase64(file);
       const answer = await updateUserPhoto(base64, user.id);
+      console.log(answer);
       setSucceeded(true);
       setError('');
       setPreviewUrl(base64);

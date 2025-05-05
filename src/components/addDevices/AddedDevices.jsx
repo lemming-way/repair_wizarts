@@ -1,20 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AddedDevice from './AddedDevice';
 import './added-devices.css';
 import { useService } from '../../hooks/useService';
 import { getClientRequests } from '../../services/request.service';
 import styles from './AddedDevices.module.css';
+import appFetch from '../../utilities/appFetch';
 
 function AddedDevices() {
   const requests = useService(getClientRequests, []);
-
-  // временно тестовые данные
+  const [archiveOrders, setArchiveOrders] = useState([]);
+  const tabsFilter = window.location.hash;
+  useEffect(() => {
+    appFetch('/drive/archive', {
+      body: {
+        u_a_role: 2,
+      },
+    }).then((v) => {
+      const formattedData = Object.values(v.data.booking).filter(
+        (item) => item.b_options.type === 'order' && !item.b_options.question1,
+      );
+      console.log(formattedData);
+      setArchiveOrders(formattedData);
+    });
+  }, []);
   const filteredRequests = Object.values(
     requests.data?.data?.booking || [],
   ).filter((item) => item.b_options.type === 'order');
   const onDeviceUpdate = (e) => requests.refetch();
-
   useEffect(() => {
     document.title = 'Добавленные устройства';
   }, []);
@@ -43,7 +56,7 @@ function AddedDevices() {
                   <h2>Актуальное</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>5</span>
+                  <span>{filteredRequests.length}</span>
                 </div>
               </div>
               <div
@@ -55,7 +68,7 @@ function AddedDevices() {
                   <h2>Архив</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>2</span>
+                  <span>{archiveOrders.length || 0}</span>
                 </div>
               </div>
             </div>
@@ -83,17 +96,39 @@ function AddedDevices() {
                 </div>
               </div>
             </div>
-            {filteredRequests?.map((v) => (
-              <AddedDevice
-                {...v.b_options}
-                status={v.b_options.status}
-                created_at={v.b_created}
-                key={v.b_id}
-                id={v.b_id}
-                onUpdate={onDeviceUpdate}
-                number_of_offers={v.drivers?.length || 0}
-              />
-            )) || []}
+            {tabsFilter === '#archive'
+              ? archiveOrders.map((v) => (
+                  <AddedDevice
+                    {...v.b_options}
+                    status={v.b_options.status}
+                    created_at={v.b_created}
+                    key={v.b_id}
+                    id={v.b_id}
+                    onUpdate={onDeviceUpdate}
+                    number_of_offers={v.drivers?.length || 0}
+                  />
+                )) || []
+              : filteredRequests?.map((v) => (
+                  <AddedDevice
+                    //                  id,
+                    // title: ,
+                    // client_price,
+                    // description,
+                    // number_of_offers,
+                    // status: statusProps,
+                    // onUpdate: onDeviceUpdate,
+                    // service,
+                    // subsection,
+                    // section,
+                    {...v.b_options}
+                    status={v.b_options.status}
+                    created_at={v.b_created}
+                    key={v.b_id}
+                    id={v.b_id}
+                    onUpdate={onDeviceUpdate}
+                    number_of_offers={v.drivers?.length || 0}
+                  />
+                )) || []}
           </div>
         </div>
       </div>

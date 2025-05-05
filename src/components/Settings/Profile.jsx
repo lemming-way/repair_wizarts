@@ -71,21 +71,23 @@ function Profile({ ymaps }) {
             },
           );
           const sections = await res.json();
-          const currentSection = sections?.find(
-            (item) => item.id === userDetails?.section,
-          );
+          console.log(sections);
           setSections(
             sections?.map((section) => ({
               value: section.id,
               label: section.name,
             })),
           );
-
-          setCategoryMainOptionSelected(
-            currentSection
-              ? [{ value: currentSection.id, label: currentSection.name }]
-              : null,
-          );
+          if (userDetails) {
+            const currentSection = sections?.find(
+              (item) => item.id === userDetails?.section,
+            );
+            setCategoryMainOptionSelected(
+              currentSection
+                ? [{ value: currentSection.id, label: currentSection.name }]
+                : null,
+            );
+          }
           break;
         }
         case 'subsection': {
@@ -99,20 +101,29 @@ function Profile({ ymaps }) {
             },
           );
           const subsections = await res.json();
+          console.log(subsections);
+
           setSubsections([
             ...subsections?.map((subsection) => ({
               value: subsection.id,
               label: subsection.name,
             })),
           ]);
-          const currentSubsection = subsections?.find(
-            (item) => item.id === userDetails.subsection,
-          );
-          setSelectedSubsections(
-            currentSubsection
-              ? [{ value: currentSubsection.id, label: currentSubsection.name }]
-              : null,
-          );
+          if (userDetails) {
+            const currentSubsection = subsections?.find(
+              (item) => item.id === userDetails.subsection,
+            );
+            setSelectedSubsections(
+              currentSubsection
+                ? [
+                    {
+                      value: currentSubsection.id,
+                      label: currentSubsection.name,
+                    },
+                  ]
+                : null,
+            );
+          }
           break;
         }
         case 'service': {
@@ -125,21 +136,25 @@ function Profile({ ymaps }) {
               },
             },
           );
+          console.log(subsectionId, sectionId);
           const services = await res.json();
-          const currentServices = services.find(
-            (item) => item.id === userDetails.service,
-          );
+          if (userDetails) {
+            const currentServices = services?.find(
+              (item) => item.id === userDetails.service,
+            );
+            setSelectedServices(
+              currentServices
+                ? [{ value: currentServices.id, label: currentServices.name }]
+                : null,
+            );
+          }
           setServices([
             ...services.map((service) => ({
               value: service.id,
               label: service.name,
             })),
           ]);
-          setSelectedServices(
-            currentServices
-              ? [{ value: currentServices.id, label: currentServices.name }]
-              : null,
-          );
+
           break;
         }
         default:
@@ -254,8 +269,13 @@ function Profile({ ymaps }) {
 
       setBusiness(master.u_details?.business_model || 'Частный мастер');
     };
-
-    fetchAllData();
+    if (
+      master.u_details?.section &&
+      master.u_details?.subsection &&
+      master.u_details?.service
+    ) {
+      fetchAllData();
+    }
   }, [ui.isAuthorized]);
 
   useEffect(() => {
@@ -323,10 +343,10 @@ function Profile({ ymaps }) {
                 setSelectedSubsections(selectedArray);
                 setServices([]);
                 setSelectedServices(null);
-
-                // Обработка всех выбранных подкатегорий
                 selectedArray.forEach((subsection) => {
+                  console.log(subsection);
                   categoryMainOptionSelected?.forEach((cat) => {
+                    console.log(cat);
                     getData('service', cat.value, subsection.value);
                   });
                 });

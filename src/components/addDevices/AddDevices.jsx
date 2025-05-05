@@ -128,7 +128,7 @@ function Profile() {
           return setError(err.message);
         }
         setError('Проверьте корректность введённых данных');
-        console.log(err);
+        console.error(err);
       });
   };
 
