@@ -1,17 +1,13 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import styles from './HeroSectionSearchBar.module.scss';
+import { useNavigate } from 'react-router-dom';
 
 const HeroSectionSearchBar = () => {
   const [service, setService] = useState<string>('');
-
-  const submitFormHandler = async (e: React.FormEvent) => {
+  const navigate = useNavigate();
+  const submitFormHandler = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      // запрос
-    } catch (e) {
-      // ошибки
-    }
+    navigate(`/devices/9/244?search=${service}`);
   };
 
   return (

@@ -40,7 +40,8 @@ function MyOrdersMaster() {
         item.b_options.title
           .toLowerCase()
           .includes(searchFilter.toLowerCase()) &&
-        item.drivers !== undefined,
+        item.drivers !== undefined &&
+        item.b_state !== '2',
     )
     .flatMap((item) => {
       if (!Array.isArray(item.drivers) || item.drivers.length === 0) {
@@ -184,6 +185,7 @@ function MyOrdersMaster() {
                   'В работе': 'status_working',
                   Отменено: 'status_cancel',
                   Активно: 'status_ok',
+                  Пауза: 'status_cancel',
                 };
                 const currentStatusStyleClass =
                   StyleEnum[item.b_options.status];

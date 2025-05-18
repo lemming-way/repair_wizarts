@@ -11,6 +11,7 @@ import ModalEditOrder from './ModalEditOrder';
 import Popup from 'reactjs-popup';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import appFetch from '../../utilities/appFetch';
+import { deleteRequest, updateRequest } from '../../services/request.service';
 
 function MyOrder() {
   const navigate = useNavigate();
@@ -178,7 +179,27 @@ function MyOrder() {
   const [price, setPrice] = useState('');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+  const onSubmitChange = (e) => {
+    e.preventDefault();
 
+    return updateRequest(id, {
+      title,
+      client_price: price,
+      description: message,
+    }).then((v) => {
+      console.log(v);
+    });
+  };
+
+  const onDelete = (e) => {
+    e.preventDefault();
+    return deleteRequest(id).then((v) => {
+      console.log(v, id);
+    });
+  };
+  const setRequestStatus = (status) => {
+    return updateRequest(id, { status: status }).then((v) => {});
+  };
   return (
     <>
       {visibleModalConfirmMaster ? (
@@ -189,7 +210,7 @@ function MyOrder() {
       {/* блок с оплатой */}
       {visibleBlockPayment ? (
         <div className={style.blockPayment_wrap}>
-          {errorBalance ? (
+          {/* {errorBalance ? (
             <div className={style.error}>
               Пополните, пожалуйста, баланс на 500р
             </div>
@@ -203,7 +224,7 @@ function MyOrder() {
             <div className={style.error}>
               С вашего баланса спишется 500 рублей{' '}
             </div>
-          ) : null}
+          ) : null} */}
 
           <div className={style.blockPayment}>
             <div
@@ -276,10 +297,16 @@ function MyOrder() {
         />
       ) : null}
       {visibleModalDelete ? (
-        <ModalDelete setVisibleDeleteModal={setVisibleModalDelete} />
+        <ModalDelete
+          setVisibleDeleteModal={setVisibleModalDelete}
+          onDelete={onDelete}
+        />
       ) : null}
       {visibleModalEditOrder ? (
-        <ModalEditOrder setVisibleModalEdit={setVisibleModalEditOrder} />
+        <ModalEditOrder
+          setVisibleModalEdit={setVisibleModalEditOrder}
+          onEdit={onSubmitChange}
+        />
       ) : null}
 
       {/* <Sidebar /> */}

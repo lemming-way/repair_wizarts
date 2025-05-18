@@ -14,7 +14,7 @@ const MultiSelect = (props: any) => {
   const allOption = { value: '*', label: selectAllLabel.current };
   const filterOptions = (options: Option[], input: string) => {
     return options?.filter(({ label }: Option) =>
-      label.toLowerCase().includes(input.toLowerCase()),
+      label?.toLowerCase()?.includes(input?.toLowerCase()),
     );
   };
 

@@ -2,28 +2,14 @@
 
 $arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
 
-.Submenu_submenu {
-  left: calc(100% + 2px);
-  top: 0 !important;
-}
-
-.Submenu_submenu_lvl3 {
-  top: 0;
-  left: calc(100% + 2px);
-}
-
-
 .serviceDropdown {
   background-color: #131313 !important;
   padding-bottom: 35px;
-
   position: absolute;
-  top: 0;
+  top: calc(100% + 18px) !important;
   left: 15px;
   width: 270px;
   border-radius: 6px;
-
-  top: calc(100% + 18px) !important;
 
   @include mixins.xl {
     left: -50px !important;
@@ -31,18 +17,15 @@ $arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
   }
 
   ul {
+    // display: flex;
+    // align-items: center;
     margin: 0 !important;
   }
 
   &_button {
-    background-color: #000000 !important;
-    color: white !important;
+    background-color: #000 !important;
+    color: #fff !important;
     font-size: 16px !important;
-
-    // спрятать стрелку
-    // img {
-    //   display: none;
-    // }
 
     @include mixins.xl {
       padding: 0 !important;
@@ -57,30 +40,35 @@ $arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
     &:focus {
       box-shadow: none !important;
     }
+
+    img {
+      margin-left: 5px;
+      transition: transform 1s ease;
+    }
   }
 
   &_item {
     background-color: #131313 !important;
-    color: white !important;
+    color: #fff !important;
     width: 270px;
     font-size: 16px !important;
+
+    &_lvl3 {
+    }
+
     &:first-child {
-      border-radius: 4px 4px 0 0; // Закругление только сверху
+      border-radius: 4px 4px 0 0;
     }
 
     &:last-child {
-      border-radius: 0 0 4px 4px; // Закругление только снизу
-    }
-
-    &_lvl3 {
-      width: 200px;
+      border-radius: 0 0 4px 4px;
     }
 
     span {
-      padding: 10px 20px;
-      border-bottom: 1px solid #515151;
       display: block;
       width: 100%;
+      padding: 10px 20px;
+      border-bottom: 1px solid #515151;
 
       &:hover {
         border-bottom: 1px solid white;
@@ -89,70 +77,91 @@ $arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
 
     &_menu {
       background: url('#{$arrowRightIconPath}') no-repeat right center;
+      background-size: 16px;
     }
+  }
+
+  &_lvl1 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background-color: #131313 !important;
+    color: white;
+    width: 270px;
+    // height: 100px !important;
+    font-size: 16px;
+
+    &__span {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 10px;
+      padding: 10px;
+      border-bottom: 1px solid #515151;
+      background: url('#{$arrowRightIconPath}') no-repeat right center;
+      background-size: 16px;
+
+      &:hover {
+        border-bottom: 1px solid #8d8d8d;
+      }
+    }
+  }
+
+  &_item_lvl1 {
+    background-color: #131313 !important;
+    color: white !important;
+    width: 270px;
+    font-size: 16px !important;
   }
 }
 
-
-
-.test ul{
-  margin: 0 !important;
+.Submenu_submenu,
+.Submenu_submenu_lvl3 {
+  top: 0 !important;
+  left: calc(100% + 2px);
 }
 
-// для городов
 .menu_cities {
-  background-color: white !important;
+  background-color: #fff !important;
   border-radius: 10px;
   padding: 12px;
-
   position: absolute;
-  top: 0;
+  top: calc(100% + 18px) !important;
   left: 115px;
   width: 320px;
-
-  top: calc(100% + 18px) !important;
 
   li {
     padding: 0 !important;
   }
 
-  & div {
+  div {
     display: flex;
     align-items: center;
-  }
 
-  & div:hover {
-    flex-direction: row !important;
+    &:hover {
+      flex-direction: row !important;
+    }
   }
 
   input {
     background-color: #ededed;
-    padding: 10px 10px;
+    padding: 10px;
     width: 100%;
     margin-bottom: 20px;
-
     border-radius: 5px;
-    outline: none;
     border: none;
+    outline: none;
 
     &::placeholder {
-      color: #999999;
-    }
-
-    &:focus {
-      outline: none;
-      border: none;
+      color: #999;
     }
   }
 
   .sity {
     background-color: #ededed;
-    padding: 10px 10px;
+    padding: 10px;
     border-radius: 5px;
-    outline: none;
-
     color: #303030;
-
     width: 100%;
     margin-bottom: 5px;
     cursor: pointer;
@@ -166,62 +175,23 @@ $arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
 .small {
   margin-left: 10px;
   font-size: 10px;
-  color: #8D8D8D;
-}
-
-.serviceDropdown_lvl1 {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-
-  background-color: #131313 !important;
-  color: white !important;
-  width: 270px;
-  height: 315px;
-
-  font-size: 16px !important;
-  // padding-top: 15px;
+  color: #8d8d8d;
 }
 
 .lvl1_row {
   display: flex;
   align-items: center;
   gap: 15px;
-
   padding-left: 20px;
   margin-bottom: 20px;
-}
 
-.lvl1_row img {
-  --size: 27px;
-  width: var(--size);
-  height: var(--size);
-}
-
-
-.serviceDropdown_item_lvl1 {
-  background-color: #131313 !important;
-  color: white !important;
-  width: 270px;
-  font-size: 16px !important;
-}
-
-.serviceDropdown_lvl1__span {
-  padding: 10px;
-  border-bottom: 1px solid #515151;
-  background: url('#{$arrowRightIconPath}') no-repeat right center;
-  // border-bottom: none !important;
-  display: block;
-  width: 100%;
-
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  // border-bottom: 1px solid white;
-
-  &:hover {
-    border-bottom: 1px solid #8d8d8d;
+  img {
+    --size: 27px;
+    width: var(--size);
+    height: var(--size);
   }
+}
+
+.test ul {
+  margin: 0 !important;
 }

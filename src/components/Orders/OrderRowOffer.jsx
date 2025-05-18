@@ -20,8 +20,7 @@ export default function OrderRowOffer({
   images,
   profileImage = '/img/profil_img/1.png',
 }) {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const user = JSON.parse(localStorage.getItem('userdata')).user;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
   const [visibleModalGo, setVisibleModalGo] = useState(false);
@@ -53,6 +52,7 @@ export default function OrderRowOffer({
       if (isHasBind) {
         alert('Вы уже отправили заявку');
       } else {
+        console.log(user);
         isHasBind = await appFetch(`/drive/get/${b_id}`, {
           body: {
             u_a_role: 2,
@@ -93,7 +93,7 @@ export default function OrderRowOffer({
       <div className={style.order_row}>
         <div className={style.left}>
           <div className={style.profile}>
-            <img src={profileImage} alt="Профиль" />
+            {/* <img src={profileImage} alt="Профиль" /> */}
             <div className={style.profile__col}>
               <p className={style.name}>{userName}</p>
               <p>Размещено проектов на бирже {projectsPosted}</p>
@@ -130,7 +130,7 @@ export default function OrderRowOffer({
           >
             {images.map((src, index) => (
               <SwiperSlide key={index} className={style.swiperSlide}>
-                <img onClick={() => openModal(src)} src={src} alt="" />
+                {/* <img onClick={() => openModal(src)} src={src} alt="" /> */}
               </SwiperSlide>
             ))}
           </Swiper>

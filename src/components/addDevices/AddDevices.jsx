@@ -7,11 +7,13 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { createRequest } from '../../services/request.service';
 import style from './AddDevices.module.css';
+import { useSelector } from 'react-redux';
 
 function Profile() {
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const [URLSearchParams] = useSearchParams();
+  const { categories } = useSelector((state) => state.categories);
   const title = URLSearchParams.get('title');
   const [error, setError] = useState('');
   const [description, setDescription] = useState('');

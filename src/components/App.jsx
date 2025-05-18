@@ -81,14 +81,14 @@ import BalanceClient from './Settings/BalanceClient';
 import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
 import HomeV2 from './home_v2/HomeV2';
+import { setCategories } from '../slices/cateories.slice';
 
 function App() {
   const __location__ = useLocation();
   const dispatch = useDispatch();
-
   const userStatus = useSelector(selectUserStatus);
+  const { categories } = useSelector((state) => state.categories);
   const [currentHome, setCurrentHome] = useState('electron');
-
   useEffect(() => {
     const isMaster = getUserMode();
     const location = getLocation();
@@ -105,6 +105,10 @@ function App() {
       'main',
     );
     setCurrentHome(currentVersion || 'electron');
+    // console.log(categories);
+    if (categories.length === 0) {
+      fetchFullDataAboutCategories();
+    }
   }, []);
   useEffect(() => {
     const token = getToken();
@@ -129,15 +133,27 @@ function App() {
       dispatch(setLoading(false));
     }
   }, [userStatus, dispatch]);
+  const fetchFullDataAboutCategories = async () => {
+    try {
+      const response = await fetch(
+        'https://profiback.itest24.com/api/full-data',
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${'123'}`,
+          },
+        },
+      );
+      const data = await response.json();
 
-  // FIXME: such a moron made this
-  // setTimeout(() => {
-  //   if (matchPath('/services/:id', __location__.pathname)) {
-  //     let hg = document.querySelector('.hhun');
-  //     hg?.classList.add('nhh');
-  //   }
-  // }, 1000);
-
+      dispatch(setCategories(data));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  if (categories.length === 0) {
+    return 'Loading...';
+  }
   return (
     <>
       {currentHome === 'new' ? (
@@ -150,8 +166,14 @@ function App() {
             <Routes>
               <Route>
                 <Route index element={<Home />} />
-                <Route path="devices/:id" element={<Remont />} />
-                <Route path="services/:id" element={<ServiceDetail />} />
+                <Route
+                  path="devices/:sectionId/:subsectionId"
+                  element={<Remont />}
+                />
+                <Route
+                  path="services/:sectionId/:subsectionId/:serviceId"
+                  element={<ServiceDetail />}
+                />
                 <Route path="articles/:id" element={<Article />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="articles" element={<Articles />} />
