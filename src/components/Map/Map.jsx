@@ -78,7 +78,7 @@ const Map = (props) => {
 
             {/* Метка: Москва */}
             <Placemark
-                geometry={[55.7558, 37.6173]}
+                geometry={[ui.location.latitude, ui.location.longitude]}
                 options={{
                     iconColor: '#ff0000',
                     preset: 'islands#redDotIcon',
