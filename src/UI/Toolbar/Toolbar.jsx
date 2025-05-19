@@ -44,7 +44,7 @@ const Toolbar = () => {
 
   return (
     <header>
-      <div className={`${styles.toolbar} appContainer`}>
+      <div className={`${styles.toolbar} appContainer test`}>
         {/*Заменила лого по требованию ТЗ*/}
         <Link to="/" className={styles.toolbar_logo}>
           <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
