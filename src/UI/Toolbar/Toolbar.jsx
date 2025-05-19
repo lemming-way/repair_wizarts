@@ -26,6 +26,7 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
 
   const ui = useSelector(selectUI);
+  console.log(ui);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
 
