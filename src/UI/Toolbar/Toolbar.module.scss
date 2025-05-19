@@ -42,7 +42,7 @@
     margin: auto;
     padding-left: 0;
 
-    @include mixins.xl {
+    @include mixins.rxl {
       display: none;
     }
 
