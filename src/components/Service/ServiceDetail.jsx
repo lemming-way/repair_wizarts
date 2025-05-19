@@ -764,7 +764,7 @@ function ServiceDetail() {
 
       {/* инфо о мастере */}
       <div style={{ display: 'flex', position: 'absolute' }}>
-        <div style={{position: 'absolute', zIndex: 1, bottom: "0", left: "100px", display: 'flex', gap: '10px'}}>
+        <div style={{position: 'absolute', zIndex: 1, bottom: "0", left: "370px", display: 'flex', gap: '10px'}}>
           <div className="info_master" >
             <div className="info_master__close">
               <img src="/img/close.svg" alt="" />
