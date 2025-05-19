@@ -75,6 +75,21 @@ const Map = (props) => {
             <SearchControl
                 options={{ fitMaxWidth: true, maxWidth: '660px' }}
             />
+
+            {/* Метка: Москва */}
+            <Placemark
+                geometry={[55.7558, 37.6173]}
+                options={{
+                    iconColor: '#ff0000',
+                    preset: 'islands#redDotIcon',
+                }}
+                properties={{
+                    hintContent: 'Москва',
+                    balloonContent: 'Это Москва'
+                }}
+            />
+
+
             {masters?.map((v) => (
                 <Placemark
                     key={v.id}
