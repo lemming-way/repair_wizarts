@@ -81,7 +81,7 @@
     position: absolute;
     top: 15px;
     right: 15px;
-    display: none;
+    display: block;
 
     cursor: pointer;
 
@@ -96,7 +96,7 @@
     z-index: 888;
 
     @include mixins.xl {
-      display: block;
+      display: none;
     }
 
     & button {

@@ -196,7 +196,7 @@ const Toolbar = () => {
       <div
         className={styles.toolbar_burger2}
         onClick={toggleMenu}
-        style={{ display: ui.isAuthorized ? 'block' : 'none' }}
+        style={{ display: ui.isAuthorized ? 'none' : 'block' }}
       >
         <div className={styles.toolbar_burger2_icon}></div>
       </div>
