@@ -277,6 +277,9 @@ function ServiceDetail() {
     setSelectedService(list);
   }
 
+  const [showSmallModal, setShowSmallModal] = useState(true);
+  const [showBigModal, setShowBigModal] = useState(true);
+
   return (
     <ServiceDetailContext.Provider value={selectedValue}>
       {/* блок с оплатой */}
@@ -765,8 +768,11 @@ function ServiceDetail() {
       {/* инфо о мастере */}
       <div style={{ display: 'flex', position: 'absolute' }}>
         <div style={{position: 'absolute', zIndex: 1, bottom: "0", left: "370px", display: 'flex', gap: '10px'}}>
+        {showSmallModal && (
           <div className="info_master" >
-            <div className="info_master__close">
+            <div className="info_master__close"
+             onClick={() => setShowSmallModal(false)}
+             style={{ cursor: 'pointer' }}>
               <img src="/img/close.svg" alt="" />
             </div>
 
@@ -830,10 +836,13 @@ function ServiceDetail() {
               54%
             </p>
           </div>
-
+        )}
+{showBigModal && (
           <div className="info_master_big" >
             <div>
-              <div className="info_master__close">
+              <div className="info_master__close"
+               onClick={() => setShowBigModal(false)}
+               style={{ cursor: 'pointer' }}>
                 <img src="/img/close.svg" alt="" />
               </div>
 
@@ -923,6 +932,7 @@ function ServiceDetail() {
 
             <div></div>
           </div>
+           )}
         </div>
       </div>
       {/* Модальное окно с слайдером */}
