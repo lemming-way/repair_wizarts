@@ -112,9 +112,12 @@ function ServiceDetail() {
   const selectedValue = useMemo(() => ({ selected, setSelected }), [selected]);
 
   const [selectedMaster, setSelectedMaster] = useState({});
+  const [showSmallModal, setShowSmallModal] = useState(true);
+  const [showBigModal, setShowBigModal] = useState(true);
 
   const onSelectMaster = (e, data) => {
-    console.log('qqqqq')
+    setShowSmallModal(true);
+    setShowBigModal(true);
     return getMasterByUsername(data).then(setSelectedMaster);
   };
 
@@ -278,8 +281,7 @@ function ServiceDetail() {
     setSelectedService(list);
   }
 
-  const [showSmallModal, setShowSmallModal] = useState(true);
-  const [showBigModal, setShowBigModal] = useState(true);
+  
 
   return (
     <ServiceDetailContext.Provider value={selectedValue}>
