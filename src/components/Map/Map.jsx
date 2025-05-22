@@ -87,6 +87,7 @@ const Map = (props) => {
                     hintContent: 'Москва',
                     balloonContent: 'Это Москва'
                 }}
+                onClick={() => selectMaster(ui)}
             />
 
 

@@ -96,7 +96,7 @@
     z-index: 888;
 
     @include mixins.xl {
-      display: none;
+      display: block;
     }
 
     & button {

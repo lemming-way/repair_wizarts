@@ -114,6 +114,7 @@ function ServiceDetail() {
   const [selectedMaster, setSelectedMaster] = useState({});
 
   const onSelectMaster = (e, data) => {
+    console.log('qqqqq')
     return getMasterByUsername(data).then(setSelectedMaster);
   };
 
