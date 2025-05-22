@@ -77,11 +77,22 @@
     }
   }
 
+  &_burger2_visibility_none {
+    display: none;
+  }
+
+  &_burger2_visibility_block {
+    display: none;
+    @include mixins.xl {
+      display: block !important;
+    }
+  }
+
   &_burger2 {
     position: absolute;
     top: 15px;
     right: 15px;
-    display: none;
+
 
     cursor: pointer;
 
@@ -95,9 +106,7 @@
 
     z-index: 888;
 
-    @include mixins.xl {
-      display: block;
-    }
+  
 
     & button {
       background-color: unset !important;

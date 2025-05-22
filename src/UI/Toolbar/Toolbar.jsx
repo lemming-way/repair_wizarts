@@ -194,9 +194,11 @@ const Toolbar = () => {
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
       <div
-        className={styles.toolbar_burger2}
+        className={[
+          styles.toolbar_burger2,
+          ui.isAuthorized ? styles.toolbar_burger2_visibility_none : styles.toolbar_burger2_visibility_block
+        ].join(' ')}
         onClick={toggleMenu}
-        style={{ display: ui.isAuthorized ? 'none' : 'block' }}
       >
         <div className={styles.toolbar_burger2_icon}></div>
       </div>
