@@ -190,8 +190,40 @@ const getServiceRepairsByDeviceIdTestData = (deviceId) => {
   });
 };
 
-const getMasterRepairs = () => appFetch('service/master-repairs');
-
+const getMasterRepairs = () => [
+  {
+    master_id: 'master1',
+    repair_id: 1,
+    price: 1200,
+    time: 45,
+    address_latitude: 59.9311,
+    address_longitude: 30.3609,
+  },
+  {
+    master_id: 'master1',
+    repair_id: 2,
+    price: 1800,
+    time: 60,
+    address_latitude: 59.9311,
+    address_longitude: 30.3609,
+  },
+  {
+    master_id: 'master2',
+    repair_id: 1,
+    price: 1500,
+    time: 50,
+    address_latitude: 59.9386,
+    address_longitude: 30.3141,
+  },
+  {
+    master_id: 'master3',
+    repair_id: 3,
+    price: 2000,
+    time: 70,
+    address_latitude: 59.9457,
+    address_longitude: 30.32,
+  },
+];
 const getMasterRepairsByUsername = (username) =>
   appFetch('service/master-repairs?master_username=' + username);
 

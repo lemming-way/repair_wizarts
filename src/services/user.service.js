@@ -34,7 +34,7 @@ const getClientById = (id) => appFetch('user/client/' + id);
 
 const updateUser = (data, id) => {
   const formattedDetails = Object.entries(data.details || {}).map(
-    ([key, value]) => ['=', [key], value],
+    ([key, value]) => (value ? ['=', [key], value] : ['=', [key], []]),
   );
   return appFetch('user', {
     body: {

@@ -9,10 +9,29 @@ import 'swiper/css/navigation';
 import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
-
+// {
+//   "address": "csklncjksdncklsdncklsd",
+//   "login": "sdcsdcsdjkcnsdsdncklsd",
+//   "categories": {
+//       "main": [
+//           8
+//       ],
+//       "sub": [
+//           228
+//       ],
+//       "models": [
+//           13115,
+//           13116,
+//           13117,
+//           13118,
+//           13119
+//       ]
+//   }
+// }
 function Profile({ ymaps }) {
-  const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
-    useState(null);
+  const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(
+    [],
+  );
   const [experience, setExperience] = useState(null);
 
   const experienceOptions = [
@@ -33,6 +52,7 @@ function Profile({ ymaps }) {
   //   ]; ###
 
   const ui = useSelector(selectUI);
+  const { categories } = useSelector((state) => state.categories);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const [Sections, setSections] = useState([]);
@@ -210,9 +230,9 @@ function Profile({ ymaps }) {
       details: {
         ...form.details,
         business_model,
-        section: categoryMainOptionSelected[0].value,
-        subsection: selectedSubsections[0].value,
-        service: selectedServices[0].value,
+        section: categoryMainOptionSelected,
+        subsection: selectedSubsections,
+        service: selectedServices,
       },
     };
     try {
@@ -231,19 +251,73 @@ function Profile({ ymaps }) {
     const master = user;
 
     const fetchAllData = async () => {
-      await getData('section', '', '', master.u_details);
-      await getData(
-        'subsection',
-        master.u_details?.section,
-        '',
-        master.u_details,
-      );
-      await getData(
-        'service',
-        master.u_details?.section,
-        master.u_details?.subsection,
-        master.u_details,
-      );
+      if (
+        master.u_details.section &&
+        master.u_details.subsection &&
+        master.u_details.service
+      ) {
+        setSubsections(
+          categories.flatMap((item) => {
+            const isSelectedSectionId = master.u_details.section.find(
+              (selec) => selec.value === item.id,
+            );
+            return isSelectedSectionId
+              ? item.subsections.map((item) => ({
+                  label: item.name,
+                  value: item.id,
+                }))
+              : [];
+          }),
+        );
+        setServices(
+          categories.flatMap((item) => {
+            const isSelectedSectionId = master.u_details.section.find(
+              (selec) => selec.value == item.id,
+            );
+            return isSelectedSectionId
+              ? item.subsections.flatMap((item) => {
+                  const isSelectedSubsection = master.u_details.subsection.find(
+                    (subSelec) => subSelec.value == item.id,
+                  );
+                  return isSelectedSubsection
+                    ? item.services.map((item) => ({
+                        label: item.name,
+                        value: item.id,
+                      }))
+                    : [];
+                })
+              : [];
+          }),
+        );
+        setCategoryMainOptionSelected(
+          Array.isArray(master.u_details.section)
+            ? master.u_details.section
+            : [],
+        );
+        setSelectedSubsections(
+          Array.isArray(master.u_details.subsection)
+            ? master.u_details.subsection
+            : [],
+        );
+        setSelectedServices(
+          Array.isArray(master.u_details.service)
+            ? master.u_details.service
+            : [],
+        );
+      }
+      // await getData('section', '', '', master.u_details);
+      // await getData(
+      //   'subsection',
+      //   master.u_details?.section,
+      //   '',
+      //   master.u_details,
+      // );
+      // await getData(
+      //   'service',
+      //   master.u_details?.section,
+      //   master.u_details?.subsection,
+      //   master.u_details,
+      // );
       setExperience(
         master.u_details?.experience
           ? [
@@ -280,9 +354,10 @@ function Profile({ ymaps }) {
 
   useEffect(() => {
     document.title = 'Настройки';
-    getData('section');
+    setSections(
+      categories.map((item) => ({ label: item.name, value: item.id })),
+    );
   }, []);
-
   //   useEffect(() => {
   //     ymaps.ready(() => {
   //       const suggestView = new ymaps.SuggestView('suggest-input');
@@ -308,22 +383,25 @@ function Profile({ ymaps }) {
               key="category_id"
               placeholder="Вид категории"
               options={Array.isArray(Sections) ? Sections : []}
+              isMulti={true}
+              isSelectAll={true}
               onChange={(selected) => {
-                const selectedArray = Array.isArray(selected)
-                  ? selected
-                  : selected
-                  ? [selected]
-                  : [];
-
-                setCategoryMainOptionSelected(selectedArray);
-                setSubsections([]);
+                setCategoryMainOptionSelected(selected);
                 setSelectedSubsections(null);
-                setServices([]);
                 setSelectedServices(null);
-
-                selectedArray.forEach((item) => {
-                  getData('subsection', item.value);
-                });
+                setSubsections(
+                  categories.flatMap((item) => {
+                    const isSelectedSectionId = selected.find(
+                      (selec) => selec.value === item.id,
+                    );
+                    return isSelectedSectionId
+                      ? item.subsections.map((item) => ({
+                          label: item.name,
+                          value: item.id,
+                        }))
+                      : [];
+                  }),
+                );
               }}
               value={categoryMainOptionSelected}
               menuPlacement="bottom"
@@ -332,24 +410,32 @@ function Profile({ ymaps }) {
             <MultiSelect
               key="subsection_id"
               placeholder="Подкатегории"
+              isMulti={true}
+              isSelectAll={true}
               options={Array.isArray(Subsections) ? Subsections : []}
               onChange={(selected) => {
-                const selectedArray = Array.isArray(selected)
-                  ? selected
-                  : selected
-                  ? [selected]
-                  : [];
-
-                setSelectedSubsections(selectedArray);
-                setServices([]);
+                setSelectedSubsections(selected);
                 setSelectedServices(null);
-                selectedArray.forEach((subsection) => {
-                  console.log(subsection);
-                  categoryMainOptionSelected?.forEach((cat) => {
-                    console.log(cat);
-                    getData('service', cat.value, subsection.value);
-                  });
-                });
+                setServices(
+                  categories.flatMap((item) => {
+                    const isSelectedSectionId = categoryMainOptionSelected.find(
+                      (selec) => selec.value === item.id,
+                    );
+                    return isSelectedSectionId
+                      ? item.subsections.flatMap((item) => {
+                          const isSelectedSubsection = selected.find(
+                            (subSelec) => subSelec.value === item.id,
+                          );
+                          return isSelectedSubsection
+                            ? item.services.map((item) => ({
+                                label: item.name,
+                                value: item.id,
+                              }))
+                            : [];
+                        })
+                      : [];
+                  }),
+                );
               }}
               value={selectedSubsections}
               menuPlacement="bottom"
@@ -357,6 +443,8 @@ function Profile({ ymaps }) {
 
             <MultiSelect
               key="services"
+              isSelectAll={true}
+              isMulti={true}
               placeholder="Услуги"
               options={Array.isArray(Services) ? Services : []}
               onChange={(selected) =>

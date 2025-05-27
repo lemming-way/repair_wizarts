@@ -2,8 +2,14 @@ import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import { getUser } from '../services/user.service';
 import FetchStatus from '../constants/FetchStatus';
 
-const fetchUser = createAsyncThunk('user/fetch', (_, { rejectWithValue }) =>
-  getUser().catch(rejectWithValue),
+const fetchUser = createAsyncThunk(
+  'user/fetch',
+  (_, { rejectWithValue }) => getUser().catch(rejectWithValue),
+  {
+    condition: (_, { getState, extra }) => {
+      return true;
+    },
+  },
 );
 
 const wipeUser = createAction('user/wipe');

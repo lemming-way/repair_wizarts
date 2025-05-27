@@ -14,7 +14,7 @@ function App() {
   const listLinks = [
     '/master/settings',
     '/master/settings/profile',
-    // "/master/settings/services",
+    '/master/settings/services',
     '/master/settings/finance',
     '/master/settings/balance',
   ];

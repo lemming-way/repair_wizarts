@@ -63,7 +63,7 @@ const refreshAccessToken = async () => {
   }
 };
 
-const appFetch = async (location, init = {}) => {
+const appFetch = async (location, init = {}, admin) => {
   try {
     const token = getToken();
     const response = await fetch(BASE_URL + location, {
@@ -75,7 +75,16 @@ const appFetch = async (location, init = {}) => {
         ? {}
         : {
             body: new URLSearchParams({
-              ...(token ? { token: token?.token, u_hash: token?.hash } : {}),
+              ...(token
+                ? {
+                    token: admin
+                      ? 'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr'
+                      : token?.token,
+                    u_hash: admin
+                      ? 'bbdd06a50ddcc1a4adc91fa0f6f86444'
+                      : token?.hash,
+                  }
+                : {}),
               ...init.body,
             }).toString(),
           }),

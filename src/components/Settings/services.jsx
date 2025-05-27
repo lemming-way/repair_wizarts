@@ -7,166 +7,138 @@ import { getMasterRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
 
 import style from './services.module.css';
-
-// const FormMode = {
-//     Hidden: 0,
-//     Default: 1,
-//     Custom: 2
-// } ###
-
+import { updateUser } from '../../services/user.service';
 function Services() {
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
   const [brandOptionSelected, setBrandOptionSelected] = useState(null);
   const [modelPhoneOptionSelected, setModelPhoneOptionSelected] =
     useState(null);
-
-  const categoriesMainOptions = [{ value: 0, label: 'Электроника' }];
-
-  const categoriesOptions = [
-    { value: 0, label: 'Ремонт телефонов' },
-    { value: 1, label: 'Ремонт планшетов' },
-    { value: 2, label: 'Ремонт ноутбуков' },
-    { value: 3, label: 'Ремонт компьютеров' },
-    { value: 4, label: 'Ремонт часов' },
-    { value: 5, label: 'Акссесуары' },
-  ];
-
-  const modelsPhone = [
-    { value: 0, label: 'iPhone 11' },
-    { value: 1, label: 'iPhone 11 Pro' },
-    { value: 2, label: 'iPhone 11 Pro Max' },
-    { value: 3, label: 'iPhone SE' },
-    { value: 4, label: 'iPhone 12' },
-    { value: 5, label: 'iPhone 12 Mini' },
-    { value: 6, label: 'iPhone 12 Pro' },
-    { value: 7, label: 'iPhone 12 Pro Max' },
-    { value: 8, label: 'iPhone 13' },
-    { value: 9, label: 'iPhone 13 Mini' },
-    { value: 10, label: 'iPhone 13 Pro' },
-    { value: 11, label: 'iPhone 13 Pro Max' },
-    { value: 12, label: 'iPhone 14' },
-    { value: 13, label: 'iPhone 14 Plus' },
-    { value: 14, label: 'iPhone 14 Pro' },
-    { value: 15, label: 'iPhone 14 Pro Max' },
-    { value: 16, label: 'iPhone 15' },
-    { value: 17, label: 'iPhone 15 Plus' },
-    { value: 18, label: 'iPhone 15 Pro' },
-    { value: 19, label: 'iPhone 15 Pro Max' },
-  ];
-
-  const brandsOptions = [
-    { value: 0, label: 'Apple' },
-    { value: 1, label: 'Samsung' },
-    { value: 2, label: 'Huawei' },
-    { value: 3, label: 'Xiaomi' },
-    { value: 4, label: 'Sony' },
-    { value: 5, label: 'LG' },
-    { value: 6, label: 'Google' },
-    { value: 7, label: 'OnePlus' },
-  ];
-
-  //   const typeOfRepairOptions = [
-  //     { value: 0, label: "Ремонт экрана" },
-  //     { value: 1, label: "Замена батареи" },
-  //     { value: 2, label: "Ремонт от воды" },
-  //     { value: 3, label: "Прошивка устройства" },
-  //     { value: 4, label: "Ремонт разъемов и портов" },
-  //     { value: 5, label: "Восстановление программного обеспечения" },
-  //   ]; ###
-
-  const user = useSelector(selectUser);
-
   const [repairs, setRepairs] = useState([]);
-  const username = user.master?.[0].username;
-
+  const [servicesBlocks, setServicesBlocks] = useState({});
+  const username = user.u_details?.login;
+  const { categories } = useSelector((state) => state.categories);
+  useEffect(() => {}, []);
   useEffect(() => {
     if (!username) return;
-
+    if (
+      user.u_details?.section &&
+      user.u_details?.subsection &&
+      user.u_details?.service &&
+      user.u_details?.servicesBlocks
+    ) {
+      setCategoryMainOptionSelected(
+        Array.isArray(user.u_details.section) ? user.u_details.section : [],
+      );
+      setCategoryOptionSelected(
+        Array.isArray(user.u_details.subsection)
+          ? user.u_details.subsection
+          : [],
+      );
+      setModelPhoneOptionSelected(
+        Array.isArray(user.u_details.service) ? user.u_details.service : [],
+      );
+      setServicesBlocks({ ...user.u_details.servicesBlocks });
+    }
     getMasterRepairsByUsername(username).then(setRepairs);
   }, [user, username]);
-
-  // const onDelete = useCallback((e, id) => {
-  //     getMasterRepairsByUsername(username).then(setRepairs)
-  // }, [])
-
-  // const onSubmit = (e) =>
-  //     getMasterRepairsByUsername(username).then(setRepairs)
-
-  const [servicesBlocks, setServicesBlocks] = useState({});
   useEffect(() => {
     var obj = {};
     if (!modelPhoneOptionSelected) {
       return;
     }
 
-    modelPhoneOptionSelected.map(
-      (object) =>
-        (obj[object.label] = {
-          open: false,
-          select_state: '',
-          row: [
-            {
-              heading: '',
-              description: '',
-              time: '',
-              price: '',
-            },
-            {
-              heading: '',
-              description: '',
-              time: '',
-              price: '',
-            },
-            {
-              heading: '',
-              description: '',
-              time: '',
-              price: '',
-            },
-            {
-              heading: '',
-              description: '',
-              time: '',
-              price: '',
-            },
-          ],
-        }),
-    );
+    const rr = modelPhoneOptionSelected.forEach((object) => {
+      servicesBlocks[object.label]
+        ? (obj[object.label] = servicesBlocks[object.label])
+        : (obj[object.label] = {
+            open: false,
+            select_state: '',
+            row: [
+              {
+                heading: '',
+                description: '',
+                time: '',
+                price: '',
+              },
+              {
+                heading: '',
+                description: '',
+                time: '',
+                price: '',
+              },
+              {
+                heading: '',
+                description: '',
+                time: '',
+                price: '',
+              },
+              {
+                heading: '',
+                description: '',
+                time: '',
+                price: '',
+              },
+            ],
+          });
+    });
     setServicesBlocks(obj);
   }, [modelPhoneOptionSelected]);
-
   function changeInputs(value, key, field, index) {
-    var obj = { ...servicesBlocks };
-    obj[key]['row'][index][field] = value;
-
-    setServicesBlocks(obj);
+    setServicesBlocks((prev) => {
+      const updated = { ...prev };
+      updated[key] = {
+        ...updated[key],
+        row: updated[key].row.map((item, i) =>
+          i === index ? { ...item, [field]: value } : item,
+        ),
+      };
+      return updated;
+    });
   }
 
   function deleteRow(key, index) {
-    var obj = { ...servicesBlocks };
-    // var filtered_massiv = obj[key]["row"].filter((number) => number !== index);
-
-    obj[key]['row'].splice(index, 1);
-    // obj[key]["row"] = filtered_massiv
-    setServicesBlocks(obj);
+    setServicesBlocks((prev) => {
+      const updated = { ...prev };
+      updated[key] = {
+        ...updated[key],
+        row: updated[key].row.filter((_, i) => i !== index),
+      };
+      return updated;
+    });
   }
 
   function addRow(key) {
-    var obj = { ...servicesBlocks };
-    obj[key]['row'].push({
-      heading: '',
-      description: '',
-      time: '',
-      price: '',
+    setServicesBlocks((prev) => {
+      const updated = { ...prev };
+      updated[key] = {
+        ...updated[key],
+        row: [
+          ...updated[key].row,
+          {
+            heading: '',
+            description: '',
+            time: '',
+            price: '',
+          },
+        ],
+      };
+      return updated;
     });
-    setServicesBlocks(obj);
   }
 
   function openBlocks(key) {
-    var obj = { ...servicesBlocks };
-    obj[key]['open'] = !obj[key]['open'];
+    const obj = {
+      ...servicesBlocks,
+      [key]: {
+        ...servicesBlocks[key],
+        open: !servicesBlocks[key].open,
+      },
+    };
+
     setServicesBlocks(obj);
   }
 
@@ -175,14 +147,7 @@ function Services() {
     obj[key]['select_state'] = e.target.value;
 
     if (e.target.value === 'Свои услуги') {
-      obj[key]['row'] = [
-        {
-          heading: '',
-          description: '',
-          time: '',
-          price: '',
-        },
-      ];
+      return;
     }
 
     if (e.target.value === 'Услуги по умолчанию') {
@@ -210,43 +175,95 @@ function Services() {
 
     setServicesBlocks(obj);
   }
+  function onSubmit(e) {
+    e.preventDefault();
+    updateUser(
+      {
+        details: {
+          section: categoryMainOptionSelected || [],
+          subsection: categoryOptionSelected || [],
+          service: modelPhoneOptionSelected || [],
+          servicesBlocks: servicesBlocks,
+        },
+      },
+      user.u_id,
+    ).then((v) => console.log(v));
+  }
+  const categoriesMainOptions = categories.map((item) => ({
+    label: item.name,
+    value: item.id,
+  }));
 
+  const categoriesOptions =
+    categoryMainOptionSelected?.length ?? 0 > 0
+      ? categories.flatMap((item) => {
+          const isSelectedSectionId = categoryMainOptionSelected?.find(
+            (selec) => selec.value === item.id,
+          );
+          return isSelectedSectionId
+            ? item.subsections.map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))
+            : [];
+        })
+      : [];
+
+  const modelPhoneOptions = categories.flatMap((i) => {
+    const isSelectedCategoryId = categoryMainOptionSelected?.find(
+      (item) => item.value === i.id,
+    );
+    return isSelectedCategoryId
+      ? i.subsections.flatMap((j) => {
+          const isSelectedSubCategoryId = categoryOptionSelected?.find(
+            (item) => item.value === j.id,
+          );
+          return isSelectedSubCategoryId
+            ? j.services.map((c) => ({ label: c.name, value: c.id }))
+            : [];
+        })
+      : [];
+  });
   return (
     <div className={style.services_wrap}>
       <div className={style.categories_block}>
         <div className={style.alert}>Данные сохранены</div>
 
         <MultiSelect
-          key="category_id"
           placeholder="Вид категории"
           options={categoriesMainOptions}
-          onChange={(selected) => setCategoryMainOptionSelected(selected)}
+          onChange={(selected) => {
+            setCategoryMainOptionSelected(selected);
+            setCategoryOptionSelected([]);
+            setModelPhoneOptionSelected([]);
+          }}
           value={categoryMainOptionSelected}
           isSelectAll={true}
           menuPlacement={'bottom'}
         />
         <MultiSelect
-          key="categories"
           placeholder="Категории"
           options={categoriesOptions}
-          onChange={(selected) => setCategoryOptionSelected(selected)}
+          onChange={(selected) => {
+            setCategoryOptionSelected(selected);
+            setModelPhoneOptionSelected([]);
+          }}
           value={categoryOptionSelected}
           isSelectAll={true}
           menuPlacement={'bottom'}
         />
-        <MultiSelect
+        {/* <MultiSelect
           key="brand_id"
           placeholder="Бренды"
-          options={brandsOptions}
+          options={}
           onChange={(selected) => setBrandOptionSelected(selected)}
           value={brandOptionSelected}
           isSelectAll={true}
           menuPlacement={'bottom'}
-        />
+        /> */}
         <MultiSelect
-          key="model_phone"
           placeholder="Модель устройства"
-          options={modelsPhone}
+          options={modelPhoneOptions}
           onChange={(selected) => setModelPhoneOptionSelected(selected)}
           value={modelPhoneOptionSelected}
           isSelectAll={true}
@@ -254,7 +271,9 @@ function Services() {
         />
 
         <div className={style.wrap_buttons}>
-          <button className={style.button_save}>Сохранить</button>
+          <button className={style.button_save} onClick={onSubmit}>
+            Сохранить
+          </button>
         </div>
       </div>
 
