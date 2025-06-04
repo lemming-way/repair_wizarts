@@ -119,7 +119,7 @@ function ServiceDetail() {
   const [showSmallModal, setShowSmallModal] = useState(true);
   const [showBigModal, setShowBigModal] = useState(true);
   useEffect(() => {
-    // appFetch('/user', {}, true).then((v) => console.log(v));
+    appFetch('user', {}, true).then((v) => console.log(v));
   }, []);
   useEffect(() => {
     setPhone(user.u_phone);
@@ -231,6 +231,9 @@ function ServiceDetail() {
       section: sectionId,
       subsection: subsectionId,
       service: selectServices[0],
+      public: {
+        test: 'test',
+      },
     };
     return createRequest({
       data,
@@ -403,7 +406,6 @@ function ServiceDetail() {
           </div>
         </div>
       ) : null}
-
       {/* Вы подтвердили производителя работ  */}
       {visibleConfirm ? (
         <div className={style.blockConfirm_wrap}>

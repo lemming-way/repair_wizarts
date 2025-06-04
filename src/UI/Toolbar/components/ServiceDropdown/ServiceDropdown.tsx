@@ -160,11 +160,9 @@ const ServiceDropdown = () => {
                     >
                       <span>{subCategoryContent.name}</span>
                     </Link>
-
-                    {/* 3 lvl
                     <Dropdown.Submenu
                       position="right-top"
-                      className={styles.Submenu_submenu_lvl3}
+                      className={styles.Submenu_submenu}
                     >
                       {subCategoryContent.services
                         .slice(0, 5)
@@ -173,10 +171,14 @@ const ServiceDropdown = () => {
                             className={`${styles.serviceDropdown_item} ${styles.serviceDropdown_item_lvl3}`}
                             key={serviceIndex}
                           >
-                           
+                            <Link
+                              to={`/devices/${categoryContent.id}/${subCategoryContent.id}`}
+                            >
+                              <span>{service.name}</span>
+                            </Link>
                           </Dropdown.Item>
                         ))}
-                    </Dropdown.Submenu> */}
+                    </Dropdown.Submenu>
                   </Dropdown.Item>
                 ),
               )}

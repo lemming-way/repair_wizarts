@@ -1,118 +1,131 @@
-import { useEffect,  useState } from "react"
-import { useSelector } from "react-redux"
-import { selectUser } from "../../slices/user.slice"
-import style from "./finance.module.css"
-import ModalConfirm from "./ModalConfirm"
-import ModalSuccess from "./ModalSuccess"
-import ModalDelete from "./ModalDelete"
+import { useEffect, useState, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../slices/user.slice';
+import style from './finance.module.css';
+import ModalConfirm from './ModalConfirm';
+import ModalSuccess from './ModalSuccess';
+import ModalDelete from './ModalDelete';
+import appFetch from '../../utilities/appFetch';
+import { updateUser } from '../../services/user.service';
 
+const FinanceClient = () => {
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
 
-const FinanceClient = (props) => {
-    const user = useSelector(selectUser)
-    const userPictures = user.master?.[0]?.pictures
-        .filter((v) => v !== "")
-    const [pics, setPics] = useState([])
+  const [card, setCard] = useState('');
+  const [webmoney, setWebmoney] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [isVisibleConfirm, setVisibleConfirm] = useState(false);
+  const [isVisibleSuccess, setVisibleSuccess] = useState(false);
+  const [isVisibleDelete, setVisibleDelete] = useState(false);
 
-    useEffect(() => {
-        if (user.master) {
-            setPics(userPictures)
-        }
-    }, [user])
+  useEffect(() => {
+    const cardWallet = user.u_details?.wallets?.find((w) => w.type === 'card');
+    const wmWallet = user.u_details?.wallets?.find(
+      (w) => w.type === 'webmoney',
+    );
 
-    // const pictureInputRef = useRef(null) ###
+    setCard(cardWallet?.value || '');
+    setWebmoney(wmWallet?.value || '');
+  }, [user]);
 
-    // const onSubmit = (e) => {
-    //     e.preventDefault()
-    //     const files = [
-    //         ...pictureInputRef.current.files,
-    //         ...pics
-    //     ]
-    //     return updateMasterPictures(user.id, files).then((v) => {
-    //         const filename = pictureInputRef.current.files[0]?.name
+  const onSubmitWallets = async () => {
+    try {
+      const wallets = [
+        { type: 'card', value: card },
+        { type: 'webmoney', value: webmoney },
+      ];
 
-    //         console.log(v)
+      const payload = {
+        wallets,
+      };
 
-    //         if (filename) {
-    //             setPics((prev) => [...prev, "files/" + filename])
-    //             pictureInputRef.current.value = null
-    //         }
-    //     })
-    // }
+      const res = await updateUser({ details: payload }, user.u_id).then((v) =>
+        console.log(v),
+      );
+      console.log(res);
+      if (!res?.code === '200') throw new Error('Ошибка при сохранении');
+      setVisibleSuccess(true);
+      setSuccess(true);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при сохранении кошельков');
+    }
+  };
 
-    // const getDeleteHandle = (name) => (e) => {
-    //     e.preventDefault()
-    //     return updateMasterPictures(
-    //         user.id,
-    //         pics.filter((v) => v !== name),
-    //     ).then(() => {
-    //         setPics((prev) => prev.filter((v => v !== name)))
-    //     })
-    // } ###
+  return (
+    <>
+      {isVisibleConfirm && (
+        <ModalConfirm
+          setVisibleConfirm={setVisibleConfirm}
+          setVisibleSuccess={setVisibleSuccess}
+        />
+      )}
+      {isVisibleSuccess && (
+        <ModalSuccess setVisibleSuccess={setVisibleSuccess} />
+      )}
+      {isVisibleDelete && <ModalDelete setVisibleDelete={setVisibleDelete} />}
 
-    const [isVisibleConfirm, setVisibleConfirm] = useState(false)
-    const [isVisibleSuccess, setVisibleSuccess] = useState(false)
-    const [isVisibleDelete, setVisibleDelete] = useState(false)
+      <div className="">
+        <div className={style.main}>
+          {success && (
+            <div className={style.alert}>Данные кошелька сохранены</div>
+          )}
 
-    return (
-        <>
-            {isVisibleConfirm ? <ModalConfirm setVisibleConfirm={setVisibleConfirm} setVisibleSuccess={setVisibleSuccess} />  : null}
-            {isVisibleSuccess ? <ModalSuccess setVisibleSuccess={setVisibleSuccess} />  : null}
-            {isVisibleDelete ? <ModalDelete setVisibleDelete={setVisibleDelete} />  : null}
-            {/* <Sidebar /> */}
-            <div className="">
-
-                <div className={style.main}>
-                    <div className={style.alert}>Данные кошелька сохранены</div>
-
-                    <div className={style.payment_block}>
-                        <p className={style.name}>Банковская карта</p>
-                        <div className={style.payment_block__row}>
-                            <img src="/img/visa.png" alt="" />
-                            <input className={style.payment_block__input} type="text" />
-                        </div>
-                    </div>
-
-                    <div className={style.payment_block}>
-                        <p className={style.name}>Webmoney</p>
-                        <div className={style.payment_block__row}>
-                            <img src="/img/webmoney.png" alt="" />
-                            <input className={style.payment_block__input} type="text" />
-                        </div>
-                    </div>
-
-                    <div className={style.payment_block}>
-                        <p className={style.name}>Банковская карта</p>
-                        <div className={style.payment_block__row}>
-                            <img src="/img/visa.png" alt="" />
-                            <div className={style.column}>
-                                <p className={style.payment__secret}>2202 20** **** 0719</p>
-                                <div className={style.row_link}>
-                                    <button className={style.btn_link}>Изменить</button>
-                                    <button className={style.btn_link} onClick={()=> setVisibleDelete(true)}>Удалить</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className={style.payment_block}>
-                        <p className={style.name}>Webmoney</p>
-                        <div className={style.payment_block__row}>
-                            <img src="/img/webmoney.png" alt="" />
-                            <div className={style.column}>
-                                <p className={style.payment__secret}>Z7*******3528</p>
-                                <div className={style.row_link}>
-                                    <button className={style.btn_link}>Изменить</button>
-                                    <button className={style.btn_link} onClick={()=> setVisibleDelete(true)}>Удалить</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button className="master-settings-pics__button" onClick={()=> setVisibleConfirm(true)}>Сохранить кошельки</button>
-
+          <div className={style.payment_block}>
+            <p className={style.name}>Банковская карта</p>
+            <div className={style.payment_block__row}>
+              <img src="/img/visa.png" alt="card" />
+              <input
+                className={style.payment_block__input}
+                type="text"
+                placeholder="Введите номер карты"
+                value={card}
+                onChange={(e) => setCard(e.target.value)}
+              />
             </div>
-        </>
-    )
-}
+          </div>
 
-export default FinanceClient
+          <div className={style.payment_block}>
+            <p className={style.name}>Webmoney</p>
+            <div className={style.payment_block__row}>
+              <img src="/img/webmoney.png" alt="webmoney" />
+              <input
+                className={style.payment_block__input}
+                type="text"
+                placeholder="Введите кошелёк"
+                value={webmoney}
+                onChange={(e) => setWebmoney(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* <button
+          className="master-settings-pics__button"
+          onClick={() => {
+            if (!card && !webmoney) {
+              alert('Введите хотя бы один способ оплаты');
+              return;
+            }
+            setVisibleConfirm(true);
+          }}
+        >
+          Сохранить кошельки
+        </button> */}
+
+        {/* Кнопка подтверждения */}
+        {/* {isVisibleConfirm && ( */}
+        <button
+          className="master-settings-pics__button"
+          onClick={onSubmitWallets}
+        >
+          Подтвердить отправку
+        </button>
+        {/* )}   */}
+      </div>
+    </>
+  );
+};
+
+export default FinanceClient;

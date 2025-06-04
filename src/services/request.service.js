@@ -65,6 +65,18 @@ const getClientRequests = () => {
     },
   });
 };
+const getAllClientRequests = () => {
+  return Promise.all([
+    appFetch('drive', {
+      body: {
+        u_a_role: 1,
+      },
+    }),
+    appFetch('drive/archive', {
+      body: { u_a_role: 2, lc: 99999999999999 },
+    }),
+  ]);
+};
 
 const getClientRequestsTestData = () => {
   return new Promise((resolve) => {
@@ -114,4 +126,5 @@ export {
   getMasterRequests,
   getMasterPersonalRequests,
   getRequestById,
+  getAllClientRequests,
 };

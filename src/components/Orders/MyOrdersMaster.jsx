@@ -41,7 +41,8 @@ function MyOrdersMaster() {
           .toLowerCase()
           .includes(searchFilter.toLowerCase()) &&
         item.drivers !== undefined &&
-        item.b_state !== '2',
+        item.b_state !== '2' &&
+        !item.b_options.winnerMaster,
     )
     .flatMap((item) => {
       if (!Array.isArray(item.drivers) || item.drivers.length === 0) {

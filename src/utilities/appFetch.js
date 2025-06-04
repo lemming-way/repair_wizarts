@@ -78,10 +78,10 @@ const appFetch = async (location, init = {}, admin) => {
               ...(token
                 ? {
                     token: admin
-                      ? 'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr'
+                      ? 'bbdd06a50ddcc1a4adc91fa0f6f86444'
                       : token?.token,
                     u_hash: admin
-                      ? 'bbdd06a50ddcc1a4adc91fa0f6f86444'
+                      ? 'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr'
                       : token?.hash,
                   }
                 : {}),
@@ -89,7 +89,6 @@ const appFetch = async (location, init = {}, admin) => {
             }).toString(),
           }),
     });
-    console.log(response);
     const data = await response.json();
     if (response.ok) {
       return data;

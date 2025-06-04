@@ -71,6 +71,7 @@ function Profile({ ymaps }) {
       main_business: '',
       experience: '',
       model: '',
+      city: '',
     },
   });
   const [selectedSubsections, setSelectedSubsections] = useState(null);
@@ -335,6 +336,7 @@ function Profile({ ymaps }) {
         details: {
           organization_name: master.u_details?.organization_name || '',
           address: master.u_details?.address || '',
+          city: master.u_details?.city || '',
           specialty: master.u_details?.specialty || '',
           main_business: master.u_details?.main_business || '',
           experience: master.u_details?.experience || '',
@@ -473,6 +475,12 @@ function Profile({ ymaps }) {
             placeholder="Адрес"
             id="suggest-input"
             {...getFormAttrs('details.address')}
+          />
+          <input
+            type="text"
+            placeholder="Город"
+            id="suggest-input"
+            {...getFormAttrs('details.city')}
           />
 
           <input

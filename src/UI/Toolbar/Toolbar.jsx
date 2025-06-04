@@ -26,7 +26,6 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
 
   const ui = useSelector(selectUI);
-  console.log(ui);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
 
@@ -196,7 +195,9 @@ const Toolbar = () => {
       <div
         className={[
           styles.toolbar_burger2,
-          ui.isAuthorized ? styles.toolbar_burger2_visibility_none : styles.toolbar_burger2_visibility_block
+          ui.isAuthorized
+            ? styles.toolbar_burger2_visibility_none
+            : styles.toolbar_burger2_visibility_block,
         ].join(' ')}
         onClick={toggleMenu}
       >

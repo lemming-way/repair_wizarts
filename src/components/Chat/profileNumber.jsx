@@ -8,9 +8,79 @@ import style from './profileNumber.module.css';
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
 import appFetch from '../../utilities/appFetch';
+const mockDriveArchiveResponse = {
+  data: {
+    booking: {
+      1: {
+        b_id: 1,
+        u_id: 'user_1',
+        b_options: {
+          title: 'Замена дисплея iPhone',
+        },
+        b_comments: [
+          {
+            created_at: '2024-12-10T14:22:00Z',
+            rating: 5,
+            // text: 'Отличный сервис!',
+            // comment: 'Мастер был очень вежлив и выполнил работу быстро.',
+            // photos: ['/img/feedback1.jpg', '/img/feedback2.jpg'],
+            // author: {
+            //   u_id: 'user_1',
+            //   name: 'Андрей',
+            //   photo: '/img/avatar1.png',
+            // },
+          },
+        ],
+      },
+      2: {
+        b_id: 2,
+        u_id: 'user_2',
+        b_options: {
+          title: 'Ремонт ноутбука',
+        },
+        b_comments: [
+          {
+            created_at: '2025-01-15T09:30:00Z',
+            rating: 4,
+            // text: 'Всё нормально, но пришлось подождать.',
+            // comment: 'Могли бы и побыстрее.',
+            // photos: [],
+            // author: {
+            //   u_id: 'user_2',
+            //   name: 'Екатерина',
+            //   photo: '', // дефолтный аватар
+            // },
+          },
+        ],
+      },
+      3: {
+        b_id: 3,
+        u_id: 'user_3',
+        b_options: {
+          title: 'Замена аккумулятора',
+        },
+        b_comments: [
+          {
+            created_at: '2025-02-05T11:45:00Z',
+            rating: 3,
+            // text: '',
+            // comment: 'Ожидал большего. Аккумулятор садится быстро.',
+            // photos: ['/img/feedback3.jpg'],
+            // author: {
+            //   u_id: 'user_3',
+            //   name: 'Иван',
+            //   photo: '/img/avatar2.png',
+            // },
+          },
+        ],
+      },
+    },
+  },
+};
 
 function App() {
-  const user = useSelector(selectUser);
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const [feedback, setFeedback] = useState([]);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
@@ -18,20 +88,21 @@ function App() {
   useEffect(() => {
     const getUserCommentsFromBookings = async (u_id) => {
       try {
-        const data = await appFetch('drive/archive', {
+        const req = await appFetch('drive/archive', {
           method: 'POST',
         });
+        const data = mockDriveArchiveResponse;
 
         const allBookings = Object.values(data?.data?.booking || {});
-
+        console.log(allBookings);
         const comments = allBookings.flatMap((booking) => {
           if (!booking.b_comments) return [];
 
           return booking.b_comments
             .filter((comment) => {
-              const authorId = comment.author?.u_id;
-              const targetId = booking.u_id;
-              return targetId === u_id || authorId === u_id;
+              // const authorId = comment.author?.u_id;
+              // const targetId = booking.u_id;
+              return true;
             })
             .map((comment) => ({
               booking_id: booking.b_id,
@@ -53,8 +124,8 @@ function App() {
     };
 
     const fetchFeedback = async () => {
-      if (user?.master && user.master[0]?.username) {
-        const comments = await getUserCommentsFromBookings(user.master[0].u_id);
+      if (user.u_details?.login) {
+        const comments = await getUserCommentsFromBookings(user.u_id);
         setFeedback(comments);
       }
     };
@@ -80,7 +151,7 @@ function App() {
         feedback.reduce((sum, item) => sum + (item.rating || 0), 0) / totalCount
       ).toFixed(1)
     : '0.0';
-  if (feedback.length === 0) return 'Отзывов нет';
+  // if (feedback.length === 0) return 'Отзывов нет';
   return (
     <>
       {visibleModalDelete ? (

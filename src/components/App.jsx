@@ -86,6 +86,7 @@ import { setCategories } from '../slices/cateories.slice';
 function App() {
   const __location__ = useLocation();
   const dispatch = useDispatch();
+
   const userStatus = useSelector(selectUserStatus);
   const { categories } = useSelector((state) => state.categories);
   const [currentHome, setCurrentHome] = useState('electron');
@@ -101,11 +102,13 @@ function App() {
     }
   }, [dispatch]);
   useEffect(() => {
+    dispatch(fetchUser());
+  }, [__location__.pathname]);
+  useEffect(() => {
     const currentVersion = new URLSearchParams(window.location.search).get(
       'main',
     );
     setCurrentHome(currentVersion || 'electron');
-    // console.log(categories);
     if (categories.length === 0) {
       fetchFullDataAboutCategories();
     }
@@ -135,6 +138,9 @@ function App() {
   }, [userStatus, dispatch]);
   const fetchFullDataAboutCategories = async () => {
     try {
+      const sectionData = JSON.parse(localStorage.getItem('sections'));
+      console.log(sectionData);
+      if (sectionData) return dispatch(setCategories(sectionData));
       const response = await fetch(
         'https://profiback.itest24.com/api/full-data',
         {
@@ -145,7 +151,12 @@ function App() {
         },
       );
       const data = await response.json();
-
+      data.forEach((item) =>
+        item.subsections
+          .slice(0, 5)
+          .forEach((item) => item.services.slice(0, 5)),
+      );
+      localStorage.setItem('sections', JSON.stringify(data));
       dispatch(setCategories(data));
     } catch (error) {
       console.error(error);

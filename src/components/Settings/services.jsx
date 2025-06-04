@@ -129,7 +129,6 @@ function Services() {
       return updated;
     });
   }
-
   function openBlocks(key) {
     const obj = {
       ...servicesBlocks,

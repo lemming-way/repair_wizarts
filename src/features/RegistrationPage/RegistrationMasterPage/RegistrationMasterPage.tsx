@@ -17,6 +17,7 @@ const RegistrationMasterPage = () => {
   const { categories } = useSelector((state: RootState) => state.categories);
 
   const [login, setLogin] = useState('');
+  const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
   const [name, setName] = useState('');
   const [lastname, setLastname] = useState('');
@@ -38,6 +39,9 @@ const RegistrationMasterPage = () => {
     Option[] | null
   >([]);
   const [modelPhoneOptionSelected, setModelPhoneOptionSelected] = useState<
+    Option[] | null
+  >([]);
+  const [subModelOptionSelected, setSubModelOptionSelected] = useState<
     Option[] | null
   >([]);
 
@@ -79,12 +83,12 @@ const RegistrationMasterPage = () => {
 
     const uDetails = {
       address,
+      city,
       login,
-      categories: {
-        main: categoryMainOptionSelected?.map((o) => o.value) || [],
-        sub: categoryOptionSelected?.map((o) => o.value) || [],
-        models: modelPhoneOptionSelected?.map((o) => o.value) || [],
-      },
+      section: categoryMainOptionSelected || [],
+      subsection: categoryOptionSelected || [],
+      service: modelPhoneOptionSelected || [],
+      subservice: subModelOptionSelected || [],
     };
 
     const dataForApi = {
@@ -105,7 +109,6 @@ const RegistrationMasterPage = () => {
       const response = await appFetch('register/', {
         body: bodyParams,
       });
-
       if (response.code === '200' && response.status === 'success') {
         setSuccessMessage('Регистрация прошла успешно! ');
         if (response.data?.string) {
@@ -119,9 +122,9 @@ const RegistrationMasterPage = () => {
           );
         }
 
-        // Reset form
         setLogin('');
         setAddress('');
+        setCity('');
         setName('');
         setLastname('');
         setPhone('+7(9');
@@ -208,7 +211,7 @@ const RegistrationMasterPage = () => {
       setError('');
     }
   };
-
+  console.log(categories);
   const categoriesMainOptions: Option[] = categories.map((item) => ({
     label: item.name,
     value: item.id,
@@ -234,6 +237,31 @@ const RegistrationMasterPage = () => {
           );
           return isSelectedSubCategoryId
             ? j.services.map((c) => ({ label: c.name, value: c.id }))
+            : [];
+        })
+      : [];
+  });
+  const subModelOptions = categories.flatMap((i) => {
+    const isSelectedCategoryId = categoryMainOptionSelected?.find(
+      (item) => item.value === i.id,
+    );
+    return isSelectedCategoryId
+      ? i.subsections.flatMap((j) => {
+          const isSelectedSubCategoryId = categoryOptionSelected?.find(
+            (item) => item.value === j.id,
+          );
+          return isSelectedSubCategoryId
+            ? j.services.flatMap((s) => {
+                const isSelectedService = modelPhoneOptionSelected?.find(
+                  (item) => item.value === s.id,
+                );
+                return isSelectedService
+                  ? (s.questions || []).map((sub) => ({
+                      label: sub.text,
+                      value: sub.number,
+                    }))
+                  : [];
+              })
             : [];
         })
       : [];
@@ -283,12 +311,22 @@ const RegistrationMasterPage = () => {
           <input
             className={styles.registrationMasterPage_form_input}
             type="text"
+            name="city"
+            placeholder="Город"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            required
+          />
+          <input
+            className={styles.registrationMasterPage_form_input}
+            type="text"
             name="address_form"
-            placeholder="Адрес (Город, улица, дом)"
+            placeholder="Адрес (улица, дом)"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             required
           />
+
           <input
             className={styles.registrationMasterPage_form_input}
             type="text"
@@ -396,6 +434,24 @@ const RegistrationMasterPage = () => {
               menuPlacement={'bottom'}
               isDisabled={
                 !categoryOptionSelected || categoryOptionSelected.length === 0
+              }
+            />
+          )}
+          {modelPhoneOptionSelected && modelPhoneOptionSelected.length > 0 && (
+            <MultiSelect
+              key="sub_model_phone_id"
+              placeholder="Детали модели / подуслуги"
+              options={subModelOptions}
+              onChange={(selected: Option[] | null) =>
+                setSubModelOptionSelected(selected)
+              }
+              value={subModelOptionSelected}
+              isSelectAll={true}
+              isMulti={true}
+              menuPlacement={'bottom'}
+              isDisabled={
+                !modelPhoneOptionSelected ||
+                modelPhoneOptionSelected.length === 0
               }
             />
           )}

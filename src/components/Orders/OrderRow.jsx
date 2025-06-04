@@ -14,6 +14,7 @@ export default function OrderRow({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
   const [visibleDeleteModal, setVisibleDeleteModal] = useState(false);
+  const [isOpenCommentWrap, setIsOpenCommentWrap] = useState(false);
 
   // Функция для открытия модального окна
   const openModal = (imageSrc) => {
@@ -84,60 +85,65 @@ export default function OrderRow({
             ))}
           </Swiper>
 
-          <button className={style.button}>Моё предложение</button>
+          <button
+            className={style.button}
+            onClick={() => setIsOpenCommentWrap((prev) => !prev)}
+          >
+            Моё предложение
+          </button>
         </div>
       </div>
-
-      <div className={style.comment_wrap}>
-        <div className={style.profile}>
-          <img
-            src={'/img/profil_img/1.png' || commentData?.author?.avatar}
-            alt="Аватар"
-            className={style.avatar}
-          />
-          <div className={style.profile__col}>
-            <p className={style.name}>
-              {commentData?.author?.name || 'Имя Пользователя'}
-            </p>
-            <p>{commentData?.author?.ordersCount || 0} заказов</p>
-          </div>
-        </div>
-
-        <div className={style.comment_block}>
-          <div className={style.icon_chat}>
-            <img src="/img/chat.png" alt="Chat Icon" />
+      {isOpenCommentWrap && (
+        <div className={style.comment_wrap}>
+          <div className={style.profile}>
+            <img
+              src={'/img/profil_img/1.png' || commentData?.author?.avatar}
+              alt="Аватар"
+              className={style.avatar}
+            />
+            <div className={style.profile__col}>
+              <p className={style.name}>
+                {commentData?.author?.name || 'Имя Пользователя'}
+              </p>
+              <p>{commentData?.author?.ordersCount || 0} заказов</p>
+            </div>
           </div>
 
-          <textarea
-            className={style.comment__input}
-            rows={4}
-            placeholder="сообщение.."
-            value={commentData?.message || ''}
-            readOnly
-          />
+          <div className={style.comment_block}>
+            <div className={style.icon_chat}>
+              <img src="/img/chat.png" alt="Chat Icon" />
+            </div>
 
-          <table className={style.table}>
-            <thead>
-              <tr>
-                <th>Что входит в предложение</th>
-                <th>Срок</th>
-                <th>Стоимость</th>
-              </tr>
-            </thead>
-            <tbody>
-              {commentData?.offers?.map((offer, idx) => (
-                <tr key={idx} className={style.line}>
-                  <td>{offer?.description || '-'}</td>
-                  <td>{offer?.time || '-'}</td>
-                  <td>{offer?.price || '-'}</td>
+            <textarea
+              className={style.comment__input}
+              rows={4}
+              placeholder="сообщение.."
+              value={commentData?.message || ''}
+              readOnly
+            />
+
+            <table className={style.table}>
+              <thead>
+                <tr>
+                  <th>Что входит в предложение</th>
+                  <th>Срок</th>
+                  <th>Стоимость</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {commentData?.offers?.map((offer, idx) => (
+                  <tr key={idx} className={style.line}>
+                    <td>{offer?.description || '-'}</td>
+                    <td>{offer?.time || '-'}</td>
+                    <td>{offer?.price || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Статусы */}
-        {/* {(commentData?.statuses || []).map((status, idx) => (
+          {/* Статусы */}
+          {/* {(commentData?.statuses || []).map((status, idx) => (
           <div key={idx} className={style.status_row}>
             <div className={style[status.class]}>
               {status.icon && <img src={status.icon} alt="status icon" />}
@@ -152,7 +158,8 @@ export default function OrderRow({
             </div>
           </div>
         ))} */}
-      </div>
+        </div>
+      )}
 
       {/* Модальное окно со слайдером */}
       {isModalOpen && (

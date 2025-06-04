@@ -12,8 +12,12 @@ import Popup from 'reactjs-popup';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import appFetch from '../../utilities/appFetch';
 import { deleteRequest, updateRequest } from '../../services/request.service';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../slices/user.slice';
 
 function MyOrder() {
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
@@ -135,7 +139,6 @@ function MyOrder() {
     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
     '/img/sentence_img/iphone-x.png',
   ];
-
   // Функция для открытия модального окна
   const openModal = (imageSrc) => {
     setModalImage(imageSrc); // Устанавливаем путь к картинке
@@ -162,16 +165,20 @@ function MyOrder() {
       console.log(spisok);
     }
   };
-  const onSubmit = async (winnerId, orderId) => {
+  const onSubmit = async (winnerId, orderId, selectedBudget) => {
     try {
-      const answer = await appFetch(`/drive/get/${orderId}`, {
-        body: {
-          u_a_role: 1,
-          u_id: winnerId,
-          action: 'set_performer',
-        },
+      updateRequest(orderId, {
+        winnerMaster: winnerId,
+        selectedBudget,
       });
-      console.log(answer);
+      // const answer = await appFetch(`/drive/get/${orderId}`, {
+      //   body: {
+      //     u_a_role: 1,
+      //     u_id: winnerId,
+      //     action: 'set_performer',
+      //   },
+      // });
+      // console.log(answer);
     } catch (error) {
       console.log(error);
     }
@@ -246,7 +253,9 @@ function MyOrder() {
                     checked={selectedIdx === 0}
                     onChange={() => setSelectedIdx(0)}
                   />
-                  <label htmlFor="inputSite">Баланс: 0р</label>
+                  <label htmlFor="inputSite">
+                    Баланс: {user?.u_details?.balance || 0}р
+                  </label>
                 </div>
                 <p>Обычная цена сделки без риска</p>
                 <p className={style.mini_text}>
@@ -783,7 +792,11 @@ function MyOrder() {
                 <button
                   className={styles.button}
                   onClick={() => {
-                    onSubmit(item.u_id, currentOrder.b_id);
+                    onSubmit(
+                      item.u_id,
+                      currentOrder.b_id,
+                      item.c_options.bind_amount,
+                    );
                     setVisibleBlockPayment(true);
                   }}
                 >

@@ -35,7 +35,6 @@ function Orders() {
             u_a_role: 2,
           },
         });
-        console.log(allOrder);
         const filteredOrders = Object.values({
           ...(allOrder.data.booking || {}),
         }).filter(
@@ -49,7 +48,6 @@ function Orders() {
             drivers: item.drivers.find((item) => item.u_id === user.u_id),
           };
         });
-        console.log(formattedOrders);
         setOrders(formattedOrders);
       } catch (error) {
         console.error(error);
@@ -85,7 +83,7 @@ function Orders() {
 
   return (
     <>
-      <div className={style.order_row}>
+      <div className={style.order_row} style={{ marginBottom: 20 }}>
         <div>
           <h1 className={style.heading}>Биржа заказы</h1>
 
@@ -94,7 +92,7 @@ function Orders() {
               <Link to="/master/requests">
                 <div className="myorders">
                   <p>
-                    Мои отклики<span>1</span>
+                    Мои отклики<span>{orders.length}</span>
                   </p>
                 </div>
               </Link>
