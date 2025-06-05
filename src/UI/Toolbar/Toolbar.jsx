@@ -41,7 +41,7 @@ const Toolbar = () => {
       setIsOpen(false);
     });
   }, []);
-
+  console.log(ui.isAuthorized);
   return (
     <header>
       <div className={`${styles.toolbar} appContainer test`}>

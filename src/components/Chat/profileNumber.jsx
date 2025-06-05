@@ -8,75 +8,6 @@ import style from './profileNumber.module.css';
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
 import appFetch from '../../utilities/appFetch';
-const mockDriveArchiveResponse = {
-  data: {
-    booking: {
-      1: {
-        b_id: 1,
-        u_id: 'user_1',
-        b_options: {
-          title: 'Замена дисплея iPhone',
-        },
-        b_comments: [
-          {
-            created_at: '2024-12-10T14:22:00Z',
-            rating: 5,
-            // text: 'Отличный сервис!',
-            // comment: 'Мастер был очень вежлив и выполнил работу быстро.',
-            // photos: ['/img/feedback1.jpg', '/img/feedback2.jpg'],
-            // author: {
-            //   u_id: 'user_1',
-            //   name: 'Андрей',
-            //   photo: '/img/avatar1.png',
-            // },
-          },
-        ],
-      },
-      2: {
-        b_id: 2,
-        u_id: 'user_2',
-        b_options: {
-          title: 'Ремонт ноутбука',
-        },
-        b_comments: [
-          {
-            created_at: '2025-01-15T09:30:00Z',
-            rating: 4,
-            // text: 'Всё нормально, но пришлось подождать.',
-            // comment: 'Могли бы и побыстрее.',
-            // photos: [],
-            // author: {
-            //   u_id: 'user_2',
-            //   name: 'Екатерина',
-            //   photo: '', // дефолтный аватар
-            // },
-          },
-        ],
-      },
-      3: {
-        b_id: 3,
-        u_id: 'user_3',
-        b_options: {
-          title: 'Замена аккумулятора',
-        },
-        b_comments: [
-          {
-            created_at: '2025-02-05T11:45:00Z',
-            rating: 3,
-            // text: '',
-            // comment: 'Ожидал большего. Аккумулятор садится быстро.',
-            // photos: ['/img/feedback3.jpg'],
-            // author: {
-            //   u_id: 'user_3',
-            //   name: 'Иван',
-            //   photo: '/img/avatar2.png',
-            // },
-          },
-        ],
-      },
-    },
-  },
-};
 
 function App() {
   const user =
@@ -88,32 +19,39 @@ function App() {
   useEffect(() => {
     const getUserCommentsFromBookings = async (u_id) => {
       try {
-        const req = await appFetch('drive/archive', {
+        const res = await appFetch('drive/archive', {
           method: 'POST',
         });
-        const data = mockDriveArchiveResponse;
 
-        const allBookings = Object.values(data?.data?.booking || {});
-        console.log(allBookings);
+        const allBookings = Object.values(res?.data?.booking || {});
         const comments = allBookings.flatMap((booking) => {
-          if (!booking.b_comments) return [];
+          if (!booking.b_rating) return [];
+          if (!booking.b_comments || booking.b_comments.length === 0) {
+            console.log(booking);
+            return [
+              {
+                booking_id: booking.b_id,
+                booking_title: booking.b_options?.title || '',
+                created_at: booking.b_created || '',
+                rating: booking.b_rating,
+                text: '',
+                comment: 'Комментарий не указан',
+                photos: [],
+                author: booking.b_options.author,
+              },
+            ];
+          }
 
-          return booking.b_comments
-            .filter((comment) => {
-              // const authorId = comment.author?.u_id;
-              // const targetId = booking.u_id;
-              return true;
-            })
-            .map((comment) => ({
-              booking_id: booking.b_id,
-              booking_title: booking.b_options?.title,
-              created_at: comment.created_at,
-              rating: comment.rating || null,
-              text: comment.text || '',
-              comment: comment.comment || '',
-              photos: comment.photos || [],
-              author: comment.author || {},
-            }));
+          return booking.b_comments.map((comment) => ({
+            booking_id: booking.b_id,
+            booking_title: booking.b_options?.title || '',
+            created_at: comment.created_at,
+            rating: comment.rating || null,
+            text: comment.text || '',
+            comment: comment.comment || 'Комментарий не указан',
+            photos: comment.photos || [],
+            author: comment.author || {},
+          }));
         });
 
         return comments;
@@ -136,10 +74,9 @@ function App() {
   useEffect(() => {
     document.title = 'Отзывы';
   }, []);
+
   const totalCount = feedback.length;
-
   const ratingCounts = [0, 0, 0, 0, 0];
-
   feedback.forEach((item) => {
     if (item.rating >= 1 && item.rating <= 5) {
       ratingCounts[item.rating - 1]++;
@@ -151,17 +88,17 @@ function App() {
         feedback.reduce((sum, item) => sum + (item.rating || 0), 0) / totalCount
       ).toFixed(1)
     : '0.0';
-  // if (feedback.length === 0) return 'Отзывов нет';
+
   return (
     <>
-      {visibleModalDelete ? (
+      {visibleModalDelete && (
         <ModalDelete setVisibleModalDelete={setVisibleModalDelete} />
-      ) : null}
-      {visibleModalAddComment ? (
+      )}
+      {visibleModalAddComment && (
         <ModalAddCommentMini
           setVisibleModalAddComment={setVisibleModalAddComment}
         />
-      ) : null}
+      )}
 
       <div className="mini-text">
         <h1>Номер профиля</h1>
@@ -173,12 +110,11 @@ function App() {
           {Array.from({ length: 5 }, (_, i) => (
             <img
               key={i}
-              src={
-                i < Math.round(averageRating)
-                  ? '/img/img-star.png'
-                  : '/img/img-star.png'
-              }
+              src="/img/img-star.png"
               alt="Star"
+              style={{
+                opacity: i < Math.round(averageRating) ? 1 : 0.3,
+              }}
             />
           ))}
         </div>
@@ -188,7 +124,7 @@ function App() {
         </div>
 
         <div className="main-line">
-          {[5, 4, 3, 2, 1].map((star, index) => (
+          {[5, 4, 3, 2, 1].map((star) => (
             <div className="line-content df" key={star}>
               <div className="img-line">
                 {Array.from({ length: 5 }, (_, i) => (
@@ -221,11 +157,12 @@ function App() {
           <div className="portifoly-photo" key={index}>
             <div className="portifoly-img df">
               <img
-                src={item?.author?.photo || '/img/default-avatar.png'}
+                style={{ width: 50, height: 50, borderRadius: 30 }}
+                src={item?.author?.u_photo || '/img/img-camera.png'}
                 alt="avatar"
               />
               <div>
-                <h2 className="inter">{item?.author?.name}</h2>
+                <h2 className="inter">{item?.author?.u_name}</h2>
                 <p className="inter">
                   {new Date(item?.created_at).toLocaleDateString()}
                 </p>

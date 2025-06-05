@@ -1,11 +1,16 @@
 import appFetch from '../utilities/appFetch';
 
 const getMasterOrders = () =>
-  appFetch('/drive', {
-    body: {
-      u_a_role: 2,
-    },
-  });
+  Promise.all([
+    appFetch('/drive', {
+      body: {
+        u_a_role: 2,
+      },
+    }),
+    appFetch('drive/archive', {
+      body: { lc: 99999999999999 },
+    }),
+  ]);
 // Mock method to fetch master orders
 const getMasterOrdersTestData = () => {
   return new Promise((resolve) => {

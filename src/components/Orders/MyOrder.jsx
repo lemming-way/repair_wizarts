@@ -170,6 +170,7 @@ function MyOrder() {
       updateRequest(orderId, {
         winnerMaster: winnerId,
         selectedBudget,
+        status: 'В работе',
       });
       // const answer = await appFetch(`/drive/get/${orderId}`, {
       //   body: {
@@ -212,6 +213,7 @@ function MyOrder() {
       {visibleModalConfirmMaster ? (
         <ModalConfirmMaster
           setVisibleModalConfirmMaster={setVisibleModalConfirmMaster}
+          id={currentOrder.b_id}
         />
       ) : null}
       {/* блок с оплатой */}
@@ -290,6 +292,9 @@ function MyOrder() {
             <div
               className={style.button}
               onClick={() => {
+                updateRequest(currentOrder.b_id, {
+                  pay_type: selectedIdx === 0 ? 'card' : 'cash',
+                });
                 setVisibleBlockPayment(false);
                 setVisibleModalConfirmMaster(true);
               }}

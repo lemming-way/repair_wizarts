@@ -102,7 +102,8 @@ function App() {
     }
   }, [dispatch]);
   useEffect(() => {
-    dispatch(fetchUser());
+    const token = getToken();
+    if (token) dispatch(fetchUser());
   }, [__location__.pathname]);
   useEffect(() => {
     const currentVersion = new URLSearchParams(window.location.search).get(
@@ -115,7 +116,6 @@ function App() {
   }, []);
   useEffect(() => {
     const token = getToken();
-
     if (userStatus === FetchStatus.IDLE) {
       if (token) {
         dispatch(fetchUser());

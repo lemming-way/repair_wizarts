@@ -117,7 +117,6 @@ const AddedDevice = (props) => {
             },
           );
           const services = await serviceResponse.json();
-          console.log(services);
           setServices(
             services.map((service) => ({
               value: service.id,

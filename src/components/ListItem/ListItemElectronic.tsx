@@ -1,5 +1,5 @@
 import React from 'react';
-import {Link} from "react-router-dom";
+import { Link } from 'react-router-dom';
 
 interface Props {
   link: string;
@@ -10,12 +10,23 @@ interface Props {
   openItem?: boolean;
 }
 
-const ListItemElectronic: React.FC<Props> = ({link, name, onClick, className, item, openItem}) => {
+const ListItemElectronic: React.FC<Props> = ({
+  link,
+  name,
+  onClick,
+  className,
+  item,
+  openItem,
+}) => {
   return (
     <li onClick={onClick}>
       <Link className={className} to={link}>
         <img src="/img/microshema.png" alt="" /> {name}
-        {item && <div style={{rotate: openItem ? "0deg": "-90deg"}}><img src="/img/header/icons/arrow-down-icon.svg" alt="" /></div>}
+        {item && (
+          <div style={{ rotate: openItem ? '0deg' : '-90deg' }}>
+            <img src="/img/header/icons/arrow-down-icon.svg" alt="" />
+          </div>
+        )}
       </Link>
     </li>
   );

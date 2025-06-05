@@ -1,69 +1,36 @@
+import { useSelector } from 'react-redux';
 import style from './Allorders.module.css';
 
 export default function FilterBlock() {
+  const { categories } = useSelector((state) => state.categories);
   return (
     <>
       <div className={style.filter_block}>
         <p className={style.filter__heading}>Рубрики</p>
-        <details className={style.margin_btm}>
-          <summary className={style.filter__summary}>Электроника</summary>
-          <div className={style.filter__details_data}>
-            <details>
-              <summary>Ремонт телефонов (290)</summary>
-              <div className={style.filter__details_data}>
-                <details>
-                  <summary>Apple (30)</summary>
+        {categories?.map((category) => (
+          <details key={category.id} className={style.margin_btm}>
+            <summary className={style.filter__summary}>{category.name}</summary>
+            <div className={style.filter__details_data}>
+              {category.subsections?.map((sub) => (
+                <details key={sub.id}>
+                  <summary>{sub.name}</summary>
                   <div className={style.filter__details_data}>
-                    <p>iPhone 15</p>
-                    <p>iPhone 15 pro</p>
-                    <p>iPhone 15 pro max</p>
-                    <p>iPhone 16</p>
-                    <p>iPhone 16 pro</p>
-                    <p>iPhone 13</p>
+                    {sub.services?.map((service) => (
+                      <details key={service.id}>
+                        <summary>{service.name}</summary>
+                        <div className={style.filter__details_data}>
+                          {service.questions?.map((q) => (
+                            <p key={q.number}>{q.text}</p>
+                          ))}
+                        </div>
+                      </details>
+                    ))}
                   </div>
                 </details>
-                <details>
-                  <summary>Samsung (30)</summary>
-                  <div className={style.filter__details_data}>
-                    <p>iPhone 15</p>
-                    <p>iPhone 15 pro</p>
-                    <p>iPhone 15 pro max</p>
-                    <p>iPhone 16</p>
-                    <p>iPhone 16 pro</p>
-                    <p>iPhone 13</p>
-                  </div>
-                </details>
-                <details>
-                  <summary>Lenovo (15)</summary>
-                  <div className={style.filter__details_data}>
-                    <p>iPhone 15</p>
-                    <p>iPhone 15 pro</p>
-                    <p>iPhone 15 pro max</p>
-                    <p>iPhone 16</p>
-                    <p>iPhone 16 pro</p>
-                    <p>iPhone 13</p>
-                  </div>
-                </details>
-                <details>
-                  <summary>Xiaomi (31)</summary>
-                  <div className={style.filter__details_data}>
-                    <p>iPhone 15</p>
-                    <p>iPhone 15 pro</p>
-                    <p>iPhone 15 pro max</p>
-                    <p>iPhone 16</p>
-                    <p>iPhone 16 pro</p>
-                    <p>iPhone 13</p>
-                  </div>
-                </details>
-              </div>
-            </details>
-            <p>Ремонт планшетов (50)</p>
-            <p>Ремонт ноутбуков (72)</p>
-            <p>Ремонт компьюьтеров (108)</p>
-            <p>Ремонт часов (16)</p>
-            <p>Акссесуары (8)</p>
-          </div>
-        </details>
+              ))}
+            </div>
+          </details>
+        ))}
 
         <p className={style.filter__heading}>Колличество предложений </p>
         <div className={style.margin_btm}>

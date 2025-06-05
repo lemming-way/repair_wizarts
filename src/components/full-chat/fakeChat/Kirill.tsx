@@ -40,6 +40,7 @@ import { updateUser } from '../../../services/user.service';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../slices/user.slice';
 import appFetch from '../../../utilities/appFetch';
+import { updateRequest } from '../../../services/request.service';
 function ChoiceOfReplenishmentMethodCard() {
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
@@ -64,11 +65,12 @@ function ChoiceOfReplenishmentMethodCard() {
   const [isVisibleConfirmOrder, setVisibleConfirmOrder] = useState(false);
   const [isVisibleConfirmOrderFinal, setVisibleConfirmOrderFinal] =
     useState(false);
+  const [isOrderCancel, setIsOrderCancel] = useState(false);
   const [isVisibleModalArbitation, setVisibleModalArbitation] = useState(false);
   const [isVisibleCancelOrder, setVisibleCancelOrder] = useState(false);
   const [isVisibleCancelOrderFinal, setVisibleCancelOrderFinal] =
     useState(false);
-
+  const [isConfirmDoneOrder, setIsConfirmDoneOrder] = useState(false);
   const [isOpenOrder, setOpenOrder] = useState(false);
   const [isOpenPovtor, setOpenPovtor] = useState(false);
   const [isOpenZayavka, setOpenZayavka] = useState(false);
@@ -103,6 +105,15 @@ function ChoiceOfReplenishmentMethodCard() {
     }
     if (id) fetchOrder();
   }, [id]);
+  useEffect(() => {
+    console.log(currentOrder);
+    if (currentOrder && currentOrder.b_state === '4') {
+      setIsConfirmDoneOrder(true);
+    }
+    if (currentOrder && currentOrder.b_options.is_request_for_cancel_exist) {
+      setIsOrderCancel(true);
+    }
+  }, [currentOrder]);
   useEffect(() => {
     document.title = 'Чат';
     document.body.style.overflow = 'hidden';
@@ -923,10 +934,13 @@ function ChoiceOfReplenishmentMethodCard() {
                   </div>
                 </div>
               ) : null}
-              {currentOrder?.b_options?.pay_type === 'cash' ||
+              {currentOrder?.b_options?.pay_type ||
               !currentOrder?.b_options?.pay_type ? (
                 <>
-                  {isConfirmOrder || order__isDenyOrder ? null : (
+                  {isConfirmOrder ||
+                  order__isDenyOrder ||
+                  isConfirmDoneOrder ||
+                  isOrderCancel ? null : (
                     <div className="chat_technical_message">
                       <div className={styles.confirm_block}>
                         <button
@@ -949,37 +963,47 @@ function ChoiceOfReplenishmentMethodCard() {
                         >
                           Подтвердить заказ
                         </button>
-                        <button onClick={() => order__setDenyOrder(true)}>
+                        <button
+                          onClick={() => {
+                            order__setDenyOrder(true);
+                            updateRequest(currentOrder.b_id, {
+                              is_request_for_cancel_exist: true,
+                              is_cancel_request_from_client_comfirm: false,
+                            });
+                          }}
+                        >
                           Отменить заказ
                         </button>
                       </div>
                     </div>
                   )}
 
-                  {isConfirmOrder && (
-                    <div className="chat_technical_message">
-                      <div>
-                        <div className={`${styles.cancel_block}`}>
-                          <img src="/img/message_green.png" alt="" />
-                          <p>Заказ успешно подтвержден 5:42</p>
-                        </div>
-                        <div className={styles.add_feedback}>
-                          <button onClick={() => setVisibleAddFeedback(true)}>
-                            Оставить отзыв
-                          </button>
+                  {isConfirmOrder ||
+                    (isConfirmDoneOrder && (
+                      <div className="chat_technical_message">
+                        <div>
+                          <div className={`${styles.cancel_block}`}>
+                            <img src="/img/message_green.png" alt="" />
+                            <p>Заказ успешно подтвержден 5:42</p>
+                          </div>
+                          <div className={styles.add_feedback}>
+                            <button onClick={() => setVisibleAddFeedback(true)}>
+                              Оставить отзыв
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
 
-                  {order__isDenyOrder && (
-                    <div className="chat_technical_message">
-                      <div className={styles.cancel_block}>
-                        <img src="/img/cansel_message.png" alt="" />
-                        <p>Вы предложили отменить заказ 5:42</p>
+                  {order__isDenyOrder ||
+                    (isOrderCancel && (
+                      <div className="chat_technical_message">
+                        <div className={styles.cancel_block}>
+                          <img src="/img/cansel_message.png" alt="" />
+                          <p>Вы предложили отменить заказ 5:42</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    ))}
                 </>
               ) : (
                 <>

@@ -40,7 +40,7 @@ function MyOrdersMaster() {
         item.b_options.title
           .toLowerCase()
           .includes(searchFilter.toLowerCase()) &&
-        item.drivers !== undefined &&
+        item.drivers &&
         item.b_state !== '2' &&
         !item.b_options.winnerMaster,
     )
@@ -53,7 +53,7 @@ function MyOrdersMaster() {
         drivers: driver,
       }));
     });
-  console.log(userRequests);
+
   const [isVisibleModalEdit, setVisibleModalEdit] = useState(false);
   return (
     <>
@@ -140,7 +140,7 @@ function MyOrdersMaster() {
                                 : '/client/requests/my_order/' + item.b_id
                             }
                           >
-                            {item.c_options?.author.name || 'Anton'}
+                            {item.drivers?.c_options?.author.u_name || 'Anton'}
                           </Link>
                         </td>
                         <td>

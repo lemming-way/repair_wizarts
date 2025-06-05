@@ -73,7 +73,7 @@ const getAllClientRequests = () => {
       },
     }),
     appFetch('drive/archive', {
-      body: { u_a_role: 2, lc: 99999999999999 },
+      body: { lc: 99999999999999 },
     }),
   ]);
 };

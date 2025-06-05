@@ -21,7 +21,6 @@ function Services() {
   const [servicesBlocks, setServicesBlocks] = useState({});
   const username = user.u_details?.login;
   const { categories } = useSelector((state) => state.categories);
-  useEffect(() => {}, []);
   useEffect(() => {
     if (!username) return;
     if (
@@ -41,17 +40,20 @@ function Services() {
       setModelPhoneOptionSelected(
         Array.isArray(user.u_details.service) ? user.u_details.service : [],
       );
+      setBrandOptionSelected(
+        Array.isArray(user.u_details.question) ? user.u_details.question : [],
+      );
       setServicesBlocks({ ...user.u_details.servicesBlocks });
     }
     getMasterRepairsByUsername(username).then(setRepairs);
   }, [user, username]);
   useEffect(() => {
     var obj = {};
-    if (!modelPhoneOptionSelected) {
+    if (!brandOptionSelected) {
       return;
     }
 
-    const rr = modelPhoneOptionSelected.forEach((object) => {
+    const rr = brandOptionSelected.forEach((object) => {
       servicesBlocks[object.label]
         ? (obj[object.label] = servicesBlocks[object.label])
         : (obj[object.label] = {
@@ -86,7 +88,7 @@ function Services() {
           });
     });
     setServicesBlocks(obj);
-  }, [modelPhoneOptionSelected]);
+  }, [brandOptionSelected]);
   function changeInputs(value, key, field, index) {
     setServicesBlocks((prev) => {
       const updated = { ...prev };
@@ -182,7 +184,8 @@ function Services() {
           section: categoryMainOptionSelected || [],
           subsection: categoryOptionSelected || [],
           service: modelPhoneOptionSelected || [],
-          servicesBlocks: servicesBlocks,
+          question: brandOptionSelected || [],
+          servicesBlocks: [],
         },
       },
       user.u_id,
@@ -223,6 +226,29 @@ function Services() {
         })
       : [];
   });
+  const brandPhoneOptions = categories.flatMap((i) => {
+    const isSelectedCategoryId = categoryMainOptionSelected?.find(
+      (item) => item.value === i.id,
+    );
+    return isSelectedCategoryId
+      ? i.subsections.flatMap((j) => {
+          const isSelectedSubCategoryId = categoryOptionSelected?.find(
+            (item) => item.value === j.id,
+          );
+          return isSelectedSubCategoryId
+            ? j.services.flatMap((c) => {
+                const isSelectedService = modelPhoneOptionSelected?.find(
+                  (item) => item.value === c.id,
+                );
+                return isSelectedService
+                  ? c.questions.map((b) => ({ label: b.text, value: b.number }))
+                  : [];
+              })
+            : [];
+        })
+      : [];
+  });
+
   return (
     <div className={style.services_wrap}>
       <div className={style.categories_block}>
@@ -251,20 +277,20 @@ function Services() {
           isSelectAll={true}
           menuPlacement={'bottom'}
         />
-        {/* <MultiSelect
-          key="brand_id"
-          placeholder="Бренды"
-          options={}
-          onChange={(selected) => setBrandOptionSelected(selected)}
-          value={brandOptionSelected}
-          isSelectAll={true}
-          menuPlacement={'bottom'}
-        /> */}
         <MultiSelect
           placeholder="Модель устройства"
           options={modelPhoneOptions}
           onChange={(selected) => setModelPhoneOptionSelected(selected)}
           value={modelPhoneOptionSelected}
+          isSelectAll={true}
+          menuPlacement={'bottom'}
+        />
+        <MultiSelect
+          key="brand_id"
+          placeholder="Бренды"
+          options={brandPhoneOptions}
+          onChange={(selected) => setBrandOptionSelected(selected)}
+          value={brandOptionSelected}
           isSelectAll={true}
           menuPlacement={'bottom'}
         />
