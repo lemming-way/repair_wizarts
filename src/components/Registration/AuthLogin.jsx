@@ -161,7 +161,7 @@ function AuthLogin() {
 
     try {
       const response = await login(phone, password);
-      const userProfile = await appFetch('//user/authorized/car', {
+      const userProfile = await appFetch('user/authorized/car', {
         body: {
           u_hash: response.data.u_hash,
           token: response.data.token,

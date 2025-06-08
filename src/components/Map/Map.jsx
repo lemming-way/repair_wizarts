@@ -1,124 +1,58 @@
-import {
-    useEffect,
-    useId,
-    useMemo
-} from "react"
-import { renderToStaticMarkup } from "react-dom/server"
-import { useSelector } from "react-redux"
-import {
-    Map as YandexMap,
-    SearchControl,
-    Placemark,
-    withYMaps
-} from "react-yandex-maps"
-import { Rating } from "react-simple-star-rating"
-import {
-    getMapBalloonTemplate,
-    getMapBalloonOverrides
-} from './mapBalloonLayout'
-import { selectUI } from "../../slices/ui.slice"
-import { CLIENT_PATH } from "../../constants/SERVER_PATH"
+import { withYMaps } from 'react-yandex-maps';
+import { useSelector } from 'react-redux';
+import { Map as YandexMap, SearchControl, Placemark } from 'react-yandex-maps';
+import { selectUI } from '../../slices/ui.slice';
 
+// --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 const Map = (props) => {
-    const {
-        masters,
-        selectedMaster,
-        selectMaster
-    } = props
-    const {
-        templateLayoutFactory
-    } = props.ymaps
+  const {
+    masters,
+    // selectedMaster, // Больше не нужен внутри этого компонента
+    selectMaster, // Функция из родителя для выбора мастера
+  } = props;
+  const ui = useSelector(selectUI);
 
-    useEffect(() => {
-        const element = document.getElementById("mapBalloonButton")
-
-        const onClick = (e) => window.location
-            .replace(CLIENT_PATH + "contact?pics=1&id=" + selectedMaster.username)
-        element?.addEventListener("click", onClick)
-
-        return () => {
-            element?.removeEventListener("click", onClick)
-        }
-    }, [selectedMaster])
-
-    const ui = useSelector(selectUI)
-    const balloonId = useId()
-
-    const ratingElement = useMemo(() => renderToStaticMarkup(
-        <Rating
-            size={24}
-            readonly
-            initialValue={selectedMaster.rating * 20} // filled-stars width fix
+  return (
+    <YandexMap
+      state={{
+        center: [ui.location.latitude, ui.location.longitude],
+        zoom: 10,
+      }}
+      options={{
+        suppressMapOpenBlock: true,
+      }}
+      height="500px"
+      width="100%"
+    >
+      <SearchControl options={{ fitMaxWidth: true, maxWidth: '660px' }} />
+      Метка: Москва (или текущее местоположение пользователя)
+      <Placemark
+        geometry={[ui.location.latitude, ui.location.longitude]}
+        options={{
+          iconColor: '#ff0000',
+          preset: 'islands#redDotIcon',
+        }}
+        properties={{
+          hintContent: 'Вы здесь',
+        }}
+      />
+      {/* Перебираем мастеров и создаем для каждого метку */}
+      {masters?.map((v) => (
+        <Placemark
+          key={v.id}
+          geometry={[v.latitude, v.longitude]}
+          // --- ИЗМЕНЕНИЕ: Передаем весь объект мастера в функцию selectMaster ---
+          onClick={() => selectMaster(v)}
+          options={{
+            // Просто стилизуем метку, без балуна
+            preset: 'islands#blueRepairShopIcon',
+          }}
         />
-    ), [selectedMaster])
+      ))}
+    </YandexMap>
+  );
+};
+// --- КОНЕЦ: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 
-    const availableFrom = selectedMaster.availability_from?.split(":")[0] || 0
-    const availableTo = selectedMaster.availability_to?.split(":")[0] || 0
-
-    return (
-        <YandexMap
-            /*
-             * FIXME:
-             * it's refreshing when you are selecting master
-             * because of the changes in the state
-            */
-            state={{
-                center: [ui.location.latitude, ui.location.longitude],
-                zoom: 10,
-            }}
-            options={{
-                suppressMapOpenBlock: true
-            }}
-            height="500px"
-            width="100%"
-        >
-            <SearchControl
-                options={{ fitMaxWidth: true, maxWidth: '660px' }}
-            />
-
-            {/* Метка: Москва */}
-            <Placemark
-                geometry={[ui.location.latitude, ui.location.longitude]}
-                options={{
-                    iconColor: '#ff0000',
-                    preset: 'islands#redDotIcon',
-                }}
-                properties={{
-                    hintContent: 'Москва',
-                    balloonContent: 'Это Москва'
-                }}
-                onClick={() => selectMaster(ui)}
-            />
-
-
-            {masters?.map((v) => (
-                <Placemark
-                    key={v.id}
-                    geometry={[v.latitude, v.longitude]}
-                    modules={['geoObject.addon.balloon']}
-                    properties={{
-                        name: selectedMaster.name,
-                        lastname: selectedMaster.lastname,
-                        business: selectedMaster.business_model,
-                        address: selectedMaster.address,
-                        avatar: selectedMaster.avatar,
-                        element: ratingElement,
-                        rating: selectedMaster.rating,
-                        organizationName: selectedMaster.organization_name,
-                        availableFrom,
-                        availableTo
-                    }}
-                    onClick={(e) => selectMaster(e, v.id)}
-                    options={{
-                        balloonLayout: templateLayoutFactory.createClass(
-                            getMapBalloonTemplate(balloonId),
-                            getMapBalloonOverrides(balloonId)
-                        ),
-                    }}
-                />
-            ))}
-        </YandexMap>
-    )
-}
-
-export default withYMaps(Map, true, ['templateLayoutFactory'])
+// Оборачиваем компонент в HOC от Яндекс.Карт, но уже не запрашиваем templateLayoutFactory
+export default withYMaps(Map, true);

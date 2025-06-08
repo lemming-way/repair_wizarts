@@ -15,6 +15,7 @@ import '../../scss/detail.scss';
 import '../../scss/media.css';
 import { getMasterRepairs } from '../../services/service.service';
 import { Link } from 'react-router-dom';
+import { Rating } from 'react-simple-star-rating';
 
 import style from './serviceDetail.module.scss';
 import appFetch from '../../utilities/appFetch';
@@ -84,7 +85,6 @@ function ServiceDetail() {
   const [visibleListSelectedServices, setVisibleListSelectedServices] =
     useState(false);
   const [visibleConfirm, setVisibleConfirm] = useState(false);
-
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const navigate = useNavigate();
   const { id } = useParams();
@@ -116,19 +116,115 @@ function ServiceDetail() {
   const selectedValue = useMemo(() => ({ selected, setSelected }), [selected]);
 
   const [selectedMaster, setSelectedMaster] = useState({});
-  const [showSmallModal, setShowSmallModal] = useState(true);
-  const [showBigModal, setShowBigModal] = useState(true);
+  const [showSmallModal, setShowSmallModal] = useState(false);
+  const [showBigModal, setShowBigModal] = useState(false);
+
+  const [mastersList, setMastersList] = useState([]);
+  const [masterCarData, setMasterCarData] = useState(null);
+
   useEffect(() => {
-    appFetch('user', {}, true).then((v) => console.log(v));
+    appFetch('user', { body: { lc: 99999999999 } }, true)
+      .then((response) => {
+        if (response && response.data && response.data.user) {
+          const allUsers = Object.values(response.data.user);
+
+          const filteredMasters = allUsers
+            .filter((user) => user.u_details && user.u_details.business_model)
+            .map((user) => {
+              const details = user.u_details || {};
+              return {
+                id: user.u_id,
+                username: user.u_name,
+                name: `${user.u_name || ''} ${user.u_family || ''}`.trim(),
+                latitude: 59.9343 + (Math.random() - 0.5) * 0.1,
+                longitude: 30.3351 + (Math.random() - 0.5) * 0.2,
+                info: details.business_model || 'Частный мастер',
+                rating: details.rating || 5,
+                reviews: details.reviews || 0,
+                address: details.address || 'Адрес не указан',
+                orgName: details.organization_name || 'Частная практика',
+                experience: `${details.experience || 1} год/лет`,
+                onSiteSince: user.u_created
+                  ? new Date(user.u_created * 1000).getFullYear()
+                  : '2023',
+                status: user.u_active ? 'онлайн' : 'офлайн',
+                ordersCompleted: details.ordersCompleted || 0,
+                successRate: `${details.successRate || 100}%`,
+                repeatOrders: `${details.repeatOrders || 0}%`,
+                categoryView:
+                  details.section?.map((item) => item.label).join(', ') ||
+                  'Электроника',
+                categories:
+                  details.subsection?.map((item) => item.label).join(', ') ||
+                  'Ремонт телефонов',
+                brands:
+                  details.services?.map((item) => item.label).join(', ') ||
+                  'Все бренды',
+                activity: details.specialty || 'Ремонт техники',
+                mainFocus: details.main_business || 'Общий ремонт',
+                businessType: details.business_model || 'Сервис',
+                aboutOrg:
+                  details.about_organization ||
+                  'Информация об организации отсутствует.',
+              };
+            });
+
+          setMastersList(filteredMasters);
+        }
+      })
+      .catch((error) => {
+        console.error('Ошибка при загрузке пользователей:', error);
+      });
   }, []);
+
   useEffect(() => {
     setPhone(user.u_phone);
     setName(user.u_name);
   }, [user]);
-  const onSelectMaster = (e, data) => {
+
+  const onSelectMaster = async (masterData) => {
+    setSelectedMaster(masterData);
     setShowSmallModal(true);
     setShowBigModal(true);
-    return getMasterByUsername(data).then(setSelectedMaster);
+    setMasterCarData(null);
+
+    try {
+      console.log(`Загрузка данных о машине для мастера ID: ${masterData.id}`);
+      const carResponse = await appFetch(
+        'user/authorized/car',
+        {
+          method: 'POST',
+          body: { u_a_id: masterData.id },
+        },
+        true,
+      );
+      console.log(carResponse);
+
+      if (carResponse && carResponse.data && carResponse.data.car) {
+        const cars = Object.values(carResponse.data.car);
+        if (cars.length > 0) {
+          setMasterCarData(cars[0]);
+          console.log('Данные о машине успешно загружены:', cars[0]);
+        } else {
+          console.warn(
+            `У мастера ID: ${masterData.id} нет зарегистрированных машин.`,
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Ошибка при загрузке данных о машине для мастера ID: ${masterData.id}`,
+        error,
+      );
+      setFormError('Не удалось загрузить данные о машине мастера.');
+    }
+  };
+
+  const handleCloseModals = () => {
+    setShowSmallModal(false);
+    setShowBigModal(false);
+    setSelectedMaster({});
+    setMasterCarData(null);
   };
 
   const [invoice, setInvoice] = useState({
@@ -137,56 +233,11 @@ function ServiceDetail() {
   });
   const [description, setDescription] = useState('');
 
-  const masters = useMemo(
-    () =>
-      repairMasters?.reduce(
-        (
-          arr,
-          { master_id, repair_id, address_latitude, address_longitude },
-        ) => {
-          if (arr.find((v) => v.id === master_id)) {
-            return arr;
-          }
-          const repairService = undefined;
-          if (!repairService) {
-            return arr;
-          }
-          if (master_id === 'master1') {
-            return arr;
-          }
+  const masters = useMemo(() => mastersList, [mastersList]);
 
-          return [
-            ...arr,
-            {
-              id: master_id,
-              latitude: address_latitude,
-              longitude: address_longitude,
-            },
-          ];
-        },
-        [],
-      ),
-    [repairMasters.data, user.u_details?.login, categories],
-  );
   const repairFiltered = useMemo(
     () => repairMasters,
-    // repairMasters.reduce((arr, { master_id, repair_id, price, time }) => {
-    //   if (master_id !== selectedMaster.username) {
-    //     return arr;
-    //   }
-
-    //   const repairService = services.repair_types.find(
-    //     ({ id: repid, device_id }) =>
-    //       device_id === +id && repair_id === repid,
-    //   );
-    //   if (!repairService) {
-    //     return arr;
-    //   }
-
-    //   arr.push({ ...repairService, price, time });
-    //   return arr;
-    // }, []),
-    // selectedMaster.username
+    [selectedMaster.username],
   );
 
   useEffect(() => {
@@ -212,42 +263,118 @@ function ServiceDetail() {
 
   const [search, setSearch] = useState('');
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (selectedService.length === 0) return setFormError('выберите услуги');
-    const payload = {
-      // client_message: description,
-      // client_price: invoice.final,
-      // repairs_id: selected,
-      // device_id: +id,
-      // master_username: selectedMaster.username,
+  /**
+   * Асинхронная функция для назначения мастера на заказ в качестве КАНДИДАТА.
+   * @param {string} orderId - ID только что созданного заказа.
+   * @param {object} master - Объект выбранного мастера.
+   */
+  const assignMasterToOrder = async (orderId, master) => {
+    if (!orderId || !master.id) {
+      console.error(
+        'ID заказа или ID мастера отсутствуют. Назначение невозможно.',
+      );
+      throw new Error('ID заказа или мастера не определены.');
+    }
+    if (!masterCarData) {
+      console.error(
+        'Данные о машине мастера не загружены. Назначение невозможно.',
+      );
+    }
+    const assignmentPayload = {
+      c_id: masterCarData?.c_id || '1',
+      c_payment_way: 2,
+      c_options: {
+        author: {
+          author: {
+            ...master,
+          },
+          bind_amount: getSumPrice(),
+          comment: 'Выполню',
+          time: 30,
+        },
+      },
     };
-    setShow(false);
-    setVisibleBlockPayment(true);
-    const data = {
+    const requestBody = {
+      action: 'set_performer',
+      performer: 0,
+      u_a_role: 2,
+
+      u_a_id: master.id,
+      data: JSON.stringify(assignmentPayload),
+    };
+
+    try {
+      const url = `drive/get/${orderId}`;
+      console.log(
+        `Попытка назначения мастера ${master.id} КАНДИДАТОМ на заказ ${orderId}. URL: ${url}`,
+      );
+      console.log('Тело запроса:', requestBody);
+
+      // Отправляем запрос с новым телом
+      await appFetch(
+        url,
+        {
+          body: requestBody,
+        },
+        true,
+      ).then((v) => console.log('trueble', v));
+
+      console.log(
+        `Мастер ${master.name} (ID: ${master.id}) успешно добавлен в поездку (ID: ${orderId}) как кандидат.`,
+      );
+    } catch (error) {
+      console.error(
+        `Ошибка при назначении мастера на заказ ${orderId}:`,
+        error,
+      );
+      throw error;
+    }
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedService.length === 0) {
+      setFormError('Выберите услуги');
+      return;
+    }
+    if (!selectedMaster.id) {
+      setFormError('Сначала выберите мастера на карте');
+      return;
+    }
+
+    const orderData = {
       title: selectedService.map((item) => prices[item].name).join(' '),
       description,
       client_price: getSumPrice(),
       section: sectionId,
       subsection: subsectionId,
       service: selectServices[0],
-      public: {
-        test: 'test',
-      },
+      orderType: 'request',
+      winnerMaster: selectedMaster.id,
+      type: 'order',
     };
-    return createRequest({
-      data,
-    })
-      .then((d) => {
-        console.log(d);
-      })
-      .catch((err) => {
-        if (err.message) {
-          return setFormError(err.message);
-        }
-        setFormError('Проверьте корректность введённых данных');
-        console.error(err);
-      });
+
+    try {
+      console.log('Создание заказа...');
+      const creationResponse = await createRequest({ data: orderData });
+      const newOrderId = creationResponse?.data?.b_id;
+
+      if (!newOrderId) {
+        throw new Error('Не удалось получить ID созданного заказа.');
+      }
+      console.log(`Заказ успешно создан. ID: ${newOrderId}`);
+
+      await assignMasterToOrder(newOrderId, selectedMaster);
+
+      setShow(false);
+      setVisibleBlockPayment(true);
+    } catch (err) {
+      console.error(
+        'Произошла ошибка в процессе создания/назначения заказа:',
+        err,
+      );
+      setFormError(err.message || 'Произошла неизвестная ошибка.');
+    }
   };
 
   useEffect(() => {
@@ -279,22 +406,13 @@ function ServiceDetail() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
 
-  // Массив картинок для слайдера в модальном окне
-  // const images = [
-  //     '/img/sentence_img/iphone-x.png',
-  //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
-  //     '/img/sentence_img/iphone-x.png',
-  // ]; ###
-
-  // Функция для открытия модального окна
   const openModal = (imageSrc) => {
-    setModalImage(imageSrc); // Устанавливаем путь к картинке
-    setIsModalOpen(true); // Открываем модальное окно
+    setModalImage(imageSrc);
+    setIsModalOpen(true);
   };
 
-  // Функция для закрытия модального окна
   const closeModal = () => {
-    setIsModalOpen(false); // Закрываем модальное окно
+    setIsModalOpen(false);
   };
 
   function addRemoveService(index) {
@@ -481,17 +599,6 @@ function ServiceDetail() {
 
             {/* список услуг */}
             <div className={`order__cards__to__scrolls ${style.orders_list}`}>
-              {/* список услуг - так было */}
-              {/* {repairFiltered?.length ? (
-                                search.length > 0 ? (repairFiltered.map((v) => v.description.toLowerCase().includes(search.toLowerCase()) && (
-                                    <ServiceDetailCard {...v} key={v.id} />
-                                ))) : (repairFiltered?.map((v) => (
-                                    <ServiceDetailCard {...v} key={v.id} />
-                                )))
-                            ) : (
-                                <h1>Для отображения услуг выберите мастера на карте ниже.</h1>
-                            )} */}
-
               {prices.length > 0 &&
                 prices.map((obj, index) => (
                   <>
@@ -537,17 +644,21 @@ function ServiceDetail() {
                   </>
                 ))}
             </div>
-            <div className={style.button_wrap}>
-              <button
-                className={style.button_services}
-                onClick={() => {
-                  setShow(true);
-                }}
-              >
-                {' '}
-                Оформить заказ
-              </button>
-            </div>
+
+            {/* Условный рендеринг кнопки "Оформить заказ" */}
+            {selectedMaster.id && (
+              <div className={style.button_wrap}>
+                <button
+                  className={style.button_services}
+                  onClick={() => {
+                    setShow(true);
+                  }}
+                >
+                  {' '}
+                  Оформить заказ
+                </button>
+              </div>
+            )}
 
             <div
               className="popupdetailfwpruhwe"
@@ -686,24 +797,7 @@ function ServiceDetail() {
                       cols="30"
                       rows="10"
                     />
-                    {/* так был сделан вывод выбранных услуг */}
-                    {/* <div className="service-detail-modal__price">
-                                            <ul className="service-detail-modal-price__list">
-                                                {invoice.list.map((v, i) => (
-                                                    <li className="service-detail-modal-price__item" key={i}>
-                                                        <span className="service-detail-modal-price__name">{v.name} — </span>
-                                                        <span className="service-detail-modal-price__price">{v.price}₽</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                            <div className="service-detail-modal-price__final">Итого: {invoice.final}₽</div>
-                                        </div> */}
-                    <button
-                      // onClick={() => {
-                      // }}
-                      className={`done ${style.fix_btn}`}
-                      type="submit"
-                    >
+                    <button className={`done ${style.fix_btn}`} type="submit">
                       Отправить
                     </button>
                   </form>
@@ -714,7 +808,6 @@ function ServiceDetail() {
 
           <div className={`main__info__image ${style.iphone_desktop}`}>
             <img
-              // src={SERVER_PATH + device.picture}
               src="/img/detail-iphone.png"
               alt=""
               style={{
@@ -769,39 +862,7 @@ function ServiceDetail() {
             </Swiper>
           </div>
         </section>
-        {/* цены - так было */}
-        {/* <section className="detail__price">
-                    <div className="container detail-price-container">
-                        <Swiper
-                            slidesPerView={4}
-                            spaceBetween={30}
-                            navigation={true}
-                            modules={[Navigation]}
-                            className="mySwiper"
-                            breakpoints={{
-                                0: {
-                                    slidesPerView: 2
-                                },
-                                800: {
-                                    slidesPerView: 3
-                                },
-                                1124: {
-                                    slidesPerView: 4
-                                },
-                            }}
-                        >
-                            {repairFiltered?.map((v) => (
-                                <SwiperSlide className="sliderr" key={v.id}>
-                                    <ServiceDetailPrice
-                                        {...v}
-                                        price={v.price}
-                                        repair_id={v.repair_id}
-                                    />
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
-                    </div>
-                </section> */}
+
         <section className="map">
           <Map
             masters={masters}
@@ -811,196 +872,207 @@ function ServiceDetail() {
         </section>
       </div>
 
-      {/* инфо о мастере */}
-      <div style={{ display: 'flex', position: 'absolute' }}>
-        <div
-          style={{
-            position: 'absolute',
-            zIndex: 1,
-            bottom: '0',
-            left: '370px',
-            display: 'flex',
-            gap: '10px',
-          }}
-        >
-          {showSmallModal && (
-            <div className="info_master">
-              <div
-                className="info_master__close"
-                onClick={() => setShowSmallModal(false)}
-                style={{ cursor: 'pointer' }}
-              >
-                <img src="/img/close.svg" alt="" />
-              </div>
-
-              <div className="info_master__row1">
-                <img src="/img/profile__image.png" alt="" />
-                <div className="info_master__about">
-                  <p>Алексей Михеев</p>
-                  <p>Частный мастер</p>
-                  <div className="info_master__stars">
-                    <img src="/img/star.png" alt="" />
-                    <img src="/img/star.png" alt="" />
-                    <img src="/img/star.png" alt="" />
-                    <img src="/img/star.png" alt="" />
-                    <img src="/img/star.png" alt="" />
-                  </div>
-                  <div className="info_master__row-links">
-                    <Link to="/client/feedback/1">23 отзыва</Link>
-                    <a href="#">Подробнее</a>
-                  </div>
-                </div>
-              </div>
-
-              <p className="info_master__info">Санкт-Петербург, Каховского 7</p>
-              <p className="info_master__info">Открыт: с 9 до 21</p>
-              <p className="info_master__text-about">
-                <span className="info_master__text-about-light">
-                  Имя организации
-                </span>
-                DeviseWorks
-              </p>
-              <p className="info_master__text-about">
-                <span className="info_master__text-about-light">Опыт</span>2
-                года
-              </p>
-              <p className="info_master__text-about">
-                <span className="info_master__text-about-light">На сайте</span>с
-                2022 года
-              </p>
-              <p className="info_master__text-about">
-                <span className="info_master__text-about-light">Статус</span>
-                онлайн
-              </p>
-              <p className="info_master__text-about--accent">
-                <span className="info_master__text-about-light">Оценка</span>5.0
-              </p>
-              <p className="info_master__text-about--accent">
-                <span className="info_master__text-about-light">
-                  заказов выполнено
-                </span>
-                40
-              </p>
-              <p className="info_master__text-about--accent">
-                <span className="info_master__text-about-light">
-                  Заказов успешно сдано
-                </span>
-                100%
-              </p>
-              <p className="info_master__text-about--accent">
-                <span className="info_master__text-about-light">
-                  2 повторных заказов
-                </span>
-                54%
-              </p>
-            </div>
-          )}
-          {showBigModal && (
-            <div className="info_master_big">
-              <div>
+      {/* Условный рендеринг модальных окон */}
+      {selectedMaster.id && (
+        <div style={{ display: 'flex', position: 'absolute' }}>
+          <div
+            style={{
+              position: 'absolute',
+              zIndex: 1,
+              bottom: '0',
+              left: '370px',
+              display: 'flex',
+              gap: '10px',
+            }}
+          >
+            {showSmallModal && (
+              <div className="info_master">
                 <div
                   className="info_master__close"
-                  onClick={() => setShowBigModal(false)}
+                  onClick={handleCloseModals}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src="/img/close.svg" alt="" />
                 </div>
 
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Вид категории
-                  </span>
-                  Электроника
-                </p>
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Категория
-                  </span>
-                  Ремотн телефонов, ремонт планшетов
-                </p>
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Бренды
-                  </span>
-                  iPhone, iPad, samsung
-                </p>
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Ваша деятельность
-                  </span>
-                  Занимаюсь ремонтом техники Apple{' '}
-                </p>
-
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Основное направление
-                  </span>
-                  Пайка, переклейка
-                </p>
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Основной бизнес
-                  </span>
-                  сервис
-                </p>
-                <p className="info_master_big__text-about">
-                  <span className="info_master_big__text-about-light">
-                    Об организации:{' '}
-                  </span>
-                </p>
-                <p className="info_master_big__text">
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Culpa
-                  explicabo saepe eius natus non vel repudiandae perferendis quo
-                  quam sed, vitae sequi recusandae! Pariatur alias ad labore
-                  nemo odio itaque.
-                </p>
-
-                <div>
-                  <Swiper
-                    slidesPerView={4}
-                    spaceBetween={30}
-                    navigation={true}
-                    modules={[Navigation]}
-                    className={style.swiper}
-                    breakpoints={{
-                      0: {
-                        slidesPerView: 2,
-                      },
-                      800: {
-                        slidesPerView: 2,
-                      },
-                      1124: {
-                        slidesPerView: 3,
-                      },
-                    }}
-                  >
-                    {test_price.map((obj, index) => (
-                      <SwiperSlide key={index} className={style.swiper__slide}>
-                        <div className={style.slide__empty}>
-                          <img
-                            onClick={() => openModal(obj.img)}
-                            style={{ width: 100 }}
-                            src={obj.img}
-                            alt=""
-                          />
-                        </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
+                <div className="info_master__row1">
+                  <img src="/img/profile__image.png" alt="" />
+                  <div className="info_master__about">
+                    <p>{selectedMaster.name}</p>
+                    <p>{selectedMaster.info}</p>
+                    <div className="info_master__stars">
+                      <Rating
+                        size={18}
+                        readonly
+                        initialValue={selectedMaster.rating}
+                        allowFraction
+                        fillColor="#FFC107"
+                        emptyColor="#E4E5E9"
+                      />
+                    </div>
+                    <div className="info_master__row-links">
+                      <Link to={`/client/feedback/${selectedMaster.id}`}>
+                        {selectedMaster.reviews} отзыва
+                      </Link>
+                      <a href="#">Подробнее</a>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div></div>
-            </div>
-          )}
+                <p className="info_master__info">{selectedMaster.address}</p>
+                <p className="info_master__info">Открыт: с 9 до 21</p>
+                <p className="info_master__text-about">
+                  <span className="info_master__text-about-light">
+                    Имя организации
+                  </span>
+                  {selectedMaster.orgName}
+                </p>
+                <p className="info_master__text-about">
+                  <span className="info_master__text-about-light">Опыт</span>
+                  {selectedMaster.experience}
+                </p>
+                <p className="info_master__text-about">
+                  <span className="info_master__text-about-light">
+                    На сайте
+                  </span>
+                  с {selectedMaster.onSiteSince}
+                </p>
+                <p className="info_master__text-about">
+                  <span className="info_master__text-about-light">Статус</span>
+                  {selectedMaster.status}
+                </p>
+                <p className="info_master__text-about--accent">
+                  <span className="info_master__text-about-light">Оценка</span>
+                  {selectedMaster.rating}
+                </p>
+                <p className="info_master__text-about--accent">
+                  <span className="info_master__text-about-light">
+                    заказов выполнено
+                  </span>
+                  {selectedMaster.ordersCompleted}
+                </p>
+                <p className="info_master__text-about--accent">
+                  <span className="info_master__text-about-light">
+                    Заказов успешно сдано
+                  </span>
+                  {selectedMaster.successRate}
+                </p>
+                <p className="info_master__text-about--accent">
+                  <span className="info_master__text-about-light">
+                    2 повторных заказов
+                  </span>
+                  {selectedMaster.repeatOrders}
+                </p>
+              </div>
+            )}
+            {showBigModal && (
+              <div className="info_master_big">
+                <div>
+                  <div
+                    className="info_master__close"
+                    onClick={handleCloseModals}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <img src="/img/close.svg" alt="" />
+                  </div>
+
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Вид категории
+                    </span>
+                    {selectedMaster.categoryView}
+                  </p>
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Категория
+                    </span>
+                    {selectedMaster.categories}
+                  </p>
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Бренды
+                    </span>
+                    {selectedMaster.brands}
+                  </p>
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Ваша деятельность
+                    </span>
+                    {selectedMaster.activity}
+                  </p>
+
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Основное направление
+                    </span>
+                    {selectedMaster.mainFocus}
+                  </p>
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Основной бизнес
+                    </span>
+                    {selectedMaster.businessType}
+                  </p>
+                  <p className="info_master_big__text-about">
+                    <span className="info_master_big__text-about-light">
+                      Об организации:{' '}
+                    </span>
+                  </p>
+                  <p className="info_master_big__text">
+                    {selectedMaster.aboutOrg}
+                  </p>
+
+                  <div>
+                    <Swiper
+                      slidesPerView={4}
+                      spaceBetween={30}
+                      navigation={true}
+                      modules={[Navigation]}
+                      className={style.swiper}
+                      breakpoints={{
+                        0: {
+                          slidesPerView: 2,
+                        },
+                        800: {
+                          slidesPerView: 2,
+                        },
+                        1124: {
+                          slidesPerView: 3,
+                        },
+                      }}
+                    >
+                      {test_price.map((obj, index) => (
+                        <SwiperSlide
+                          key={index}
+                          className={style.swiper__slide}
+                        >
+                          <div className={style.slide__empty}>
+                            <img
+                              onClick={() => openModal(obj.img)}
+                              style={{ width: 100 }}
+                              src={obj.img}
+                              alt=""
+                            />
+                          </div>
+                        </SwiperSlide>
+                      ))}
+                    </Swiper>
+                  </div>
+                </div>
+
+                <div></div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
       {/* Модальное окно с слайдером */}
       {isModalOpen && (
         <div className="modal" onClick={closeModal}>
           <div className="modalContent" onClick={(e) => e.stopPropagation()}>
             <button className="closeBtn" onClick={closeModal}>
-              &times;
+              ×
             </button>
 
             {/* Слайдер внутри модального окна */}
