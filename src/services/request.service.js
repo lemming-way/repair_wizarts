@@ -29,21 +29,26 @@ const createRequest = (payload) => {
     },
   });
 };
-const updateRequest = (id, payload) => {
+const updateRequest = (id, payload, asAdmin, actingUserId) => {
   const formattedData = Object.entries(payload).map(([key, value]) => [
     '=',
     [key],
     value,
   ]);
-  return appFetch('drive/get/' + id, {
-    body: {
-      u_a_role: 1,
-      action: 'edit',
-      data: JSON.stringify({
-        b_options: formattedData,
-      }),
+  return appFetch(
+    'drive/get/' + id,
+    {
+      body: {
+        u_a_role: 1,
+        ...(actingUserId ? { u_a_id: actingUserId } : {}),
+        action: 'edit',
+        data: JSON.stringify({
+          b_options: formattedData,
+        }),
+      },
     },
-  });
+    asAdmin,
+  );
 };
 
 const updateRequestStatus = (id, status) => updateRequest(id, { status });
@@ -70,6 +75,7 @@ const getAllClientRequests = () => {
     appFetch('drive', {
       body: {
         u_a_role: 1,
+        lc: 99999999999999,
       },
     }),
     appFetch('drive/archive', {

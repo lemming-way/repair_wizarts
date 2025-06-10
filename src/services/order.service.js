@@ -5,6 +5,7 @@ const getMasterOrders = () =>
     appFetch('/drive', {
       body: {
         u_a_role: 2,
+        lc: 99999999999999999,
       },
     }),
     appFetch('drive/archive', {

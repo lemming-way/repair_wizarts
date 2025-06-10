@@ -285,20 +285,17 @@ function ServiceDetail() {
       c_payment_way: 2,
       c_options: {
         author: {
-          author: {
-            ...master,
-          },
-          bind_amount: getSumPrice(),
-          comment: 'Выполню',
-          time: 30,
+          ...master,
         },
+        bind_amount: getSumPrice(),
+        comment: 'Выполню',
+        time: 30,
       },
     };
     const requestBody = {
       action: 'set_performer',
       performer: 0,
       u_a_role: 2,
-
       u_a_id: master.id,
       data: JSON.stringify(assignmentPayload),
     };

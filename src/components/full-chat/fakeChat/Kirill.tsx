@@ -1,10 +1,20 @@
-import { useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  FC,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import '../../../scss/chat.css';
-import { useState } from 'react';
-import FrameMessages from './frameMessages';
-import MediaQuery from 'react-responsive';
-import { Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../../slices/user.slice';
+import { getAllClientRequests } from '../../../services/request.service';
+import { useService } from '../../../hooks/useService';
+import { selectUI } from '../../../slices/ui.slice';
+import { getMasterOrders } from '../../../services/order.service';
 import styles from './Chat.module.css';
 import Dropdown from 'react-multilevel-dropdown';
 import MiniSlider from '../../miniSlider/MiniSilder';
@@ -37,83 +47,799 @@ import DisputeFinalModalV5 from './DisputeFinalModal_v5';
 import DisputeFinalItemModalV5 from './DisputeFinalItemModal_v5';
 import SimpleImage from './SimpleImage';
 import { updateUser } from '../../../services/user.service';
-import { useSelector } from 'react-redux';
-import { selectUser } from '../../../slices/user.slice';
 import appFetch from '../../../utilities/appFetch';
 import { updateRequest } from '../../../services/request.service';
+import FrameMessages from './frameMessages';
+import MediaQuery from 'react-responsive';
+
+interface MasterInfo {
+  u_photo?: string;
+  u_name?: string;
+}
+
+interface GroupedChat {
+  chatId: string;
+  masterInfo: MasterInfo;
+  orders: any[];
+}
+
+interface OrderDetailsBlockProps {
+  order: any;
+  setOrderId: Dispatch<SetStateAction<number>>;
+  setIsOpenDisput: Dispatch<SetStateAction<boolean>>;
+  currentUser: any;
+  masterUser: any;
+  refetchRequests: () => void; // Используем refetch
+}
+
+const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
+  order,
+  currentUser,
+  masterUser,
+  refetchRequests,
+  setOrderId,
+  setIsOpenDisput,
+}) => {
+  const user =
+    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
+    ({} as any);
+  // Локальное состояние для каждого блока заказа
+  const [isOpenZayavka, setOpenZayavka] = useState(false);
+  const [isShowDetailsOrder, setShowDetailsOrder] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Состояния для управления UI конкретного заказа
+  const [dispute__isVisibleModal, dispute__SetVisibleModal] = useState(false);
+  const [isVisibleAddFeedback, setVisibleAddFeedback] = useState(false);
+  const [isVisibleDispute, setVisibleDispute] = useState(false);
+
+  // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
+  const handleConfirmOrder = async () => {
+    setIsLoading(true);
+    try {
+      await appFetch(`/drive/get/${order.b_id}`, {
+        body: {
+          u_a_role: 1,
+          u_id: masterUser.u_id,
+          action: 'set_performer',
+        },
+      });
+
+      // Шаг 2: Завершаем заказ
+      await appFetch(`/drive/get/${order.b_id}`, {
+        body: {
+          u_a_role: 1,
+          action: 'set_complete_state',
+        },
+      }).then((v) => console.log(v));
+
+      console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
+      refetchRequests(); // Обновляем список заказов
+    } catch (error) {
+      console.error('Ошибка при подтверждении заказа:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    setIsLoading(true);
+    try {
+      // Обновляем b_options, добавляя флаг отмены
+      await updateRequest(order.b_id, {
+        is_request_for_cancel_exist: true,
+      });
+      console.log(`Запрос на отмену заказа ${order.b_id} отправлен.`);
+      refetchRequests(); // Обновляем список
+    } catch (error) {
+      console.error('Ошибка при отмене заказа:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleOpenDispute = () => {
+    setOrderId(order.b_id);
+    setIsOpenDisput(true);
+  };
+  // --- КОНЕЦ: Логика для кнопок ---
+
+  function formatTimeByHours(hours: number) {
+    if (Number.isNaN(hours)) return 'Готов ждать';
+    if (hours >= 24) {
+      const days = Math.floor(hours / 24);
+      const lastDigit = days % 10;
+      const lastTwo = days % 100;
+      let word = 'дней';
+      if (lastTwo < 11 || lastTwo > 14) {
+        if (lastDigit === 1) word = 'день';
+        else if (lastDigit >= 2 && lastDigit <= 4) word = 'дня';
+      }
+      return `${days} ${word}`;
+    } else {
+      const lastDigit = hours % 10;
+      const lastTwo = hours % 100;
+      let word = 'часов';
+      if (lastTwo < 11 || lastTwo > 14) {
+        if (lastDigit === 1) word = 'час';
+        else if (lastDigit >= 2 && lastDigit <= 4) word = 'часа';
+      }
+      return `${hours} ${word}`;
+    }
+  }
+
+  const driverData = order.drivers?.find(
+    (d: any) => d.u_id === order.b_options.winnerMaster,
+  );
+  const masterReqData = driverData?.c_options || {};
+  const isOrderCompleted = order.b_state === '4';
+  const isCancelRequested =
+    !!order.b_options?.is_request_for_cancel_exist || order.b_state == '3';
+  const isOwner = order.u_id === user?.u_id;
+  const isMasterAgreeWithCancelRequest =
+    order.b_options.is_master_agree_with_cancel || order.b_state == '3';
+  const isOpenDispute = order.b_options.is_open_dispute;
+  const isMasterAgreeWithDispute = order.b_options.is_master_agree_with_dispute;
+  return (
+    <>
+      {isVisibleAddFeedback && (
+        <AddFeedbackModal
+          id={order.b_id}
+          setVisibleAddFeedback={setVisibleAddFeedback}
+          setVisibleFinalOrder={() => {}}
+        />
+      )}
+
+      {/* Полный JSX блока заказа */}
+      <div className="chat_technical_message">
+        <div className={`${styles.message_block} ${styles.text_right}`}>
+          <div className="my_chat">
+            <div
+              className="correspondence-active font_inter df"
+              style={{ gap: '10px' }}
+            >
+              <div className="ciril-img" style={{ opacity: 0 }}>
+                <img
+                  src="/img/chat_img/2.png"
+                  style={{ width: '58px', height: '58px' }}
+                  alt="img absent"
+                />
+              </div>
+              <div className="let">
+                <div
+                  className="letter_kiril df"
+                  style={{ gap: '10px', justifyContent: 'flex-end' }}
+                >
+                  <div className="letter_text-2">
+                    <h3>13:44</h3>
+                  </div>
+                  <div className="letter_text-1">
+                    <h2>Вы</h2>
+                  </div>
+                  <img
+                    src={currentUser.u_photo || '/img/img-camera.png'}
+                    style={{ width: '58px', height: '58px', borderRadius: 30 }}
+                    alt="img absent"
+                  />
+                </div>
+                <div className={styles.block_bid}>
+                  <p>
+                    {order.b_options.orderType === 'request'
+                      ? 'Выбранная модель устройства'
+                      : 'Размещен на биржи заказ'}{' '}
+                    <Link
+                      to={'/master/requests'}
+                      className={styles.block_bid__link}
+                    >
+                      {order?.b_options?.title}
+                    </Link>
+                  </p>
+                  {order.b_options.orderType === 'request' && (
+                    <p>
+                      Перечень работ:
+                      <span>{order?.b_options?.title}</span>
+                    </p>
+                  )}
+                  <p>Описание клиента {order?.b_options?.description}</p>
+                  <p>
+                    Мастер откликнулся на этот заказ, сделав предложение на
+                    сумму {masterReqData?.bind_amount} рублей.
+                  </p>
+                  <p>
+                    Слова мастера из{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'заявки'
+                      : 'заказа на бирже!'}{' '}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="chat_technical_message">
+        <div className={`${styles.message_block} ${styles.text_left}`}>
+          <div
+            className={`correspondence df font_inter`}
+            style={{ flexDirection: 'column', gap: '10px' }}
+          >
+            <div className="correspondence_ciril df_chat">
+              <div className="ciril-img">
+                <img
+                  style={{ width: 58, height: 58, borderRadius: 30 }}
+                  src={masterUser.u_photo || '/img/img-camera.png'}
+                  alt="img absent"
+                />
+              </div>
+              <div className="let">
+                <div className="letter_kiril df" style={{ gap: '10px' }}>
+                  <div className="letter_text-1">
+                    <h2>{masterUser.u_name}</h2>
+                  </div>
+                  <div className="letter_text-2">
+                    <h3>13:44</h3>
+                  </div>
+                  <div className="right_menu-img df align mini-gap">
+                    <img
+                      className="ansver"
+                      src="/img/chat_img/ответ.png"
+                      alt="img absent"
+                    />
+                    <img src="/img/chat_img/span.png" alt="img absent" />
+                  </div>
+                </div>
+                <div
+                  className={`${styles.individual_order} ${styles.individual_order2}`}
+                >
+                  <div className={styles.individual_order__heading}>
+                    <img src="/img/icons/cil_basket.png" alt="" />
+                    <p>
+                      Индивидуальное предложение{' '}
+                      {order.b_options.orderType === 'request'
+                        ? 'заявки'
+                        : 'заказа'}
+                    </p>
+                  </div>
+                  <div className={styles.individual_order__block}>
+                    <details className={styles.individual_order__details}>
+                      <summary className={styles.individual_order__order}>
+                        <p style={{ position: 'relative' }}>
+                          {order.b_options.title}
+                          <div
+                            className={`miniSwiperWrap miniswiperslideInfo ${styles.miniswiperslideInfo} ${styles.miniSwiperWrap}`}
+                          >
+                            <MiniSlider />
+                          </div>
+                        </p>
+                        <div className={styles.individual_order__arrow}>
+                          <img src="/img/bot.png" alt="" />
+                        </div>
+                        <div style={{ flex: 1 }}></div>
+                        <p className={styles.modile_hidden}>
+                          {' '}
+                          {formatTimeByHours(Number(masterReqData.time))}
+                        </p>
+                        <p className={styles.modile_hidden}>
+                          {masterReqData.bind_amount}
+                        </p>
+                      </summary>
+                      <div className={styles.individual_order__more}>
+                        <p>
+                          условия{' '}
+                          {order.b_options.orderType === 'request'
+                            ? 'заявки'
+                            : 'заказа'}
+                        </p>
+                        <p>{order.b_options.description} </p>
+                      </div>
+                    </details>
+                  </div>
+                  <div className={styles.individual_order__final}>
+                    <p>Итого:</p>
+                    <p> {formatTimeByHours(Number(masterReqData.time))}</p>
+                    <p>{masterReqData.bind_amount} ₽</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className={styles.create_order}>
+              <img src="/img/icons/box.png" alt="" />
+              <div>
+                <p>
+                  {order.b_options.orderType === 'request' ? 'заявка' : 'заказ'}{' '}
+                  создан
+                </p>
+                <p>
+                  Номер{' '}
+                  {order.b_options.orderType === 'request'
+                    ? 'заявки'
+                    : 'заказа'}{' '}
+                  <a
+                    className={styles.create_order__link}
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setOpenZayavka((prev) => !prev);
+                    }}
+                  >
+                    №{order.b_id}
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {isOpenZayavka && (
+        <div className="chat_technical_message">
+          <div className={`${styles.message_block} ${styles.text_left}`}>
+            <div
+              className={`correspondence df font_inter ${styles.create_order__message}`}
+            >
+              <div className="correspondence_ciril df_chat">
+                <div className="ciril-img">
+                  <img
+                    style={{ width: '58px', height: '58px', borderRadius: 30 }}
+                    src={masterUser.u_photo || '/img/img-camera.png'}
+                    alt="img absent"
+                  />
+                </div>
+                <div className="let">
+                  <div className="letter_kiril df" style={{ gap: '10px' }}>
+                    <div className="letter_text-1">
+                      <h2>{masterUser.u_name}</h2>
+                    </div>
+                    <div className="letter_text-2">
+                      <h3>13:44</h3>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.create_order__heading}>
+                <p>Услуги</p>
+                <div style={{ flex: 1 }}></div>
+                <p>Кол-во</p>
+                <p>Срок</p>
+                <p>Стоимость</p>
+              </div>
+              <div className={styles.create_order__data}>
+                <div style={{ position: 'relative' }}>
+                  <p style={{ position: 'relative' }}>
+                    {order.b_options.title}
+                  </p>
+                  {!isShowDetailsOrder ? (
+                    <img
+                      onClick={() => setShowDetailsOrder(true)}
+                      style={{ marginLeft: '10px', cursor: 'pointer' }}
+                      src="/img/bot.png"
+                      alt=""
+                    />
+                  ) : null}
+                </div>
+                <div style={{ flex: 1 }}></div>
+                <p>1</p>
+                <p style={{ whiteSpace: 'nowrap' }}>
+                  {' '}
+                  {formatTimeByHours(Number(masterReqData.time))}
+                </p>
+                <p className={styles.create_order__price}>
+                  {masterReqData.bind_amount} ₽
+                </p>
+              </div>
+              {isShowDetailsOrder && (
+                <div className={styles.create_order__dataVisible}>
+                  <p>
+                    Условия{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'заявки'
+                      : 'заказа'}{' '}
+                    {order?.b_options?.description}
+                  </p>
+                  <p>
+                    Свернуть
+                    <img
+                      style={{
+                        marginLeft: '10px',
+                        cursor: 'pointer',
+                        rotate: '180deg',
+                      }}
+                      onClick={() => setShowDetailsOrder(false)}
+                      src="/img/bot.png"
+                      alt=""
+                    />
+                  </p>
+                  <div className={styles.create_order__line} />
+                  <div className={styles.create_order__final}>
+                    <p>Итого:</p>
+                    <p> {formatTimeByHours(Number(masterReqData.time))}</p>
+                    <p className={styles.create_order__price}>
+                      {masterReqData.bind_amount} ₽
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {!isOrderCompleted && !isCancelRequested && !isOpenDispute && (
+        <div className="chat_technical_message">
+          <div className={styles.confirm_block}>
+            <button onClick={handleConfirmOrder} disabled={isLoading}>
+              {isLoading
+                ? 'Обработка...'
+                : `Подтвердить ${
+                    order.b_options.orderType === 'request' ? 'заявку' : 'заказ'
+                  }`}
+            </button>
+            <button
+              onClick={
+                order.b_options.payType !== 'cash'
+                  ? handleOpenDispute
+                  : handleCancelOrder
+              }
+              disabled={isLoading}
+            >
+              {order.b_options.payType === 'cash' ? (
+                <>
+                  {isLoading
+                    ? 'Обработка...'
+                    : `Отменить ${
+                        order.b_options.orderType === 'request'
+                          ? 'заявку'
+                          : 'заказ'
+                      }`}
+                </>
+              ) : (
+                'Открыть спор'
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+      {isOrderCompleted && (
+        <div className="chat_technical_message">
+          <div>
+            <div className={`${styles.cancel_block}`}>
+              <img src="/img/message_green.png" alt="" />
+              <p>
+                {order.b_options.orderType === 'request' ? 'заявка' : 'заказ'}{' '}
+                успешно подтвержден
+              </p>
+              <span>14:12</span>
+            </div>
+            <div className={styles.add_feedback}>
+              <button onClick={() => setVisibleAddFeedback(true)}>
+                Оставить отзыв
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isCancelRequested &&
+        !isOrderCompleted &&
+        isOpenDispute &&
+        (isOwner ? (
+          <div className="chat_technical_message">
+            <div className={styles.cancel_block}>
+              <img src="/img/cansel_message.png" alt="" />
+              <p>
+                Вы предложили отменить{' '}
+                {order.b_options.orderType === 'request' ? 'заявку' : 'заказ'}
+              </p>
+              <span>14:12</span>
+            </div>
+          </div>
+        ) : (
+          <div className="chat_technical_message">
+            <div
+              className={`${styles.message_block} ${styles.text_center} ${styles.text_center_col}`}
+            >
+              <div className={styles.cancel_client_block}>
+                <img src="/img/cansel_message.png" alt="" />
+                <div>
+                  <p>В работе 17:08</p>
+                  <p>
+                    Клиент предлагает отменить{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'заявку'
+                      : 'заказ'}
+                  </p>
+                </div>
+              </div>
+              {typeof isMasterAgreeWithCancelRequest === 'boolean' &&
+              !isMasterAgreeWithCancelRequest ? (
+                <div className={styles.cancel_client_block}>
+                  <img src="/img/message_cancel.png" alt="" />
+                  <div>
+                    <p>В работе 17:08</p>
+                    <p>
+                      Вы отказались принимать отмену{' '}
+                      {order.b_options.orderType === 'request'
+                        ? 'заявки'
+                        : 'заказа'}
+                    </p>
+                  </div>
+                </div>
+              ) : typeof isMasterAgreeWithCancelRequest === 'boolean' &&
+                isMasterAgreeWithCancelRequest ? (
+                <div className={styles.cancel_client_block}>
+                  <img src="/img/message_green.png" alt="" />
+                  <div>
+                    <p>В работе 17:08</p>
+                    <p>
+                      Вы приняли отмену{' '}
+                      {order.b_options.orderType === 'request'
+                        ? 'заявки'
+                        : 'заказа'}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.cancel_client_confirm}>
+                  <button
+                    onClick={async () => {
+                      await updateRequest(
+                        order.b_id,
+                        {
+                          is_master_agree_with_cancel: true,
+                        },
+                        true,
+                        order.u_id,
+                      );
+                      refetchRequests();
+                    }}
+                  >
+                    Подтвердить отмену{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'заявки'
+                      : 'заказа'}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await updateRequest(
+                        order.b_id,
+                        {
+                          is_master_agree_with_cancel: false,
+                        },
+                        true,
+                        order.u_id,
+                      );
+                      refetchRequests();
+                    }}
+                  >
+                    Нет
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      {isMasterAgreeWithCancelRequest && isOwner && (
+        <div className="chat_technical_message">
+          <div className={`${styles.message_block} ${styles.text_center}`}>
+            <div className={styles.cancel_block}>
+              <img src="/img/message_green.png" alt="" />
+              <p>
+                Исполнитель согласился на отмену{' '}
+                {order.b_options.orderType === 'request' ? 'заявки' : 'заказа'}{' '}
+                5:42
+              </p>
+            </div>
+            <div className={styles.add_feedback} style={{ maxWidth: '750px' }}>
+              <button onClick={() => setVisibleAddFeedback(true)}>
+                Оставить отзыв
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isOpenDispute &&
+        (isOwner ? (
+          <div className="chat_technical_message">
+            <div>
+              <div className={`${styles.message_block} ${styles.text_center}`}>
+                <div className={`${styles.cancel_block}`}>
+                  <img src="/img/message_cancel.png" alt="" />
+                  <p>
+                    Открылся спор по{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'данной заявки'
+                      : 'данному заказу'}{' '}
+                    19:08
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="chat_technical_message">
+            <div className={styles.dispute_block}>
+              <p className={styles.dispute_heading}>Клиент открыл спор</p>
+              <div className={styles.dispute_details}>
+                <div className={styles.row_title}>
+                  <p>
+                    {order.b_options.orderType === 'request'
+                      ? 'Размещена заявка'
+                      : 'Размещен заказ'}{' '}
+                  </p>
+                  <Link to="#" className={styles.dispute_link}>
+                    {order.b_options.title}
+                  </Link>
+                </div>
+                <div className={styles.dispute_description}>
+                  <p>{order.b_options.dispute_comment}</p>
+                  <div className={`miniSwiperWrap ${styles.miniSwiperWrap}`}>
+                    <div className="miniSlider">
+                      <SimpleImage />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {!(typeof isMasterAgreeWithDispute === 'boolean') && (
+                <div className={styles.dispute_row}>
+                  <button
+                    className={styles.dispute_button}
+                    onClick={async () => {
+                      await updateRequest(
+                        order.b_id,
+                        {
+                          is_master_agree_with_dispute: true,
+                        },
+                        true,
+                        order.u_id,
+                      );
+                      refetchRequests();
+                    }}
+                  >
+                    Подтвердить отмену{' '}
+                    {order.b_options.orderType === 'request'
+                      ? 'заявки'
+                      : 'заказа'}
+                  </button>
+                  <button
+                    className={styles.dispute_button}
+                    onClick={async () => {
+                      await updateRequest(
+                        order.b_id,
+                        {
+                          is_master_agree_with_dispute: false,
+                        },
+                        true,
+                        order.u_id,
+                      );
+                      refetchRequests();
+                    }}
+                  >
+                    Обратиться в арбитраж
+                  </button>
+                </div>
+              )}
+              {!isMasterAgreeWithDispute ? (
+                <div className="chat_technical_message">
+                  <div
+                    className={`${styles.message_block} ${styles.text_center}`}
+                  >
+                    <div className={styles.cancel_client_block}>
+                      <img src="/img/message_cancel.png" alt="" />
+                      <div>
+                        <p>В работе 17:08</p>
+                        <p>
+                          Вы отказались от{' '}
+                          {order.b_options.orderType === 'request'
+                            ? 'заявки'
+                            : 'заказа'}
+                          !
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="chat_technical_message">
+                  <div
+                    className={`${styles.message_block} ${styles.text_center}`}
+                  >
+                    <div className={`${styles.cancel_block}`}>
+                      <img src="/img/message_cancel.png" alt="" />
+                      <p>
+                        Открылся спор по{' '}
+                        {order.b_options.orderType === 'request'
+                          ? 'данной заявке'
+                          : 'данному заказу'}{' '}
+                        19:08
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+    </>
+  );
+};
+
 function ChoiceOfReplenishmentMethodCard() {
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
     ({} as any);
-  const [currentOrder, setCurrentOrder] = useState(null as any);
-  const [currentUser, setCurrentUser] = useState(null as any);
-  const [masterUser, setMasterUser] = useState(null as any);
-  const [visibleTestCancel, setVisibleTestCancel] = useState(false);
-  const [visibleTestAcceptItem, setVisibleTestAcceptItem] = useState(false);
-  const [visibleTestCancel2, setVisibleTestCancel2] = useState('');
-  const [visibleTestCancelOrder2, setVisibleTestCancelOrder2] = useState('');
-
-  const [visibleTestCancel3, setVisibleTestCancel3] = useState('');
-
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
   const [isVisibleAddOrder, setVisibleAddOrder] = useState(false);
   const [isVisibleEmoji, setVisibleEmoji] = useState(false);
-  const [isVisibleAddFeedback, setVisibleAddFeedback] = useState(false);
-  const [isVisibleFinalOrder, setVisibleFinalOrder] = useState(false);
-  const [isVisibleDispute, setVisibleDispute] = useState(false);
-  const [isVisibleDisputeFinal, setVisibleDisputeFinal] = useState(false);
-  const [isVisibleConfirmOrder, setVisibleConfirmOrder] = useState(false);
-  const [isVisibleConfirmOrderFinal, setVisibleConfirmOrderFinal] =
+  const [isDeleteBlockChat, setIsDeleteChat] = useState(false);
+  const [isOkModal, setVisibleOkModal] = useState(false);
+  const [isVisibleBlock, setIsVisibleBlock] = useState(false);
+  const [zayavka__isVisibleDispute, zayavka__setVisibleDispute] =
     useState(false);
-  const [isOrderCancel, setIsOrderCancel] = useState(false);
-  const [isVisibleModalArbitation, setVisibleModalArbitation] = useState(false);
-  const [isVisibleCancelOrder, setVisibleCancelOrder] = useState(false);
-  const [isVisibleCancelOrderFinal, setVisibleCancelOrderFinal] =
+  const [zayavka__isVisibleDisputeFinal, zayavka__setisVisibleDisputeFinal] =
     useState(false);
-  const [isConfirmDoneOrder, setIsConfirmDoneOrder] = useState(false);
-  const [isOpenOrder, setOpenOrder] = useState(false);
-  const [isOpenPovtor, setOpenPovtor] = useState(false);
-  const [isOpenZayavka, setOpenZayavka] = useState(false);
-  const [isShowDetailsOrder, setShowDetailsOrder] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<number>(0);
+  const { id } = useParams<{ id: string }>();
+  const ui = useSelector(selectUI);
+  const userRequests = useService(
+    ui.isMaster ? getMasterOrders : getAllClientRequests,
+    [],
+  );
 
-  const { id } = useParams();
+  const groupedChats = useMemo(() => {
+    const rawRequests =
+      userRequests?.data
+        ?.map((item: any) => Object.values(item?.data?.booking || {}))
+        .flat()
+        .filter((request: any) => request?.b_id)
+        .sort(
+          (a, b) =>
+            new Date(a.b_created).getTime() - new Date(b.b_created).getTime(),
+        ) || [];
+    const filteredRequests = rawRequests.filter(
+      (item: any) =>
+        item.b_options?.winnerMaster && item.drivers && item.drivers.length > 0,
+    );
+    const chatsByMaster = filteredRequests.reduce((acc: any, request: any) => {
+      const masterId = request.b_options.winnerMaster;
+      if (!acc[masterId]) {
+        acc[masterId] = [];
+      }
+      acc[masterId].push(request);
+      return acc;
+    }, {});
+
+    return Object.values(chatsByMaster).map((orders: any): GroupedChat => {
+      const firstOrder = orders[0];
+      const winnerDriver = firstOrder.drivers.find(
+        (d: any) => d.u_id === firstOrder.b_options.winnerMaster,
+      );
+      return {
+        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
+        masterInfo: winnerDriver?.c_options?.author || {},
+        orders: orders,
+      };
+    });
+  }, [userRequests.data]);
+
+  const currentChat = useMemo(() => {
+    if (!id) return null;
+    return groupedChats.find((chat) => chat.chatId === id) || null;
+  }, [id, groupedChats]);
+
   useEffect(() => {
-    async function fetchOrder() {
-      const currentOrder = await appFetch(`/drive/get/${id}`);
-      const order = Object.values(currentOrder.data.booking || {})[0] as any;
+    async function fetchChatParticipants() {
+      if (!currentChat) return;
+      const client_id = currentChat.chatId.split('_')[0];
+      const master_id = currentChat.chatId.split('_')[1];
 
-      await appFetch(`user/${order.u_id}`, {}, true).then((v) =>
+      appFetch(`user/${client_id}`, {}, true).then((v) =>
         setCurrentUser(Object.values(v.data.user || {})[0] as object),
       );
+      appFetch(`user/${master_id}`, {}, true).then((v) =>
+        setMasterUser(Object.values(v.data.user || {})[0] as object),
+      );
+    }
+    fetchChatParticipants();
+  }, [currentChat]);
 
-      await appFetch(`user/${order.b_options.winnerMaster}`, {}, true).then(
-        (v) => {
-          const currentWinner =
-            order.drivers.find(
-              (item) =>
-                String(item.u_id) === String(order.b_options.winnerMaster),
-            ) || {};
-          setMasterUser({
-            ...(Object.values(v.data.user || {})[0] as object),
-            master_req_data: { ...currentWinner.c_options },
-          });
-        },
-      );
-      setCurrentOrder(
-        Object.values(currentOrder.data.booking || {})[0] as object,
-      );
-    }
-    if (id) fetchOrder();
-  }, [id]);
-  useEffect(() => {
-    console.log(currentOrder);
-    if (currentOrder && currentOrder.b_state === '4') {
-      setIsConfirmDoneOrder(true);
-    }
-    if (currentOrder && currentOrder.b_options.is_request_for_cancel_exist) {
-      setIsOrderCancel(true);
-    }
-  }, [currentOrder]);
   useEffect(() => {
     document.title = 'Чат';
     document.body.style.overflow = 'hidden';
@@ -122,58 +848,23 @@ function ChoiceOfReplenishmentMethodCard() {
   const [answer, Isanswer] = useState(false);
   const [edit, Isedit] = useState(false);
   const [chooseFile, IschooseFile] = useState(false);
-
   const [message, setMessage] = useState('');
   function addEmojiToMessage(emoji: EmojiClickData) {
     setMessage((prevMessage) => prevMessage + emoji.emoji);
   }
 
-  function handleInputChat(event) {
+  function handleInputChat(event: React.ChangeEvent<HTMLInputElement>) {
     setMessage(event.target.value);
   }
-  const [isVisibleDeleteMessage, setVisibleDeleteMessage] = useState(false);
-  const [isOpenDispute, setOpenDispute] = useState(false);
-  const [isConfirmOrder, setConfirmOrder] = useState(false);
-
-  const [dispute__isVisibleModal, dispute__SetVisibleModal] = useState(false);
-  const [dispute__isVisibleModalFinal, dispute__SetVisibleModalFinal] =
-    useState(false);
-  const [dispute__isVConfirmOrder, dispute__SetConfirmOrder] = useState(false);
-
-  const [order__isDenyOrder, order__setDenyOrder] = useState(false);
-
-  // const [zayavka__isVisibleDispute, zayavka__SetVisibleDispute] = useState(false)
-  const [zayavka__isVisibleModal, zayavka__SetVisibleModal] = useState(false);
-  const [zayavka__isVisibleModalFinal, zayavka__SetVisibleModalFinal] =
-    useState(false);
-  const [zayavka__isConfirmOrder, zayavka__SetConfirmOrder] = useState(false);
-  const [zayavka__isOpenDispute, zayavka__setOpenDispute] = useState(false);
-
-  const [zayavka__isVisibleDispute, zayavka__setVisibleDispute] =
-    useState(false);
-  const [zayavka__isVisibleDisputeFinal, zayavka__setisVisibleDisputeFinal] =
-    useState(false);
-
-  const [visibleTestCancelV2, setVisibleTestCancelV3] = useState(false);
-  const [visibleTestAcceptV2, setVisibleTestAcceptV2] = useState(false);
-
-  const [isCancelOrderV4, setCancelOrderV4] = useState(false);
-  const [isCancelOrderItemV4, setCancelOrderItemV4] = useState(false);
-
-  const [isVisibleCancelOrderV4, setVisibleCancelOrderV4] = useState(false);
-  const [isVisibleCancelOrderItemV4, setVisibleCancelOrderItemV4] =
-    useState(false);
   const [isAtBottom, setIsAtBottom] = useState(false);
   const chatBlockRef = useRef<HTMLDivElement>(null);
 
-  // Функция для прокрутки вниз
   const scrollToBottom = () => {
     if (chatBlockRef.current) {
       chatBlockRef.current.scrollTop = chatBlockRef.current.scrollHeight;
     }
   };
 
-  // Проверка, находимся ли мы внизу страницы
   const handleScroll = () => {
     if (chatBlockRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = chatBlockRef.current;
@@ -182,90 +873,36 @@ function ChoiceOfReplenishmentMethodCard() {
     }
   };
 
-  // Добавляем и удаляем слушатель события прокрутки
   useEffect(() => {
     const chatBlock = chatBlockRef.current;
-
     if (chatBlock) {
       chatBlock.addEventListener('scroll', handleScroll);
-      handleScroll(); // Проверяем положение скролла при загрузке
+      handleScroll();
     }
-
     return () => {
       if (chatBlock) {
         chatBlock.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [id]); // Теперь обработчик обновляется при смене чата
+  }, [id]);
 
-  // Стили для кнопки
-  // const behaiveStyles: React.CSSProperties = {
-  //     position: 'fixed',
-  //     bottom: '120px',
-  //     borderRadius: '50%',
-  //     right: '20px',
-  //     width: '40px',
-  //     height: '40px',
-  //     display: isAtBottom ? 'flex' : 'none', // Показать кнопку, если прокрутили больше чем 200px от низа
-  //     justifyContent: 'center',
-  //     alignItems: 'center',
-  //     background: 'rgb(185, 185, 185)', // Сделаем фон кнопки прозрачным
-  //     border: 'none',
-  //     cursor: 'pointer',
-  //     padding: '0',
-  //     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  //     zIndex: 9999, // Чтобы кнопка была поверх другого контента
-  // };
+  if ((!currentUser || !masterUser) && id) return 'Загрузка...';
 
-  const imageStyles: React.CSSProperties = {};
-  const [isVisibleModalArbitationV5, setVisibleModalArbitationV5] =
-    useState(false);
-  const [isVisibleModalArbitationItemV5, setVisibleModalArbitationItemV5] =
-    useState(false);
-  const [isVisibleModalArbitationFinalV5, setVisibleModalArbitationFinalV5] =
-    useState(false);
-  const [
-    isVisibleModalArbitationFinalItemV5,
-    setVisibleModalArbitationFinalItemV5,
-  ] = useState(false);
-  const [isDisputeArbitr, setDisputeArbitr] = useState(false);
-  const [isDisputeArbitrItem, setDisputeArbitrItem] = useState(false);
-
-  const [isVisibleBlock, setIsVisibleBlock] = useState(false);
-  const [isDeleteBlockChat, setIsDeleteChat] = useState(false);
-  const [isOkModal, setVisibleOkModal] = useState(false);
-  function formatTimeByHours(hours) {
-    if (Number.isNaN(hours)) return 'Готов ждать';
-    if (hours >= 24) {
-      const days = Math.floor(hours / 24);
-      const lastDigit = days % 10;
-      const lastTwo = days % 100;
-
-      let word = 'дней';
-      if (lastTwo < 11 || lastTwo > 14) {
-        if (lastDigit === 1) word = 'день';
-        else if (lastDigit >= 2 && lastDigit <= 4) word = 'дня';
-      }
-
-      return `${days} ${word}`;
-    } else {
-      const lastDigit = hours % 10;
-      const lastTwo = hours % 100;
-
-      let word = 'часов';
-      if (lastTwo < 11 || lastTwo > 14) {
-        if (lastDigit === 1) word = 'час';
-        else if (lastDigit >= 2 && lastDigit <= 4) word = 'часа';
-      }
-
-      return `${hours} ${word}`;
-    }
-  }
-
-  if ((!currentUser || !currentOrder || !masterUser) && id)
-    return 'Загрузка...';
   return (
     <>
+      {zayavka__isVisibleDispute ? (
+        <DisputeModalV2
+          refetchRequests={userRequests.refetch}
+          id={currentOrderId}
+          setVisibleDispute={zayavka__setVisibleDispute}
+          setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
+        />
+      ) : null}
+      {zayavka__isVisibleDisputeFinal ? (
+        <DisputeFinalModalV2
+          setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
+        />
+      ) : null}
       {isOkModal ? <OkModal setVisibleBlackList={setVisibleOkModal} /> : null}
       {isDeleteBlockChat ? (
         <DeleteChatModal setVisibleBlackList={setIsDeleteChat} />
@@ -276,141 +913,11 @@ function ChoiceOfReplenishmentMethodCard() {
       {isVisibleBlackList ? (
         <BlackListModal setVisibleBlackList={setVisibleBlackList} />
       ) : null}
-      {/* `/drive/get/${id}`, {
-      token: token,
-      u_hash: hash,
-      u_a_role: type === 'owner' ? 1 : 2,
-      action: 'set_rate',
-      value: rate,
-    } */}
       {isVisibleAddOrder ? (
         <AddOrderModal
           setVisibleAddOrder={setVisibleAddOrder}
           setVisibleOkModal={setVisibleOkModal}
-          currentOrder={currentOrder || {}}
-        />
-      ) : null}
-      {isVisibleAddFeedback ? (
-        <AddFeedbackModal
-          id={currentOrder.b_id}
-          setVisibleAddFeedback={setVisibleAddFeedback}
-          setVisibleFinalOrder={setVisibleFinalOrder}
-        />
-      ) : null}
-      {isVisibleFinalOrder ? (
-        <FinalOrder setVisibleFinalOrder={setVisibleFinalOrder} />
-      ) : null}
-      {isVisibleDispute ? (
-        <DisputeModal
-          setVisibleDispute={setVisibleDispute}
-          setVisibleDisputeFinal={setVisibleDisputeFinal}
-        />
-      ) : null}
-      {isVisibleDisputeFinal ? (
-        <DisputeFinalModal
-          setVisibleDisputeFinal={setVisibleDisputeFinal}
-          setOpenDispute={setOpenDispute}
-        />
-      ) : null}
-      {isVisibleConfirmOrder ? (
-        <ConfirmOrder
-          setVisibleConfirmOrder={setVisibleConfirmOrder}
-          setVisibleConfirmOrderFinal={setVisibleConfirmOrderFinal}
-        />
-      ) : null}
-      {isVisibleConfirmOrderFinal ? (
-        <ConfirmOrderFinal
-          setVisibleConfirmOrderFinal={setVisibleConfirmOrderFinal}
-          setConfirmOrder={setConfirmOrder}
-        />
-      ) : null}
-      {isVisibleModalArbitation ? (
-        <ModalАrbitration
-          setVisibleModalArbitation={setVisibleModalArbitation}
-          setVisibleDisputeFinal={setVisibleDisputeFinal}
-        />
-      ) : null}
-      {isVisibleCancelOrder ? (
-        <CancelOrder
-          setVisibleCancelOrder={setVisibleCancelOrder}
-          setVisibleCancelOrderFinal={setVisibleCancelOrderFinal}
-        />
-      ) : null}
-
-      {dispute__isVisibleModal ? (
-        <ConfirmOrderV2
-          setVisibleConfirmOrder={dispute__SetVisibleModal}
-          setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal}
-        />
-      ) : null}
-      {dispute__isVisibleModalFinal ? (
-        <ConfirmOrderFinalV2
-          setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal}
-          setConfirmOrder={dispute__SetConfirmOrder}
-        />
-      ) : null}
-
-      {zayavka__isVisibleModal ? (
-        <ConfirmOrderV3
-          setVisibleConfirmOrder={zayavka__SetVisibleModal}
-          setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal}
-        />
-      ) : null}
-      {zayavka__isVisibleModalFinal ? (
-        <ConfirmOrderFinalV3
-          setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal}
-          setConfirmOrder={zayavka__SetConfirmOrder}
-        />
-      ) : null}
-      {zayavka__isVisibleDispute ? (
-        <DisputeModalV2
-          setVisibleDispute={zayavka__setVisibleDispute}
-          setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
-        />
-      ) : null}
-      {zayavka__isVisibleDisputeFinal ? (
-        <DisputeFinalModalV2
-          setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
-          setOpenDispute={zayavka__setOpenDispute}
-        />
-      ) : null}
-
-      {isVisibleCancelOrderV4 ? (
-        <CancelOrderV4
-          setVisibleCancelOrder={setVisibleCancelOrderV4}
-          setVisibleCancelOrderFinal={setCancelOrderV4}
-        />
-      ) : null}
-      {isVisibleCancelOrderItemV4 ? (
-        <CancelOrderItemV4
-          setVisibleCancelOrder={setVisibleCancelOrderItemV4}
-          setVisibleCancelOrderFinal={setCancelOrderItemV4}
-        />
-      ) : null}
-
-      {isVisibleModalArbitationV5 ? (
-        <ModalАrbitration
-          setVisibleModalArbitation={setVisibleModalArbitationV5}
-          setVisibleDisputeFinal={setVisibleModalArbitationFinalV5}
-        />
-      ) : null}
-      {isVisibleModalArbitationItemV5 ? (
-        <ModalАrbitrationItem
-          setVisibleModalArbitation={setVisibleModalArbitationItemV5}
-          setVisibleDisputeFinal={setVisibleModalArbitationFinalItemV5}
-        />
-      ) : null}
-
-      {isVisibleModalArbitationFinalV5 ? (
-        <DisputeFinalModalV5
-          setVisibleDisputeFinal={setVisibleModalArbitationFinalV5}
-          setOpenDispute={setDisputeArbitr}
-        />
-      ) : null}
-      {isVisibleModalArbitationFinalItemV5 ? (
-        <DisputeFinalItemModalV5
-          setVisibleDisputeFinal={setVisibleModalArbitationFinalItemV5}
-          setOpenDispute={setDisputeArbitrItem}
+          currentOrder={currentChat?.orders[0] || {}}
         />
       ) : null}
 
@@ -431,7 +938,7 @@ function ChoiceOfReplenishmentMethodCard() {
           <FrameMessages />
         )}
 
-        {id ? (
+        {id && currentChat ? (
           <div className="profil fchat__profile">
             <div
               className={`kiril_profil kiril_profil_fchat df font_inter ${styles.profile_top_row}`}
@@ -448,7 +955,6 @@ function ChoiceOfReplenishmentMethodCard() {
                   src="/img/dropdownuser.png"
                   className="dropdownuser_arrow"
                   alt="Scroll Down"
-                  style={imageStyles}
                 />
               </div>
               <Link to="/profile-number">
@@ -475,7 +981,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         <OnlineDotted isVisible={true} />
                       </div>
                       <img
-                        src={masterUser.u_photo || '/img/img-camera.png'}
+                        src={masterUser?.u_photo || '/img/img-camera.png'}
                         alt="img absent"
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                       />
@@ -483,21 +989,12 @@ function ChoiceOfReplenishmentMethodCard() {
                   </div>
 
                   <div className="nik">
-                    <h2 className="eyrqwe">{masterUser.u_name}</h2>
-
+                    <h2 className="eyrqwe">{masterUser?.u_name}</h2>
                     <div className="info_nik df">
                       <div className="kiril_info">
                         <h3>Офлайн 31 минута</h3>
                       </div>
                     </div>
-
-                    {/* <div className="info_nik df">
-                                                <div className="kiril_info">
-                                                    <h3>
-                                                        Информация с настроек
-                                                    </h3>
-                                                </div>
-                                            </div> */}
                   </div>
                 </div>
               </Link>
@@ -528,10 +1025,7 @@ function ChoiceOfReplenishmentMethodCard() {
                     </Dropdown.Item>
                   )}
                   {window.location.pathname.includes('/master/chat') ? null : (
-                    <Dropdown.Item
-                      className={styles.item}
-                      onClick={() => setVisibleAddFeedback(true)}
-                    >
+                    <Dropdown.Item className={styles.item}>
                       <img src="/img/icons/review.png" alt="" />
                       Оставить отзыв
                     </Dropdown.Item>
@@ -540,28 +1034,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   <Dropdown.Item
                     className={styles.item}
                     onClick={() => {
-                      if (
-                        currentUser.u_details?.black_list?.find(
-                          (item) =>
-                            item.id?.toString() ===
-                            currentOrder.b_options.winnerMaster.toString(),
-                        )
-                      )
-                        return;
-
-                      updateUser({
-                        details: {
-                          black_list: [
-                            ...(Array.isArray(user?.u_details?.black_list)
-                              ? user?.u_details?.black_list
-                              : []),
-                            {
-                              id: currentOrder.b_options.winnerMaster,
-                              date: new Date().toISOString(),
-                            },
-                          ],
-                        },
-                      });
+                      // Логика блокировки
                     }}
                   >
                     <img src="/img/icons/block.png" alt="" />
@@ -595,1584 +1068,20 @@ function ChoiceOfReplenishmentMethodCard() {
             </div>
 
             <div className="chatt awqervgg chat_block__ashd" ref={chatBlockRef}>
-              <div className="right_menu">
-                <div className="call_date font_inter chat_date_hover">
-                  <div
-                    className="cal_date-text df align"
-                    style={{ margin: 'auto', justifyContent: 'center' }}
-                  >
-                    <div className="date_line-left"></div>
-                    <div className="date1">
-                      <h2>21 АВГ</h2>
-                    </div>
-                    <div className="date_line-right"></div>
-                  </div>
-                </div>
-              </div>
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_right}`}>
-                  <div className="my_chat">
-                    <div
-                      className="correspondence-active font_inter df"
-                      style={{ gap: '10px' }}
-                    >
-                      <div className="ciril-img">
-                        <img
-                          src="/img/chat_img/2.png"
-                          style={{
-                            width: '58px',
-                            height: '58px',
-                            opacity: '0',
-                          }}
-                          alt="img absent"
-                        />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px', justifyContent: 'flex-end' }}
-                        >
-                          <div
-                            className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}
-                          >
-                            <img
-                              src="/img/chat_img/edid.png"
-                              onClick={() => Isedit(true)}
-                              alt="img absent"
-                            />
-                            <div style={{ position: 'relative' }}>
-                              {isVisibleDeleteMessage && (
-                                <div
-                                  className={styles.modal_delete_message}
-                                  onClick={() => setVisibleDeleteMessage(false)}
-                                >
-                                  <img
-                                    className="delete_message"
-                                    src="/img/icons/delete.png"
-                                    alt=""
-                                  />
-                                  <span>удалить сообщение</span>
-                                </div>
-                              )}
-                              <img
-                                className="delete_message"
-                                onClick={() => setVisibleDeleteMessage(true)}
-                                src="/img/icons/delete.png"
-                                alt=""
-                              />
-                            </div>
-
-                            {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="letter_text-1">
-                            <h2>Вы</h2>
-                          </div>
-                          <img
-                            src={user.u_photo || '/img/img-camera.png'}
-                            style={{
-                              width: '58px',
-                              height: '58px',
-                              borderRadius: 30,
-                            }}
-                            alt="img absent"
-                          />
-                        </div>
-                        <div className={styles.block_bid}>
-                          <p>
-                            Размещен на биржи заказ{' '}
-                            <Link
-                              to={'/master/requests'}
-                              className={styles.block_bid__link}
-                            >
-                              {currentOrder?.b_options?.title}
-                            </Link>
-                          </p>
-                          <p>
-                            Описание клиента{' '}
-                            {currentOrder?.b_options?.description}
-                          </p>
-                          <p>
-                            Мастер откликнулся на этот заказ, сделав предложение
-                            на сумму {masterUser?.master_req_data?.bind_amount}{' '}
-                            рублей.
-                          </p>
-                          <p>Слова мастера из заказа на бирже! </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_left}`}>
-                  <div
-                    className={`correspondence df font_inter`}
-                    style={{ flexDirection: 'column', gap: '10px' }}
-                  >
-                    <div className="correspondence_ciril df_chat">
-                      <div className="ciril-img">
-                        <img
-                          style={{ width: 58, height: 58, borderRadius: 30 }}
-                          src={masterUser.u_photo || '/img/img-camera.png'}
-                          alt="img absent"
-                        />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px' }}
-                        >
-                          <div className="letter_text-1">
-                            <h2>{masterUser.u_name}</h2>
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="right_menu-img df align mini-gap">
-                            <img
-                              className="ansver"
-                              onClick={() => Isanswer(true)}
-                              src="/img/chat_img/ответ.png"
-                              alt="img absent"
-                            />
-                            <img
-                              src="/img/chat_img/span.png"
-                              alt="img absent"
-                            />
-                            {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
-                          </div>
-                        </div>
-
-                        <div
-                          className={`${styles.individual_order} ${styles.individual_order2}`}
-                        >
-                          <div className={styles.individual_order__heading}>
-                            <img src="/img/icons/cil_basket.png" alt="" />
-                            <p>Индивидуальное предложение заказа</p>
-                          </div>
-
-                          <div className={styles.individual_order__block}>
-                            <details
-                              className={styles.individual_order__details}
-                            >
-                              <summary
-                                className={styles.individual_order__order}
-                              >
-                                <p style={{ position: 'relative' }}>
-                                  Замена экрана на iphone 15 pro
-                                  <div
-                                    className={`miniSwiperWrap miniswiperslideInfo ${styles.miniswiperslideInfo} ${styles.miniSwiperWrap}`}
-                                  >
-                                    <MiniSlider />
-                                  </div>
-                                </p>
-                                <div className={styles.individual_order__arrow}>
-                                  <img src="/img/bot.png" alt="" />
-                                </div>
-                                <div style={{ flex: 1 }}></div>
-                                <p className={styles.modile_hidden}>
-                                  {' '}
-                                  {formatTimeByHours(
-                                    Number(masterUser.master_req_data.time),
-                                  )}
-                                </p>
-                                <p className={styles.modile_hidden}>
-                                  {masterUser.master_req_data.bind_amout}
-                                </p>
-                              </summary>
-                              <div className={styles.individual_order__more}>
-                                <p>условия заказа</p>
-                                <p>{currentOrder.b_options.title} </p>
-                              </div>
-                            </details>
-                          </div>
-                          <div className={styles.individual_order__final}>
-                            <p>Итого:</p>
-                            <p>
-                              {formatTimeByHours(
-                                Number(masterUser.master_req_data.time),
-                              )}
-                            </p>
-                            <p>{masterUser.master_req_data.bind_amout} ₽</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* заказ создан */}
-                    <div className={styles.create_order}>
-                      <img src="/img/icons/box.png" alt="" />
-                      <div>
-                        <p>Заказ создан</p>
-                        <p>
-                          Номер заказа{' '}
-                          <a
-                            className={styles.create_order__link}
-                            href="#"
-                            onClick={() => setOpenZayavka((prev) => !prev)}
-                          >
-                            №{currentOrder.b_id}
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {isOpenZayavka ? (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_left}`}
-                  >
-                    <div
-                      className={`correspondence df font_inter ${styles.create_order__message}`}
-                    >
-                      <div className="correspondence_ciril df_chat">
-                        <div className="ciril-img">
-                          <img
-                            style={{
-                              width: '58px',
-                              height: '58px',
-                              borderRadius: 30,
-                            }}
-                            src={masterUser.u_photo || '/img/img-camera.png'}
-                            alt="img absent"
-                          />
-                        </div>
-                        <div className="let">
-                          <div
-                            className="letter_kiril df"
-                            style={{ gap: '10px' }}
-                          >
-                            <div className="letter_text-1">
-                              <h2>{masterUser.u_name}</h2>
-                            </div>
-                            <div className="letter_text-2">
-                              <h3>13:44</h3>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.create_order__heading}>
-                        <p>Услуги</p>
-                        <div style={{ flex: 1 }}></div>
-                        <p>Кол-во</p>
-                        <p>Срок</p>
-                        <p>Стоимость</p>
-                      </div>
-                      <div className={styles.create_order__data}>
-                        <div style={{ position: 'relative' }}>
-                          <p style={{ position: 'relative' }}>
-                            {currentOrder.b_options.title}
-                          </p>
-                          {/* мини слайдер */}
-                          {isShowDetailsOrder ? (
-                            <div
-                              className={`miniSwiperWrap ${styles.miniSwiperWrap}`}
-                            >
-                              <MiniSlider />
-                            </div>
-                          ) : null}
-                          {!isShowDetailsOrder ? (
-                            <img
-                              onClick={() => setShowDetailsOrder(true)}
-                              style={{ marginLeft: '10px', cursor: 'pointer' }}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          ) : null}
-                        </div>
-                        <div style={{ flex: 1 }}></div>
-                        <p>1</p>
-                        <p style={{ whiteSpace: 'nowrap' }}>
-                          {' '}
-                          {formatTimeByHours(
-                            Number(masterUser.master_req_data.time),
-                          )}
-                        </p>
-                        <p className={styles.create_order__price}>
-                          {masterUser.master_req_data.bind_amount} ₽
-                        </p>
-                      </div>
-                      {isShowDetailsOrder ? (
-                        <div className={styles.create_order__dataVisible}>
-                          <p>
-                            Условия заказа{' '}
-                            {currentOrder?.b_options?.description}
-                          </p>
-                          <p>
-                            Свернуть
-                            <img
-                              style={{
-                                marginLeft: '10px',
-                                cursor: 'pointer',
-                                rotate: '180deg',
-                              }}
-                              onClick={() => setShowDetailsOrder(false)}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          </p>
-                          <div className={styles.create_order__line} />
-                          <div className={styles.create_order__final}>
-                            <p>Итого:</p>
-                            <p>
-                              {' '}
-                              {formatTimeByHours(
-                                Number(masterUser.master_req_data.time),
-                              )}
-                            </p>
-                            <p className={styles.create_order__price}>
-                              {masterUser.master_req_data.bind_amount} ₽
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              {currentOrder?.b_options?.pay_type ||
-              !currentOrder?.b_options?.pay_type ? (
-                <>
-                  {isConfirmOrder ||
-                  order__isDenyOrder ||
-                  isConfirmDoneOrder ||
-                  isOrderCancel ? null : (
-                    <div className="chat_technical_message">
-                      <div className={styles.confirm_block}>
-                        <button
-                          onClick={() => {
-                            appFetch(`/drive/get/${currentOrder.b_id}`, {
-                              body: {
-                                u_a_role: 1,
-                                u_id: masterUser.u_id,
-                                action: 'set_performer',
-                              },
-                            }).then((v) => console.log(v));
-                            appFetch(`/drive/get/${currentOrder.b_id}`, {
-                              body: {
-                                u_a_role: 1,
-                                action: 'set_complete_state',
-                              },
-                            }).then((v) => console.log(v));
-                            setVisibleConfirmOrderFinal(true);
-                          }}
-                        >
-                          Подтвердить заказ
-                        </button>
-                        <button
-                          onClick={() => {
-                            order__setDenyOrder(true);
-                            updateRequest(currentOrder.b_id, {
-                              is_request_for_cancel_exist: true,
-                              is_cancel_request_from_client_comfirm: false,
-                            });
-                          }}
-                        >
-                          Отменить заказ
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {isConfirmOrder ||
-                    (isConfirmDoneOrder && (
-                      <div className="chat_technical_message">
-                        <div>
-                          <div className={`${styles.cancel_block}`}>
-                            <img src="/img/message_green.png" alt="" />
-                            <p>Заказ успешно подтвержден 5:42</p>
-                          </div>
-                          <div className={styles.add_feedback}>
-                            <button onClick={() => setVisibleAddFeedback(true)}>
-                              Оставить отзыв
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-
-                  {order__isDenyOrder ||
-                    (isOrderCancel && (
-                      <div className="chat_technical_message">
-                        <div className={styles.cancel_block}>
-                          <img src="/img/cansel_message.png" alt="" />
-                          <p>Вы предложили отменить заказ 5:42</p>
-                        </div>
-                      </div>
-                    ))}
-                </>
-              ) : (
-                <>
-                  {dispute__isVConfirmOrder || isOpenDispute ? null : (
-                    <div className="chat_technical_message">
-                      <div className={styles.confirm_block}>
-                        <button onClick={() => dispute__SetVisibleModal(true)}>
-                          Подтвердить заказ
-                        </button>
-                        <button onClick={() => setVisibleDispute(true)}>
-                          Открыть спор
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  {isOpenDispute && (
-                    <div className="chat_technical_message">
-                      <div>
-                        <div
-                          className={`${styles.message_block} ${styles.text_center}`}
-                        >
-                          <div className={`${styles.cancel_block}`}>
-                            <img src="/img/message_cancel.png" alt="" />
-                            <p>Открылся спор по данному заказу 19:08</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {dispute__isVConfirmOrder && (
-                <div className="chat_technical_message">
-                  <div>
-                    <div className={`${styles.cancel_block}`}>
-                      <img src="/img/message_green.png" alt="" />
-                      <p>Заказ успешно подтвержден 5:42</p>
-                    </div>
-                    <div className={styles.add_feedback}>
-                      <button onClick={() => setVisibleAddFeedback(true)}>
-                        Оставить отзыв
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {currentOrder?.b_options?.extra_orders &&
-              Array.isArray(currentOrder?.b_options?.extra_orders)
-                ? currentOrder?.b_options?.extra_orders
-                    .slice(0, 1)
-                    .map((item) => (
-                      <>
-                        {' '}
-                        {/* повторая заявка */}
-                        <div className="chat_technical_message">
-                          <div
-                            className={`${styles.message_block} ${styles.text_right}`}
-                          >
-                            <div className="my_chat">
-                              <div
-                                className="correspondence-active font_inter df"
-                                style={{ gap: '10px' }}
-                              >
-                                <div className="ciril-img">
-                                  <img
-                                    src="/img/chat_img/2.png"
-                                    style={{
-                                      width: '58px',
-                                      height: '58px',
-                                      opacity: '0',
-                                    }}
-                                    alt="img absent"
-                                  />
-                                </div>
-                                <div className="let">
-                                  <div
-                                    className="letter_kiril df"
-                                    style={{
-                                      gap: '10px',
-                                      justifyContent: 'flex-end',
-                                    }}
-                                  >
-                                    <div
-                                      className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}
-                                    >
-                                      <img
-                                        src="/img/chat_img/edid.png"
-                                        onClick={() => Isedit(true)}
-                                        alt="img absent"
-                                      />
-                                      <div style={{ position: 'relative' }}>
-                                        {isVisibleDeleteMessage && (
-                                          <div
-                                            className={
-                                              styles.modal_delete_message
-                                            }
-                                            onClick={() =>
-                                              setVisibleDeleteMessage(false)
-                                            }
-                                          >
-                                            <img
-                                              className="delete_message"
-                                              src="/img/icons/delete.png"
-                                              alt=""
-                                            />
-                                            <span>удалить сообщение</span>
-                                          </div>
-                                        )}
-                                        <img
-                                          className="delete_message"
-                                          onClick={() =>
-                                            setVisibleDeleteMessage(true)
-                                          }
-                                          src="/img/icons/delete.png"
-                                          alt=""
-                                        />
-                                      </div>
-
-                                      {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
-                                    </div>
-                                    <div className="letter_text-2">
-                                      <h3>13:44</h3>
-                                    </div>
-                                    <div className="letter_text-1">
-                                      <h2>Вы</h2>
-                                    </div>
-                                    <img
-                                      src={
-                                        user.u_photo || '/img/img-camera.png'
-                                      }
-                                      style={{
-                                        width: '58px',
-                                        height: '58px',
-                                        borderRadius: 30,
-                                      }}
-                                      alt="img absent"
-                                    />
-                                  </div>
-                                  <div className={styles.block_bid}>
-                                    <p>
-                                      Размещена повторная заявка{' '}
-                                      <a
-                                        href="./"
-                                        className={styles.block_bid__link}
-                                      >
-                                        {item.title}
-                                      </a>
-                                    </p>
-                                    <p>Описание клиента {item.description}</p>
-                                    <p>
-                                      Мастер откликнулся на этот заказ, сделав
-                                      предложение на сумму {item.client_price}{' '}
-                                      рублей.
-                                    </p>
-                                    <p>Слова мастера из лк</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {/* повтор - индивидуальное предложение заявки */}
-                        <div className="chat_technical_message">
-                          <div
-                            className={`${styles.message_block} ${styles.text_left}`}
-                          >
-                            <div
-                              className={`correspondence df font_inter`}
-                              style={{ flexDirection: 'column', gap: '10px' }}
-                            >
-                              <div className="correspondence_ciril df_chat">
-                                <div className="ciril-img">
-                                  <img
-                                    style={{
-                                      width: 58,
-                                      height: 58,
-                                      borderRadius: 30,
-                                    }}
-                                    src={
-                                      masterUser.u_photo ||
-                                      '/img/img-camera.png'
-                                    }
-                                    alt="img absent"
-                                  />
-                                </div>
-                                <div className="let">
-                                  <div
-                                    className="letter_kiril df"
-                                    style={{ gap: '10px' }}
-                                  >
-                                    <div className="letter_text-1">
-                                      <h2>{masterUser.u_name}</h2>
-                                    </div>
-                                    <div className="letter_text-2">
-                                      <h3>13:44</h3>
-                                    </div>
-                                    <div className="right_menu-img df align mini-gap">
-                                      <img
-                                        className="ansver"
-                                        onClick={() => Isanswer(true)}
-                                        src="/img/chat_img/ответ.png"
-                                        alt="img absent"
-                                      />
-                                      <img
-                                        src="/img/chat_img/span.png"
-                                        alt="img absent"
-                                      />
-                                      {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
-                                    </div>
-                                  </div>
-
-                                  <div
-                                    className={`${styles.individual_order} ${styles.individual_order2}`}
-                                  >
-                                    <div
-                                      className={
-                                        styles.individual_order__heading
-                                      }
-                                    >
-                                      <img
-                                        src="/img/icons/cil_basket.png"
-                                        alt=""
-                                      />
-                                      <p>Индивидуальное предложение заявки</p>
-                                    </div>
-
-                                    <div
-                                      className={styles.individual_order__block}
-                                    >
-                                      <details
-                                        className={
-                                          styles.individual_order__details
-                                        }
-                                      >
-                                        <summary
-                                          className={
-                                            styles.individual_order__order
-                                          }
-                                        >
-                                          <p style={{ position: 'relative' }}>
-                                            {item.title}
-                                            {/* мини слайдер */}
-                                            <div
-                                              className={`miniSwiperWrap miniswiperslideInfo ${styles.miniswiperslideInfo}  ${styles.miniSwiperWrap}`}
-                                            >
-                                              <MiniSlider />
-                                            </div>
-                                          </p>
-                                          <div
-                                            className={
-                                              styles.individual_order__arrow
-                                            }
-                                          >
-                                            <img src="/img/bot.png" alt="" />
-                                          </div>
-                                          <div style={{ flex: 1 }}></div>
-                                          <p className={styles.modile_hidden}>
-                                            {formatTimeByHours(
-                                              Number(item.time),
-                                            )}
-                                          </p>
-                                          <p className={styles.modile_hidden}>
-                                            {item.price}
-                                          </p>
-                                        </summary>
-                                        <div
-                                          className={
-                                            styles.individual_order__more
-                                          }
-                                        >
-                                          <p>условия заказа</p>
-                                          <p>{item.description} </p>
-                                        </div>
-                                      </details>
-                                    </div>
-                                    <div
-                                      className={styles.individual_order__final}
-                                    >
-                                      <p>Итого:</p>
-                                      <p>
-                                        {formatTimeByHours(Number(item.time))}
-                                      </p>
-                                      <p>{item.price} ₽</p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              {/* заказ создан */}
-                              <div className={styles.create_order}>
-                                <img src="/img/icons/box.png" alt="" />
-                                <div>
-                                  <p>Заявка создана</p>
-                                  <p>
-                                    Номер заявки{' '}
-                                    <a
-                                      className={styles.create_order__link}
-                                      href="#"
-                                      onClick={() =>
-                                        setOpenPovtor((prev) => !prev)
-                                      }
-                                    >
-                                      №{item.id || 122}
-                                    </a>
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        {currentOrder?.b_options?.pay_type === 'cash' ||
-                        !currentOrder?.b_options?.pay_type ? (
-                          <>
-                            <div className="chat_technical_message">
-                              <div
-                                className={`${styles.message_block} ${styles.text_center} ${styles.text_center_col}`}
-                              >
-                                <div
-                                  className={`${styles.cancel_block} ${
-                                    visibleTestCancel2 !== 'access'
-                                      ? styles.display_none
-                                      : null
-                                  }`}
-                                >
-                                  <img src="/img/message_green.png" alt="" />
-                                  <p>заявка успешно подтверждена 5:42</p>
-                                </div>
-
-                                <div
-                                  className={`${styles.cancel_client_confirm} ${
-                                    visibleTestCancel2 !== ''
-                                      ? styles.display_none
-                                      : null
-                                  }`}
-                                >
-                                  <button
-                                    onClick={() =>
-                                      setVisibleTestCancel2('access')
-                                    }
-                                  >
-                                    Подтвердить заявку
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      setVisibleTestCancel2('deny')
-                                    }
-                                  >
-                                    Отменить заявку
-                                  </button>
-                                </div>
-
-                                <div
-                                  className={`${styles.cancel_block} ${
-                                    visibleTestCancel2 !== 'deny'
-                                      ? styles.display_none
-                                      : null
-                                  }`}
-                                >
-                                  <img src="/img/cansel_message.png" alt="" />
-                                  <p>Вы предложили отменить заявку 5:42</p>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {zayavka__isConfirmOrder ||
-                            zayavka__isOpenDispute ? null : (
-                              <div className="chat_technical_message">
-                                <div className={styles.confirm_block}>
-                                  <button
-                                    onClick={() =>
-                                      zayavka__SetVisibleModal(true)
-                                    }
-                                  >
-                                    Подтвердить заявку
-                                  </button>
-                                  <button
-                                    onClick={() =>
-                                      zayavka__setVisibleDispute(true)
-                                    }
-                                  >
-                                    Открыть спор
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                            {zayavka__isOpenDispute && (
-                              <div className="chat_technical_message">
-                                <div>
-                                  <div
-                                    className={`${styles.message_block} ${styles.text_center}`}
-                                  >
-                                    <div className={`${styles.cancel_block}`}>
-                                      <img
-                                        src="/img/message_cancel.png"
-                                        alt=""
-                                      />
-                                      <p>
-                                        Открылся спор по данному заказу 19:08
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            {zayavka__isConfirmOrder && (
-                              <div className="chat_technical_message">
-                                <div>
-                                  <div className={`${styles.cancel_block}`}>
-                                    <img src="/img/message_green.png" alt="" />
-                                    <p>Заявка успешно подтверждена 5:42</p>
-                                  </div>
-                                  <div className={styles.add_feedback}>
-                                    <button
-                                      onClick={() =>
-                                        setVisibleAddFeedback(true)
-                                      }
-                                    >
-                                      Оставить отзыв
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </>
-                    ))
-                : null}
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_right}`}>
-                  <div className="my_chat">
-                    <div
-                      className="correspondence-active font_inter df"
-                      style={{ gap: '10px' }}
-                    >
-                      <div className="ciril-img">
-                        <img
-                          src="/img/chat_img/2.png"
-                          style={{
-                            width: '58px',
-                            height: '58px',
-                            opacity: '0',
-                          }}
-                          alt="img absent"
-                        />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px', justifyContent: 'flex-end' }}
-                        >
-                          <div
-                            className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}
-                          >
-                            <img
-                              src="/img/chat_img/edid.png"
-                              onClick={() => Isedit(true)}
-                              alt="img absent"
-                            />
-                            <div style={{ position: 'relative' }}>
-                              {isVisibleDeleteMessage && (
-                                <div
-                                  className={styles.modal_delete_message}
-                                  onClick={() => setVisibleDeleteMessage(false)}
-                                >
-                                  <img
-                                    className="delete_message"
-                                    src="/img/icons/delete.png"
-                                    alt=""
-                                  />
-                                  <span>удалить сообщение</span>
-                                </div>
-                              )}
-                              <img
-                                className="delete_message"
-                                onClick={() => setVisibleDeleteMessage(true)}
-                                src="/img/icons/delete.png"
-                                alt=""
-                              />
-                            </div>
-
-                            {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="letter_text-1">
-                            <h2>Вы</h2>
-                          </div>
-                          <img
-                            src="/img/chat_img/2.png"
-                            style={{ width: '58px', height: '58px' }}
-                            alt="img absent"
-                          />
-                        </div>
-                        <div className={styles.block_bid}>
-                          <p>
-                            Выбранная модель устройства{' '}
-                            <a href="./" className={styles.block_bid__link}>
-                              iPhone 15 pro{' '}
-                            </a>
-                          </p>
-                          <p>Перечень работ:</p>
-                          <p>Описание клиента ...</p>
-                          <p>
-                            Мастер откликнулся на этот заказ, сделав предложение
-                            на сумму 35 000 рублей.
-                          </p>
-                          <p>Слова мастера из заявки! </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* индивидуальное предложение заявки */}
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_left}`}>
-                  <div
-                    className={`correspondence df font_inter`}
-                    style={{ flexDirection: 'column', gap: '10px' }}
-                  >
-                    <div className="correspondence_ciril df_chat">
-                      <div className="ciril-img">
-                        <img src="/img/chat_img/кирил.png" alt="img absent" />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px' }}
-                        >
-                          <div className="letter_text-1">
-                            <h2>Кирилл Воронов</h2>
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="right_menu-img df align mini-gap">
-                            <img
-                              className="ansver"
-                              onClick={() => Isanswer(true)}
-                              src="/img/chat_img/ответ.png"
-                              alt="img absent"
-                            />
-                            <img
-                              src="/img/chat_img/span.png"
-                              alt="img absent"
-                            />
-                            {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
-                          </div>
-                        </div>
-
-                        <div
-                          className={`${styles.individual_order} ${styles.individual_order2}`}
-                        >
-                          <div className={styles.individual_order__heading}>
-                            <img src="/img/icons/cil_basket.png" alt="" />
-                            <p>Индивидуальное предложение заявки</p>
-                          </div>
-
-                          <div className={styles.individual_order__block}>
-                            <details
-                              className={styles.individual_order__details}
-                            >
-                              <summary
-                                className={styles.individual_order__order}
-                              >
-                                <p style={{ position: 'relative' }}>
-                                  Замена экрана на iphone 15 pro
-                                  {/* мини слайдер */}
-                                  <div
-                                    className={`miniSwiperWrap ${styles.miniSwiperWrap}`}
-                                  >
-                                    {/* <MiniSlider /> */}
-                                  </div>
-                                </p>
-                                <div className={styles.individual_order__arrow}>
-                                  <img src="/img/bot.png" alt="" />
-                                </div>
-                                <div style={{ flex: 1 }}></div>
-                                <p className={styles.modile_hidden}>1 день</p>
-                                <p className={styles.modile_hidden}>35000</p>
-                              </summary>
-                              <div className={styles.individual_order__more}>
-                                <p>условия заказа</p>
-                                <p>
-                                  Заменить экран на iphone 15 pro и прописать
-                                  трутон и поменять чип{' '}
-                                </p>
-                              </div>
-                            </details>
-                          </div>
-                          <div className={styles.individual_order__final}>
-                            <p>Итого:</p>
-                            <p>1 день</p>
-                            <p>35000 ₽</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* заказ создан */}
-                    <div className={styles.create_order}>
-                      <img src="/img/icons/box.png" alt="" />
-                      <div>
-                        <p>Заявка создана</p>
-                        <p>
-                          Номер заявки{' '}
-                          <a
-                            className={styles.create_order__link}
-                            href="./"
-                            onClick={() => setOpenOrder((prev) => !prev)}
-                          >
-                            №243
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* заявка создана */}
-              {/* <div className="chat_technical_message">
-                                <div className={`${styles.message_block} ${styles.text_center}`}>
-                                    <div className={`${styles.create_order} ${styles.create_order_fix}`}>
-                                        <img src="/img/icons/box.png" alt="" />
-                                        <div>
-                                            <p>Заявка создана</p>
-                                            <p>Номер заявки <a className={styles.create_order__link} href="./" onClick={() => setOpenOrder(prev => !prev)}>№243</a></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div> */}
-
-              {/* заявка создана  */}
-              {isOpenOrder ? (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_left}`}
-                  >
-                    <div
-                      className={`correspondence df font_inter ${styles.create_order__message}`}
-                    >
-                      <div className="correspondence_ciril df_chat">
-                        <div className="ciril-img">
-                          <img src="/img/chat_img/кирил.png" alt="img absent" />
-                        </div>
-                        <div className="let">
-                          <div
-                            className="letter_kiril df"
-                            style={{ gap: '10px' }}
-                          >
-                            <div className="letter_text-1">
-                              <h2>Кирилл Воронов</h2>
-                            </div>
-                            <div className="letter_text-2">
-                              <h3>13:44</h3>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.create_order__heading}>
-                        <p>Услуги</p>
-                        <div style={{ flex: 1 }}></div>
-                        <p>Кол-во</p>
-                        <p>Срок</p>
-                        <p>Стоимость</p>
-                      </div>
-                      <div className={styles.create_order__data}>
-                        <div style={{ position: 'relative' }}>
-                          <p style={{ position: 'relative' }}>
-                            Замена экрана на{' '}
-                            <span style={{ color: '#2E9BD9' }}>
-                              iPhone 15 pro
-                            </span>
-                          </p>
-                          {/* мини слайдер */}
-                          {/* {isShowDetailsOrder ?
-                                                        <div className={`miniSwiperWrap ${styles.miniSwiperWrap}`}>
-                                                            <MiniSlider />
-                                                        </div>
-                                                        : null} */}
-                          {!isShowDetailsOrder ? (
-                            <img
-                              onClick={() => setShowDetailsOrder(true)}
-                              style={{ marginLeft: '10px', cursor: 'pointer' }}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          ) : null}
-                        </div>
-                        <div style={{ flex: 1 }}></div>
-                        <p>1</p>
-                        <p style={{ whiteSpace: 'nowrap' }}>2 дня</p>
-                        <p className={styles.create_order__price}>35000 ₽</p>
-                      </div>
-                      {isShowDetailsOrder ? (
-                        <div className={styles.create_order__dataVisible}>
-                          <p>Условия заказа </p>
-                          <p>
-                            Свернуть
-                            <img
-                              style={{
-                                marginLeft: '10px',
-                                cursor: 'pointer',
-                                rotate: '180deg',
-                              }}
-                              onClick={() => setShowDetailsOrder(false)}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          </p>
-                          <div className={styles.create_order__line} />
-                          <div className={styles.create_order__final}>
-                            <p>Итого:</p>
-                            <p>2 дня</p>
-                            <p className={styles.create_order__price}>
-                              35000 ₽
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-              {/* повтор - заявка создана  */}
-              {isOpenPovtor ? (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_left}`}
-                  >
-                    <div
-                      className={`correspondence df font_inter ${styles.create_order__message}`}
-                    >
-                      <div className="correspondence_ciril df_chat">
-                        <div className="ciril-img">
-                          <img src="/img/chat_img/кирил.png" alt="img absent" />
-                        </div>
-                        <div className="let">
-                          <div
-                            className="letter_kiril df"
-                            style={{ gap: '10px' }}
-                          >
-                            <div className="letter_text-1">
-                              <h2>Кирилл Воронов</h2>
-                            </div>
-                            <div className="letter_text-2">
-                              <h3>13:44</h3>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={styles.create_order__heading}>
-                        <p>Услуги</p>
-                        <div style={{ flex: 1 }}></div>
-                        <p>Кол-во</p>
-                        <p>Срок</p>
-                        <p>Стоимость</p>
-                      </div>
-                      <div className={styles.create_order__data}>
-                        <div style={{ position: 'relative' }}>
-                          <p style={{ position: 'relative' }}>
-                            Замена экрана на{' '}
-                            <span style={{ color: '#2E9BD9' }}>
-                              iPhone 15 pro
-                            </span>
-                          </p>
-                          {/* мини слайдер */}
-                          {isShowDetailsOrder ? (
-                            <div
-                              className={`miniSwiperWrap ${styles.miniSwiperWrap}`}
-                            >
-                              <MiniSlider />
-                            </div>
-                          ) : null}
-                          {!isShowDetailsOrder ? (
-                            <img
-                              onClick={() => setShowDetailsOrder(true)}
-                              style={{ marginLeft: '10px', cursor: 'pointer' }}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          ) : null}
-                        </div>
-                        <div style={{ flex: 1 }}></div>
-                        <p>1</p>
-                        <p style={{ whiteSpace: 'nowrap' }}>2 дня</p>
-                        <p className={styles.create_order__price}>35000 ₽</p>
-                      </div>
-                      {isShowDetailsOrder ? (
-                        <div className={styles.create_order__dataVisible}>
-                          <p>Условия заказа </p>
-                          <p>
-                            Свернуть
-                            <img
-                              style={{
-                                marginLeft: '10px',
-                                cursor: 'pointer',
-                                rotate: '180deg',
-                              }}
-                              onClick={() => setShowDetailsOrder(false)}
-                              src="/img/bot.png"
-                              alt=""
-                            />
-                          </p>
-                          <div className={styles.create_order__line} />
-                          <div className={styles.create_order__final}>
-                            <p>Итого:</p>
-                            <p>2 дня</p>
-                            <p className={styles.create_order__price}>
-                              35000 ₽
-                            </p>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              {/* предложение повторной заявки */}
-              {false && (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_left}`}
-                  >
-                    <div className="correspondence df font_inter">
-                      <div className="correspondence_ciril df_chat">
-                        <div className="ciril-img">
-                          <img src="/img/chat_img/кирил.png" alt="img absent" />
-                        </div>
-                        <div className="let">
-                          <div
-                            className="letter_kiril df"
-                            style={{ gap: '10px' }}
-                          >
-                            <div className="letter_text-1">
-                              <h2>Кирилл Воронов</h2>
-                            </div>
-                            <div className="letter_text-2">
-                              <h3>13:44</h3>
-                            </div>
-                            <div className="right_menu-img df align mini-gap">
-                              <img
-                                className="ansver"
-                                onClick={() => Isanswer(true)}
-                                src="/img/chat_img/ответ.png"
-                                alt="img absent"
-                              />
-                              <img
-                                src="/img/chat_img/span.png"
-                                alt="img absent"
-                              />
-                              {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
-                            </div>
-                          </div>
-
-                          <div className={styles.individual_order}>
-                            <div className={styles.individual_order__heading}>
-                              <img src="/img/icons/cil_basket.png" alt="" />
-                              <p>Предложение повторной заявки</p>
-                            </div>
-
-                            <div className={styles.individual_order__block}>
-                              <details
-                                className={styles.individual_order__details}
-                              >
-                                <summary
-                                  className={styles.individual_order__order}
-                                >
-                                  <p>Замена экрана на iphone 15 pro</p>
-                                  <div
-                                    className={styles.individual_order__arrow}
-                                  >
-                                    <img src="/img/bot.png" alt="" />
-                                  </div>
-                                  <div style={{ flex: 1 }}></div>
-                                  <p>1 день</p>
-                                  <p>35000</p>
-                                </summary>
-                                <div className={styles.individual_order__more}>
-                                  <p>условия заказа</p>
-                                  <p>
-                                    Заменить экран на iphone 15 pro и прописать
-                                    трутон и поменять чип{' '}
-                                  </p>
-                                </div>
-                              </details>
-                            </div>
-                            <div className={styles.individual_order__final}>
-                              <p>Итого:</p>
-                              <p>1 день</p>
-                              <p>35000 ₽</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className="chat_technical_message">
-                <div className={styles.dispute_block}>
-                  <p className={styles.dispute_heading}>Клиент открыл спор</p>
-                  <div className={styles.dispute_details}>
-                    <div className={styles.row_title}>
-                      <p>Размещена заявка</p>
-                      <Link to="#" className={styles.dispute_link}>
-                        Замена экрана на iphone 15 pro
-                      </Link>
-                    </div>
-                    <div className={styles.dispute_description}>
-                      <p>Вы наклеили стекло криво! очень плохая работа</p>
-                      <div
-                        className={`miniSwiperWrap ${styles.miniSwiperWrap}`}
-                      >
-                        <div className="miniSlider">
-                          <SimpleImage />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  {isCancelOrderItemV4 || isDisputeArbitrItem ? null : (
-                    <div className={styles.dispute_row}>
-                      <button
-                        className={styles.dispute_button}
-                        onClick={() => setVisibleCancelOrderItemV4(true)}
-                      >
-                        Подтвердить отмену заявки
-                      </button>
-                      <button
-                        className={styles.dispute_button}
-                        onClick={() => setVisibleModalArbitationItemV5(true)}
-                      >
-                        Обратиться в арбитраж
-                      </button>
-                    </div>
-                  )}
-
-                  {isCancelOrderItemV4 && (
-                    <div className="chat_technical_message">
-                      <div
-                        className={`${styles.message_block} ${styles.text_center}`}
-                      >
-                        <div className={styles.cancel_client_block}>
-                          <img src="/img/message_cancel.png" alt="" />
-                          <div>
-                            <p>В работе 17:08</p>
-                            <p>Вы отказались от заявки!</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {isDisputeArbitrItem && (
-                    <div className="chat_technical_message">
-                      <div
-                        className={`${styles.message_block} ${styles.text_center}`}
-                      >
-                        <div className={`${styles.cancel_block}`}>
-                          <img src="/img/message_cancel.png" alt="" />
-                          <p>Открылся спор по данному заявки 19:08</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Клиент открыл спор */}
-              <div className="chat_technical_message">
-                <div className={styles.dispute_block}>
-                  <p className={styles.dispute_heading}>Клиент открыл спор</p>
-                  <div className={styles.dispute_details}>
-                    <div className={styles.row_title}>
-                      <p>Размещен на биржи заказ</p>
-                      <Link to="#" className={styles.dispute_link}>
-                        Замена экрана на iphone 15 pro
-                      </Link>
-                    </div>
-                    <div className={styles.dispute_description}>
-                      <p>Вы наклеили стекло криво! очень плохая работа</p>
-                      <div
-                        className={`miniSwiperWrap ${styles.miniSwiperWrap}`}
-                      >
-                        <MiniSlider />
-                      </div>
-                    </div>
-                  </div>
-                  {isCancelOrderV4 || isDisputeArbitr ? null : (
-                    <div className={styles.dispute_row}>
-                      <button
-                        className={styles.dispute_button}
-                        onClick={() => setVisibleCancelOrderV4(true)}
-                      >
-                        Подтвердить отмену заказа
-                      </button>
-                      <button
-                        className={styles.dispute_button}
-                        onClick={() => setVisibleModalArbitationV5(true)}
-                      >
-                        Обратиться в арбитраж
-                      </button>
-                    </div>
-                  )}
-
-                  {isCancelOrderV4 && (
-                    <div className="chat_technical_message">
-                      <div
-                        className={`${styles.message_block} ${styles.text_center}`}
-                      >
-                        <div className={styles.cancel_client_block}>
-                          <img src="/img/message_cancel.png" alt="" />
-                          <div>
-                            <p>В работе 17:08</p>
-                            <p>Вы отказались от заказа!</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {isDisputeArbitr && (
-                    <div className="chat_technical_message">
-                      <div
-                        className={`${styles.message_block} ${styles.text_center}`}
-                      >
-                        <div className={`${styles.cancel_block}`}>
-                          <img src="/img/message_cancel.png" alt="" />
-                          <p>Открылся спор по данному заказу 19:08</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_left}`}>
-                  <div className="correspondence df font_inter">
-                    <div className="correspondence_ciril df_chat">
-                      <div className="ciril-img">
-                        <img src="/img/chat_img/кирил.png" alt="img absent" />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px' }}
-                        >
-                          <div className="letter_text-1">
-                            <h2>Кирилл Воронов</h2>
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="right_menu-img df align mini-gap">
-                            <img
-                              className="ansver"
-                              onClick={() => Isanswer(true)}
-                              src="/img/chat_img/ответ.png"
-                              alt="img absent"
-                            />
-                            <img
-                              src="/img/chat_img/span.png"
-                              alt="img absent"
-                            />
-                            {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
-                          </div>
-                        </div>
-                        <div className="sms df align">
-                          <div className="sms_text">
-                            <h2>Могу выполнить заказ</h2>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="chat_technical_message">
-                <div className={`${styles.message_block} ${styles.text_right}`}>
-                  <div className="my_chat">
-                    <div
-                      className="correspondence-active font_inter df"
-                      style={{ gap: '10px' }}
-                    >
-                      <div className="ciril-img">
-                        <img
-                          src="/img/chat_img/2.png"
-                          style={{
-                            width: '58px',
-                            height: '58px',
-                            opacity: '0',
-                          }}
-                          alt="img absent"
-                        />
-                      </div>
-                      <div className="let">
-                        <div
-                          className="letter_kiril df"
-                          style={{ gap: '10px', justifyContent: 'flex-end' }}
-                        >
-                          <div
-                            className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}
-                          >
-                            <img
-                              src="/img/chat_img/edid.png"
-                              onClick={() => Isedit(true)}
-                              alt="img absent"
-                            />
-                            <div style={{ position: 'relative' }}>
-                              {isVisibleDeleteMessage && (
-                                <div
-                                  className={styles.modal_delete_message}
-                                  onClick={() => setVisibleDeleteMessage(false)}
-                                >
-                                  <img
-                                    className="delete_message"
-                                    src="/img/icons/delete.png"
-                                    alt=""
-                                  />
-                                  <span>удалить сообщение</span>
-                                </div>
-                              )}
-                              <img
-                                className="delete_message"
-                                onClick={() => setVisibleDeleteMessage(true)}
-                                src="/img/icons/delete.png"
-                                alt=""
-                              />
-                            </div>
-
-                            {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
-                          </div>
-                          <div className="letter_text-2">
-                            <h3>13:44</h3>
-                          </div>
-                          <div className="letter_text-1">
-                            <h2>Вы</h2>
-                          </div>
-                          <img
-                            src="/img/chat_img/2.png"
-                            style={{ width: '58px', height: '58px' }}
-                            alt="img absent"
-                          />
-                        </div>
-                        <div
-                          className="sms_text-3"
-                          style={{ marginRight: '60px' }}
-                        >
-                          <h2>Хорошо, мне подходит</h2>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              {currentChat.orders.map((order) => (
+                <OrderDetailsBlock
+                  setOrderId={setCurrentOrderId}
+                  setIsOpenDisput={zayavka__setVisibleDispute}
+                  key={order.b_id}
+                  order={order}
+                  currentUser={currentUser}
+                  masterUser={masterUser}
+                  refetchRequests={userRequests.refetch}
+                />
+              ))}
             </div>
 
             <div className="message_block">
-              {/* <div className="chat_technical_message">
-                                    <div className={`${styles.message_block} ${styles.text_left}`}> */}
               <div className="block_messages-2 font_inter">
                 {answer ? (
                   <p className="answer_to_message">
@@ -2187,10 +1096,8 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {/* {console.log(currentUser)} */}
-                {/* заблок чат */}
                 {currentUser.u_details?.black_list?.find(
-                  (item) => item.id?.toString() === user.u_id?.toString(),
+                  (item: any) => item.id?.toString() === user.u_id?.toString(),
                 ) ? (
                   <div className={styles.chat_block_wrap}>
                     <img src="/img/icons/chat_block.png" alt="" />
@@ -2207,7 +1114,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         type="text"
                         placeholder="Введите сообщение..."
                         value={message}
-                        onChange={handleInputChat} //Обновляем текст в инпуте
+                        onChange={handleInputChat}
                       />
                     </div>
                     <div className="nav_message df">
@@ -2290,9 +1197,6 @@ function ChoiceOfReplenishmentMethodCard() {
                     </div>
                   </div>
                 )}
-
-                {/* </div>
-                                </div> */}
               </div>
             </div>
           </div>

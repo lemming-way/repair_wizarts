@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react'; // Добавил useMemo
 import '../../../scss/chat.css';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -16,32 +16,54 @@ function App() {
     ui.isMaster ? getMasterOrders : getAllClientRequests,
     [],
   );
-  console.log(
-    userRequests?.data.map((item) => Object.values(item.data?.booking)).flat(),
-  );
-  const rawRequests = Array.from(
-    new Map(
-      userRequests?.data
-        ?.map((item) => Object.values(item?.data?.booking || {}))
-        .flat()
-        .filter((request) => request?.b_id)
-        .map((request) => [request.b_id, request]),
-    ).values(),
-  );
 
-  const filteredRequests = rawRequests.filter(
-    (item: any) =>
-      item.b_options?.type === 'order' &&
-      item.drivers &&
-      item.b_options.winnerMaster,
-  );
-  console.log(filteredRequests);
-  const currentUsers = filteredRequests.map((item: any) => ({
-    ...item.drivers.find((j) => {
-      return j.u_id === item.b_options.winnerMaster;
-    })?.c_options.author,
-    b_id: item.b_id,
-  }));
+  // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика группировки чатов ---
+
+  // Используем useMemo, чтобы избежать ненужных пересчетов при каждом рендере
+  const groupedChats = useMemo(() => {
+    // Шаг 1: Получаем плоский массив всех заказов
+    const rawRequests = Array.from(
+      new Map(
+        userRequests?.data
+          ?.map((item) => Object.values(item?.data?.booking || {}))
+          .flat()
+          .filter((request) => request?.b_id)
+          .map((request) => [request.b_id, request]),
+      ).values(),
+    );
+    const filteredRequests = rawRequests.filter(
+      (item: any) =>
+        item.b_options?.winnerMaster && item.drivers && item.drivers.length > 0,
+    );
+    const chatsByMaster: any = filteredRequests.reduce(
+      (acc: any, request: any) => {
+        const masterId = request.b_options.winnerMaster;
+        if (!acc[masterId]) {
+          acc[masterId] = [];
+        }
+        acc[masterId].push(request);
+        return acc;
+      },
+      {},
+    );
+    return Object.values(chatsByMaster).map((orders: any) => {
+      // Берем первый заказ из группы, чтобы получить информацию о мастере
+      const firstOrder = orders[0];
+      const winnerDriver = firstOrder.drivers.find(
+        (d) => d.u_id === firstOrder.b_options.winnerMaster,
+      );
+
+      return {
+        // Уникальный ID для чата, чтобы ссылка была одинаковой
+        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
+        masterInfo: winnerDriver?.c_options?.author || {},
+        orders: orders, // Массив всех заказов для этого чата
+      };
+    });
+  }, [userRequests.data]); // Пересчитываем только при изменении данных о заказах
+  console.log(groupedChats);
+  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
   useEffect(() => {
     document.title = 'Чат';
   }, []);
@@ -63,57 +85,29 @@ function App() {
       </div>
 
       <div className="big_messages__wrap">
-        {/* <div className="big_messages">
-          <Link
-            to={
-              window.location.href.includes('master')
-                ? '/master/chat/111'
-                : '/client/chat/111'
-            }
-          >
-            <div className="ilya df font_inter align">
-              <div className="ilya_img">
-                <img src="/img/chat_img/ilya.png" alt="chat icon" />
-              </div>
-
-              <div className="ilya_text">
-                <h2>Илья Брага</h2>
-
-                <h3 className="txt-text-small-ver" style={{ color: '#D9573B' }}>
-                  Печатает...
-                </h3>
-              </div>
-
-              <div className="ilya_text-2">
-                <h2>14:12</h2>
-                <h3>1</h3>
-              </div>
-            </div>
-            <div className="line_ilya"></div>
-          </Link>
-        </div> */}
-        {currentUsers.length === 0
+        {/* --- ИЗМЕНЕНИЕ: Рендерим сгруппированные чаты --- */}
+        {groupedChats.length === 0
           ? 'Пусто'
-          : currentUsers.map((item) => (
-              <div className="big_messages">
+          : groupedChats.map(({ chatId, masterInfo }) => (
+              <div className="big_messages" key={chatId}>
                 <Link
                   to={
                     window.location.href.includes('master')
-                      ? '/master/chat/' + item.b_id
-                      : '/client/chat/' + item.b_id
+                      ? `/master/chat/${chatId}`
+                      : `/client/chat/${chatId}`
                   }
                 >
                   <div className="ilya df font_inter align">
                     <div className="ilya_img">
                       <img
-                        src={item.u_photo || '/img/img-camera.png'}
+                        src={masterInfo.u_photo || '/img/img-camera.png'}
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                         alt="chat icon"
                       />
                     </div>
 
                     <div className="ilya_text">
-                      <h2>{item.u_name}</h2>
+                      <h2>{masterInfo.u_name || 'Мастер'}</h2>
 
                       <h3
                         className="txt-text-small-ver"
@@ -132,162 +126,6 @@ function App() {
                 </Link>
               </div>
             ))}
-
-        {/* <div className="big_messages">
-          <Link
-            to={
-              window.location.href.includes('master')
-                ? '/master/chat/168789461'
-                : '/client/chat/168789461'
-            }
-          >
-            <div className="ilya df font_inter align">
-              <div className="ilya_img">
-                <img src="/img/chat_img/тех подержка.png" alt="chat icon" />
-              </div>
-
-              <div className="ilya_text">
-                <h2>Тех поддержка</h2>
-
-                <h3 className="txt-text-small-ver">Хорошо</h3>
-              </div>
-
-              <div className="ilya_text-2">
-                <h2>14:12</h2>
-
-                <h3>1</h3>
-              </div>
-            </div>
-            <div className="line_ilya"></div>
-          </Link>
-        </div>
-
-        <div className="big_messages">
-          <Link
-            to={
-              window.location.href.includes('master')
-                ? '/master/chat/16854163'
-                : '/client/chat/16854163'
-            }
-          >
-            <div className="ilya df font_inter align">
-              <div className="ilya_img">
-                <img src="/img/chat_img/кирил.png" alt="chat icon" />
-              </div>
-
-              <div className="ilya_text">
-                <h2>Кирилл Воронов</h2>
-
-                <h3 className="txt-text-small-ver">Смогу приехать через час</h3>
-              </div>
-
-              <div className="ilya_text-2">
-                <h2>14:02</h2>
-              </div>
-            </div>
-            <div className="line_ilya"></div>
-          </Link>
-        </div>
-        <div className="big_messages">
-          <Link
-            to={
-              window.location.href.includes('master')
-                ? '/master/chat/16854163'
-                : '/client/chat/16854163'
-            }
-          >
-            <div className="ilya df font_inter align">
-              <div className="ilya_img">
-                <img src="/img/chat_img/кирил.png" alt="chat icon" />
-              </div>
-
-              <div className="ilya_text">
-                <h2>Кирилл Воронов</h2>
-
-                <h3 className="txt-text-small-ver">Смогу приехать через час</h3>
-              </div>
-
-              <div className="ilya_text-2">
-                <h2>14:02</h2>
-              </div>
-            </div>
-            <div className="line_ilya"></div>
-          </Link>
-        </div>
-
-        <div className="big_messages">
-          <div className="ilya df font_inter align">
-            <div className="ilya_img">
-              <img src="/img/chat_img/елена.png" alt="chat icon" />
-            </div>
-
-            <div className="ilya_text">
-              <h2>Елена Ионова</h2>
-
-              <h3 className="txt-text-small-ver">Фото пришлю позже</h3>
-            </div>
-
-            <div className="ilya_text-2">
-              <h2>11:57</h2>
-            </div>
-          </div>
-          <div className="line_ilya"></div>
-        </div>
-
-        <div className="big_messages">
-          <div className="ilya df font_inter align">
-            <div className="ilya_img">
-              <img src="/img/chat_img/флипп.png" alt="chat icon" />
-            </div>
-            <div className="ilya_text">
-              <h2>Филипп Терешов</h2>
-
-              <h3 className="txt-text-small-ver">Спасибо</h3>
-            </div>
-
-            <div className="ilya_text-2">
-              <h2>10:33</h2>
-            </div>
-          </div>
-          <div className="line_ilya"></div>
-        </div>
-
-        <div className="big_messages">
-          <div className="ilya df font_inter align">
-            <div className="ilya_img">
-              <img src="/img/chat_img/михаил.png" alt="chat icon" />
-            </div>
-
-            <div className="ilya_text">
-              <h2>Михаил Серов</h2>
-
-              <h3 className="txt-text-small-ver">Отправьте адрес</h3>
-            </div>
-
-            <div className="ilya_text-2">
-              <h2>09:56</h2>
-            </div>
-          </div>
-          <div className="line_ilya"></div>
-        </div>
-
-        <div className="big_messages">
-          <div className="ilya df font_inter align">
-            <div className="ilya_img">
-              <img src="/img/chat_img/евгений.png" alt="chat icon" />
-            </div>
-
-            <div className="ilya_text">
-              <h2>Евгений Конеев</h2>
-
-              <h3 className="txt-text-small-ver">Спасибо</h3>
-            </div>
-
-            <div className="ilya_text-2">
-              <h2>09:23</h2>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );
