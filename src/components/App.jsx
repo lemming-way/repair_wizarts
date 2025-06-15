@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Header from './Header';
-import { fetchUser, selectUserStatus } from '../slices/user.slice';
+import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
 import '../scss/swiper.css';
 import Footer from '../UI/Footer/FooterDesktop';
 import { useDispatch, useSelector } from 'react-redux';
@@ -65,7 +65,7 @@ import {
 } from '../slices/ui.slice';
 import { getLocation } from '../services/location.service';
 import { getToken } from '../services/token.service';
-import { getUserMode } from '../services/user.service';
+import { getUserMode, updateUser } from '../services/user.service';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
 import MyOrdersMaster from './Orders/MyOrdersMaster';
@@ -82,14 +82,66 @@ import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
 import HomeV2 from './home_v2/HomeV2';
 import { setCategories } from '../slices/cateories.slice';
+import { updateBalance } from '../services/balance.service';
 
 function App() {
+  const user =
+    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const __location__ = useLocation();
   const dispatch = useDispatch();
 
   const userStatus = useSelector(selectUserStatus);
   const { categories } = useSelector((state) => state.categories);
   const [currentHome, setCurrentHome] = useState('electron');
+
+  // Add visibility change tracking
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        updateUser(
+          {
+            details: {
+              isOnline: false,
+              lastTimeBeenOnline: new Date().toISOString(),
+            },
+          },
+          user.u_id,
+        );
+      } else if (document.visibilityState === 'visible') {
+        updateUser(
+          {
+            details: {
+              isOnline: true,
+              lastTimeBeenOnline: new Date().toISOString(),
+            },
+          },
+          user.u_id,
+        );
+      }
+    };
+
+    // Add page unload tracking
+    const handleBeforeUnload = (event) => {
+      updateUser(
+        {
+          details: {
+            isOnline: false,
+            lastTimeBeenOnline: new Date().toISOString(),
+          },
+        },
+        user.u_id,
+      );
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [dispatch, user]);
+
   useEffect(() => {
     const isMaster = getUserMode();
     const location = getLocation();
@@ -165,6 +217,7 @@ function App() {
   if (categories.length === 0) {
     return 'Loading...';
   }
+
   return (
     <>
       {currentHome === 'new' ? (

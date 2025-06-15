@@ -3,6 +3,8 @@ import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useState } from 'react';
 import ModalDelete from './ModalDelete';
+// --- 1. Импортируем нашу API-функцию ---
+import { cancelMasterResponse } from '../../services/order.service';
 
 export default function OrderRow({
   userProfile,
@@ -10,10 +12,12 @@ export default function OrderRow({
   photos = [],
   images = [],
   commentData,
+  b_id, // --- 2. Принимаем b_id как пропс ---
+  onResponseCancelled, // --- 3. Принимаем колбэк для обновления ---
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
-  const [visibleDeleteModal, setVisibleDeleteModal] = useState(false);
+  const [visibleDeleteModal, setVisibleDeleteModal] = useState(false); // Этот стейт можно удалить, если ModalDelete не используется
   const [isOpenCommentWrap, setIsOpenCommentWrap] = useState(false);
 
   // Функция для открытия модального окна
@@ -27,14 +31,44 @@ export default function OrderRow({
     setIsModalOpen(false);
   };
 
+  // --- 4. Создаем обработчик для удаления отклика ---
+  const handleCancelResponse = async () => {
+    if (!window.confirm('Вы уверены, что хотите удалить свое предложение?')) {
+      return;
+    }
+
+    if (!b_id) {
+      console.error('ID заказа не передан в компонент OrderRow.');
+      alert('Произошла ошибка: не найден ID заказа.');
+      return;
+    }
+
+    try {
+      await cancelMasterResponse(b_id);
+      alert('Ваше предложение успешно удалено.');
+      // Вызываем колбэк, переданный из родителя, для обновления списка
+      if (onResponseCancelled) {
+        onResponseCancelled();
+      }
+    } catch (error) {
+      console.error('Ошибка при удалении предложения:', error);
+      alert('Не удалось удалить предложение. Пожалуйста, попробуйте снова.');
+    }
+  };
+
   return (
     <>
+      {/* Если ModalDelete используется для подтверждения, можно его задействовать */}
       {visibleDeleteModal && (
-        <ModalDelete setVisibleDeleteModal={setVisibleDeleteModal} />
+        <ModalDelete
+          setVisibleDeleteModal={setVisibleDeleteModal}
+          onConfirm={handleCancelResponse} // Передаем нашу функцию в модалку
+        />
       )}
 
       <div className={style.order_row}>
         <div className={style.left}>
+          {/* ... остальная часть левой колонки ... */}
           <div className={style.profile}>
             <img
               src={'/img/profil_img/1.png' || userProfile?.avatar}
@@ -61,6 +95,7 @@ export default function OrderRow({
         </div>
 
         <div className={style.right}>
+          {/* ... остальная часть правой колонки ... */}
           <p>
             Желаемый бюджет{' '}
             <span className={style.price}>{orderInfo?.budget || '0'} ₽</span>
@@ -110,6 +145,7 @@ export default function OrderRow({
           </div>
 
           <div className={style.comment_block}>
+            {/* ... остальная часть блока с комментарием ... */}
             <div className={style.icon_chat}>
               <img src="/img/chat.png" alt="Chat Icon" />
             </div>
@@ -142,22 +178,20 @@ export default function OrderRow({
             </table>
           </div>
 
-          {/* Статусы */}
-          {/* {(commentData?.statuses || []).map((status, idx) => (
-          <div key={idx} className={style.status_row}>
-            <div className={style[status.class]}>
-              {status.icon && <img src={status.icon} alt="status icon" />}
-              <p>{status.text}</p>
-            </div>
+          {/* --- 5. Блок с иконкой удаления --- */}
+          {/* Этот блок можно разместить внизу, где предполагается управление откликом */}
+          <div className={style.action_row}>
+            {' '}
+            {/* Создайте этот класс, если его нет */}
+            {/* ... тут могут быть другие статусы или кнопки ... */}
             <div
               className={style.delete}
-              onClick={() => setVisibleDeleteModal(true)}
+              onClick={handleCancelResponse} // Привязываем наш обработчик
             >
               <img src="/img/icons/delete.png" alt="delete icon" />
               <p>удалить</p>
             </div>
           </div>
-        ))} */}
         </div>
       )}
 
@@ -166,7 +200,7 @@ export default function OrderRow({
         <div className="modal" onClick={closeModal}>
           <div className="modalContent" onClick={(e) => e.stopPropagation()}>
             <button className="closeBtn" onClick={closeModal}>
-              &times;
+              ×
             </button>
             <Swiper
               initialSlide={images.indexOf(modalImage)}
@@ -188,6 +222,7 @@ export default function OrderRow({
 
       {/* Стили для модального окна */}
       <style jsx>{`
+        /* ... ваши существующие стили ... */
         .modal {
           position: fixed;
           top: 0;

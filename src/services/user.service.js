@@ -32,25 +32,30 @@ const getMasterRepairs = () => appFetch('service/master-repairs');
 
 const getClientById = (id) => appFetch('user/client/' + id);
 
-const updateUser = (data, id) => {
+const updateUser = (data, id, asAdmin) => {
   const formattedDetails = Object.entries(data.details || {}).map(
     ([key, value]) =>
       value !== null || value !== undefined
         ? ['=', [key], value]
         : ['=', [key], []],
   );
-  return appFetch('user', {
-    body: {
-      data: JSON.stringify({
-        u_name: data.name,
-        u_family: data.lastname,
-        u_phone: data.phone,
-        u_email: data.email,
-        u_description: data.u_description,
-        ...(data.details ? { u_details: formattedDetails } : {}),
-      }),
+  return appFetch(
+    'user',
+    {
+      body: {
+        ...(asAdmin ? { u_a_id: id } : {}),
+        data: JSON.stringify({
+          u_name: data.name,
+          u_family: data.lastname,
+          u_phone: data.phone,
+          u_email: data.email,
+          u_description: data.u_description,
+          ...(data.details ? { u_details: formattedDetails } : {}),
+        }),
+      },
     },
-  });
+    asAdmin,
+  );
 };
 const updatePassword = (data) =>
   appFetch('newpass', {

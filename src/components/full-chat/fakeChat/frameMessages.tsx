@@ -11,17 +11,14 @@ import { getMasterOrders } from '../../../services/order.service';
 function App() {
   const ui = useSelector(selectUI);
   const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
+    ({} as any);
   const userRequests = useService(
     ui.isMaster ? getMasterOrders : getAllClientRequests,
     [],
   );
 
-  // --- НАЧАЛО ИЗМЕНЕНИЯ: Логика группировки чатов ---
-
-  // Используем useMemo, чтобы избежать ненужных пересчетов при каждом рендере
   const groupedChats = useMemo(() => {
-    // Шаг 1: Получаем плоский массив всех заказов
     const rawRequests = Array.from(
       new Map(
         userRequests?.data
@@ -47,21 +44,20 @@ function App() {
       {},
     );
     return Object.values(chatsByMaster).map((orders: any) => {
-      // Берем первый заказ из группы, чтобы получить информацию о мастере
       const firstOrder = orders[0];
       const winnerDriver = firstOrder.drivers.find(
         (d) => d.u_id === firstOrder.b_options.winnerMaster,
       );
-
       return {
-        // Уникальный ID для чата, чтобы ссылка была одинаковой
+        isOwner: firstOrder.u_id === user.u_id,
         chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
-        masterInfo: winnerDriver?.c_options?.author || {},
-        orders: orders, // Массив всех заказов для этого чата
+        clientInfo: firstOrder.b_options.author || {},
+        masterInfo: winnerDriver.c_options.author || {},
+        orders: orders,
       };
     });
-  }, [userRequests.data]); // Пересчитываем только при изменении данных о заказах
-  console.log(groupedChats);
+  }, [userRequests.data]);
+  // console.log(groupedChats);
   // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
   useEffect(() => {
@@ -88,7 +84,7 @@ function App() {
         {/* --- ИЗМЕНЕНИЕ: Рендерим сгруппированные чаты --- */}
         {groupedChats.length === 0
           ? 'Пусто'
-          : groupedChats.map(({ chatId, masterInfo }) => (
+          : groupedChats.map(({ chatId, masterInfo, isOwner, clientInfo }) => (
               <div className="big_messages" key={chatId}>
                 <Link
                   to={
@@ -107,7 +103,11 @@ function App() {
                     </div>
 
                     <div className="ilya_text">
-                      <h2>{masterInfo.u_name || 'Мастер'}</h2>
+                      <h2>
+                        {isOwner
+                          ? masterInfo.u_name || 'Мастер'
+                          : clientInfo.name || 'Мастер'}
+                      </h2>
 
                       <h3
                         className="txt-text-small-ver"
@@ -118,7 +118,15 @@ function App() {
                     </div>
 
                     <div className="ilya_text-2">
-                      <h2>14:12</h2>
+                      <h2>
+                        {new Date(
+                          masterInfo.u_details?.lastTimeBeenOnline ||
+                            new Date().toISOString(),
+                        )?.toLocaleTimeString('ru-RU', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </h2>
                       <h3>1</h3>
                     </div>
                   </div>

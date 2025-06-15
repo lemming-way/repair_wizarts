@@ -69,6 +69,8 @@ interface OrderDetailsBlockProps {
   setIsOpenDisput: Dispatch<SetStateAction<boolean>>;
   currentUser: any;
   masterUser: any;
+  setIsBalanceError: Dispatch<SetStateAction<boolean>>;
+  setBalanceErrorNum: Dispatch<SetStateAction<number>>;
   refetchRequests: () => void; // Используем refetch
 }
 
@@ -79,6 +81,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   refetchRequests,
   setOrderId,
   setIsOpenDisput,
+  setIsBalanceError,
+  setBalanceErrorNum,
 }) => {
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
@@ -93,8 +97,40 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   const [isVisibleAddFeedback, setVisibleAddFeedback] = useState(false);
   const [isVisibleDispute, setVisibleDispute] = useState(false);
 
+  // Add balance check
+  useEffect(() => {
+    const masterReqData =
+      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
+        ?.c_options || {};
+
+    if (masterReqData?.bind_amount > user?.u_details?.balance) {
+      setIsBalanceError(true);
+      setBalanceErrorNum(
+        Number(masterReqData.bind_amount) -
+          Number(user?.u_details?.balance || 0),
+      );
+    } else {
+      setIsBalanceError(false);
+      setBalanceErrorNum(0);
+    }
+  }, [order, user?.u_details?.balance]);
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
   const handleConfirmOrder = async () => {
+    const masterReqData =
+      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
+        ?.c_options || {};
+
+    // Calculate total amount with 9% commission
+    const commission = Number(masterReqData.bind_amount) * 0.09;
+    const totalAmount = Number(masterReqData.bind_amount) + commission;
+
+    if (totalAmount > Number(user?.u_details?.balance || 0)) {
+      console.log(masterUser);
+      setIsBalanceError(true);
+      setBalanceErrorNum(totalAmount - Number(user?.u_details?.balance || 0));
+      return;
+    }
+
     setIsLoading(true);
     try {
       await appFetch(`/drive/get/${order.b_id}`, {
@@ -112,6 +148,30 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
           action: 'set_complete_state',
         },
       }).then((v) => console.log(v));
+
+      // Update master's balance (full amount)
+      updateUser(
+        {
+          details: {
+            balance:
+              Number(masterReqData.bind_amount) +
+              Number(masterUser.u_details.balance),
+          },
+        },
+        masterUser.u_id,
+        true,
+      );
+
+      // Update client's balance (amount + commission)
+      updateUser(
+        {
+          details: {
+            balance: Number(user.u_details?.balance || 0) - totalAmount,
+          },
+        },
+        user.u_id,
+        true,
+      );
 
       console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
       refetchRequests(); // Обновляем список заказов
@@ -769,6 +829,8 @@ function ChoiceOfReplenishmentMethodCard() {
   const [isVisibleAddOrder, setVisibleAddOrder] = useState(false);
   const [isVisibleEmoji, setVisibleEmoji] = useState(false);
   const [isDeleteBlockChat, setIsDeleteChat] = useState(false);
+  const [isBalanceError, setIsBalanceError] = useState(false);
+  const [BalanceErrorNum, setBalanceErrorNum] = useState(0);
   const [isOkModal, setVisibleOkModal] = useState(false);
   const [isVisibleBlock, setIsVisibleBlock] = useState(false);
   const [zayavka__isVisibleDispute, zayavka__setVisibleDispute] =
@@ -886,6 +948,55 @@ function ChoiceOfReplenishmentMethodCard() {
     };
   }, [id]);
 
+  // Add function to calculate time since last online
+  const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {
+    const lastOnline = new Date(lastTimeBeenOnline);
+    const now = new Date();
+    const diffInMinutes = Math.floor(
+      (now.getTime() - lastOnline.getTime()) / (1000 * 60),
+    );
+
+    if (diffInMinutes < 1) return 'только что';
+    if (diffInMinutes < 60)
+      return `${diffInMinutes} ${getMinutesWord(diffInMinutes)}`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} ${getHoursWord(diffInHours)}`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} ${getDaysWord(diffInDays)}`;
+  };
+
+  const getMinutesWord = (minutes: number) => {
+    const lastDigit = minutes % 10;
+    const lastTwo = minutes % 100;
+    if (lastTwo < 11 || lastTwo > 14) {
+      if (lastDigit === 1) return 'минуту';
+      if (lastDigit >= 2 && lastDigit <= 4) return 'минуты';
+    }
+    return 'минут';
+  };
+
+  const getHoursWord = (hours: number) => {
+    const lastDigit = hours % 10;
+    const lastTwo = hours % 100;
+    if (lastTwo < 11 || lastTwo > 14) {
+      if (lastDigit === 1) return 'час';
+      if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
+    }
+    return 'часов';
+  };
+
+  const getDaysWord = (days: number) => {
+    const lastDigit = days % 10;
+    const lastTwo = days % 100;
+    if (lastTwo < 11 || lastTwo > 14) {
+      if (lastDigit === 1) return 'день';
+      if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
+    }
+    return 'дней';
+  };
+
   if ((!currentUser || !masterUser) && id) return 'Загрузка...';
 
   return (
@@ -978,7 +1089,9 @@ function ChoiceOfReplenishmentMethodCard() {
                     </Link>
                     <div style={{ position: 'relative' }}>
                       <div className={styles.dotted_wrap}>
-                        <OnlineDotted isVisible={true} />
+                        <OnlineDotted
+                          isVisible={masterUser?.u_details?.isOnline}
+                        />
                       </div>
                       <img
                         src={masterUser?.u_photo || '/img/img-camera.png'}
@@ -992,7 +1105,14 @@ function ChoiceOfReplenishmentMethodCard() {
                     <h2 className="eyrqwe">{masterUser?.u_name}</h2>
                     <div className="info_nik df">
                       <div className="kiril_info">
-                        <h3>Офлайн 31 минута</h3>
+                        <h3>
+                          {masterUser?.u_details?.isOnline
+                            ? 'Онлайн'
+                            : `Офлайн ${getTimeSinceLastOnline(
+                                masterUser?.u_details?.lastTimeBeenOnline ||
+                                  new Date().toISOString(),
+                              )}`}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -1070,6 +1190,8 @@ function ChoiceOfReplenishmentMethodCard() {
             <div className="chatt awqervgg chat_block__ashd" ref={chatBlockRef}>
               {currentChat.orders.map((order) => (
                 <OrderDetailsBlock
+                  setBalanceErrorNum={setBalanceErrorNum}
+                  setIsBalanceError={setIsBalanceError}
                   setOrderId={setCurrentOrderId}
                   setIsOpenDisput={zayavka__setVisibleDispute}
                   key={order.b_id}
@@ -1080,9 +1202,15 @@ function ChoiceOfReplenishmentMethodCard() {
                 />
               ))}
             </div>
-
-            <div className="message_block">
+            <div className="message_block" style={{ position: 'relative' }}>
               <div className="block_messages-2 font_inter">
+                {isBalanceError ? (
+                  <div className={styles.balance_error}>
+                    <p>
+                      Пожалуйста пополните баланс на {BalanceErrorNum} рублей
+                    </p>
+                  </div>
+                ) : null}
                 {answer ? (
                   <p className="answer_to_message">
                     Ответить <span>Смогу приехать через час</span>

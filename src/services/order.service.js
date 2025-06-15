@@ -12,7 +12,7 @@ const getMasterOrders = () =>
       body: { lc: 99999999999999 },
     }),
   ]);
-// Mock method to fetch master orders
+
 const getMasterOrdersTestData = () => {
   return new Promise((resolve) => {
     const mockOrders = [
@@ -65,8 +65,6 @@ const getMasterOrdersTestData = () => {
         status: 'завершён',
       },
     ];
-
-    // Simulate network delay
     setTimeout(() => resolve(mockOrders), 500);
   });
 };
@@ -88,9 +86,26 @@ const updateOrderStatusFromClient = (id, payload) =>
     method: 'PATCH',
   });
 
+/**
+ * Отменяет участие мастера (драйвера) в заявке (поездке).
+ * Используется для удаления своего отклика.
+ * @param {string | number} bookingId - Идентификатор заявки (b_id).
+ * @returns {Promise<any>} Ответ от API.
+ */
+const cancelMasterResponse = (bookingId) => {
+  return appFetch(`/drive/get/${bookingId}`, {
+    method: 'POST',
+    body: {
+      u_a_role: 2,
+      action: 'set_cancel_state',
+    },
+  });
+};
+
 export {
   getMasterOrders,
   createOrder,
   updateOrderStatus,
   updateOrderStatusFromClient,
+  cancelMasterResponse,
 };
