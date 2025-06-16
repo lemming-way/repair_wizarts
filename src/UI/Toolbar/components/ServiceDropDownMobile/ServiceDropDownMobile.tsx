@@ -3,19 +3,21 @@ import arrowRight from '../../../../img/header/icons/arrow-right-icon.svg';
 import styles from '../ServiceDropDownMobile/ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './components/ServiceCategoriesDropdown/ServiceCategoriesDropdown';
 import { useSelector } from 'react-redux';
-
+import { useLanguage } from '../../../../context/LanguageContext';
 const ServiceDropdownMobile = () => {
+  const { t } = useLanguage();
+  
   const categories = useSelector(
     (state: any) => state.categories.categories || [],
   );
   // Для скоращения кода и пройтись по циклу сохранила данные в массиве
   const data: string[] = [
-    'Ремонт телефонов',
-    'Ремонт планшетов',
-    'Ремонт ноутбуков',
-    'Ремонт компьютеров',
-    'Ремонт часов',
-    'Аксессуары',
+    t('Phone repair'),
+    t('Tablet repair'),
+    t('Laptop repair'),
+    t('Computer repair'),
+    t('Watch repair'),
+    t('Accessories'),
   ];
   const [openItem, setOpenItem] = useState<number | null>(null);
 

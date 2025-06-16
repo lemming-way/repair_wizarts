@@ -1,10 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import arrowDown from "../../../../img/header/icons/arrow-down-icon.svg";
 import styles from './ServiceDropdown.module.scss';
+import { useLanguage } from '../../../../context/LanguageContext';
 
 const ServiceDropdownCities = () => {
-  const menu = [['Москва', "и Московская область"], ['Санкт-Петербург', "и Ленинградская область"]];
-  
+  const { t } = useLanguage();
+ 
+  const menu = [
+    [t('Moscow'), t('and Moscow region')],
+    [t('Saint Petersburg'), t('and Leningrad region')]
+  ];
+
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -40,7 +46,7 @@ const ServiceDropdownCities = () => {
         onClick={() => setIsOpen(prev => !prev)}
         style={{'color': 'white', 'background': 'none', 'border': 'none', 'fontSize': '16px'}}
       >
-        <span style={{ fontWeight: 400 }}>Город</span>
+        <span style={{ fontWeight: 400 }}>{t('City')}</span>
         <img
           src={arrowDown}
           alt=""
@@ -59,7 +65,7 @@ const ServiceDropdownCities = () => {
               type="text" 
               value={search} 
               onChange={(event) => setSearch(event.target.value)} 
-              placeholder='выберите регион или город' 
+              placeholder={t('select region or city')} 
             />
             {menu.map((menuItem, index) => (
               <div key={index} className={styles.sity}>

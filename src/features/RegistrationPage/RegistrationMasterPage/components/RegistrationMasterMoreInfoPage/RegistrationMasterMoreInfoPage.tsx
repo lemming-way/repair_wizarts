@@ -1,8 +1,10 @@
 import React from 'react';
 import CreatableSelect from "react-select/creatable";
 import styles from './RegistrationMasterMoreInfoPage.module.scss';
+import { useLanguage } from '../../../../../context/LanguageContext';
 
 const RegistrationMasterMoreInfoPage = () => {
+  const { t } = useLanguage();
   const options = [
     { value: 0, label: "Apple" },
     { value: 1, label: "Samsung" },
@@ -16,18 +18,18 @@ const RegistrationMasterMoreInfoPage = () => {
 
   return (
     <div className={`${styles.registrationMasterMoreInfoPage} appContainer`}>
-      <h1 className={styles.registrationMasterMoreInfoPage_title}>Дополнительная информация</h1>
+      <h1 className={styles.registrationMasterMoreInfoPage_title}>{t("Additional information")}</h1>
       <form className={styles.registrationMasterMoreInfoPage_form}>
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="name"
-          placeholder="Название организации"
+          placeholder={t("Organization name")}
           required
         />
 
         <div className={styles.registrationMasterMoreInfoPage_form_radio}>
-          <p>Пол:</p>
+          <p>{t("Gender")}:</p>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
             checked
@@ -39,7 +41,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="man"
           >
-            Мужской
+            {t("Male")}
           </label>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
@@ -51,7 +53,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="woman"
           >
-            Женский
+            {t("Female")}
           </label>
         </div>
 
@@ -59,26 +61,26 @@ const RegistrationMasterMoreInfoPage = () => {
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="type"
-          placeholder="Вид деятельности"
+          placeholder={t("Type of activity")}
           required
         />
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="business"
-          placeholder="Основной бизнес"
+          placeholder={t("Main business")}
           required
         />
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="activity"
-          placeholder="Основное направление"
+          placeholder={t("Main direction")}
           required
         />
 
         <div className={styles.registrationMasterMoreInfoPage_form_radio}>
-          <p>Бизнес модель:</p>
+          <p>{t("Business model")}:</p>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
             checked
@@ -90,7 +92,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="master"
           >
-            Частный мастер
+            {t("Private master")}
           </label>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
@@ -102,35 +104,37 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="service"
           >
-            Сервис
+            {t("Service")}
           </label>
         </div>
 
         <CreatableSelect
-          placeholder="Город"
+          placeholder={t("City")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder="Район"
+          placeholder={t("District")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder="Станция метро"
+          placeholder={t("Metro station")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder="Адрес"
+          placeholder={t("Address")}
           isClearable
           options={options}
         />
 
-        <button className={styles.registrationMasterMoreInfoPage_form_button} type="submit">Регистрация</button>
+        <button className={styles.registrationMasterMoreInfoPage_form_button} type="submit">
+          {t("Registration")}
+        </button>
       </form>
 
     </div>

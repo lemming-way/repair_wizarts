@@ -4,28 +4,31 @@ import registrationDefaultMasterImg from '../../../img/users/registrationPick/re
 import RegistrationPickCard from "./components/RegistrationPickCard/RegistrationPickCard";
 import RegistrationPickSwiper from "./components/RegistrationPickSwiper/RegistrationPickSwiper";
 import styles from './RegistrationPickPage.module.scss';
+import { useLanguage } from '../../../../../context/LanguageContext';  // импортируем контекст перевода
 
 const RegistrationPickPage = () => {
+  const { t } = useLanguage(); // получаем функцию t для перевода
+
   useEffect(() => {
-    document.title = 'Выбор регистрации';
+    document.title = t('Registration selection');
   }, []);
 
   return (
     <div className={`${styles.registrationPickPage} appContainer`}>
-      <h1 className={styles.registrationPickPage_title}>Выбор регистрации</h1>
+      <h1 className={styles.registrationPickPage_title}>{t('Registration selection')}</h1>
       <div className={styles.registrationPickPage_block}>
         {/*Вынесла в отдельный компонет т.к. будет переиспользован в свайпере*/}
         {/*Скачала дефолтные картинки в формате и svg*/}
         <RegistrationPickCard
           link="/register/client"
           img={registrationDefaultUserImg}
-          title="Регистрация пользователя"
-          subtitle="Тип регистрации для пользователей (только клиентам)"
+          title={t("User registration")}
+          subtitle={t("Registration type for users (clients only)")}
         />
         <RegistrationPickCard
           link="/register/master"
           img={registrationDefaultMasterImg}
-          title="Регистрация сервисов и мастеров"
+          title={t("Service and master registration")}
         />
       </div>
 

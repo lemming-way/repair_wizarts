@@ -1,23 +1,26 @@
 import React from 'react';
+import { useLanguage } from '../../../context/LanguageContext';
 
 const FooterInfo = () => {
+  const { t } = useLanguage();
+
   return (
     <div>
       <ul>
         <li>
-          <a href="tel:+7(969)7148750">Телефон: +7 (969) 7148750</a>
+          <a href="tel:+7(969)7148750">{t("Phone")}: +7 (969) 7148750</a>
         </li>
         <li>
-          Адрес: г. СПБ. Каховского 7
+          {t("Address")}: {t("City SPB Kakhovskogo 7")}
         </li>
         <li>
-          (Свой адрес писать все трусы)
+          ({t("Custom address note")})
         </li>
         <li>
-          Работаем ежедневно 10:00 - 20:00,
+          {t("We work daily")} 10:00 - 20:00,
         </li>
         <li>
-          без перерывов и выходных
+          {t("No breaks or days off")}
         </li>
       </ul>
     </div>

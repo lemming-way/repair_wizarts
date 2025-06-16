@@ -10,8 +10,11 @@ import qualityImage from '../../../../../img/home/whyChooseUsBlock/quality.svg';
 import priceImage from '../../../../../img/home/whyChooseUsBlock/price.svg';
 import clockImage from "../../../../../img/home/whyChooseUsBlock/clock.svg";
 import './WhyChooseUsBlockSwiper.scss';
+import { useLanguage } from '../../../../../context/LanguageContext';
 
 const WhyChooseUsBlockSwiper = () => {
+  const { t } = useLanguage();
+
   return (
       <Swiper
         pagination={{
@@ -28,47 +31,29 @@ const WhyChooseUsBlockSwiper = () => {
         <SwiperSlide className="whyChooseUsBlockSwiperSlider_item">
           <WhyChooseUsBlockCard
             img={mastersImage}
-            title="Выезд"
-            text="
-            Время - деньги. Заказав переклейку или ремонт iphone у нас
-            Вы можете сэкономить 3-4 часа времени. Мастер приедет
-            и произведет ремонт у вас дома или в офисе или заберет
-            у вас телефон, потом доставит отремонтированный.
-          "
+            title={t("On-site service")}
+            text={t("Time is money. By ordering screen replacement or iPhone repair from us, you can save 3-4 hours. The technician will come to your home or office, repair the device on site, or take it and return it after repair.")}
           />
         </SwiperSlide>
         <SwiperSlide className="whyChooseUsBlockSwiperSlider_item">
           <WhyChooseUsBlockCard
             img={qualityImage}
-            title="Качество"
-            text="
-            Наши мастера имеют 10+ лет опыта работы в области переклейки
-            и ремонта Iphone. Работая с нами, Вы можете быть совершенно уверены в том, что ваш
-            телефон в надежных и опытных руках.
-          "
+            title={t("Quality")}
+            text={t("Our technicians have over 10 years of experience in iPhone repair and screen replacement. With us, you can be sure that your phone is in reliable and experienced hands.")}
           />
         </SwiperSlide>
         <SwiperSlide className="whyChooseUsBlockSwiperSlider_item">
           <WhyChooseUsBlockCard
             img={priceImage}
-            title="Цены"
-            text="
-            Наши цены ниже среднерыночных, несмотря на то, что качество работы яна самом высшем
-            уровне. Несмотря на то, что мы используем только оригинальные зап. части. Мы любим
-            свою работу, работаем много и это позволяет предлагать лучшие
-            на рынке условия.
-          "
+            title={t("Prices")}
+            text={t("Our prices are below average, even though the quality is top level. We use only original parts. We love what we do, work hard, and this allows us to offer the best conditions on the market.")}
           />
         </SwiperSlide>
         <SwiperSlide className="whyChooseUsBlockSwiperSlider_item">
           <WhyChooseUsBlockCard
             img={clockImage}
-            title="Сроки работы"
-            text="
-            Мы пунктуальны и ответственны. Называем срок работы с запасом
-            и выполняем работу почти всегда раньше обещанного срока,
-            а ровно в срок сдаем тогда, когда происходят непредвиденные обстоятельства.
-          "
+            title={t("Work deadlines")}
+            text={t("We are punctual and responsible. We always overestimate the time and usually complete the work earlier. Only in unforeseen situations do we deliver exactly on time.")}
           />
         </SwiperSlide>
       </Swiper>

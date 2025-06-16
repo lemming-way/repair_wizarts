@@ -9,6 +9,7 @@ import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
+import { useLanguage } from "../../../../../context/LanguageContext"; // поправьте путь под себя
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
@@ -18,7 +19,7 @@ function Header() {
     const ui = useSelector(selectUI)
     const user = useSelector(selectUser)
     const messages = useSelector(selectUnreadMessages)
-
+    const { t } = useLanguage();
     return (
         <>
             <header >
@@ -33,7 +34,7 @@ function Header() {
                                     setVisibleCountry(false)
                                     setVisibleSetout(false)
                                 }}>
-                                    <span className="header__link">Услуги</span>
+                                    <span className="header__link">{t("Services")}</span>
                                     <img src="/img/afdsfads.png" alt="" />
                                 </div>
                             </DropdownService>
@@ -43,25 +44,25 @@ function Header() {
                                 setVisibleCountry(!visibleCountry)
                                 setVisibleSetout(false)
                             }}>
-                                <span className="header__link">Город</span>
+                                <span className="header__link">{t("City")}</span>
                                 <img src="/img/afdsfads.png" alt="" />
                             </div>
                             <DropdownCountry />
                         </li>
                         <li>
-                            <Link to="/articles" className="header__link">Статьи</Link>
+                            <Link to="/articles" className="header__link">{t("Articles")}</Link>
                         </li>
                         <li>
-                            <Link to="/reviews" className="header__link">Отзывы</Link>
+                            <Link to="/reviews" className="header__link">{t("Reviews")}</Link>
                         </li>
                         <li>
-                            <Link to="/contact" className="header__link">Контакты</Link>
+                            <Link to="/contact" className="header__link">{t("Contacts")}</Link>
                         </li>
                     </ul>
                     <div className="header__profile">
                         {ui.isAuthorized ? (
                             <div className="header__profile">
-                                <Link to={"/client/requests/create/title"} className="header__button">Дать задание</Link>
+                                <Link to={"/client/requests/create/title"} className="header__button">{t("Give task")}</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
@@ -104,7 +105,7 @@ function Header() {
                                             {parseFloat(user.master[0].balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
-                                            <Link to="/master/wallet">Пополнить баланс</Link>
+                                            <Link to="/master/wallet">{t("Top up balance")}</Link>
                                         </div>
                                     </>
                                 )}
@@ -113,10 +114,10 @@ function Header() {
                         ) : (
                             <div className='header__profile'>
                                 <Link to="/login" className='login__link__pourhoie'>
-                                Вход
+                                    {t("Login")}
                                 </Link>
                                 <Link to="/register" className='regis__link__pourhoie'>
-                                    Регистрация
+                                    {t("Register")}
                                 </Link>
                             </div>
                         )}

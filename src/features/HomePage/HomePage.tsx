@@ -4,16 +4,18 @@ import WhyChooseUsBlock from "./WhyChooseUsBlock/WhyChooseUsBlock";
 import Order from "../../components/Home/Order";
 import Articles from "../../components/Home/Articles";
 // import Loader from "../../components/Loader/Loader";
+import { useLanguage } from '../../context/LanguageContext';
 
 const HomePage = () => {
   // Добавила все что было в старом Home, если вдруг сломается
 
   // const counters = useService(getCounters, {})
   // const covers = useService(getCovers, [])
+  const { t } = useLanguage();
 
   useEffect(() => {
-    document.title = 'Главная';
-  }, []);
+    document.title = t("Home");
+  }, [t]);
 
 
   return (

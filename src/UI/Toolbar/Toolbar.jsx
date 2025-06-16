@@ -70,12 +70,12 @@ const Toolbar = () => {
           <ListItem
             link="/reviews"
             className={styles.toolbar_lists_item_link}
-            name="Отзывы"
+            name={t('reviews')}
           />
           <ListItem
             link="/contact"
             className={styles.toolbar_lists_item_link}
-            name="Контакты"
+            name={t('contacts')}
           />
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
@@ -87,14 +87,14 @@ const Toolbar = () => {
                   to={'/client/requests/create/title'}
                   className="header__button"
                 >
-                  Дать задание
+                   {t('give_task')}
                 </Link>
               ) : (
                 <Link
                   to={'/client/requests/create/title'}
                   className="header__button"
                 >
-                  Заказать на бирже
+                    {t('order_on_exchange')}
                 </Link>
               )}
 
@@ -159,7 +159,7 @@ const Toolbar = () => {
                   </>
                 </p> */}
                 <div className="master__moneys__full">
-                  <Link to="/master/wallet">Пополнить баланс</Link>
+                  <Link to="/master/wallet">{t('replenish_balance')}</Link>
                 </div>
               </>
             </div>
@@ -207,10 +207,10 @@ const Toolbar = () => {
       {isOpen && (
         <div className={styles.toolbar_burger2_menu}>
           <Link onClick={() => setIsOpen(false)} to="/login">
-            Вход
+          {t('login')}
           </Link>
           <Link onClick={() => setIsOpen(false)} to="/register">
-            Регистрация
+          {t('register')}
           </Link>
         </div>
       )}

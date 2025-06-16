@@ -2,28 +2,30 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { selectServices } from "../slices/services.slice";
+import { useLanguage } from "../context/LanguageContext"; // путь поправьте под свой
 
 function App() {
     const services = useSelector(selectServices)
+    const { t } = useLanguage();
 
     return (
         <footer id="footer">
             <div className="container">
                 <ul>
                     <li>
-                        <a href="">Телефон: +7 (969) 7148750</a>
+                        <a href="tel:+79697148750">{t("Phone")}: +7 (969) 7148750</a>
                     </li>
                     <li>
-                        <a href="#">Адрес: г. СПБ. Каховского 7 </a>
+                        <a href="#">{t("Address")}: г. СПБ. Каховского 7</a>
                     </li>
                     <li>
-                        <a href="#">(Свой адрес писать все трусы)</a>
+                        <a href="#">{t("Write your own address")}</a>
                     </li>
                     <li>
-                        <a href="#">Работаем ежедневно 10:00 - 20:00,</a>
+                        <a href="#">{t("Open daily 10:00 - 20:00,")}</a>
                     </li>
                     <li>
-                        <a href="#">без перерывов и выходных</a>
+                        <a href="#">{t("without breaks and days off")}</a>
                     </li>
                 </ul>
                 <div className="contfff">
@@ -36,16 +38,16 @@ function App() {
                     </ul>
                     <ul>
                         <li>
-                            <Link to="/articles">Статьи</Link>
+                            <Link to="/articles">{t("Articles")}</Link>
                         </li>
                         <li>
-                            <Link to="/reviews">Отзывы</Link>
+                            <Link to="/reviews">{t("Reviews")}</Link>
                         </li>
                     </ul>
                 </div>
             </div>
         </footer>
-    )
+    );
 }
 
 

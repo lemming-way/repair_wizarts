@@ -1,8 +1,10 @@
 import React from 'react';
 import styles from './ServiceCategoriesDropdown.module.scss';
-
+import { useLanguage } from '../../../../../../context/LanguageContext';
 const ServiceCategoriesDropdown = ({ subsections }) => {
-  const data: string[] = ['Ремонт iPhone', 'Ремонт iPad', 'Ремонт MacBook'];
+  const { t } = useLanguage();
+
+  const data: string[] = [t('iPhone repair'), t('iPad repair'), t('MacBook repair')];
 
   return (
     <div className={styles.serviceCategoriesDropdown}>

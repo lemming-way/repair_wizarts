@@ -2,8 +2,10 @@ import styles from './FooterDesktop.module.scss';
 import FooterInfo from "./components/FooterInfo";
 import ListItem from "../../components/ListItem/ListItem";
 import FooterMobile from "./FooterMobile/FooterMobile";
-function App() {
+import { useLanguage } from '../../context/LanguageContext';
 
+function App() {
+  const { t } = useLanguage();
   return (
     <footer className={`${styles.footer} ${window.location.pathname.includes("/master") ? styles.footer_master : null}`}>
       <div className={styles.footer_footerContainer}>
@@ -29,18 +31,18 @@ function App() {
           {/*</ul>*/}
 
           <ul>
-            <ListItem link="/" name="Новости"/>
-            <ListItem link="/" name="Блог"/>
-            <ListItem link="/" name="Акции и скидки"/>
-            <ListItem link="/" name="Отзывы клиентов"/>
+            <ListItem link="/" name={t("News")} />
+            <ListItem link="/" name={t("Blog")} />
+            <ListItem link="/" name={t("Promotions and Discounts")} />
+            <ListItem link="/" name={t("Customer Reviews")} />
           </ul>
 
           <ul>
-            <ListItem link="/" name="О компании"/>
-            <ListItem link="/" name="Как мы работаем"/>
-            <ListItem link="/" name="Гарантия"/>
-            <ListItem link="/" name="Вакансии"/>
-            <ListItem link="/" name="Контакты"/>
+            <ListItem link="/" name={t("About Us")} />
+            <ListItem link="/" name={t("How We Work")} />
+            <ListItem link="/" name={t("Warranty")} />
+            <ListItem link="/" name={t("Vacancies")} />
+            <ListItem link="/" name={t("Contacts")} />
           </ul>
         </div>
         <div className={styles.footer_mobile}>
@@ -48,8 +50,8 @@ function App() {
         </div>
         <div className={styles.footer_footerContainer_politics}>
           <ul>
-            <ListItem link="/" name="Политика обработки персональных данных"/>
-            <ListItem link="/" name="Пользовательское соглашение"/>
+            <ListItem link="/" name={t("Privacy Policy")} />
+            <ListItem link="/" name={t("User Agreement")} />
           </ul>
         </div>
       </div>

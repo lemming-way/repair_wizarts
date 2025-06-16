@@ -8,8 +8,11 @@ import RegistrationPickCard from "../RegistrationPickCard/RegistrationPickCard";
 import registrationDefaultUserImg from "../../../../../img/users/registrationPick/registration-user.svg";
 import registrationDefaultMasterImg from "../../../../../img/users/registrationPick/registration-master.svg";
 import './RegistrationPickSwiper.scss';
+import { useLanguage } from '../../../../../context/LanguageContext';  // импорт контекста перевода
 
 const RegistrationPickSwiper = () => {
+  const { t } = useLanguage(); // получаем функцию t
+
   return (
     <Swiper
       pagination={{
@@ -26,8 +29,8 @@ const RegistrationPickSwiper = () => {
         <RegistrationPickCard
           link="/register/client"
           img={registrationDefaultUserImg}
-          title="Регистрация пользователя"
-          subtitle="Тип регистрации для пользователей (только клиентам)"
+          title={t("User registration")}
+          subtitle={t("Registration type for users (clients only)")}
         />
       </SwiperSlide>
 
@@ -35,7 +38,7 @@ const RegistrationPickSwiper = () => {
         <RegistrationPickCard
           link="/register/master"
           img={registrationDefaultMasterImg}
-          title="Регистрация сервисов и мастеров"
+          title={t("Service and master registration")}
         />
       </SwiperSlide>
     </Swiper>
