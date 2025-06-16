@@ -8,7 +8,7 @@ import { YMaps } from 'react-yandex-maps';
 import {CustomProvider} from 'rsuite';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
-
+import { LanguageProvider } from './context/LanguageContext';
 import store from './store'
 
 const YandexQuery = {
@@ -24,7 +24,9 @@ root.render(
     <Provider store={store}>
       <BrowserRouter>
           <CustomProvider theme="dark">
-            <App />
+            <LanguageProvider>
+              <App />
+              </LanguageProvider>
           </CustomProvider>
       </BrowserRouter>
     </Provider>

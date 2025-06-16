@@ -13,6 +13,7 @@ import ServiceDropdownCities from './components/ServiceDropdownCities/ServiceDro
 import logo from '../../img/header/new-logotype.svg';
 import styles from './Toolbar.module.scss';
 import './header.scss';
+import { useLanguage } from '../context/LanguageContext';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -24,7 +25,7 @@ const Toolbar = () => {
   const [visibleCountry, setVisibleCountry] = useState(false);
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
-
+  const { t, language, setLanguage } = useLanguage();
   const ui = useSelector(selectUI);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
@@ -64,7 +65,7 @@ const Toolbar = () => {
           <ListItem
             link="/articles"
             className={styles.toolbar_lists_item_link}
-            name="Статьи"
+            name={t('articles')}
           />
           <ListItem
             link="/reviews"
