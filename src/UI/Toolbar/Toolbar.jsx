@@ -13,7 +13,7 @@ import ServiceDropdownCities from './components/ServiceDropdownCities/ServiceDro
 import logo from '../../img/header/new-logotype.svg';
 import styles from './Toolbar.module.scss';
 import './header.scss';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
