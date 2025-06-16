@@ -9,7 +9,7 @@ import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
-import { useLanguage } from "../../../../../context/LanguageContext"; // поправьте путь под себя
+import { useLanguage } from "../context/LanguageContext"; // поправьте путь под себя
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)

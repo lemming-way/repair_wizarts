@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import { setLocation } from "../slices/ui.slice"
 import { getCities } from "../services/location.service"
-import { useLanguage } from "../../../../../context/LanguageContext";  // путь поправь под свой
+import { useLanguage } from "../context/LanguageContext";  // путь поправь под свой
 
 function DropdownCountry() {
     const dispatch = useDispatch()

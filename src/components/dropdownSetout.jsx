@@ -5,7 +5,7 @@ import { selectUser, wipeUser } from '../slices/user.slice';
 import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
 import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';
-import { useLanguage } from '../../../../../context/LanguageContext'; // путь поправьте под свой
+import { useLanguage } from '../context/LanguageContext'; // путь поправьте под свой
 
 function DropdownService() {
   const dispatch = useDispatch();

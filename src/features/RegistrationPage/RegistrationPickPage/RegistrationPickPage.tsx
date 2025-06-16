@@ -4,7 +4,7 @@ import registrationDefaultMasterImg from '../../../img/users/registrationPick/re
 import RegistrationPickCard from "./components/RegistrationPickCard/RegistrationPickCard";
 import RegistrationPickSwiper from "./components/RegistrationPickSwiper/RegistrationPickSwiper";
 import styles from './RegistrationPickPage.module.scss';
-import { useLanguage } from '../../../../../context/LanguageContext';  // импортируем контекст перевода
+import { useLanguage } from '../../../context/LanguageContext';  // импортируем контекст перевода
 
 const RegistrationPickPage = () => {
   const { t } = useLanguage(); // получаем функцию t для перевода
