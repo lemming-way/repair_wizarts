@@ -6,10 +6,53 @@ import formatDate from '../../utilities/formatDate';
 import { deleteRequest, updateRequest } from '../../services/request.service';
 import ModalConfirmPause from './ModalConfirmPause';
 import ModalConfirmDelete from './ModalConfirmDelete';
+import { useRef } from 'react';
 
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import style from './AddedDevice.module.css';
+import appFetch from '../../utilities/appFetch';
+// Вспомогательная функция для преобразования файла в base64
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+// Функция для загрузки фото
+const uploadPhoto = async (file) => {
+  try {
+    const base64String = await fileToBase64(file);
+    const fileObject = {
+      file: JSON.stringify({
+        base64: base64String,
+        name: file.name,
+      }),
+    };
+    // appFetch как админ (3-й аргумент true)
+    const response = await appFetch(
+      '/dropbox/file/',
+      {
+        method: 'POST',
+        body: fileObject,
+      },
+      true,
+    );
+    const result = await response;
+    return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
+  } catch (error) {
+    console.error('Ошибка в функции uploadPhoto:', error);
+    throw error;
+  }
+};
+
+const getDropboxUrl = (urlOrId) => {
+  // Если это уже полный url, вернуть как есть
+  if (urlOrId.startsWith('http')) return urlOrId;
+  // Если это только dl_id
+  return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${urlOrId}`;
+};
 
 const StatusEnum = {
   ACTIVE: 'Активно',
@@ -18,6 +61,52 @@ const StatusEnum = {
   COMPLETED: 'Выполнено',
   COMPLETED: 'Завершено',
   CANCELED: 'Отменено',
+};
+
+// Компонент для отображения dropbox-фото через POST-запрос
+const DropboxImage = ({ url, alt = '' }) => {
+  const [imgUrl, setImgUrl] = useState(url.startsWith('blob:') ? url : null);
+  const urlRef = useRef(null);
+  useEffect(() => {
+    let revoked = false;
+    if (url.startsWith('blob:')) {
+      setImgUrl(url);
+      return;
+    }
+    // Получаем id из url
+    const match = url.match(/\/dropbox\/file\/(\d+)/);
+    const id = match ? match[1] : null;
+    if (!id) return;
+    fetch(
+      `https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/${id}`,
+      {
+        method: 'POST',
+        body: new URLSearchParams({
+          token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
+          u_hash:
+            'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
+        }),
+      },
+      true,
+    ).then(async (res) => {
+      const blob = await (res.blob ? res.blob() : res);
+      console.log(blob);
+      const objectUrl = URL.createObjectURL(blob);
+      urlRef.current = objectUrl;
+      if (!revoked) setImgUrl(objectUrl);
+    });
+    return () => {
+      revoked = true;
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    };
+  }, [url]);
+  if (!imgUrl)
+    return (
+      <div style={{ width: '100%', height: 120, background: '#eee' }}>
+        Загрузка...
+      </div>
+    );
+  return <img src={imgUrl} alt={alt} style={{ width: '100%' }} />;
 };
 
 const AddedDevice = (props) => {
@@ -33,6 +122,7 @@ const AddedDevice = (props) => {
     subsection,
     section,
     created_at,
+    photoUrls = [],
   } = props;
 
   const [isVisibleConfirmPause, setVisibleConfirmPause] = useState(false);
@@ -45,27 +135,38 @@ const AddedDevice = (props) => {
     subsection: subsection,
     service: service,
   });
-  // тестовый список для слайдера
-  const [photos, setPhotos] = useState([
-    'https://cdn.motor1.com/images/mgl/VzMq0z/s1/bugatti-chiron-1500.webp',
-  ]);
+  // photos: [{url, file?}]
+  const [photos, setPhotos] = useState(
+    photoUrls && Array.isArray(photoUrls) && photoUrls.length > 0
+      ? photoUrls.map((url) => ({ url: getDropboxUrl(url) }))
+      : [],
+  );
+  // При открытии модалки редактирования — подгружать реальные фото из props
+  useEffect(() => {
+    if (photoUrls && Array.isArray(photoUrls) && photoUrls.length > 0) {
+      setPhotos(photoUrls.map((url) => ({ url: getDropboxUrl(url) })));
+    }
+  }, [photoUrls]);
 
   // загрузка фото
   const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    console.log('внутри функции');
-
-    if (file) {
-      // Создаем URL для выбранного изображения
-      const imageUrl = URL.createObjectURL(file);
-
-      // добавить фото в общий список
-      var spisok = [...photos];
-      spisok.push(imageUrl);
-      setPhotos(spisok);
-      console.log(spisok);
+    const files = Array.from(event.target.files);
+    if (photos.length + files.length > 10) {
+      // Можно добавить setError, если нужно
+      return;
     }
+    const newPhotos = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setPhotos((prev) => [...prev, ...newPhotos]);
   };
+
+  // Удаление фото по индексу
+  const handleRemovePhoto = (index) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const getData = async (type, sectionId, subsectionId) => {
     try {
       switch (type) {
@@ -137,16 +238,29 @@ const AddedDevice = (props) => {
   const isEditable =
     status === StatusEnum.ACTIVE || status === StatusEnum.PAUSED;
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-
+    // 1. Загрузить новые фото (у которых есть file)
+    const uploadedUrls = [];
+    for (const photo of photos) {
+      if (photo.file) {
+        const url = await uploadPhoto(photo.file);
+        uploadedUrls.push(url);
+      } else if (photo.url) {
+        uploadedUrls.push(photo.url);
+      }
+    }
+    // 2. Отправить обновление
     return updateRequest(id, {
       title,
       client_price: price,
       description: message,
       status,
+      photoUrls: uploadedUrls,
+      section: selectedService.section,
+      subsection: selectedService.subsection,
+      service: selectedService.service,
     }).then((v) => {
-      console.log(v);
       onDeviceUpdate();
     });
   };
@@ -298,9 +412,25 @@ const AddedDevice = (props) => {
                               },
                             }}
                           >
-                            {photos.map((src, index) => (
+                            {photos.map((photo, index) => (
                               <SwiperSlide key={index} className="">
-                                <img src={src} alt="" />
+                                <div style={{ position: 'relative' }}>
+                                  <DropboxImage url={photo.url} alt="" />
+                                  <button
+                                    type="button"
+                                    style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      right: 0,
+                                      background: 'rgba(255,255,255,0.7)',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => handleRemovePhoto(index)}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
                               </SwiperSlide>
                             ))}
                           </Swiper>

@@ -21,6 +21,9 @@ function App() {
       try {
         const res = await appFetch('drive/archive', {
           method: 'POST',
+          body: {
+            ls: 9999999999999,
+          },
         });
 
         const allBookings = Object.values(res?.data?.booking || {});

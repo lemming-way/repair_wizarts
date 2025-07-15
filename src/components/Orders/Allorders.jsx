@@ -142,6 +142,13 @@ function App() {
   // --- Логика фильтрации ---
   // Этот блок будет пересчитываться при каждом рендере, если изменится состояние фильтров
   const filteredOrders = allOrders.filter((order) => {
+    // Исключить заказы, где владелец — текущий пользователь
+    const ownerId =
+      order.b_options?.author?.id ||
+      order.b_options?.author?.u_id ||
+      order.b_options?.u_id;
+    if (ownerId && String(ownerId) === String(user.u_id)) return false;
+
     // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'Новые' && !order.isNew) return false;
     if (selectValue === 'Просмотренные' && order.isNew) return false;

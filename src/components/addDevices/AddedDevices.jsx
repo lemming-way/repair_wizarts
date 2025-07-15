@@ -59,8 +59,8 @@ function AddedDevices() {
                 } ${styles.relative}`}
               >
                 {/* <Link to="/added-device">
-                                    <h2>Актуальное</h2>
-                                </Link> */}
+                                      <h2>Актуальное</h2>
+                                  </Link> */}
                 <Link className="just__flexingfaa" to="/client/requests">
                   <h2>Актуальное</h2>
                 </Link>
@@ -115,20 +115,15 @@ function AddedDevices() {
                     id={v.b_id}
                     onUpdate={onDeviceUpdate}
                     number_of_offers={v.drivers?.length || 0}
+                    photoUrls={
+                      v.b_options.client_feedback_photo_urls ||
+                      v.b_options.photoUrls ||
+                      []
+                    }
                   />
                 )) || []
               : filteredRequests?.map((v) => (
                   <AddedDevice
-                    //                  id,
-                    // title: ,
-                    // client_price,
-                    // description,
-                    // number_of_offers,
-                    // status: statusProps,
-                    // onUpdate: onDeviceUpdate,
-                    // service,
-                    // subsection,
-                    // section,
                     {...v.b_options}
                     status={v.b_options.status}
                     created_at={v.b_created}
@@ -136,6 +131,11 @@ function AddedDevices() {
                     id={v.b_id}
                     onUpdate={onDeviceUpdate}
                     number_of_offers={v.drivers?.length || 0}
+                    photoUrls={
+                      v.b_options.client_feedback_photo_urls ||
+                      v.b_options.photoUrls ||
+                      []
+                    }
                   />
                 )) || []}
           </div>

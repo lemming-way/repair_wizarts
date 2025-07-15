@@ -1,11 +1,88 @@
 import style from './OrderRow.module.css';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ModalOfferGo from './ModalOfferGo';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
+
+import { useRef } from 'react';
+// Компонент для отображения dropbox-фото через POST-запрос
+const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
+  const [imgUrl, setImgUrl] = useState(
+    url && url.startsWith('blob:') ? url : null,
+  );
+  const [error, setError] = useState(false);
+  const urlRef = useRef(null);
+
+  useEffect(() => {
+    let revoked = false;
+    if (!url) return;
+    if (url.startsWith('blob:')) {
+      setImgUrl(url);
+      return;
+    }
+    // Получаем id из url
+    const match = url.match(/\/dropbox\/file\/(\d+)/);
+    const id = match ? match[1] : null;
+    if (!id) return;
+    fetch(`https://ibronevik.ru/taxi/api/v1/dropbox/file/${id}`, {
+      method: 'POST',
+      body: new URLSearchParams({
+        token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
+        u_hash:
+          'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Ошибка загрузки фото');
+        const blob = await res.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('Не картинка');
+        const objectUrl = URL.createObjectURL(blob);
+        urlRef.current = objectUrl;
+        if (!revoked) setImgUrl(objectUrl);
+      })
+      .catch(() => setError(true));
+    return () => {
+      revoked = true;
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    };
+  }, [url]);
+
+  if (error)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          color: 'red',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Ошибка загрузки фото
+      </div>
+    );
+  if (!imgUrl)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Загрузка...
+      </div>
+    );
+  return <img src={imgUrl} alt={alt} style={imgStyle || { width: '100%' }} />;
+};
 
 export default function OrderRowOffer({
   b_id,
@@ -28,7 +105,7 @@ export default function OrderRowOffer({
   const [comment, setComment] = useState('');
   const [price, setPrice] = useState('');
   const [time, setTime] = useState('');
-
+  console.log(images);
   const openModal = (imageSrc) => {
     setModalImage(imageSrc);
     setIsModalOpen(true);
@@ -130,7 +207,24 @@ export default function OrderRowOffer({
           >
             {images.map((src, index) => (
               <SwiperSlide key={index} className={style.swiperSlide}>
-                {/* <img onClick={() => openModal(src)} src={src} alt="" /> */}
+                <div
+                  onClick={() => {
+                    openModal(src);
+                    console.log('e', src);
+                  }}
+                  style={{ cursor: 'pointer', width: '100%', height: '100%' }}
+                >
+                  <DropboxImage
+                    url={src}
+                    alt={deviceName}
+                    imgStyle={{
+                      width: '100%',
+                      height: 120,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                    }}
+                  />
+                </div>
               </SwiperSlide>
             ))}
           </Swiper>
@@ -234,7 +328,11 @@ export default function OrderRowOffer({
               {images.map((image, index) => (
                 <SwiperSlide key={index}>
                   <div className="modal-content-info">
-                    <img src={image} alt={`Slide ${index + 1}`} />
+                    <DropboxImage
+                      url={image}
+                      alt={`Slide ${index + 1}`}
+                      imgStyle={{ maxHeight: '80vh', maxWidth: '100%' }}
+                    />
                   </div>
                 </SwiperSlide>
               ))}

@@ -51,6 +51,92 @@ import appFetch from '../../../utilities/appFetch';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
 import MediaQuery from 'react-responsive';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation } from 'swiper';
+
+// Тип для фото-ссылки
+interface PhotoUrl {
+  url: string;
+}
+
+// Типизированный компонент для dropbox-фото
+const DropboxImage: FC<{
+  url: string;
+  alt?: string;
+  style?: React.CSSProperties;
+}> = ({ url, alt = '', style }) => {
+  const [imgUrl, setImgUrl] = useState<string | null>(
+    url && url.startsWith('blob:') ? url : null,
+  );
+  const [error, setError] = useState(false);
+  const urlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let revoked = false;
+    if (!url) return;
+    if (url.startsWith('blob:')) {
+      setImgUrl(url);
+      return;
+    }
+    const match = url.match(/\/dropbox\/file\/(\d+)/);
+    const id = match ? match[1] : null;
+    if (!id) return;
+    fetch(`https://ibronevik.ru/taxi/api/v1/dropbox/file/${id}`, {
+      method: 'POST',
+      body: new URLSearchParams({
+        token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
+        u_hash:
+          'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Ошибка загрузки фото');
+        const blob = await res.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('Не картинка');
+        const objectUrl = URL.createObjectURL(blob);
+        urlRef.current = objectUrl;
+        if (!revoked) setImgUrl(objectUrl);
+      })
+      .catch(() => setError(true));
+    return () => {
+      revoked = true;
+      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    };
+  }, [url]);
+
+  if (error)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          color: 'red',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Ошибка загрузки фото
+      </div>
+    );
+  if (!imgUrl)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        Загрузка...
+      </div>
+    );
+  return <img src={imgUrl} alt={alt} style={style || { width: '100%' }} />;
+};
 
 interface MasterInfo {
   u_photo?: string;
@@ -239,6 +325,11 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     order.b_options.is_master_agree_with_cancel || order.b_state == '3';
   const isOpenDispute = order.b_options.is_open_dispute;
   const isMasterAgreeWithDispute = order.b_options.is_master_agree_with_dispute;
+  // Получаем массив ссылок на фото
+  const photoUrls: string[] =
+    (order.b_options?.client_feedback_photo_urls as string[]) ||
+    (order.b_options?.photoUrls as string[]) ||
+    [];
   return (
     <>
       {isVisibleAddFeedback && (
@@ -519,6 +610,33 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* Фото заказа */}
+      {photoUrls.length > 0 && (
+        <div style={{ margin: '10px 0' }}>
+          <Swiper
+            slidesPerView={3}
+            spaceBetween={10}
+            navigation={true}
+            modules={[Navigation]}
+            style={{ width: 300, height: 120 }}
+          >
+            {photoUrls.map((url, idx) => (
+              <SwiperSlide key={idx}>
+                <DropboxImage
+                  url={typeof url === 'string' ? url : (url as any).url}
+                  alt={`Фото ${idx + 1}`}
+                  style={{
+                    width: '100%',
+                    height: 120,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                  }}
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
         </div>
       )}
       {!isOrderCompleted && !isCancelRequested && !isOpenDispute && (

@@ -2,32 +2,36 @@ import appFetch from '../utilities/appFetch';
 import formatDateForApI from '../utilities/formatDateForApi';
 import { getToken } from './token.service';
 
-const createRequest = (payload) => {
+const createRequest = (payload, asAdmin) => {
   const token = getToken();
   const date = new Date();
   const formattedDate = formatDateForApI(date);
-  return appFetch('/drive', {
-    body: {
-      u_a_role: 1,
-      data: JSON.stringify({
-        b_start_address: 'адрес',
-        b_start_datetime: formattedDate,
-        b_max_waiting: 604800,
-        b_payment_way: '2',
-        b_options: {
-          ...payload.data,
-          author: {
-            name: token.user?.u_name,
-            email: token.user?.u_email,
-            phone: token.user?.u_phone,
-            photo: token.user?.u_photo,
+  return appFetch(
+    '/drive',
+    {
+      body: {
+        u_a_role: 1,
+        data: JSON.stringify({
+          b_start_address: 'адрес',
+          b_start_datetime: formattedDate,
+          b_max_waiting: 604800,
+          b_payment_way: '2',
+          b_options: {
+            ...payload.data,
+            author: {
+              name: token.user?.u_name,
+              email: token.user?.u_email,
+              phone: token.user?.u_phone,
+              photo: token.user?.u_photo,
+            },
+            status: 'Активно',
+            type: 'order',
           },
-          status: 'Активно',
-          type: 'order',
-        },
-      }),
+        }),
+      },
     },
-  });
+    asAdmin,
+  );
 };
 const updateRequest = (id, payload, asAdmin, actingUserId) => {
   const formattedData = Object.entries(payload).map(([key, value]) => [

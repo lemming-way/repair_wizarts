@@ -97,7 +97,7 @@ function Offer() {
         </div>
         {/* <NavigationOrders /> */}
       </div>
-
+      {console.log(currentOrder)}
       <OrderRowOffer
         b_id={id}
         userName={currentOrder.b_options?.author.name}
@@ -108,7 +108,7 @@ function Offer() {
         timeLeft={'1 день'} // можно рассчитать от b_start_datetime
         views={0}
         budget={currentOrder.b_options?.client_price}
-        images={[]} // если будут фотки - подставишь
+        images={currentOrder.b_options?.photoUrls || []} // если будут фотки - подставишь
         profileImage={
           currentOrder.b_options?.author.photo || '/img/profil_img/1.png'
         }
