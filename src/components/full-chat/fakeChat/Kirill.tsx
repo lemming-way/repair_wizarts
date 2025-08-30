@@ -6,6 +6,7 @@ import {
   FC,
   Dispatch,
   SetStateAction,
+  KeyboardEvent,
 } from 'react';
 import '../../../scss/chat.css';
 import { Link, useParams } from 'react-router-dom';
@@ -53,6 +54,72 @@ import FrameMessages from './frameMessages';
 import MediaQuery from 'react-responsive';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper';
+
+// ====== ЧАТ: типы и утилиты ===============================================
+type ChatAuthor = 'client' | 'master' | 'admin';
+
+interface ChatMessage {
+  id: string; // uuid
+  ts: string; // ISO
+  author: ChatAuthor;
+  text: string;
+  files?: string[];
+}
+
+const nowIso = () => new Date().toISOString();
+
+const makeMsg = (
+  author: ChatAuthor,
+  text: string,
+  files?: string[],
+): ChatMessage => ({
+  id:
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? (crypto as any).randomUUID()
+      : String(Date.now()) + Math.random().toString(16).slice(2),
+  ts: nowIso(),
+  author,
+  text: String(text || '').trim(),
+  files: files && files.length ? files : undefined,
+});
+// ===========================================================================
+
+// ====== Хронологический таймлайн событий ======
+type TimelineKind =
+  | 'order_created'
+  | 'chat'
+  | 'cancel_requested'
+  | 'cancel_master_accepted'
+  | 'cancel_master_rejected'
+  | 'dispute_opened'
+  | 'dispute_master_accepted'
+  | 'dispute_master_rejected'
+  | 'order_completed';
+
+interface TimelineItemBase {
+  ts: string; // ISO
+  kind: TimelineKind;
+}
+
+interface TimelineChatItem extends TimelineItemBase {
+  kind: 'chat';
+  msg: ChatMessage;
+}
+
+interface TimelineSimpleItem extends TimelineItemBase {
+  kind:
+    | 'order_created'
+    | 'cancel_requested'
+    | 'cancel_master_accepted'
+    | 'cancel_master_rejected'
+    | 'dispute_opened'
+    | 'dispute_master_accepted'
+    | 'dispute_master_rejected'
+    | 'order_completed';
+}
+
+type TimelineItem = TimelineChatItem | TimelineSimpleItem;
+// =================================================
 
 // Тип для фото-ссылки
 interface PhotoUrl {
@@ -173,6 +240,116 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
     ({} as any);
+
+  // ===== ЧАТ: история для этого заказа =====
+  const chatHistory: ChatMessage[] = useMemo(() => {
+    const raw = order?.b_options?.chat_history;
+    const arr = Array.isArray(raw) ? (raw as ChatMessage[]) : [];
+    // сортируем сообщения по времени (старые -> новые)
+    return [...arr].sort(
+      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+    );
+  }, [order?.b_options?.chat_history]);
+  // ========================================
+
+  // ===== Таймлайн для этого заказа (единая лента) =====
+  const timeline: TimelineItem[] = useMemo(() => {
+    const items: TimelineItem[] = [];
+
+    // 3.1 Создание заказа
+    if (order?.b_created) {
+      items.push({
+        kind: 'order_created',
+        ts: order.b_created,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.2 Запрос отмены (клиент)
+    if (
+      order?.b_options?.is_request_for_cancel_exist &&
+      order?.b_options?.cancel_requested_ts
+    ) {
+      items.push({
+        kind: 'cancel_requested',
+        ts: order.b_options.cancel_requested_ts,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.3 Решение мастера по отмене
+    if (
+      typeof order?.b_options?.is_master_agree_with_cancel === 'boolean' &&
+      order?.b_options?.cancel_master_decision_ts
+    ) {
+      items.push({
+        kind: order.b_options.is_master_agree_with_cancel
+          ? 'cancel_master_accepted'
+          : 'cancel_master_rejected',
+        ts: order.b_options.cancel_master_decision_ts,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.4 Открытие спора
+    if (
+      order?.b_options?.is_open_dispute &&
+      order?.b_options?.dispute_opened_ts
+    ) {
+      items.push({
+        kind: 'dispute_opened',
+        ts: order.b_options.dispute_opened_ts,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.5 Решение мастера по спору
+    if (
+      typeof order?.b_options?.is_master_agree_with_dispute === 'boolean' &&
+      order?.b_options?.dispute_master_decision_ts
+    ) {
+      items.push({
+        kind: order.b_options.is_master_agree_with_dispute
+          ? 'dispute_master_accepted'
+          : 'dispute_master_rejected',
+        ts: order.b_options.dispute_master_decision_ts,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.6 Завершение заказа
+    if (order?.b_state === '4' && order?.b_options?.complete_ts) {
+      items.push({
+        kind: 'order_completed',
+        ts: order.b_options.complete_ts,
+      } as TimelineSimpleItem);
+    }
+
+    // 3.7 Сообщения чата
+    for (const m of chatHistory) {
+      if (m?.ts) {
+        items.push({
+          kind: 'chat',
+          ts: m.ts,
+          msg: m,
+        } as TimelineChatItem);
+      }
+    }
+
+    // сортировка по времени (от старых к новым)
+    items.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+    return items;
+  }, [
+    order?.b_created,
+    order?.b_state,
+    order?.b_options?.is_request_for_cancel_exist,
+    order?.b_options?.cancel_requested_ts,
+    order?.b_options?.is_master_agree_with_cancel,
+    order?.b_options?.cancel_master_decision_ts,
+    order?.b_options?.is_open_dispute,
+    order?.b_options?.dispute_opened_ts,
+    order?.b_options?.is_master_agree_with_dispute,
+    order?.b_options?.dispute_master_decision_ts,
+    order?.b_options?.complete_ts,
+    chatHistory,
+  ]);
+  // =====================================================
+
   // Локальное состояние для каждого блока заказа
   const [isOpenZayavka, setOpenZayavka] = useState(false);
   const [isShowDetailsOrder, setShowDetailsOrder] = useState(false);
@@ -259,6 +436,16 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
         true,
       );
 
+      // ====== ДОБАВИЛИ отметку времени завершения в b_options ======
+      await updateRequest(
+        order.b_id,
+        {
+          complete_ts: nowIso(),
+        },
+        true,
+        order.u_id,
+      );
+
       console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
       refetchRequests(); // Обновляем список заказов
     } catch (error) {
@@ -271,9 +458,10 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   const handleCancelOrder = async () => {
     setIsLoading(true);
     try {
-      // Обновляем b_options, добавляя флаг отмены
+      // Обновляем b_options, добавляя флаг отмены + время
       await updateRequest(order.b_id, {
         is_request_for_cancel_exist: true,
+        cancel_requested_ts: nowIso(), // <— отметка времени
       });
       console.log(`Запрос на отмену заказа ${order.b_id} отправлен.`);
       refetchRequests(); // Обновляем список
@@ -283,9 +471,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       setIsLoading(false);
     }
   };
-  const handleOpenDispute = () => {
+  const handleOpenDispute = async () => {
     setOrderId(order.b_id);
     setIsOpenDisput(true);
+    try {
+      await updateRequest(order.b_id, {
+        is_open_dispute: true,
+        dispute_opened_ts: nowIso(), // <— отметка времени
+      });
+    } catch (e) {
+      console.error('open dispute error', e);
+    }
   };
   // --- КОНЕЦ: Логика для кнопок ---
 
@@ -306,8 +502,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       const lastTwo = hours % 100;
       let word = 'часов';
       if (lastTwo < 11 || lastTwo > 14) {
-        if (lastDigit === 1) word = 'час';
-        else if (lastDigit >= 2 && lastDigit <= 4) word = 'часа';
+        if (lastDigit === 1) return 'час';
+        else if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
       }
       return `${hours} ${word}`;
     }
@@ -330,8 +526,128 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     (order.b_options?.client_feedback_photo_urls as string[]) ||
     (order.b_options?.photoUrls as string[]) ||
     [];
+
   return (
     <>
+      {/* ======= ЧАТ: (оставлен твой старый рендер истории; ниже будет единый таймлайн) ======= */}
+      {chatHistory.length > 0 && (
+        <div className="chat_technical_message">
+          <div className={`${styles.message_block} ${styles.text_left}`}>
+            <div
+              className="correspondence df font_inter"
+              style={{ flexDirection: 'column', gap: '10px' }}
+            >
+              {chatHistory.map((m) => {
+                const isMine =
+                  (m.author === 'client' &&
+                    currentUser?.u_id === order?.u_id) ||
+                  (m.author === 'master' &&
+                    masterUser?.u_id === order?.b_options?.winnerMaster);
+                const bubbleSide = isMine
+                  ? styles.text_right
+                  : styles.text_left;
+                const avatarSrc =
+                  m.author === 'admin'
+                    ? '/img/img-camera.png'
+                    : m.author === 'master'
+                    ? masterUser?.u_photo || '/img/img-camera.png'
+                    : currentUser?.u_photo || '/img/img-camera.png';
+                const authorName =
+                  m.author === 'admin'
+                    ? 'Администратор'
+                    : m.author === 'master'
+                    ? masterUser?.u_name || 'Исполнитель'
+                    : 'Вы';
+                return (
+                  <div
+                    key={m.id}
+                    className={`${styles.message_block} ${bubbleSide}`}
+                    style={{ marginBottom: 6 }}
+                  >
+                    <div className="my_chat">
+                      <div
+                        className="correspondence-active font_inter df"
+                        style={{ gap: '10px' }}
+                      >
+                        {!isMine && (
+                          <div className="ciril-img">
+                            <img
+                              src={avatarSrc}
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                              }}
+                              alt="user"
+                            />
+                          </div>
+                        )}
+                        <div className="let" style={{ maxWidth: 560 }}>
+                          <div
+                            className="letter_kiril df"
+                            style={{
+                              gap: '8px',
+                              justifyContent: isMine
+                                ? 'flex-end'
+                                : 'flex-start',
+                            }}
+                          >
+                            <div className="letter_text-1">
+                              <h2 style={{ fontSize: 14, opacity: 0.8 }}>
+                                {authorName}
+                              </h2>
+                            </div>
+                            <div className="letter_text-2">
+                              <h3 style={{ fontSize: 12, opacity: 0.6 }}>
+                                {new Date(m.ts).toLocaleTimeString([], {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </h3>
+                            </div>
+                          </div>
+                          <div
+                            className={styles.block_bid}
+                            style={{ padding: '10px 12px' }}
+                          >
+                            <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
+                            {!!m.files?.length && (
+                              <div
+                                style={{
+                                  marginTop: 8,
+                                  display: 'grid',
+                                  gridTemplateColumns: 'repeat(3, 100px)',
+                                  gap: 8,
+                                }}
+                              >
+                                {m.files.map((u, i) => (
+                                  <DropboxImage
+                                    key={i}
+                                    url={u}
+                                    alt={`file-${i}`}
+                                    style={{
+                                      width: 100,
+                                      height: 100,
+                                      objectFit: 'cover',
+                                      borderRadius: 8,
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ======= КОНЕЦ: чат-история ======= */}
+
       {isVisibleAddFeedback && (
         <AddFeedbackModal
           id={order.b_id}
@@ -760,6 +1076,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         order.b_id,
                         {
                           is_master_agree_with_cancel: true,
+                          cancel_master_decision_ts: nowIso(), // <— отметка времени
                         },
                         true,
                         order.u_id,
@@ -778,6 +1095,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         order.b_id,
                         {
                           is_master_agree_with_cancel: false,
+                          cancel_master_decision_ts: nowIso(), // <— отметка времени
                         },
                         true,
                         order.u_id,
@@ -862,6 +1180,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         order.b_id,
                         {
                           is_master_agree_with_dispute: true,
+                          dispute_master_decision_ts: nowIso(), // <— отметка времени
                         },
                         true,
                         order.u_id,
@@ -881,6 +1200,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         order.b_id,
                         {
                           is_master_agree_with_dispute: false,
+                          dispute_master_decision_ts: nowIso(), // <— отметка времени
                         },
                         true,
                         order.u_id,
@@ -933,6 +1253,278 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
             </div>
           </div>
         ))}
+
+      {/* ====== ЕДИНЫЙ ТАЙМЛАЙН (ВСЁ ПО ВРЕМЕНИ) ====== */}
+      {timeline.length > 0 && (
+        <div className="chat_technical_message">
+          <div className={`${styles.message_block} ${styles.text_left}`}>
+            <div
+              className="correspondence df font_inter"
+              style={{ flexDirection: 'column', gap: 10 }}
+            >
+              {timeline.map((item, idx) => {
+                if (item.kind === 'chat') {
+                  const m = (item as TimelineChatItem).msg;
+                  const isMine =
+                    (m.author === 'client' &&
+                      currentUser?.u_id === order?.u_id) ||
+                    (m.author === 'master' &&
+                      masterUser?.u_id === order?.b_options?.winnerMaster);
+                  const bubbleSide = isMine
+                    ? styles.text_right
+                    : styles.text_left;
+                  const avatarSrc =
+                    m.author === 'admin'
+                      ? '/img/img-camera.png'
+                      : m.author === 'master'
+                      ? masterUser?.u_photo || '/img/img-camera.png'
+                      : currentUser?.u_photo || '/img/img-camera.png';
+                  const authorName =
+                    m.author === 'admin'
+                      ? masterUser?.u_name || 'Исполнитель'
+                      : m.author === 'master'
+                      ? masterUser?.u_name || 'Исполнитель'
+                      : 'Вы';
+                  return (
+                    <div
+                      key={m.id}
+                      className={`${styles.message_block} ${bubbleSide}`}
+                      style={{ marginBottom: 6 }}
+                    >
+                      <div className="my_chat">
+                        <div
+                          className="correspondence-active font_inter df"
+                          style={{ gap: 10 }}
+                        >
+                          {!isMine && (
+                            <div className="ciril-img">
+                              <img
+                                src={avatarSrc}
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 20,
+                                }}
+                                alt="user"
+                              />
+                            </div>
+                          )}
+                          <div className="let" style={{ maxWidth: 560 }}>
+                            <div
+                              className="letter_kiril df"
+                              style={{
+                                gap: 8,
+                                justifyContent: isMine
+                                  ? 'flex-end'
+                                  : 'flex-start',
+                              }}
+                            >
+                              <div className="letter_text-1">
+                                <h2 style={{ fontSize: 14, opacity: 0.8 }}>
+                                  {authorName}
+                                </h2>
+                              </div>
+                              <div className="letter_text-2">
+                                <h3 style={{ fontSize: 12, opacity: 0.6 }}>
+                                  {new Date(m.ts).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </h3>
+                              </div>
+                            </div>
+                            <div
+                              className={styles.block_bid}
+                              style={{ padding: '10px 12px' }}
+                            >
+                              <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
+                              {!!m.files?.length && (
+                                <div
+                                  style={{
+                                    marginTop: 8,
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, 100px)',
+                                    gap: 8,
+                                  }}
+                                >
+                                  {m.files.map((u, i) => (
+                                    <DropboxImage
+                                      key={i}
+                                      url={u}
+                                      alt={`file-${i}`}
+                                      style={{
+                                        width: 100,
+                                        height: 100,
+                                        objectFit: 'cover',
+                                        borderRadius: 8,
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // системные события — единый вид
+                const timeStr = new Date(item.ts).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                const sys = (txt: string, icon: string) => (
+                  <div
+                    className={`${styles.message_block} ${styles.text_center}`}
+                  >
+                    <div className={styles.cancel_block}>
+                      <img src={icon} alt="" />
+                      <p>{txt}</p>
+                      <span>{timeStr}</span>
+                    </div>
+                  </div>
+                );
+
+                switch (item.kind) {
+                  case 'order_created':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `${
+                            order.b_options.orderType === 'request'
+                              ? 'Заявка'
+                              : 'Заказ'
+                          } создан (№${order.b_id})`,
+                          '/img/icons/box.png',
+                        )}
+                      </div>
+                    );
+                  case 'cancel_requested':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Клиент предложил отмену ${
+                            order.b_options.orderType === 'request'
+                              ? 'заявки'
+                              : 'заказа'
+                          }`,
+                          '/img/cansel_message.png',
+                        )}
+                      </div>
+                    );
+                  case 'cancel_master_accepted':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Исполнитель принял отмену ${
+                            order.b_options.orderType === 'request'
+                              ? 'заявки'
+                              : 'заказа'
+                          }`,
+                          '/img/message_green.png',
+                        )}
+                      </div>
+                    );
+                  case 'cancel_master_rejected':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Исполнитель отказался от отмены ${
+                            order.b_options.orderType === 'request'
+                              ? 'заявки'
+                              : 'заказа'
+                          }`,
+                          '/img/message_cancel.png',
+                        )}
+                      </div>
+                    );
+                  case 'dispute_opened':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Открылся спор по ${
+                            order.b_options.orderType === 'request'
+                              ? 'данной заявке'
+                              : 'данному заказу'
+                          }`,
+                          '/img/message_cancel.png',
+                        )}
+                      </div>
+                    );
+                  case 'dispute_master_accepted':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Исполнитель согласился по спору (${
+                            order.b_options.orderType === 'request'
+                              ? 'заявка'
+                              : 'заказ'
+                          })`,
+                          '/img/message_green.png',
+                        )}
+                      </div>
+                    );
+                  case 'dispute_master_rejected':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `Исполнитель не согласен по спору (${
+                            order.b_options.orderType === 'request'
+                              ? 'заявка'
+                              : 'заказ'
+                          })`,
+                          '/img/message_cancel.png',
+                        )}
+                      </div>
+                    );
+                  case 'order_completed':
+                    return (
+                      <div
+                        key={`sys-${idx}`}
+                        className="chat_technical_message"
+                      >
+                        {sys(
+                          `${
+                            order.b_options.orderType === 'request'
+                              ? 'Заявка'
+                              : 'Заказ'
+                          } успешно подтвержден`,
+                          '/img/message_green.png',
+                        )}
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ====== КОНЕЦ: ЕДИНЫЙ ТАЙМЛАЙН ====== */}
     </>
   );
 };
@@ -1029,6 +1621,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const [edit, Isedit] = useState(false);
   const [chooseFile, IschooseFile] = useState(false);
   const [message, setMessage] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
   function addEmojiToMessage(emoji: EmojiClickData) {
     setMessage((prevMessage) => prevMessage + emoji.emoji);
   }
@@ -1038,6 +1631,53 @@ function ChoiceOfReplenishmentMethodCard() {
   }
   const [isAtBottom, setIsAtBottom] = useState(false);
   const chatBlockRef = useRef<HTMLDivElement>(null);
+
+  // ===== ЧАТ: отправка сообщения =====
+  async function sendChatMessage(
+    order: any,
+    who: 'client' | 'master',
+    text: string,
+    files?: string[],
+  ) {
+    const author: ChatAuthor = who === 'client' ? 'client' : 'admin';
+    const msg = makeMsg(author, text, files);
+    const prev: ChatMessage[] = Array.isArray(order?.b_options?.chat_history)
+      ? (order.b_options.chat_history as ChatMessage[])
+      : [];
+    const next = [...prev, msg];
+    try {
+      if (who === 'client') {
+        await updateRequest(order.b_id, { chat_history: next });
+      } else {
+        await updateRequest(
+          order.b_id,
+          { chat_history: next },
+          true,
+          order.u_id,
+        );
+      }
+    } catch (e) {
+      console.error('sendChatMessage error', e);
+    }
+  }
+
+  const handleSend = async () => {
+    const text = message.trim();
+    if (!text) return;
+    if (!currentChat?.orders?.length) return;
+    const order = currentChat.orders[currentChat.orders.length - 1];
+    const role: 'client' | 'master' = ui.isMaster ? 'master' : 'client';
+    await sendChatMessage(
+      order,
+      role,
+      text,
+      attachedFiles.length ? attachedFiles : undefined,
+    );
+    setMessage('');
+    setAttachedFiles([]);
+    userRequests.refetch();
+    scrollToBottom();
+  };
 
   const scrollToBottom = () => {
     if (chatBlockRef.current) {
@@ -1053,6 +1693,14 @@ function ChoiceOfReplenishmentMethodCard() {
     }
   };
 
+  // отправка по Enter
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   useEffect(() => {
     const chatBlock = chatBlockRef.current;
     if (chatBlock) {
@@ -1065,6 +1713,15 @@ function ChoiceOfReplenishmentMethodCard() {
       }
     };
   }, [id]);
+
+  // ===== Псевдо-вебсокет: опрос каждые 30 секунд =====
+  useEffect(() => {
+    const t = setInterval(() => {
+      userRequests.refetch();
+    }, 30000);
+    return () => clearInterval(t);
+  }, [userRequests]);
+  // ====================================
 
   // Add function to calculate time since last online
   const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {
@@ -1361,6 +2018,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         placeholder="Введите сообщение..."
                         value={message}
                         onChange={handleInputChat}
+                        onKeyDown={handleInputKeyDown}
                       />
                     </div>
                     <div className="nav_message df">
@@ -1439,7 +2097,12 @@ function ChoiceOfReplenishmentMethodCard() {
                         </label>
                       </div>
 
-                      <div className="plane"></div>
+                      <div
+                        className="plane"
+                        onClick={handleSend}
+                        role="button"
+                        aria-label="Отправить сообщение"
+                      ></div>
                     </div>
                   </div>
                 )}

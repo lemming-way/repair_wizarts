@@ -64,7 +64,6 @@ function ChoiceOfReplenishmentMethodClient() {
             </p>
           </div>
           <h6>Минимум 10₽ максимум 150 000 с учетом комиссии</h6>
-
           <ChoiceOfReplenishmentMethodCard />
 
           <div className={style.buttons}>

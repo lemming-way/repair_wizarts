@@ -18,6 +18,38 @@ function App() {
     [],
   );
 
+  // утилита: получить последнее сообщение по всем заказам чата
+  function getLastMessageFromOrders(orders: any[]): {
+    text: string;
+    ts?: string;
+  } {
+    let latest: { text: string; ts?: string } = {
+      text: 'Нет сообщений',
+      ts: undefined,
+    };
+    let latestTs = -Infinity;
+
+    for (const order of orders || []) {
+      const hist = Array.isArray(order?.b_options?.chat_history)
+        ? order.b_options.chat_history
+        : [];
+
+      for (const m of hist) {
+        const t = m?.ts ? new Date(m.ts).getTime() : NaN;
+        if (!Number.isNaN(t) && t > latestTs) {
+          latestTs = t;
+          latest = { text: String(m?.text ?? ''), ts: m.ts };
+        }
+      }
+    }
+    // небольшое визуальное сокращение длинных сообщений
+    const MAX_LEN = 120;
+    if (latest.text.length > MAX_LEN) {
+      latest.text = latest.text.slice(0, MAX_LEN).trimEnd() + '…';
+    }
+    return latest;
+  }
+
   const groupedChats = useMemo(() => {
     const rawRequests = Array.from(
       new Map(
@@ -57,8 +89,6 @@ function App() {
       };
     });
   }, [userRequests.data]);
-  // console.log(groupedChats);
-  // --- КОНЕЦ ИЗМЕНЕНИЯ ---
 
   useEffect(() => {
     document.title = 'Чат';
@@ -81,59 +111,72 @@ function App() {
       </div>
 
       <div className="big_messages__wrap">
-        {/* --- ИЗМЕНЕНИЕ: Рендерим сгруппированные чаты --- */}
         {groupedChats.length === 0
           ? 'Пусто'
-          : groupedChats.map(({ chatId, masterInfo, isOwner, clientInfo }) => (
-              <div className="big_messages" key={chatId}>
-                <Link
-                  to={
-                    window.location.href.includes('master')
-                      ? `/master/chat/${chatId}`
-                      : `/client/chat/${chatId}`
-                  }
-                >
-                  <div className="ilya df font_inter align">
-                    <div className="ilya_img">
-                      <img
-                        src={masterInfo.u_photo || '/img/img-camera.png'}
-                        style={{ height: 65, width: 66, borderRadius: 30 }}
-                        alt="chat icon"
-                      />
-                    </div>
+          : groupedChats.map(
+              ({ chatId, masterInfo, isOwner, clientInfo, orders }) => {
+                const lastMsg = getLastMessageFromOrders(orders);
+                return (
+                  <div className="big_messages" key={chatId}>
+                    <Link
+                      to={
+                        window.location.href.includes('master')
+                          ? `/master/chat/${chatId}`
+                          : `/client/chat/${chatId}`
+                      }
+                    >
+                      <div className="ilya df font_inter align">
+                        <div className="ilya_img">
+                          <img
+                            src={masterInfo.u_photo || '/img/img-camera.png'}
+                            style={{ height: 65, width: 66, borderRadius: 30 }}
+                            alt="chat icon"
+                          />
+                        </div>
 
-                    <div className="ilya_text">
-                      <h2>
-                        {isOwner
-                          ? masterInfo.u_name || 'Мастер'
-                          : clientInfo.name || 'Мастер'}
-                      </h2>
+                        <div className="ilya_text">
+                          <h2>
+                            {isOwner
+                              ? masterInfo.u_name || 'Мастер'
+                              : clientInfo.name || 'Мастер'}
+                          </h2>
 
-                      <h3
-                        className="txt-text-small-ver"
-                        style={{ color: '#D9573B' }}
-                      >
-                        Печатает...
-                      </h3>
-                    </div>
+                          <h3
+                            className="txt-text-small-ver"
+                            style={{ color: '#555' }}
+                            title={lastMsg.text}
+                          >
+                            {lastMsg.text}
+                          </h3>
+                        </div>
 
-                    <div className="ilya_text-2">
-                      <h2>
-                        {new Date(
-                          masterInfo.u_details?.lastTimeBeenOnline ||
-                            new Date().toISOString(),
-                        )?.toLocaleTimeString('ru-RU', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </h2>
-                      <h3>1</h3>
-                    </div>
+                        <div className="ilya_text-2">
+                          <h2>
+                            {lastMsg.ts
+                              ? new Date(lastMsg.ts).toLocaleTimeString(
+                                  'ru-RU',
+                                  {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  },
+                                )
+                              : new Date(
+                                  masterInfo.u_details?.lastTimeBeenOnline ||
+                                    new Date().toISOString(),
+                                ).toLocaleTimeString('ru-RU', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                          </h2>
+                          {/* Убрали индикатор нового сообщения */}
+                        </div>
+                      </div>
+                      <div className="line_ilya"></div>
+                    </Link>
                   </div>
-                  <div className="line_ilya"></div>
-                </Link>
-              </div>
-            ))}
+                );
+              },
+            )}
       </div>
     </div>
   );
