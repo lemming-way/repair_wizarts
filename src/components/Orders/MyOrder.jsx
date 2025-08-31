@@ -157,7 +157,6 @@ function MyOrder() {
     if (file) {
       // Создаем URL для выбранного изображения
       const imageUrl = URL.createObjectURL(file);
-
       // добавить фото в общий список
       var spisok = [...photos];
       spisok.push(imageUrl);

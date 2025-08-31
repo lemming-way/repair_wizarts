@@ -63,7 +63,7 @@ interface ChatMessage {
   ts: string; // ISO
   author: ChatAuthor;
   text: string;
-  files?: string[];
+  files?: string[]; // постоянные ссылки https://ibronevik.ru/taxi/api/v1/dropbox/file/{id}
 }
 
 const nowIso = () => new Date().toISOString();
@@ -126,7 +126,48 @@ interface PhotoUrl {
   url: string;
 }
 
-// Типизированный компонент для dropbox-фото
+/**
+ * ВСПОМОГАТЕЛЬНОЕ: парсинг имени файла из заголовка Content-Disposition
+ */
+const parseFilename = (cd: string | null): string | null => {
+  if (!cd) return null;
+  // filename*=UTF-8''name or filename="name"
+  const utf8 = /filename\*\=UTF-8''([^;]+)/i.exec(cd);
+  if (utf8?.[1]) {
+    try {
+      return decodeURIComponent(utf8[1]);
+    } catch {
+      return utf8[1];
+    }
+  }
+  const simple = /filename\=\"([^"]+)\"/i.exec(cd);
+  if (simple?.[1]) return simple[1];
+  return null;
+};
+
+/**
+ * ЕДИНАЯ ЗАГРУЗКА ФАЙЛА ИЗ DROPBOX API (POST, токен/хэш)
+ * Возвращает objectURL, mime, filename.
+ */
+const fetchDropboxObjectUrl = async (
+  apiUrl: string,
+): Promise<{ objectUrl: string; mime: string; filename: string | null }> => {
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    body: new URLSearchParams({
+      token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
+      u_hash:
+        'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
+    }),
+  });
+  const mime = res.headers.get('Content-Type') || 'application/octet-stream';
+  const filename = parseFilename(res.headers.get('Content-Disposition'));
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  return { objectUrl, mime, filename };
+};
+
+// Типизированный компонент для dropbox-фото (оставил как было — используется в карточках заказа)
 const DropboxImage: FC<{
   url: string;
   alt?: string;
@@ -148,18 +189,18 @@ const DropboxImage: FC<{
     const match = url.match(/\/dropbox\/file\/(\d+)/);
     const id = match ? match[1] : null;
     if (!id) return;
-    fetch(`https://ibronevik.ru/taxi/api/v1/dropbox/file/${id}`, {
+    // IMPORTANT: получаем файл по API (POST с токеном)
+    fetch(`https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/${id}`, {
       method: 'POST',
       body: new URLSearchParams({
-        token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
+        token: 'bbdd06a50ddcc1a4adc91fa0f6f86444', // тот же проект
         u_hash:
           'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
       }),
     })
       .then(async (res) => {
-        if (!res.ok) throw new Error('Ошибка загрузки фото');
-        const blob = await res.blob();
-        if (!blob.type.startsWith('image/')) throw new Error('Не картинка');
+        const blob = await (res.blob ? res.blob() : res);
+        // @ts-ignore
         const objectUrl = URL.createObjectURL(blob);
         urlRef.current = objectUrl;
         if (!revoked) setImgUrl(objectUrl);
@@ -205,6 +246,233 @@ const DropboxImage: FC<{
   return <img src={imgUrl} alt={alt} style={style || { width: '100%' }} />;
 };
 
+/**
+ * НОВОЕ: Универсальный предпросмотр файла из Dropbox API
+ * - Грузит через POST (как изображение выше)
+ * - Показывает inline для image/video/audio/pdf
+ * - Для остальных — иконка и кнопка "Скачать" с корректным именем.
+ */
+const DropboxFilePreview: FC<{
+  url: string;
+  style?: React.CSSProperties;
+}> = ({ url, style }) => {
+  const [state, setState] = useState<{
+    objectUrl: string | null;
+    mime: string;
+    filename: string | null;
+    error: boolean;
+  }>({
+    objectUrl: null,
+    mime: 'application/octet-stream',
+    filename: null,
+    error: false,
+  });
+
+  const objUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let canceled = false;
+    const run = async () => {
+      try {
+        if (!url) return;
+        // blob: — показываем сразу
+        if (url.startsWith('blob:')) {
+          if (!canceled) {
+            setState({
+              objectUrl: url,
+              mime: 'application/octet-stream',
+              filename: null,
+              error: false,
+            });
+          }
+          return;
+        }
+        // dropbox id
+        const m = url.match(/\/dropbox\/file\/(\d+)/);
+        const id = m?.[1];
+        if (!id) {
+          // не наш API — отдаём как есть ссылку
+          if (!canceled) {
+            setState({
+              objectUrl: url,
+              mime: 'application/octet-stream',
+              filename: null,
+              error: false,
+            });
+          }
+          return;
+        }
+        const { objectUrl, mime, filename } = await fetchDropboxObjectUrl(
+          `https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/${id}`,
+        );
+        objUrlRef.current = objectUrl;
+        if (!canceled) {
+          setState({ objectUrl, mime, filename, error: false });
+        }
+      } catch (e) {
+        if (!canceled) setState((s) => ({ ...s, error: true }));
+      }
+    };
+    run();
+    return () => {
+      canceled = true;
+      if (objUrlRef.current) URL.revokeObjectURL(objUrlRef.current);
+    };
+  }, [url]);
+
+  if (state.error)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          color: 'red',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+        }}
+      >
+        Ошибка загрузки файла
+      </div>
+    );
+
+  if (!state.objectUrl)
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: 120,
+          background: '#eee',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 8,
+        }}
+      >
+        Загрузка файла...
+      </div>
+    );
+
+  const mime = state.mime || '';
+  const isImg = mime.startsWith('image/');
+  const isVideo = mime.startsWith('video/');
+  const isAudio = mime.startsWith('audio/');
+  const isPdf = mime === 'application/pdf';
+
+  if (isImg) {
+    return (
+      <img
+        src={state.objectUrl}
+        alt={state.filename || 'file'}
+        style={{
+          width: '100%',
+          height: 120,
+          objectFit: 'cover',
+          borderRadius: 8,
+          ...(style || {}),
+        }}
+      />
+    );
+  }
+  if (isVideo) {
+    return (
+      <video
+        src={state.objectUrl}
+        controls
+        style={{
+          width: '100%',
+          height: 120,
+          objectFit: 'cover',
+          borderRadius: 8,
+          ...(style || {}),
+        }}
+      />
+    );
+  }
+  if (isAudio) {
+    return (
+      <audio
+        src={state.objectUrl}
+        controls
+        style={{ width: '100%', ...(style || {}) }}
+      />
+    );
+  }
+  if (isPdf) {
+    return (
+      <iframe
+        src={state.objectUrl}
+        title={state.filename || 'document'}
+        style={{
+          width: '100%',
+          height: 300,
+          border: 'none',
+          borderRadius: 8,
+          ...(style || {}),
+        }}
+      />
+    );
+  }
+
+  // Остальные типы — иконка + кнопка скачать
+  return (
+    <div
+      style={{
+        height: 120,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: 12,
+        background: '#f6f6f6',
+        borderRadius: 8,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          overflow: 'hidden',
+        }}
+      >
+        <img
+          src="/img/chat_img/folder.png"
+          alt=""
+          style={{ width: 36, opacity: 0.7 }}
+        />
+        <div
+          style={{
+            fontSize: 13,
+            whiteSpace: 'nowrap',
+            textOverflow: 'ellipsis',
+            overflow: 'hidden',
+            maxWidth: 180,
+          }}
+          title={state.filename || 'Вложение'}
+        >
+          {state.filename || 'Вложение'}
+        </div>
+      </div>
+      <a
+        href={state.objectUrl}
+        download={state.filename || 'file'}
+        className={styles.file_link}
+        style={{
+          padding: '8px 12px',
+          borderRadius: 6,
+          background: '#fff',
+          border: '1px solid #ddd',
+        }}
+      >
+        Скачать
+      </a>
+    </div>
+  );
+};
+
 interface MasterInfo {
   u_photo?: string;
   u_name?: string;
@@ -225,6 +493,8 @@ interface OrderDetailsBlockProps {
   setIsBalanceError: Dispatch<SetStateAction<boolean>>;
   setBalanceErrorNum: Dispatch<SetStateAction<number>>;
   refetchRequests: () => void; // Используем refetch
+  // НОВОЕ: кто смотрит чат (мастер или клиент)
+  viewerIsMaster: boolean;
 }
 
 const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
@@ -236,6 +506,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   setIsOpenDisput,
   setIsBalanceError,
   setBalanceErrorNum,
+  viewerIsMaster, // НОВОЕ
 }) => {
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
@@ -529,125 +800,6 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
   return (
     <>
-      {/* ======= ЧАТ: (оставлен твой старый рендер истории; ниже будет единый таймлайн) ======= */}
-      {chatHistory.length > 0 && (
-        <div className="chat_technical_message">
-          <div className={`${styles.message_block} ${styles.text_left}`}>
-            <div
-              className="correspondence df font_inter"
-              style={{ flexDirection: 'column', gap: '10px' }}
-            >
-              {chatHistory.map((m) => {
-                const isMine =
-                  (m.author === 'client' &&
-                    currentUser?.u_id === order?.u_id) ||
-                  (m.author === 'master' &&
-                    masterUser?.u_id === order?.b_options?.winnerMaster);
-                const bubbleSide = isMine
-                  ? styles.text_right
-                  : styles.text_left;
-                const avatarSrc =
-                  m.author === 'admin'
-                    ? '/img/img-camera.png'
-                    : m.author === 'master'
-                    ? masterUser?.u_photo || '/img/img-camera.png'
-                    : currentUser?.u_photo || '/img/img-camera.png';
-                const authorName =
-                  m.author === 'admin'
-                    ? 'Администратор'
-                    : m.author === 'master'
-                    ? masterUser?.u_name || 'Исполнитель'
-                    : 'Вы';
-                return (
-                  <div
-                    key={m.id}
-                    className={`${styles.message_block} ${bubbleSide}`}
-                    style={{ marginBottom: 6 }}
-                  >
-                    <div className="my_chat">
-                      <div
-                        className="correspondence-active font_inter df"
-                        style={{ gap: '10px' }}
-                      >
-                        {!isMine && (
-                          <div className="ciril-img">
-                            <img
-                              src={avatarSrc}
-                              style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 20,
-                              }}
-                              alt="user"
-                            />
-                          </div>
-                        )}
-                        <div className="let" style={{ maxWidth: 560 }}>
-                          <div
-                            className="letter_kiril df"
-                            style={{
-                              gap: '8px',
-                              justifyContent: isMine
-                                ? 'flex-end'
-                                : 'flex-start',
-                            }}
-                          >
-                            <div className="letter_text-1">
-                              <h2 style={{ fontSize: 14, opacity: 0.8 }}>
-                                {authorName}
-                              </h2>
-                            </div>
-                            <div className="letter_text-2">
-                              <h3 style={{ fontSize: 12, opacity: 0.6 }}>
-                                {new Date(m.ts).toLocaleTimeString([], {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </h3>
-                            </div>
-                          </div>
-                          <div
-                            className={styles.block_bid}
-                            style={{ padding: '10px 12px' }}
-                          >
-                            <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
-                            {!!m.files?.length && (
-                              <div
-                                style={{
-                                  marginTop: 8,
-                                  display: 'grid',
-                                  gridTemplateColumns: 'repeat(3, 100px)',
-                                  gap: 8,
-                                }}
-                              >
-                                {m.files.map((u, i) => (
-                                  <DropboxImage
-                                    key={i}
-                                    url={u}
-                                    alt={`file-${i}`}
-                                    style={{
-                                      width: 100,
-                                      height: 100,
-                                      objectFit: 'cover',
-                                      borderRadius: 8,
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* ======= КОНЕЦ: чат-история ======= */}
-
       {isVisibleAddFeedback && (
         <AddFeedbackModal
           id={order.b_id}
@@ -723,212 +875,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
           </div>
         </div>
       </div>
-      <div className="chat_technical_message">
-        <div className={`${styles.message_block} ${styles.text_left}`}>
-          <div
-            className={`correspondence df font_inter`}
-            style={{ flexDirection: 'column', gap: '10px' }}
-          >
-            <div className="correspondence_ciril df_chat">
-              <div className="ciril-img">
-                <img
-                  style={{ width: 58, height: 58, borderRadius: 30 }}
-                  src={masterUser.u_photo || '/img/img-camera.png'}
-                  alt="img absent"
-                />
-              </div>
-              <div className="let">
-                <div className="letter_kiril df" style={{ gap: '10px' }}>
-                  <div className="letter_text-1">
-                    <h2>{masterUser.u_name}</h2>
-                  </div>
-                  <div className="letter_text-2">
-                    <h3>13:44</h3>
-                  </div>
-                  <div className="right_menu-img df align mini-gap">
-                    <img
-                      className="ansver"
-                      src="/img/chat_img/ответ.png"
-                      alt="img absent"
-                    />
-                    <img src="/img/chat_img/span.png" alt="img absent" />
-                  </div>
-                </div>
-                <div
-                  className={`${styles.individual_order} ${styles.individual_order2}`}
-                >
-                  <div className={styles.individual_order__heading}>
-                    <img src="/img/icons/cil_basket.png" alt="" />
-                    <p>
-                      Индивидуальное предложение{' '}
-                      {order.b_options.orderType === 'request'
-                        ? 'заявки'
-                        : 'заказа'}
-                    </p>
-                  </div>
-                  <div className={styles.individual_order__block}>
-                    <details className={styles.individual_order__details}>
-                      <summary className={styles.individual_order__order}>
-                        <p style={{ position: 'relative' }}>
-                          {order.b_options.title}
-                          <div
-                            className={`miniSwiperWrap miniswiperslideInfo ${styles.miniswiperslideInfo} ${styles.miniSwiperWrap}`}
-                          >
-                            <MiniSlider />
-                          </div>
-                        </p>
-                        <div className={styles.individual_order__arrow}>
-                          <img src="/img/bot.png" alt="" />
-                        </div>
-                        <div style={{ flex: 1 }}></div>
-                        <p className={styles.modile_hidden}>
-                          {' '}
-                          {formatTimeByHours(Number(masterReqData.time))}
-                        </p>
-                        <p className={styles.modile_hidden}>
-                          {masterReqData.bind_amount}
-                        </p>
-                      </summary>
-                      <div className={styles.individual_order__more}>
-                        <p>
-                          условия{' '}
-                          {order.b_options.orderType === 'request'
-                            ? 'заявки'
-                            : 'заказа'}
-                        </p>
-                        <p>{order.b_options.description} </p>
-                      </div>
-                    </details>
-                  </div>
-                  <div className={styles.individual_order__final}>
-                    <p>Итого:</p>
-                    <p> {formatTimeByHours(Number(masterReqData.time))}</p>
-                    <p>{masterReqData.bind_amount} ₽</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className={styles.create_order}>
-              <img src="/img/icons/box.png" alt="" />
-              <div>
-                <p>
-                  {order.b_options.orderType === 'request' ? 'заявка' : 'заказ'}{' '}
-                  создан
-                </p>
-                <p>
-                  Номер{' '}
-                  {order.b_options.orderType === 'request'
-                    ? 'заявки'
-                    : 'заказа'}{' '}
-                  <a
-                    className={styles.create_order__link}
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setOpenZayavka((prev) => !prev);
-                    }}
-                  >
-                    №{order.b_id}
-                  </a>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {isOpenZayavka && (
-        <div className="chat_technical_message">
-          <div className={`${styles.message_block} ${styles.text_left}`}>
-            <div
-              className={`correspondence df font_inter ${styles.create_order__message}`}
-            >
-              <div className="correspondence_ciril df_chat">
-                <div className="ciril-img">
-                  <img
-                    style={{ width: '58px', height: '58px', borderRadius: 30 }}
-                    src={masterUser.u_photo || '/img/img-camera.png'}
-                    alt="img absent"
-                  />
-                </div>
-                <div className="let">
-                  <div className="letter_kiril df" style={{ gap: '10px' }}>
-                    <div className="letter_text-1">
-                      <h2>{masterUser.u_name}</h2>
-                    </div>
-                    <div className="letter_text-2">
-                      <h3>13:44</h3>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.create_order__heading}>
-                <p>Услуги</p>
-                <div style={{ flex: 1 }}></div>
-                <p>Кол-во</p>
-                <p>Срок</p>
-                <p>Стоимость</p>
-              </div>
-              <div className={styles.create_order__data}>
-                <div style={{ position: 'relative' }}>
-                  <p style={{ position: 'relative' }}>
-                    {order.b_options.title}
-                  </p>
-                  {!isShowDetailsOrder ? (
-                    <img
-                      onClick={() => setShowDetailsOrder(true)}
-                      style={{ marginLeft: '10px', cursor: 'pointer' }}
-                      src="/img/bot.png"
-                      alt=""
-                    />
-                  ) : null}
-                </div>
-                <div style={{ flex: 1 }}></div>
-                <p>1</p>
-                <p style={{ whiteSpace: 'nowrap' }}>
-                  {' '}
-                  {formatTimeByHours(Number(masterReqData.time))}
-                </p>
-                <p className={styles.create_order__price}>
-                  {masterReqData.bind_amount} ₽
-                </p>
-              </div>
-              {isShowDetailsOrder && (
-                <div className={styles.create_order__dataVisible}>
-                  <p>
-                    Условия{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'заявки'
-                      : 'заказа'}{' '}
-                    {order?.b_options?.description}
-                  </p>
-                  <p>
-                    Свернуть
-                    <img
-                      style={{
-                        marginLeft: '10px',
-                        cursor: 'pointer',
-                        rotate: '180deg',
-                      }}
-                      onClick={() => setShowDetailsOrder(false)}
-                      src="/img/bot.png"
-                      alt=""
-                    />
-                  </p>
-                  <div className={styles.create_order__line} />
-                  <div className={styles.create_order__final}>
-                    <p>Итого:</p>
-                    <p> {formatTimeByHours(Number(masterReqData.time))}</p>
-                    <p className={styles.create_order__price}>
-                      {masterReqData.bind_amount} ₽
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Фото заказа */}
+
+      {/* Фото заказа (если есть массив ссылок в заказе) */}
       {photoUrls.length > 0 && (
         <div style={{ margin: '10px 0' }}>
           <Swiper
@@ -955,304 +903,6 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
           </Swiper>
         </div>
       )}
-      {!isOrderCompleted && !isCancelRequested && !isOpenDispute && (
-        <div className="chat_technical_message">
-          <div className={styles.confirm_block}>
-            <button onClick={handleConfirmOrder} disabled={isLoading}>
-              {isLoading
-                ? 'Обработка...'
-                : `Подтвердить ${
-                    order.b_options.orderType === 'request' ? 'заявку' : 'заказ'
-                  }`}
-            </button>
-            <button
-              onClick={
-                order.b_options.payType !== 'cash'
-                  ? handleOpenDispute
-                  : handleCancelOrder
-              }
-              disabled={isLoading}
-            >
-              {order.b_options.payType === 'cash' ? (
-                <>
-                  {isLoading
-                    ? 'Обработка...'
-                    : `Отменить ${
-                        order.b_options.orderType === 'request'
-                          ? 'заявку'
-                          : 'заказ'
-                      }`}
-                </>
-              ) : (
-                'Открыть спор'
-              )}
-            </button>
-          </div>
-        </div>
-      )}
-      {isOrderCompleted && (
-        <div className="chat_technical_message">
-          <div>
-            <div className={`${styles.cancel_block}`}>
-              <img src="/img/message_green.png" alt="" />
-              <p>
-                {order.b_options.orderType === 'request' ? 'заявка' : 'заказ'}{' '}
-                успешно подтвержден
-              </p>
-              <span>14:12</span>
-            </div>
-            <div className={styles.add_feedback}>
-              <button onClick={() => setVisibleAddFeedback(true)}>
-                Оставить отзыв
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {isCancelRequested &&
-        !isOrderCompleted &&
-        isOpenDispute &&
-        (isOwner ? (
-          <div className="chat_technical_message">
-            <div className={styles.cancel_block}>
-              <img src="/img/cansel_message.png" alt="" />
-              <p>
-                Вы предложили отменить{' '}
-                {order.b_options.orderType === 'request' ? 'заявку' : 'заказ'}
-              </p>
-              <span>14:12</span>
-            </div>
-          </div>
-        ) : (
-          <div className="chat_technical_message">
-            <div
-              className={`${styles.message_block} ${styles.text_center} ${styles.text_center_col}`}
-            >
-              <div className={styles.cancel_client_block}>
-                <img src="/img/cansel_message.png" alt="" />
-                <div>
-                  <p>В работе 17:08</p>
-                  <p>
-                    Клиент предлагает отменить{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'заявку'
-                      : 'заказ'}
-                  </p>
-                </div>
-              </div>
-              {typeof isMasterAgreeWithCancelRequest === 'boolean' &&
-              !isMasterAgreeWithCancelRequest ? (
-                <div className={styles.cancel_client_block}>
-                  <img src="/img/message_cancel.png" alt="" />
-                  <div>
-                    <p>В работе 17:08</p>
-                    <p>
-                      Вы отказались принимать отмену{' '}
-                      {order.b_options.orderType === 'request'
-                        ? 'заявки'
-                        : 'заказа'}
-                    </p>
-                  </div>
-                </div>
-              ) : typeof isMasterAgreeWithCancelRequest === 'boolean' &&
-                isMasterAgreeWithCancelRequest ? (
-                <div className={styles.cancel_client_block}>
-                  <img src="/img/message_green.png" alt="" />
-                  <div>
-                    <p>В работе 17:08</p>
-                    <p>
-                      Вы приняли отмену{' '}
-                      {order.b_options.orderType === 'request'
-                        ? 'заявки'
-                        : 'заказа'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.cancel_client_confirm}>
-                  <button
-                    onClick={async () => {
-                      await updateRequest(
-                        order.b_id,
-                        {
-                          is_master_agree_with_cancel: true,
-                          cancel_master_decision_ts: nowIso(), // <— отметка времени
-                        },
-                        true,
-                        order.u_id,
-                      );
-                      refetchRequests();
-                    }}
-                  >
-                    Подтвердить отмену{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'заявки'
-                      : 'заказа'}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await updateRequest(
-                        order.b_id,
-                        {
-                          is_master_agree_with_cancel: false,
-                          cancel_master_decision_ts: nowIso(), // <— отметка времени
-                        },
-                        true,
-                        order.u_id,
-                      );
-                      refetchRequests();
-                    }}
-                  >
-                    Нет
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      {isMasterAgreeWithCancelRequest && isOwner && (
-        <div className="chat_technical_message">
-          <div className={`${styles.message_block} ${styles.text_center}`}>
-            <div className={styles.cancel_block}>
-              <img src="/img/message_green.png" alt="" />
-              <p>
-                Исполнитель согласился на отмену{' '}
-                {order.b_options.orderType === 'request' ? 'заявки' : 'заказа'}{' '}
-                5:42
-              </p>
-            </div>
-            <div className={styles.add_feedback} style={{ maxWidth: '750px' }}>
-              <button onClick={() => setVisibleAddFeedback(true)}>
-                Оставить отзыв
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {isOpenDispute &&
-        (isOwner ? (
-          <div className="chat_technical_message">
-            <div>
-              <div className={`${styles.message_block} ${styles.text_center}`}>
-                <div className={`${styles.cancel_block}`}>
-                  <img src="/img/message_cancel.png" alt="" />
-                  <p>
-                    Открылся спор по{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'данной заявки'
-                      : 'данному заказу'}{' '}
-                    19:08
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="chat_technical_message">
-            <div className={styles.dispute_block}>
-              <p className={styles.dispute_heading}>Клиент открыл спор</p>
-              <div className={styles.dispute_details}>
-                <div className={styles.row_title}>
-                  <p>
-                    {order.b_options.orderType === 'request'
-                      ? 'Размещена заявка'
-                      : 'Размещен заказ'}{' '}
-                  </p>
-                  <Link to="#" className={styles.dispute_link}>
-                    {order.b_options.title}
-                  </Link>
-                </div>
-                <div className={styles.dispute_description}>
-                  <p>{order.b_options.dispute_comment}</p>
-                  <div className={`miniSwiperWrap ${styles.miniSwiperWrap}`}>
-                    <div className="miniSlider">
-                      <SimpleImage />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {!(typeof isMasterAgreeWithDispute === 'boolean') && (
-                <div className={styles.dispute_row}>
-                  <button
-                    className={styles.dispute_button}
-                    onClick={async () => {
-                      await updateRequest(
-                        order.b_id,
-                        {
-                          is_master_agree_with_dispute: true,
-                          dispute_master_decision_ts: nowIso(), // <— отметка времени
-                        },
-                        true,
-                        order.u_id,
-                      );
-                      refetchRequests();
-                    }}
-                  >
-                    Подтвердить отмену{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'заявки'
-                      : 'заказа'}
-                  </button>
-                  <button
-                    className={styles.dispute_button}
-                    onClick={async () => {
-                      await updateRequest(
-                        order.b_id,
-                        {
-                          is_master_agree_with_dispute: false,
-                          dispute_master_decision_ts: nowIso(), // <— отметка времени
-                        },
-                        true,
-                        order.u_id,
-                      );
-                      refetchRequests();
-                    }}
-                  >
-                    Обратиться в арбитраж
-                  </button>
-                </div>
-              )}
-              {!isMasterAgreeWithDispute ? (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_center}`}
-                  >
-                    <div className={styles.cancel_client_block}>
-                      <img src="/img/message_cancel.png" alt="" />
-                      <div>
-                        <p>В работе 17:08</p>
-                        <p>
-                          Вы отказались от{' '}
-                          {order.b_options.orderType === 'request'
-                            ? 'заявки'
-                            : 'заказа'}
-                          !
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="chat_technical_message">
-                  <div
-                    className={`${styles.message_block} ${styles.text_center}`}
-                  >
-                    <div className={`${styles.cancel_block}`}>
-                      <img src="/img/message_cancel.png" alt="" />
-                      <p>
-                        Открылся спор по{' '}
-                        {order.b_options.orderType === 'request'
-                          ? 'данной заявке'
-                          : 'данному заказу'}{' '}
-                        19:08
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
 
       {/* ====== ЕДИНЫЙ ТАЙМЛАЙН (ВСЁ ПО ВРЕМЕНИ) ====== */}
       {timeline.length > 0 && (
@@ -1265,26 +915,81 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
               {timeline.map((item, idx) => {
                 if (item.kind === 'chat') {
                   const m = (item as TimelineChatItem).msg;
-                  const isMine =
-                    (m.author === 'client' &&
-                      currentUser?.u_id === order?.u_id) ||
-                    (m.author === 'master' &&
-                      masterUser?.u_id === order?.b_options?.winnerMaster);
+                  // кто сейчас смотрит чат: мастер или клиент
+                  const viewerIsMaster =
+                    typeof window !== 'undefined' &&
+                    window.location.pathname.includes('/master/');
+
+                  // у нас в истории авторы: 'client' и иногда 'master' или 'admin' (мастерские сообщения шлём как 'admin')
+                  // считаем "моё" по роли зрителя
+                  const isMine = viewerIsMaster
+                    ? m.author === 'master' || m.author === 'admin'
+                    : m.author === 'client';
                   const bubbleSide = isMine
                     ? styles.text_right
                     : styles.text_left;
-                  const avatarSrc =
-                    m.author === 'admin'
-                      ? '/img/img-camera.png'
-                      : m.author === 'master'
+
+                  const renderFiles = (files?: string[]) => {
+                    if (!files || !files.length) return null;
+                    return (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 8,
+                        }}
+                      >
+                        {files.map((u, i) => {
+                          const isBlob = u.startsWith('blob:');
+                          const isDropbox = /\/dropbox\/file\/\d+/.test(u);
+
+                          if (isBlob || isDropbox) {
+                            return (
+                              <div
+                                key={i}
+                                style={{ width: 200, maxWidth: '100%' }}
+                              >
+                                <DropboxFilePreview
+                                  url={u}
+                                  style={{ width: '100%' }}
+                                />
+                              </div>
+                            );
+                          }
+                          // внешние ссылки — как было
+                          return (
+                            <a
+                              key={i}
+                              href={u}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={styles.file_link}
+                            >
+                              Вложение {i + 1}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    );
+                  };
+
+                  // показываем "Вы" только на своих сообщениях
+                  const authorName = isMine
+                    ? 'Вы'
+                    : viewerIsMaster
+                    ? currentUser?.u_name || 'Клиент' // мастер видит имя клиента
+                    : masterUser?.u_name || 'Исполнитель'; // клиент видит имя мастера
+
+                  // аватар показываем у собеседника (слева), у своих можно не показывать
+                  const avatarSrc = viewerIsMaster
+                    ? isMine
                       ? masterUser?.u_photo || '/img/img-camera.png'
-                      : currentUser?.u_photo || '/img/img-camera.png';
-                  const authorName =
-                    m.author === 'admin'
-                      ? masterUser?.u_name || 'Исполнитель'
-                      : m.author === 'master'
-                      ? masterUser?.u_name || 'Исполнитель'
-                      : 'Вы';
+                      : currentUser?.u_photo || '/img/img-camera.png'
+                    : isMine
+                    ? currentUser?.u_photo || '/img/img-camera.png'
+                    : masterUser?.u_photo || '/img/img-camera.png';
+
                   return (
                     <div
                       key={m.id}
@@ -1338,30 +1043,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                               style={{ padding: '10px 12px' }}
                             >
                               <p style={{ whiteSpace: 'pre-wrap' }}>{m.text}</p>
-                              {!!m.files?.length && (
-                                <div
-                                  style={{
-                                    marginTop: 8,
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(3, 100px)',
-                                    gap: 8,
-                                  }}
-                                >
-                                  {m.files.map((u, i) => (
-                                    <DropboxImage
-                                      key={i}
-                                      url={u}
-                                      alt={`file-${i}`}
-                                      style={{
-                                        width: 100,
-                                        height: 100,
-                                        objectFit: 'cover',
-                                        borderRadius: 8,
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              )}
+                              {renderFiles(m.files)}
                             </div>
                           </div>
                         </div>
@@ -1370,7 +1052,6 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                   );
                 }
 
-                // системные события — единый вид
                 const timeStr = new Date(item.ts).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -1537,7 +1218,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
   const [isVisibleAddOrder, setVisibleAddOrder] = useState(false);
-  const [isVisibleEmoji, setVisibleEmoji] = useState(false);
+  const [isVisibleEmoji, setIsVisibleEmoji] = useState(false);
   const [isDeleteBlockChat, setIsDeleteChat] = useState(false);
   const [isBalanceError, setIsBalanceError] = useState(false);
   const [BalanceErrorNum, setBalanceErrorNum] = useState(0);
@@ -1621,7 +1302,12 @@ function ChoiceOfReplenishmentMethodCard() {
   const [edit, Isedit] = useState(false);
   const [chooseFile, IschooseFile] = useState(false);
   const [message, setMessage] = useState('');
-  const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
+
+  // === предпросмотр выбранных файлов до отправки ===
+  const [previewFiles, setPreviewFiles] = useState<
+    { file: File; url: string }[]
+  >([]);
+
   function addEmojiToMessage(emoji: EmojiClickData) {
     setMessage((prevMessage) => prevMessage + emoji.emoji);
   }
@@ -1629,8 +1315,118 @@ function ChoiceOfReplenishmentMethodCard() {
   function handleInputChat(event: React.ChangeEvent<HTMLInputElement>) {
     setMessage(event.target.value);
   }
+
   const [isAtBottom, setIsAtBottom] = useState(false);
   const chatBlockRef = useRef<HTMLDivElement>(null);
+
+  // ===== file -> base64
+  const fileToBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
+  // Исправленная функция для загрузки фото/файла
+  const uploadPhoto = async (file) => {
+    try {
+      const base64String = await fileToBase64(file);
+
+      const fileObject = {
+        file: JSON.stringify({
+          base64: base64String,
+          name: file.name,
+        }),
+      };
+      const response = await appFetch(
+        '/dropbox/file/',
+        {
+          method: 'POST',
+          body: fileObject,
+        },
+        true,
+      );
+      const result = await response;
+      return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
+    } catch (error) {
+      console.error('Ошибка в функции uploadPhoto:', error);
+      throw error;
+    }
+  };
+
+  // ===== выбор файлов (фото/видео/доки) — только предпросмотр, загрузка при отправке
+  async function handlePickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const previews = files.map((f) => ({
+      file: f,
+      url: URL.createObjectURL(f),
+    }));
+    setPreviewFiles((prev) => [...prev, ...previews]);
+
+    e.target.value = '';
+  }
+  function removePreview(url: string) {
+    setPreviewFiles((prev) => prev.filter((p) => p.url !== url));
+    URL.revokeObjectURL(url);
+  }
+
+  // ===== Микрофон (MediaRecorder) — формируем файл и тоже через uploadPhoto
+  const [recState, setRecState] = useState<'idle' | 'recording' | 'saving'>(
+    'idle',
+  );
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<BlobPart[]>([]);
+
+  const canRecordAudio =
+    typeof window !== 'undefined' &&
+    !!(navigator.mediaDevices && (window as any).MediaRecorder);
+
+  async function handleMicClick() {
+    if (!canRecordAudio) return;
+
+    if (recState === 'idle') {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        const mr = new MediaRecorder(stream);
+        mediaRecorderRef.current = mr;
+        recChunksRef.current = [];
+        mr.ondataavailable = (e) => {
+          if (e.data.size > 0) recChunksRef.current.push(e.data);
+        };
+        mr.onstop = async () => {
+          setRecState('saving');
+          try {
+            const blob = new Blob(recChunksRef.current, {
+              type: mr.mimeType || 'audio/webm',
+            });
+            const file = new File([blob], `audio_${Date.now()}.webm`, {
+              type: blob.type || 'audio/webm',
+            });
+            const url = URL.createObjectURL(file);
+            setPreviewFiles((prev) => [...prev, { file, url }]);
+          } catch (e) {
+            console.error('audio save error', e);
+            alert('Не удалось сохранить аудио.');
+          } finally {
+            setRecState('idle');
+            stream.getTracks().forEach((t) => t.stop());
+          }
+        };
+        mr.start();
+        setRecState('recording');
+      } catch (e) {
+        console.error('mic error', e);
+        alert('Нет доступа к микрофону.');
+      }
+    } else if (recState === 'recording') {
+      mediaRecorderRef.current?.stop();
+    }
+  }
 
   // ===== ЧАТ: отправка сообщения =====
   async function sendChatMessage(
@@ -1641,11 +1437,15 @@ function ChoiceOfReplenishmentMethodCard() {
   ) {
     const author: ChatAuthor = who === 'client' ? 'client' : 'admin';
     const msg = makeMsg(author, text, files);
-    const prev: ChatMessage[] = Array.isArray(order?.b_options?.chat_history)
-      ? (order.b_options.chat_history as ChatMessage[])
-      : [];
-    const next = [...prev, msg];
+
     try {
+      const prev: ChatMessage[] = Array.isArray(order?.b_options?.chat_history)
+        ? (order.b_options.chat_history as ChatMessage[])
+        : [];
+      const next = [...prev, msg];
+
+      order.b_options.chat_history = next;
+
       if (who === 'client') {
         await updateRequest(order.b_id, { chat_history: next });
       } else {
@@ -1658,31 +1458,57 @@ function ChoiceOfReplenishmentMethodCard() {
       }
     } catch (e) {
       console.error('sendChatMessage error', e);
+      alert('Не удалось отправить сообщение.');
     }
   }
 
   const handleSend = async () => {
     const text = message.trim();
-    if (!text) return;
+    const hasFiles = previewFiles.length > 0;
+    if (!text && !hasFiles) return;
     if (!currentChat?.orders?.length) return;
+
     const order = currentChat.orders[currentChat.orders.length - 1];
     const role: 'client' | 'master' = ui.isMaster ? 'master' : 'client';
+
+    // 1) загружаем все файлы → получаем постоянные URL
+    const uploadedUrls: string[] = [];
+    for (const { file, url } of previewFiles) {
+      try {
+        const permanentUrl = await uploadPhoto(file);
+        uploadedUrls.push(permanentUrl);
+      } catch (e) {
+        console.error('upload error', e);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    // 2) отправляем сообщение
     await sendChatMessage(
       order,
       role,
       text,
-      attachedFiles.length ? attachedFiles : undefined,
+      uploadedUrls.length ? uploadedUrls : undefined,
     );
+
+    // 3) очистка и перерисовка
     setMessage('');
-    setAttachedFiles([]);
+    setPreviewFiles([]);
     userRequests.refetch();
-    scrollToBottom();
+    scrollToBottomSoon();
   };
 
+  // Помощники автоскролла
   const scrollToBottom = () => {
     if (chatBlockRef.current) {
       chatBlockRef.current.scrollTop = chatBlockRef.current.scrollHeight;
     }
+  };
+  const scrollToBottomSoon = () => {
+    setTimeout(scrollToBottom, 50);
+    setTimeout(scrollToBottom, 200);
+    setTimeout(scrollToBottom, 600);
   };
 
   const handleScroll = () => {
@@ -1714,16 +1540,20 @@ function ChoiceOfReplenishmentMethodCard() {
     };
   }, [id]);
 
-  // ===== Псевдо-вебсокет: опрос каждые 30 секунд =====
+  useEffect(() => {
+    scrollToBottomSoon();
+  }, [userRequests.data, id]);
+
+  // Псевдо-вебсокет — опрос каждые 30 секунд
   useEffect(() => {
     const t = setInterval(() => {
       userRequests.refetch();
+      scrollToBottomSoon();
     }, 30000);
     return () => clearInterval(t);
   }, [userRequests]);
-  // ====================================
 
-  // Add function to calculate time since last online
+  // Helpers last online
   const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {
     const lastOnline = new Date(lastTimeBeenOnline);
     const now = new Date();
@@ -1974,6 +1804,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   currentUser={currentUser}
                   masterUser={masterUser}
                   refetchRequests={userRequests.refetch}
+                  viewerIsMaster={ui.isMaster} // НОВОЕ
                 />
               ))}
             </div>
@@ -1999,7 +1830,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {currentUser.u_details?.black_list?.find(
+                {currentUser?.u_details?.black_list?.find(
                   (item: any) => item.id?.toString() === user.u_id?.toString(),
                 ) ? (
                   <div className={styles.chat_block_wrap}>
@@ -2025,7 +1856,7 @@ function ChoiceOfReplenishmentMethodCard() {
                       <div style={{ position: 'relative' }}>
                         {chooseFile ? (
                           <div className="frame_icon qwerewrf">
-                            <div className="choice df block_file_attach__flex">
+                            <label className="choice df block_file_attach__flex">
                               <div className="choice_img">
                                 <img
                                   src="/img/chat_img/img.png"
@@ -2035,17 +1866,19 @@ function ChoiceOfReplenishmentMethodCard() {
                               <div className="im_attach pull-left align">
                                 <input
                                   type="file"
+                                  accept="image/*,video/*"
                                   className="im_attach_input"
-                                  title="Send file"
+                                  title="Фото/Видео"
                                   style={{ display: 'none' }}
+                                  onChange={handlePickFiles}
                                 />
                                 <p className="block_file_attach__text">
                                   Фото или видео
                                 </p>
                               </div>
-                            </div>
+                            </label>
 
-                            <div className="folder df block_file_attach__flex">
+                            <label className="folder df block_file_attach__flex">
                               <div className="choice_img">
                                 <img
                                   src="/img/chat_img/folder.png"
@@ -2055,15 +1888,17 @@ function ChoiceOfReplenishmentMethodCard() {
                               <div className="im_attach pull-left align">
                                 <input
                                   type="file"
+                                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,application/*,text/*"
                                   className="im_attach_input"
-                                  title="Send file"
+                                  title="Документ"
                                   style={{ display: 'none' }}
+                                  onChange={handlePickFiles}
                                 />
                                 <p className="block_file_attach__text">
                                   Документ
                                 </p>
                               </div>
-                            </div>
+                            </label>
                           </div>
                         ) : null}
 
@@ -2079,9 +1914,39 @@ function ChoiceOfReplenishmentMethodCard() {
                         </label>
                       </div>
 
-                      <label htmlFor="file-input">
-                        <img src="/img/icons/micro.png" alt="img absent" />
-                      </label>
+                      {/* Микрофон */}
+                      <button
+                        type="button"
+                        className={styles.mic_btn}
+                        onClick={handleMicClick}
+                        disabled={!canRecordAudio || recState === 'saving'}
+                        title={
+                          !canRecordAudio
+                            ? 'Микрофон недоступен в этом браузере'
+                            : recState === 'recording'
+                            ? 'Нажмите, чтобы остановить запись'
+                            : 'Записать голосовое сообщение'
+                        }
+                        style={{
+                          background: 'transparent',
+                          border: 0,
+                          padding: 0,
+                          margin: 0,
+                          cursor: !canRecordAudio ? 'not-allowed' : 'pointer',
+                          opacity: !canRecordAudio ? 0.4 : 1,
+                        }}
+                      >
+                        <img
+                          src="/img/icons/micro.png"
+                          alt="mic"
+                          style={{
+                            filter:
+                              recState === 'recording'
+                                ? 'drop-shadow(0 0 6px #d00)'
+                                : 'none',
+                          }}
+                        />
+                      </button>
 
                       <div style={{ position: 'relative' }}>
                         {isVisibleEmoji ? (
@@ -2091,7 +1956,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         ) : null}
                         <label
                           htmlFor="file-input"
-                          onClick={() => setVisibleEmoji((prev) => !prev)}
+                          onClick={() => setIsVisibleEmoji((prev) => !prev)}
                         >
                           <img src="/img/chat_img/emoji.png" alt="img absent" />
                         </label>
@@ -2104,6 +1969,109 @@ function ChoiceOfReplenishmentMethodCard() {
                         aria-label="Отправить сообщение"
                       ></div>
                     </div>
+                  </div>
+                )}
+
+                {/* Превью прикреплённых файлов перед отправкой */}
+                {previewFiles.length > 0 && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: 'grid',
+                      gridTemplateColumns:
+                        'repeat(auto-fill, minmax(120px,1fr))',
+                      gap: 10,
+                    }}
+                  >
+                    {previewFiles.map((p, idx) => {
+                      const isImage = p.file.type.startsWith('image/');
+                      const isVideo = p.file.type.startsWith('video/');
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            position: 'relative',
+                            borderRadius: 8,
+                            overflow: 'hidden',
+                            background: '#f2f2f2',
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => removePreview(p.url)}
+                            title="Убрать"
+                            style={{
+                              position: 'absolute',
+                              right: 6,
+                              top: 6,
+                              zIndex: 2,
+                              border: 0,
+                              background: 'rgba(0,0,0,0.55)',
+                              color: '#fff',
+                              width: 24,
+                              height: 24,
+                              borderRadius: 12,
+                              cursor: 'pointer',
+                              lineHeight: '24px',
+                              textAlign: 'center',
+                              fontWeight: 700,
+                            }}
+                          >
+                            ×
+                          </button>
+
+                          {isImage ? (
+                            <img
+                              src={p.url}
+                              alt={p.file.name}
+                              style={{
+                                width: '100%',
+                                height: 120,
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : isVideo ? (
+                            <video
+                              src={p.url}
+                              controls
+                              style={{
+                                width: '100%',
+                                height: 120,
+                                objectFit: 'cover',
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                height: 120,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 8,
+                                textAlign: 'center',
+                              }}
+                            >
+                              <div>
+                                <img
+                                  src="/img/chat_img/folder.png"
+                                  alt=""
+                                  style={{ width: 36, opacity: 0.7 }}
+                                />
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    marginTop: 6,
+                                    wordBreak: 'break-all',
+                                  }}
+                                >
+                                  {p.file.name}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
