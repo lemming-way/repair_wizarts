@@ -268,6 +268,7 @@ const DropboxFilePreview: FC<{
     error: false,
   });
 
+  const [isOpen, setIsOpen] = useState(false);
   const objUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -320,6 +321,23 @@ const DropboxFilePreview: FC<{
     };
   }, [url]);
 
+  // Закрытие по ESC + блокируем прокрутку боди, пока открыт просмотр
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e as any).key === 'Escape') setIsOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown as any);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown as any);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
+
   if (state.error)
     return (
       <div
@@ -363,19 +381,73 @@ const DropboxFilePreview: FC<{
 
   if (isImg) {
     return (
-      <img
-        src={state.objectUrl}
-        alt={state.filename || 'file'}
-        style={{
-          width: '100%',
-          height: 120,
-          objectFit: 'cover',
-          borderRadius: 8,
-          ...(style || {}),
-        }}
-      />
+      <>
+        {/* Миниатюра */}
+        <img
+          src={state.objectUrl}
+          alt={state.filename || 'file'}
+          style={{
+            width: '100%',
+            height: 120,
+            objectFit: 'cover',
+            borderRadius: 8,
+            cursor: 'pointer',
+            ...(style || {}),
+          }}
+          onClick={() => setIsOpen(true)}
+        />
+
+        {/* Модалка полноэкранного просмотра */}
+        {isOpen && (
+          <div
+            onClick={() => setIsOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.85)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              cursor: 'zoom-out',
+            }}
+          >
+            <img
+              src={state.objectUrl}
+              alt={state.filename || 'file'}
+              style={{
+                maxWidth: '95vw',
+                maxHeight: '95vh',
+                borderRadius: 10,
+                boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()} // чтобы клик по самой картинке не закрывал
+            />
+            {/* Кнопка закрытия (опционально) */}
+            <button
+              onClick={() => setIsOpen(false)}
+              aria-label="Закрыть"
+              style={{
+                position: 'fixed',
+                top: 16,
+                right: 16,
+                background: 'rgba(0,0,0,0.6)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '8px 10px',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              Закрыть
+            </button>
+          </div>
+        )}
+      </>
     );
   }
+
   if (isVideo) {
     return (
       <video
@@ -391,6 +463,7 @@ const DropboxFilePreview: FC<{
       />
     );
   }
+
   if (isAudio) {
     return (
       <audio
@@ -400,6 +473,7 @@ const DropboxFilePreview: FC<{
       />
     );
   }
+
   if (isPdf) {
     return (
       <iframe
@@ -957,7 +1031,6 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                               </div>
                             );
                           }
-                          // внешние ссылки — как было
                           return (
                             <a
                               key={i}
@@ -978,8 +1051,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                   const authorName = isMine
                     ? 'Вы'
                     : viewerIsMaster
-                    ? currentUser?.u_name || 'Клиент' // мастер видит имя клиента
-                    : masterUser?.u_name || 'Исполнитель'; // клиент видит имя мастера
+                    ? currentUser?.u_name || 'Клиент'
+                    : masterUser?.u_name || 'Исполнитель';
 
                   // аватар показываем у собеседника (слева), у своих можно не показывать
                   const avatarSrc = viewerIsMaster
@@ -1319,17 +1392,44 @@ function ChoiceOfReplenishmentMethodCard() {
   const [isAtBottom, setIsAtBottom] = useState(false);
   const chatBlockRef = useRef<HTMLDivElement>(null);
 
+  // ===== измеряем высоту футера, чтобы лента не перекрывалась закреплённой панелью
+  const footerRef = useRef<HTMLDivElement>(null);
+  const [footerHeight, setFooterHeight] = useState<number>(0);
+
+  const measureFooter = () => {
+    const h = footerRef.current?.offsetHeight || 0;
+    if (h !== footerHeight) setFooterHeight(h);
+  };
+
+  useEffect(() => {
+    measureFooter();
+    const ro = new ResizeObserver(() => measureFooter());
+    if (footerRef.current) ro.observe(footerRef.current);
+    const onResize = () => measureFooter();
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      ro.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    // при открытии emoji/добавлении превью — переизмеряем и скроллим вниз
+    measureFooter();
+    scrollToBottomSoon();
+  }, [isVisibleEmoji, previewFiles.length]);
+
   // ===== file -> base64
-  const fileToBase64 = (file) =>
-    new Promise((resolve, reject) => {
+  const fileToBase64 = (file: File) =>
+    new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
+      reader.onload = () => resolve(String(reader.result));
       reader.onerror = (error) => reject(error);
     });
 
   // Исправленная функция для загрузки фото/файла
-  const uploadPhoto = async (file) => {
+  const uploadPhoto = async (file: File) => {
     try {
       const base64String = await fileToBase64(file);
 
@@ -1602,7 +1702,7 @@ function ChoiceOfReplenishmentMethodCard() {
     return 'дней';
   };
 
-  if ((!currentUser || !masterUser) && id) return 'Загрузка...';
+  if ((!currentUser || !masterUser) && id) return <>Загрузка...</>;
 
   return (
     <>
@@ -1655,7 +1755,7 @@ function ChoiceOfReplenishmentMethodCard() {
         )}
 
         {id && currentChat ? (
-          <div className="profil fchat__profile">
+          <div className={`profil fchat__profile ${styles.profil}`}>
             <div
               className={`kiril_profil kiril_profil_fchat df font_inter ${styles.profile_top_row}`}
               style={{ gap: '10px' }}
@@ -1666,6 +1766,12 @@ function ChoiceOfReplenishmentMethodCard() {
                   isAtBottom ? styles.visible : styles.hidden
                 }`}
                 aria-label="Scroll down"
+                style={
+                  {
+                    // подвинем кнопку выше футера на лету
+                    bottom: Math.max(120, footerHeight + 40),
+                  } as any
+                }
               >
                 <img
                   src="/img/dropdownuser.png"
@@ -1687,7 +1793,7 @@ function ChoiceOfReplenishmentMethodCard() {
                       className={`backtoframemessagesLink ${
                         window.location.href.includes('master')
                           ? styles.master__arrow_back
-                          : null
+                          : ''
                       }`}
                     >
                       <img src="/img/chat_back.png" alt="" />
@@ -1792,7 +1898,10 @@ function ChoiceOfReplenishmentMethodCard() {
               )}
             </div>
 
-            <div className="chatt awqervgg chat_block__ashd" ref={chatBlockRef}>
+            <div
+              className={`awqervgg chat_block__ashd ${styles.chatt}`}
+              ref={chatBlockRef}
+            >
               {currentChat.orders.map((order) => (
                 <OrderDetailsBlock
                   setBalanceErrorNum={setBalanceErrorNum}
@@ -1808,8 +1917,13 @@ function ChoiceOfReplenishmentMethodCard() {
                 />
               ))}
             </div>
-            <div className="message_block" style={{ position: 'relative' }}>
-              <div className="block_messages-2 font_inter">
+
+            {/* НИЖНИЙ ФИКСИРОВАННЫЙ ФУТЕР ВВОДА */}
+            <div className={styles.message_block} ref={footerRef}>
+              <div
+                className="block_messages-2 font_inter"
+                style={{ paddingTop: 8 }}
+              >
                 {isBalanceError ? (
                   <div className={styles.balance_error}>
                     <p>
@@ -1841,241 +1955,255 @@ function ChoiceOfReplenishmentMethodCard() {
                     </p>
                   </div>
                 ) : (
-                  <div className="magnafire-2 df align">
-                    <div className="magnafire_input-2">
-                      <input
-                        className="inp"
-                        type="text"
-                        placeholder="Введите сообщение..."
-                        value={message}
-                        onChange={handleInputChat}
-                        onKeyDown={handleInputKeyDown}
-                      />
-                    </div>
-                    <div className="nav_message df">
-                      <div style={{ position: 'relative' }}>
-                        {chooseFile ? (
-                          <div className="frame_icon qwerewrf">
-                            <label className="choice df block_file_attach__flex">
-                              <div className="choice_img">
-                                <img
-                                  src="/img/chat_img/img.png"
-                                  alt="img absent"
-                                />
-                              </div>
-                              <div className="im_attach pull-left align">
-                                <input
-                                  type="file"
-                                  accept="image/*,video/*"
-                                  className="im_attach_input"
-                                  title="Фото/Видео"
-                                  style={{ display: 'none' }}
-                                  onChange={handlePickFiles}
-                                />
-                                <p className="block_file_attach__text">
-                                  Фото или видео
-                                </p>
-                              </div>
-                            </label>
-
-                            <label className="folder df block_file_attach__flex">
-                              <div className="choice_img">
-                                <img
-                                  src="/img/chat_img/folder.png"
-                                  alt="img absent"
-                                />
-                              </div>
-                              <div className="im_attach pull-left align">
-                                <input
-                                  type="file"
-                                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,application/*,text/*"
-                                  className="im_attach_input"
-                                  title="Документ"
-                                  style={{ display: 'none' }}
-                                  onChange={handlePickFiles}
-                                />
-                                <p className="block_file_attach__text">
-                                  Документ
-                                </p>
-                              </div>
-                            </label>
-                          </div>
-                        ) : null}
-
-                        <label>
-                          <img
-                            onClick={(event) => {
-                              IschooseFile((prev) => !prev);
-                              event.preventDefault();
-                            }}
-                            src="/img/chat_img/clip.png"
-                            alt="img absent"
-                          />
-                        </label>
-                      </div>
-
-                      {/* Микрофон */}
-                      <button
-                        type="button"
-                        className={styles.mic_btn}
-                        onClick={handleMicClick}
-                        disabled={!canRecordAudio || recState === 'saving'}
-                        title={
-                          !canRecordAudio
-                            ? 'Микрофон недоступен в этом браузере'
-                            : recState === 'recording'
-                            ? 'Нажмите, чтобы остановить запись'
-                            : 'Записать голосовое сообщение'
-                        }
+                  <>
+                    {/* Превью прикреплённых файлов перед отправкой */}
+                    {previewFiles.length > 0 && (
+                      <div
                         style={{
-                          background: 'transparent',
-                          border: 0,
-                          padding: 0,
-                          margin: 0,
-                          cursor: !canRecordAudio ? 'not-allowed' : 'pointer',
-                          opacity: !canRecordAudio ? 0.4 : 1,
+                          marginTop: 10,
+                          display: 'grid',
+                          gridTemplateColumns:
+                            'repeat(auto-fill, minmax(120px,1fr))',
+                          gap: 10,
                         }}
                       >
-                        <img
-                          src="/img/icons/micro.png"
-                          alt="mic"
-                          style={{
-                            filter:
-                              recState === 'recording'
-                                ? 'drop-shadow(0 0 6px #d00)'
-                                : 'none',
-                          }}
-                        />
-                      </button>
-
-                      <div style={{ position: 'relative' }}>
-                        {isVisibleEmoji ? (
-                          <div className={styles.emoji_pos}>
-                            <EmojiPicker onEmojiClick={addEmojiToMessage} />
-                          </div>
-                        ) : null}
-                        <label
-                          htmlFor="file-input"
-                          onClick={() => setIsVisibleEmoji((prev) => !prev)}
-                        >
-                          <img src="/img/chat_img/emoji.png" alt="img absent" />
-                        </label>
-                      </div>
-
-                      <div
-                        className="plane"
-                        onClick={handleSend}
-                        role="button"
-                        aria-label="Отправить сообщение"
-                      ></div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Превью прикреплённых файлов перед отправкой */}
-                {previewFiles.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: 10,
-                      display: 'grid',
-                      gridTemplateColumns:
-                        'repeat(auto-fill, minmax(120px,1fr))',
-                      gap: 10,
-                    }}
-                  >
-                    {previewFiles.map((p, idx) => {
-                      const isImage = p.file.type.startsWith('image/');
-                      const isVideo = p.file.type.startsWith('video/');
-                      return (
-                        <div
-                          key={idx}
-                          style={{
-                            position: 'relative',
-                            borderRadius: 8,
-                            overflow: 'hidden',
-                            background: '#f2f2f2',
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => removePreview(p.url)}
-                            title="Убрать"
-                            style={{
-                              position: 'absolute',
-                              right: 6,
-                              top: 6,
-                              zIndex: 2,
-                              border: 0,
-                              background: 'rgba(0,0,0,0.55)',
-                              color: '#fff',
-                              width: 24,
-                              height: 24,
-                              borderRadius: 12,
-                              cursor: 'pointer',
-                              lineHeight: '24px',
-                              textAlign: 'center',
-                              fontWeight: 700,
-                            }}
-                          >
-                            ×
-                          </button>
-
-                          {isImage ? (
-                            <img
-                              src={p.url}
-                              alt={p.file.name}
-                              style={{
-                                width: '100%',
-                                height: 120,
-                                objectFit: 'cover',
-                              }}
-                            />
-                          ) : isVideo ? (
-                            <video
-                              src={p.url}
-                              controls
-                              style={{
-                                width: '100%',
-                                height: 120,
-                                objectFit: 'cover',
-                              }}
-                            />
-                          ) : (
+                        {previewFiles.map((p, idx) => {
+                          const isImage = p.file.type.startsWith('image/');
+                          const isVideo = p.file.type.startsWith('video/');
+                          return (
                             <div
+                              key={idx}
                               style={{
-                                height: 120,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: 8,
-                                textAlign: 'center',
+                                position: 'relative',
+                                borderRadius: 8,
+                                overflow: 'hidden',
+                                background: '#f2f2f2',
                               }}
                             >
-                              <div>
+                              <button
+                                type="button"
+                                onClick={() => removePreview(p.url)}
+                                title="Убрать"
+                                style={{
+                                  position: 'absolute',
+                                  right: 6,
+                                  top: 6,
+                                  zIndex: 2,
+                                  border: 0,
+                                  background: 'rgba(0,0,0,0.55)',
+                                  color: '#fff',
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: 12,
+                                  cursor: 'pointer',
+                                  lineHeight: '24px',
+                                  textAlign: 'center',
+                                  fontWeight: 700,
+                                }}
+                              >
+                                ×
+                              </button>
+
+                              {isImage ? (
                                 <img
-                                  src="/img/chat_img/folder.png"
-                                  alt=""
-                                  style={{ width: 36, opacity: 0.7 }}
+                                  src={p.url}
+                                  alt={p.file.name}
+                                  style={{
+                                    width: '100%',
+                                    height: 120,
+                                    objectFit: 'cover',
+                                  }}
                                 />
+                              ) : isVideo ? (
+                                <video
+                                  src={p.url}
+                                  controls
+                                  style={{
+                                    width: '100%',
+                                    height: 120,
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              ) : (
                                 <div
                                   style={{
-                                    fontSize: 12,
-                                    marginTop: 6,
-                                    wordBreak: 'break-all',
+                                    height: 120,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 8,
+                                    textAlign: 'center',
                                   }}
                                 >
-                                  {p.file.name}
+                                  <div>
+                                    <img
+                                      src="/img/chat_img/folder.png"
+                                      alt=""
+                                      style={{ width: 36, opacity: 0.7 }}
+                                    />
+                                    <div
+                                      style={{
+                                        fontSize: 12,
+                                        marginTop: 6,
+                                        wordBreak: 'break-all',
+                                      }}
+                                    >
+                                      {p.file.name}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
+                              )}
                             </div>
-                          )}
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    <div
+                      className="magnafire-2 df align"
+                      style={{ marginTop: 8 }}
+                    >
+                      <div className="magnafire_input-2" style={{ flex: 1 }}>
+                        <input
+                          className="inp"
+                          type="text"
+                          placeholder="Введите сообщение..."
+                          value={message}
+                          onChange={handleInputChat}
+                          onKeyDown={handleInputKeyDown}
+                        />
+                      </div>
+                      <div className="nav_message df">
+                        <div style={{ position: 'relative' }}>
+                          {chooseFile ? (
+                            <div className="frame_icon qwerewrf">
+                              <label className="choice df block_file_attach__flex">
+                                <div className="choice_img">
+                                  <img
+                                    src="/img/chat_img/img.png"
+                                    alt="img absent"
+                                  />
+                                </div>
+                                <div className="im_attach pull-left align">
+                                  <input
+                                    type="file"
+                                    accept="image/*,video/*"
+                                    className="im_attach_input"
+                                    title="Фото/Видео"
+                                    style={{ display: 'none' }}
+                                    onChange={handlePickFiles}
+                                  />
+                                  <p className="block_file_attach__text">
+                                    Фото или видео
+                                  </p>
+                                </div>
+                              </label>
+
+                              <label className="folder df block_file_attach__flex">
+                                <div className="choice_img">
+                                  <img
+                                    src="/img/chat_img/folder.png"
+                                    alt="img absent"
+                                  />
+                                </div>
+                                <div className="im_attach pull-left align">
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,application/*,text/*"
+                                    className="im_attach_input"
+                                    title="Документ"
+                                    style={{ display: 'none' }}
+                                    onChange={handlePickFiles}
+                                  />
+                                  <p className="block_file_attach__text">
+                                    Документ
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+                          ) : null}
+
+                          <label>
+                            <img
+                              onClick={(event) => {
+                                IschooseFile((prev) => !prev);
+                                event.preventDefault();
+                              }}
+                              src="/img/chat_img/clip.png"
+                              alt="img absent"
+                            />
+                          </label>
                         </div>
-                      );
-                    })}
-                  </div>
+
+                        {/* Микрофон */}
+                        <button
+                          type="button"
+                          className={styles.mic_btn}
+                          onClick={handleMicClick}
+                          disabled={!canRecordAudio || recState === 'saving'}
+                          title={
+                            !canRecordAudio
+                              ? 'Микрофон недоступен в этом браузере'
+                              : recState === 'recording'
+                              ? 'Нажмите, чтобы остановить запись'
+                              : 'Записать голосовое сообщение'
+                          }
+                          style={{
+                            background: 'transparent',
+                            border: 0,
+                            padding: 0,
+                            margin: 0,
+                            cursor: !canRecordAudio ? 'not-allowed' : 'pointer',
+                            opacity: !canRecordAudio ? 0.4 : 1,
+                          }}
+                        >
+                          <img
+                            src="/img/icons/micro.png"
+                            alt="mic"
+                            style={{
+                              filter:
+                                recState === 'recording'
+                                  ? 'drop-shadow(0 0 6px #d00)'
+                                  : 'none',
+                            }}
+                          />
+                        </button>
+
+                        <div style={{ position: 'relative' }}>
+                          {isVisibleEmoji ? (
+                            <div
+                              className={styles.emoji_pos}
+                              style={{
+                                bottom: Math.max(110, footerHeight + 30),
+                              }}
+                            >
+                              <EmojiPicker onEmojiClick={addEmojiToMessage} />
+                            </div>
+                          ) : null}
+                          <label
+                            htmlFor="file-input"
+                            onClick={() => setIsVisibleEmoji((prev) => !prev)}
+                          >
+                            <img
+                              src="/img/chat_img/emoji.png"
+                              alt="img absent"
+                            />
+                          </label>
+                        </div>
+
+                        <div
+                          className="plane"
+                          onClick={handleSend}
+                          role="button"
+                          aria-label="Отправить сообщение"
+                        ></div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
+            {/* /НИЖНИЙ ФИКСИРОВАННЫЙ ФУТЕР ВВОДА */}
           </div>
         ) : (
           <div className={styles.empty_chat}>

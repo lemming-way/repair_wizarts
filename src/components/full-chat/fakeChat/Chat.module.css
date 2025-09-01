@@ -47,14 +47,36 @@
   border-bottom: 1px solid #e9eaf1;
 }
 
+/* ========== ВАЖНО: зона ленты и фиксированного инпута ========== */
+.profil {
+  /* правая колонка с чатом */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 75px);
+  width: 100%;
+  min-width: 0;
+  background: #fff;
+}
+
+.chatt {
+  /* лента сообщений */
+  flex: 1 1 auto;
+  overflow-y: auto;
+  background: #f6f8f9;
+  border-top: 1px solid #e9eaf1;
+  border-bottom: 1px solid #e9eaf1;
+}
+
+/* нижняя панель ввода сообщений — закрепляем снизу */
 .message_block {
-  position: relative;
   max-width: 1200px;
   width: 100%;
 }
+
+/* кнопка «скролл вниз» теперь сидит над закреплённым футером */
 .scroll_to_bottom {
   position: fixed;
-  bottom: 120px;
+  bottom: 120px; /* будет адаптивно скорректировано в TS при измерении футера */
   right: 20px;
   width: 40px;
   height: 40px;
@@ -73,7 +95,7 @@
 
 .scroll_to_bottom.hidden {
   opacity: 0;
-  pointer-events: none; /* Чтобы элемент не мешал кликам */
+  pointer-events: none;
 }
 
 .scroll_to_bottom.visible {
@@ -676,12 +698,12 @@
   padding: 6px 0 10px 0;
 }
 
-/* emoji */
+/* emoji — позиционируем над закреплённой панелью */
 .emoji_pos {
   position: fixed;
   right: 50px;
   bottom: 110px;
-  z-index: 10;
+  z-index: 60; /* выше .message_block */
 }
 
 .confirm_block {
@@ -986,4 +1008,9 @@
   border-radius: 10px;
   font-size: 18px;
   font-weight: bold;
+}
+
+/* выпадающий блок для прикрепления — поверх футера */
+.frame_icon.qwerewrf {
+  z-index: 70;
 }
