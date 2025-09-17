@@ -1,22 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import SERVER_PATH from "../../constants/SERVER_PATH";
 import { selectUI } from "../../slices/ui.slice";
 import { selectUser } from "../../slices/user.slice";
-import { selectUnreadMessages } from "../../slices/messages.slice";
 import DropdownSetout from "../../components/dropdownSetout";
 import ListItem from "../../components/ListItem/ListItem";
 import ToolbarButtons from "./components/ToolbarButtons/ToolbarButtons";
 import MobileMenu from "./MobileMenu";
-import ToolbarSearchBar from "./components/ToolbarSearchBar/ToolbarSearchBar";
 import ServiceDropdown from "./components/ServiceDropdown/ServiceDropdown";
 import ServiceDropdownCities from './components/ServiceDropdownCities/ServiceDropdownCities';
 import logo from '../../img/header/new-logotype.svg';
-import arrowDown from '../../img/header/icons/arrow-down-icon.svg';
 import styles from './Toolbar.module.scss';
 import "./header.scss"
-import Dropdown from "react-multilevel-dropdown";
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -28,11 +24,9 @@ const Toolbar = () => {
   const [visibleCountry, setVisibleCountry] = useState(false);
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
-  const [menuActive2, setMenuActive2] = useState(false);
 
   const ui = useSelector(selectUI);
   const user = useSelector(selectUser);
-  const messages = useSelector(selectUnreadMessages);
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {

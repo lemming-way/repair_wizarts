@@ -86,7 +86,7 @@ const PersonalRequests = (props) => {
                         </div>
                     </div>
                     <div className="bri">
-                        <a href="#" className="inter">Показать все</a>
+                        <a href="./" className="inter">Показать все</a>
                     </div>
                 </div>
         </>

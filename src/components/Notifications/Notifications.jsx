@@ -1,13 +1,12 @@
-import { useEffect } from 'react'
-import { useSelector, useDispatch } from "react-redux"
-import { selectNotifications, shiftNotification } from "../../slices/notifications.slice"
+import { useSelector } from "react-redux"
+import { selectNotifications } from "../../slices/notifications.slice"
 import Portal from '../Portal'
 import Notification from './Notification'
 import styles from './Notifications.module.css'
 
 const Notifications = (props) => {
     const notifications = useSelector(selectNotifications)
-    const dispatch = useDispatch()
+    // const dispatch_ = useDispatch() ###
 
     // useEffect(() => {
     //     if (notifications.length > 3) {

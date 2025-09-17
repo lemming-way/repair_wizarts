@@ -5,37 +5,31 @@ import {
 import '../../scss/ChoiceOfReplenishmentMethod.css'
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-
-import Sidebar from "../sidebar";
-import ChoiceOfReplenishmentMethodHistory from "./ChoiceOfReplenishmentMethodHistory";
-import { replenishBalance } from '../../services/balance.service';
 import style from './style.module.css'
-import ModalVivod from './ModalVivod';
 import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
-import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 
 function ChoiceOfReplenishmentMethodClient() {
 
     const navigator = useNavigate()
 
-    const [error, setError] = useState("")
-    const [amount, setAmount] = useState("")
-    const updateAmount = (e) => {
-        const value = e.target.value
-        if (isNaN(value)) {
-            return
-        }
-        setAmount(value)
-    }
+    // const [error, setError] = useState("")
+    // const [amount, setAmount] = useState("")
+    // const updateAmount = (e) => {
+    //     const value = e.target.value
+    //     if (isNaN(value)) {
+    //         return
+    //     }
+    //     setAmount(value)
+    // }
 
-    const onSubmit = (e) => {
-        e.preventDefault()
-        return replenishBalance(amount).then((res) => {
-            window.location.replace(res.confirmation_url)
-        }).catch((err) => setError(err.message))
-    }
+    // const onSubmit = (e) => {
+    //     e.preventDefault()
+    //     return replenishBalance(amount).then((res) => {
+    //         window.location.replace(res.confirmation_url)
+    //     }).catch((err) => setError(err.message))
+    // }
 
     useEffect(() => {
         document.title = 'Кошелек';
@@ -53,7 +47,7 @@ function ChoiceOfReplenishmentMethodClient() {
 
         <div className={style.main_block}>
 
-            {stage == 0 ?
+            {stage === 0 ?
             <div className="middle-block-1">
                 <h1>Кошелек</h1>
 
@@ -78,7 +72,7 @@ function ChoiceOfReplenishmentMethodClient() {
 
 
 
-            {stage == 1 ?
+            {stage === 1 ?
             <div className="middle-block-1">
                 <h1>Кошелек</h1>
 
@@ -86,19 +80,19 @@ function ChoiceOfReplenishmentMethodClient() {
 
                 <div>
                     <div className={style.payment_row}>
-                        <input type="radio" name="payment" value={0} onChange={(e)=> setInputRadio(e.target.value)} checked={inputRadio==0} />
+                        <input type="radio" name="payment" value={0} onChange={(e)=> setInputRadio(e.target.value)} checked={inputRadio===0} />
                         <img src="/img/visa_block.png" alt="" />
                         <p>Банковская карта <br />
                         XXXX XXXX XXXX 4443</p>
                     </div>
                     <div className={style.payment_row}>
-                        <input type="radio" name="payment" value={1} onChange={(e)=> setInputRadio(e.target.value)} checked={inputRadio==1} />
+                        <input type="radio" name="payment" value={1} onChange={(e)=> setInputRadio(e.target.value)} checked={inputRadio===1} />
                         <img src="/img/empty_block.png" alt="" />
                         <p>Новая карта</p>
                     </div>
                 </div>
 
-                {inputRadio == 1 ?  
+                {inputRadio === 1 ?  
                     <div className={style.add_card}>
                         <label htmlFor="number_card">Номер карты:</label>
                         <div className={style.row2}>
@@ -140,7 +134,7 @@ function ChoiceOfReplenishmentMethodClient() {
             : null}
 
 
-            {stage == 2 ?
+            {stage === 2 ?
                 <div className="middle-block-1">
                     <h1>Кошелек</h1>
                     <h3>Осталось средств: 5000 ₽</h3>

@@ -6,7 +6,6 @@ import formatDate from "../../utilities/formatDate"
 import likeImage from "../../img/like.png"
 import dislikeImage from "../../img/dislike.png"
 import styles from "./Article.module.css"
-import SERVER_PATH from "../../constants/SERVER_PATH"
 
 const ArticleComment = (props) => {
     const {

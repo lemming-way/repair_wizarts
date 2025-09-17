@@ -1,5 +1,4 @@
 import WhyChooseUsBlockCard from "./components/WhyChooseUsBlockCard/WhyChooseUsBlockCard";
-import WhyChooseUsBlockSwiper from "./components/WhyChooseUsBlockSwiper/WhyChooseUsBlockSwiper";
 import mastersImage from '../../../img/home/whyChooseUsBlock/masters.svg';
 import qualityImage from '../../../img/home/whyChooseUsBlock/quality.svg';
 import priceImage from '../../../img/home/whyChooseUsBlock/price.svg';

@@ -25,6 +25,7 @@ const ConfirmPolitics = () => {
             color: "#000"
           }}
           target="_blank"
+          rel="noopener noreferrer"
           href={SERVER_PATH + "files/privacy-policy.pdf"}
         >
           Политики конфиденциальности

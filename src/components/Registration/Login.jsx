@@ -6,7 +6,7 @@ import { login } from '../../services/auth.service'
 
 import './login.css'
 import Popup from 'reactjs-popup'
-import { getKeepUserAuthorized, keepUserAuthorized, recoverPassword, recoverPasswordSend, recoverPasswordVerify } from '../../services/user.service'
+import { keepUserAuthorized, recoverPassword, recoverPasswordSend, recoverPasswordVerify } from '../../services/user.service'
 
 const RecoveryState = {
     IDLE: 0,
@@ -34,7 +34,7 @@ function Login() {
 
         // нельзя вводить не числа и больше 11 символов
         const inputValue = event.target.value.slice(1);
-        if (/[^0-9()\-]/.test(inputValue) && inputValue !== '') {
+        if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
             setError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
         } 
         // else if (inputValue.length > 16) {
@@ -60,25 +60,25 @@ function Login() {
             }
         }
         // +7(988)-842-44-44
-        else if (text.length == 6) {
+        else if (text.length === 6) {
             var new_text = text + ")-"
         }
-        else if (text.length == 7) {
+        else if (text.length === 7) {
             var new_text = text.slice(0, -1) + ')-' + text.slice(-1);
         }
-        else if (text.length == 8) {
+        else if (text.length === 8) {
             var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 11) {
+        else if (text.length === 11) {
             var new_text = text + "-" 
         }
-        else if (text.length == 12) {
+        else if (text.length === 12) {
             var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 14) {
+        else if (text.length === 14) {
             var new_text = text + "-"
         }
-        else if (text.length == 15) {
+        else if (text.length === 15) {
             var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
@@ -94,7 +94,7 @@ function Login() {
 
         // нельзя вводить не числа и больше 11 символов
         const inputValue = event.target.value.slice(1);
-        if (/[^0-9()\-]/.test(inputValue) && inputValue !== '') {
+        if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
             setRecoveryError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
         } 
         // else if (inputValue.length > 9) {

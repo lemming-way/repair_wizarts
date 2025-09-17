@@ -3,26 +3,26 @@ import { removeToken } from "./token.service"
 
 const getUser = () => appFetch("user/me")
 // Method to fetch the current user data
-const getUserTestData = () => {
-    return new Promise((resolve) => {
-        const mockUser = {
-            id: 6,
-            name: "test",
-            lastname: "test",
-            email: "test@gmail.com",
-            phone: "+79111111111",
-            avatar: "files/Снимок экрана от 2025-01-28 11-58-29.png",
-            is_superuser: false,
-            is_email_verified: true,
-            is_phone_verified: true,
-            number_of_submissions: 4,
-            master: null
-        };
+// const getUserTestData = () => {
+//     return new Promise((resolve) => {
+//         const mockUser = {
+//             id: 6,
+//             name: "test",
+//             lastname: "test",
+//             email: "test@gmail.com",
+//             phone: "+79111111111",
+//             avatar: "files/Снимок экрана от 2025-01-28 11-58-29.png",
+//             is_superuser: false,
+//             is_email_verified: true,
+//             is_phone_verified: true,
+//             number_of_submissions: 4,
+//             master: null
+//         };
 
-        // Simulate network delay
-        setTimeout(() => resolve(mockUser), 500);
-    });
-};
+//         // Simulate network delay
+//         setTimeout(() => resolve(mockUser), 500);
+//     });
+// }; ###
 
 const getUserUnreadMessages = () => appFetch("user/unread-messages")
 

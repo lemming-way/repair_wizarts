@@ -14,8 +14,6 @@ const VerificationInput = (props) => {
     const {
         isConfirmed,
         isEmail,
-        value,
-        onChange,
         mask_value,
         onChangeMask
     } = props

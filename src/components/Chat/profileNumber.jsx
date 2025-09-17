@@ -1,44 +1,36 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import '../../scss/profileNumber.css'
 import '../../scss/swiper.css'
 import { useSelector } from "react-redux";
 import { selectUser } from "../../slices/user.slice";
-import { getFeedback, replyToFeedback } from "../../services/feedback.service";
-import SERVER_PATH from "../../constants/SERVER_PATH";
-
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper";
-import { Pagination } from "swiper";
+import { getFeedback } from "../../services/feedback.service";
 import ModalDelete from "./ModalDelete";
 import style from "./profileNumber.module.css"
 import ModalAddCommentMini from "./ModalAddCommentMini";
 import ProfileSlider  from "../profileNumberClient/ProfileSlider";
 
 function App() {
-    const [reply, setReply] = useState("")
-    const [isReplyOpen, setReplyOpen] = useState(false)
-
     const user = useSelector(selectUser)
     const [feedback, setFeedback] = useState([])
 
-    const onSubmit = (id) => () => {
-        return replyToFeedback({
-            id,
-            master_response: reply
-        }).then(() => {
-            getFeedback(user.master[0].username).then(setFeedback)
-        })
-    }
+    // const onSubmit = (id) => () => {
+    //     return replyToFeedback({
+    //         id,
+    //         master_response: reply
+    //     }).then(() => {
+    //         getFeedback(user.master[0].username).then(setFeedback)
+    //     })
+    // }
 
-    const formatDate = (date) => {
-        const _date = new Date(date)
-        return `${_date.getDate()}.${_date.getMonth() + 1}.${_date.getFullYear()}`
-    }
+    // const formatDate = (date) => {
+    //     const _date = new Date(date)
+    //     return `${_date.getDate()}.${_date.getMonth() + 1}.${_date.getFullYear()}`
+    // }
     
-    const feedbackByValue = useMemo(() => feedback
-        .reduce((state, value) => (
-            (state[value.rating - 1]++, state)
-        ), [0, 0, 0, 0, 0]), [feedback])
+    // const feedbackByValue = useMemo(() => feedback
+    //     .reduce((state, value) => (
+    //         (state[value.rating - 1]++, state)
+    //     ), [0, 0, 0, 0, 0]), [feedback])
 
     useEffect(() => {
         if (user.master) {

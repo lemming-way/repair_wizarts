@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import '../../../scss/chat.css'
 import { Link } from 'react-router-dom'
 
@@ -19,7 +19,7 @@ function App() {
                 </div>
                 <div className="magnafire df align">
                     <div className="magnafire_img">
-                        <img src="/img/chat_img/лупа.png" alt="no photo" />
+                        <img src="/img/chat_img/лупа.png" alt="no img" />
                     </div>
                     <div className="magnafire_input">
                         <input type="text" placeholder="Поиск..." />
@@ -36,7 +36,7 @@ function App() {
                     }>
                         <div className="ilya df font_inter align">
                             <div className="ilya_img">
-                                <img src="/img/chat_img/ilya.png" alt="no photo" />
+                                <img src="/img/chat_img/ilya.png" alt="chat icon" />
                             </div>
 
                             <div className="ilya_text">
@@ -70,7 +70,7 @@ function App() {
                     }>
                         <div className="ilya df font_inter align">
                             <div className="ilya_img">
-                                <img src="/img/chat_img/тех подержка.png" alt="no photo" />
+                                <img src="/img/chat_img/тех подержка.png" alt="chat icon" />
                             </div>
 
                             <div className="ilya_text">
@@ -104,7 +104,7 @@ function App() {
                     }>
                         <div className="ilya df font_inter align">
                             <div className="ilya_img">
-                                <img src="/img/chat_img/кирил.png" alt="no photo" />
+                                <img src="/img/chat_img/кирил.png" alt="chat icon" />
                             </div>
 
                             <div className="ilya_text">
@@ -133,7 +133,7 @@ function App() {
                         }>
                         <div className="ilya df font_inter align">
                             <div className="ilya_img">
-                                <img src="/img/chat_img/кирил.png" alt="no photo" />
+                                <img src="/img/chat_img/кирил.png" alt="chat icon" />
                             </div>
 
                             <div className="ilya_text">
@@ -159,7 +159,7 @@ function App() {
                 <div className="big_messages">
                     <div className="ilya df font_inter align">
                         <div className="ilya_img">
-                            <img src="/img/chat_img/елена.png" alt="no photo" />
+                            <img src="/img/chat_img/елена.png" alt="chat icon" />
                         </div>
 
                         <div className="ilya_text">
@@ -184,7 +184,7 @@ function App() {
                 <div className="big_messages">
                     <div className="ilya df font_inter align">
                         <div className="ilya_img">
-                            <img src="/img/chat_img/флипп.png" alt="no photo" />
+                            <img src="/img/chat_img/флипп.png" alt="chat icon" />
                         </div>
                         <div className="ilya_text">
                             <h2>
@@ -208,7 +208,7 @@ function App() {
                 <div className="big_messages">
                     <div className="ilya df font_inter align">
                         <div className="ilya_img">
-                            <img src="/img/chat_img/михаил.png" alt="no photo" />
+                            <img src="/img/chat_img/михаил.png" alt="chat icon" />
                         </div>
 
                         <div className="ilya_text">
@@ -233,7 +233,7 @@ function App() {
                 <div className="big_messages">
                     <div className="ilya df font_inter align">
                         <div className="ilya_img">
-                            <img src="/img/chat_img/евгений.png" alt="no photo" />
+                            <img src="/img/chat_img/евгений.png" alt="chat icon" />
                         </div>
 
                         <div className="ilya_text">

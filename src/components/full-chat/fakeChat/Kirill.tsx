@@ -24,21 +24,20 @@ import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
 import ModalАrbitration from "./ModalАrbitration";
 import CancelOrder from "./CancelOrder";
 import OnlineDotted from "../../onlineDotted/OnlineDotted";
-import ConfirmOrder_v2 from "./ConfirmOrder_v2";
-import ConfirmOrderFinal_v2 from "./ConfirmOrderFinal_v2";
-import ConfirmOrder_v3 from "./ConfirmOrder_v3";
-import ConfirmOrderFinal_v3 from "./ConfirmOrderFinal_v3";
-import DisputeModal_v2 from "./DisputeModal_v2";
-import DisputeFinalModal_v2 from "./DisputeFinalModal";
-import CancelOrder_v4 from "./CancelOrder_v4";
-import CancelOrderItem_v4 from "./CancelOrderItem_v4";
+import ConfirmOrderV2 from "./ConfirmOrder_v2";
+import ConfirmOrderFinalV2 from "./ConfirmOrderFinal_v2";
+import ConfirmOrderV3 from "./ConfirmOrder_v3";
+import ConfirmOrderFinalV3 from "./ConfirmOrderFinal_v3";
+import DisputeModalV2 from "./DisputeModal_v2";
+import DisputeFinalModalV2 from "./DisputeFinalModal";
+import CancelOrderV4 from "./CancelOrder_v4";
+import CancelOrderItemV4 from "./CancelOrderItem_v4";
 import ModalАrbitrationItem from "./ModalАrbitrationItem";
-import DisputeFinalModal_v5 from "./DisputeFinalModal_v5";
-import DisputeFinalItemModal_v5 from "./DisputeFinalItemModal_v5"
+import DisputeFinalModalV5 from "./DisputeFinalModal_v5";
+import DisputeFinalItemModalV5 from "./DisputeFinalItemModal_v5"
 import SimpleImage from "./SimpleImage"
 function ChoiceOfReplenishmentMethodCard() {
 
-    const [visibleTestOrder, setVisibleTestOrder] = useState(false)
     const [visibleTestCancel, setVisibleTestCancel] = useState(false)
     const [visibleTestAcceptItem, setVisibleTestAcceptItem] = useState(false);
     const [visibleTestCancel2, setVisibleTestCancel2] = useState("")
@@ -106,14 +105,14 @@ function ChoiceOfReplenishmentMethodCard() {
     const [zayavka__isVisibleDispute, zayavka__setVisibleDispute] = useState(false)
     const [zayavka__isVisibleDisputeFinal, zayavka__setisVisibleDisputeFinal] = useState(false)
 
-    const [visibleTestCancel_v2, setVisibleTestCancel_v3] = useState(false)
-    const [visibleTestAccept_v2, setVisibleTestAccept_v2] = useState(false);
+    const [visibleTestCancelV2, setVisibleTestCancelV3] = useState(false)
+    const [visibleTestAcceptV2, setVisibleTestAcceptV2] = useState(false);
 
-    const [isCancelOrder_v4, setCancelOrder_v4] = useState(false)
-    const [isCancelOrderItem_v4, setCancelOrderItem_v4] = useState(false)
+    const [isCancelOrderV4, setCancelOrderV4] = useState(false)
+    const [isCancelOrderItemV4, setCancelOrderItemV4] = useState(false)
 
-    const [isVisibleCancelOrder_v4, setVisibleCancelOrder_v4] = useState(false)
-    const [isVisibleCancelOrderItem_v4, setVisibleCancelOrderItem_v4] = useState(false)
+    const [isVisibleCancelOrderV4, setVisibleCancelOrderV4] = useState(false)
+    const [isVisibleCancelOrderItemV4, setVisibleCancelOrderItemV4] = useState(false)
     // Создаем реф для доступа к блоку
     const [isAtBottom, setIsAtBottom] = useState(false);
     const chatBlockRef = useRef<HTMLDivElement>(null);
@@ -153,31 +152,31 @@ function ChoiceOfReplenishmentMethodCard() {
 
 
 // Стили для кнопки
-    const behaiveStyles: React.CSSProperties = {
-        position: 'fixed',
-        bottom: '120px',
-        borderRadius: '50%',
-        right: '20px',
-        width: '40px',
-        height: '40px',
-        display: isAtBottom ? 'flex' : 'none', // Показать кнопку, если прокрутили больше чем 200px от низа
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'rgb(185, 185, 185)', // Сделаем фон кнопки прозрачным
-        border: 'none',
-        cursor: 'pointer',
-        padding: '0',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        zIndex: 9999, // Чтобы кнопка была поверх другого контента
-    };
+    // const behaiveStyles: React.CSSProperties = {
+    //     position: 'fixed',
+    //     bottom: '120px',
+    //     borderRadius: '50%',
+    //     right: '20px',
+    //     width: '40px',
+    //     height: '40px',
+    //     display: isAtBottom ? 'flex' : 'none', // Показать кнопку, если прокрутили больше чем 200px от низа
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    //     background: 'rgb(185, 185, 185)', // Сделаем фон кнопки прозрачным
+    //     border: 'none',
+    //     cursor: 'pointer',
+    //     padding: '0',
+    //     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    //     zIndex: 9999, // Чтобы кнопка была поверх другого контента
+    // };
 
 
     const imageStyles: React.CSSProperties = {
     };
-    const [isVisibleModalArbitation_v5, setVisibleModalArbitation_v5] = useState(false)
-    const [isVisibleModalArbitationItem_v5, setVisibleModalArbitationItem_v5] = useState(false)
-    const [isVisibleModalArbitationFinal_v5, setVisibleModalArbitationFinal_v5] = useState(false)
-    const [isVisibleModalArbitationFinalItem_v5, setVisibleModalArbitationFinalItem_v5] = useState(false)
+    const [isVisibleModalArbitationV5, setVisibleModalArbitationV5] = useState(false)
+    const [isVisibleModalArbitationItemV5, setVisibleModalArbitationItemV5] = useState(false)
+    const [isVisibleModalArbitationFinalV5, setVisibleModalArbitationFinalV5] = useState(false)
+    const [isVisibleModalArbitationFinalItemV5, setVisibleModalArbitationFinalItemV5] = useState(false)
     const [isDisputeArbitr, setDisputeArbitr] = useState(false)
     const [isDisputeArbitrItem, setDisputeArbitrItem] = useState(false)
 
@@ -201,22 +200,22 @@ function ChoiceOfReplenishmentMethodCard() {
             {isVisibleModalArbitation ? <ModalАrbitration setVisibleModalArbitation={setVisibleModalArbitation} setVisibleDisputeFinal={setVisibleDisputeFinal} /> : null}
             {isVisibleCancelOrder ? <CancelOrder setVisibleCancelOrder={setVisibleCancelOrder} setVisibleCancelOrderFinal={setVisibleCancelOrderFinal} /> : null}
 
-            {dispute__isVisibleModal ? <ConfirmOrder_v2 setVisibleConfirmOrder={dispute__SetVisibleModal} setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal} /> : null}
-            {dispute__isVisibleModalFinal ? <ConfirmOrderFinal_v2 setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal} setConfirmOrder={dispute__SetConfirmOrder} /> : null}
+            {dispute__isVisibleModal ? <ConfirmOrderV2 setVisibleConfirmOrder={dispute__SetVisibleModal} setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal} /> : null}
+            {dispute__isVisibleModalFinal ? <ConfirmOrderFinalV2 setVisibleConfirmOrderFinal={dispute__SetVisibleModalFinal} setConfirmOrder={dispute__SetConfirmOrder} /> : null}
 
-            {zayavka__isVisibleModal ? <ConfirmOrder_v3 setVisibleConfirmOrder={zayavka__SetVisibleModal} setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal} /> : null}
-            {zayavka__isVisibleModalFinal ? <ConfirmOrderFinal_v3 setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal} setConfirmOrder={zayavka__SetConfirmOrder} /> : null}
-            {zayavka__isVisibleDispute ? <DisputeModal_v2 setVisibleDispute={zayavka__setVisibleDispute} setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal} /> : null}
-            {zayavka__isVisibleDisputeFinal ? <DisputeFinalModal_v2 setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal} setOpenDispute={zayavka__setOpenDispute} /> : null}
+            {zayavka__isVisibleModal ? <ConfirmOrderV3 setVisibleConfirmOrder={zayavka__SetVisibleModal} setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal} /> : null}
+            {zayavka__isVisibleModalFinal ? <ConfirmOrderFinalV3 setVisibleConfirmOrderFinal={zayavka__SetVisibleModalFinal} setConfirmOrder={zayavka__SetConfirmOrder} /> : null}
+            {zayavka__isVisibleDispute ? <DisputeModalV2 setVisibleDispute={zayavka__setVisibleDispute} setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal} /> : null}
+            {zayavka__isVisibleDisputeFinal ? <DisputeFinalModalV2 setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal} setOpenDispute={zayavka__setOpenDispute} /> : null}
 
-            {isVisibleCancelOrder_v4 ? <CancelOrder_v4 setVisibleCancelOrder={setVisibleCancelOrder_v4} setVisibleCancelOrderFinal={setCancelOrder_v4} /> : null}
-            {isVisibleCancelOrderItem_v4 ? <CancelOrderItem_v4 setVisibleCancelOrder={setVisibleCancelOrderItem_v4} setVisibleCancelOrderFinal={setCancelOrderItem_v4} /> : null}
+            {isVisibleCancelOrderV4 ? <CancelOrderV4 setVisibleCancelOrder={setVisibleCancelOrderV4} setVisibleCancelOrderFinal={setCancelOrderV4} /> : null}
+            {isVisibleCancelOrderItemV4 ? <CancelOrderItemV4 setVisibleCancelOrder={setVisibleCancelOrderItemV4} setVisibleCancelOrderFinal={setCancelOrderItemV4} /> : null}
 
-            {isVisibleModalArbitation_v5 ? <ModalАrbitration setVisibleModalArbitation={setVisibleModalArbitation_v5} setVisibleDisputeFinal={setVisibleModalArbitationFinal_v5} /> : null}
-            {isVisibleModalArbitationItem_v5 ? <ModalАrbitrationItem setVisibleModalArbitation={setVisibleModalArbitationItem_v5} setVisibleDisputeFinal={setVisibleModalArbitationFinalItem_v5} /> : null}
+            {isVisibleModalArbitationV5 ? <ModalАrbitration setVisibleModalArbitation={setVisibleModalArbitationV5} setVisibleDisputeFinal={setVisibleModalArbitationFinalV5} /> : null}
+            {isVisibleModalArbitationItemV5 ? <ModalАrbitrationItem setVisibleModalArbitation={setVisibleModalArbitationItemV5} setVisibleDisputeFinal={setVisibleModalArbitationFinalItemV5} /> : null}
 
-            {isVisibleModalArbitationFinal_v5 ? <DisputeFinalModal_v5 setVisibleDisputeFinal={setVisibleModalArbitationFinal_v5} setOpenDispute={setDisputeArbitr} /> : null}
-            {isVisibleModalArbitationFinalItem_v5 ? <DisputeFinalItemModal_v5 setVisibleDisputeFinal={setVisibleModalArbitationFinalItem_v5} setOpenDispute={setDisputeArbitrItem} /> : null}
+            {isVisibleModalArbitationFinalV5 ? <DisputeFinalModalV5 setVisibleDisputeFinal={setVisibleModalArbitationFinalV5} setOpenDispute={setDisputeArbitr} /> : null}
+            {isVisibleModalArbitationFinalItemV5 ? <DisputeFinalItemModalV5 setVisibleDisputeFinal={setVisibleModalArbitationFinalItemV5} setOpenDispute={setDisputeArbitrItem} /> : null}
 
 
             <section className={styles.container} >
@@ -267,7 +266,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <div className={styles.dotted_wrap}>
                                                 <OnlineDotted isVisible={true}/>
                                             </div>
-                                            <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                            <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                         </div>
 
                                     </div>
@@ -372,7 +371,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <div className="correspondence font_inter df">
                                             <div className="correspondence_ciril-4 df">
                                                 <div className="ciril-img">
-                                                    <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                    <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                                 </div>
                                                 <div className="let">
                                                     <div className="letter">
@@ -385,8 +384,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                             </div>
                                                             <div className="right_menu-img df align mini-gap">
                                                                 <img className="ansver" onClick={() => Isanswer(true)}
-                                                                     src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                                <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                                     src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                                <img src="/img/chat_img/span.png" alt="img absent"/>
                                                                 {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                             </div>
                                                         </div>
@@ -530,18 +529,18 @@ function ChoiceOfReplenishmentMethodCard() {
 
                             <div className="chat_technical_message">
                                 <div
-                                    className={`${styles.cancel_block} ${visibleTestCancel3 != "deny" ? styles.display_none : null}`}>
+                                    className={`${styles.cancel_block} ${visibleTestCancel3 !== "deny" ? styles.display_none : null}`}>
                                     <img src="/img/cansel_message.png" alt=""/>
                                     <p>Вы предложили отменить заявку 5:42</p>
                                 </div>
 
                                 <div
-                                    className={`${styles.confirm_block} ${visibleTestCancel3 != "" ? styles.display_none : null}`}>
+                                    className={`${styles.confirm_block} ${visibleTestCancel3 !== "" ? styles.display_none : null}`}>
                                     <button onClick={() => setVisibleTestCancel3("access")}>Подтвердить заявку</button>
                                     <button onClick={() => setVisibleTestCancel3("deny")}>Отменить заявку</button>
                                 </div>
 
-                                <div className={`${visibleTestCancel3 != "access" ? styles.display_none : null}`}>
+                                <div className={`${visibleTestCancel3 !== "access" ? styles.display_none : null}`}>
                                     <div className={`${styles.cancel_block}`}>
                                         <img src="/img/message_green.png" alt=""/>
                                         <p>Заявка успешно подтверждена 5:42</p>
@@ -712,7 +711,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <p>Клиент предлагает отменить заказ</p>
                                         </div>
                                     </div>
-                                    {visibleTestCancel_v2
+                                    {visibleTestCancelV2
                                         ? // Вы отказались принимать отмену заявки
                                         <div className={styles.cancel_client_block}>
                                             <img src="/img/message_cancel.png" alt=""/>
@@ -721,7 +720,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                 <p>Вы отказались принимать отмену заказа</p>
                                             </div>
                                         </div>
-                                        : visibleTestAccept_v2 ?
+                                        : visibleTestAcceptV2 ?
                                             <div className={styles.cancel_client_block}>
                                                 <img src="/img/message_green.png" alt=""/>
                                                 <div>
@@ -731,10 +730,10 @@ function ChoiceOfReplenishmentMethodCard() {
                                             </div>
                                             :
                                             <div className={styles.cancel_client_confirm}>
-                                                <button onClick={() => setVisibleTestAccept_v2(true)}>Подтвердить отмену
+                                                <button onClick={() => setVisibleTestAcceptV2(true)}>Подтвердить отмену
                                                     заказа
                                                 </button>
-                                                <button onClick={() => setVisibleTestCancel_v3(true)}>Нет</button>
+                                                <button onClick={() => setVisibleTestCancelV3(true)}>Нет</button>
                                             </div>
                                     }
                                 </div>
@@ -752,20 +751,20 @@ function ChoiceOfReplenishmentMethodCard() {
 
                                     {/* Вы отказались принимать отмену заявки */}
                                     <div
-                                        className={`${styles.cancel_block} ${visibleTestCancel2 != "access" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_block} ${visibleTestCancel2 !== "access" ? styles.display_none : null}`}>
                                         <img src="/img/message_green.png" alt=""/>
                                         <p>заявка успешно подтверждена 5:42</p>
                                     </div>
 
                                     <div
-                                        className={`${styles.cancel_client_confirm} ${visibleTestCancel2 != "" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_client_confirm} ${visibleTestCancel2 !== "" ? styles.display_none : null}`}>
                                         <button onClick={() => setVisibleTestCancel2("access")}>Подтвердить заявку
                                         </button>
                                         <button onClick={() => setVisibleTestCancel2("deny")}>Отменить заявку</button>
                                     </div>
 
                                     <div
-                                        className={`${styles.cancel_block} ${visibleTestCancel2 != "deny" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_block} ${visibleTestCancel2 !== "deny" ? styles.display_none : null}`}>
                                         <img src="/img/cansel_message.png" alt=""/>
                                         <p>Вы предложили отменить заявку 5:42</p>
                                     </div>
@@ -783,13 +782,13 @@ function ChoiceOfReplenishmentMethodCard() {
 
                                     {/* Вы отказались принимать отмену заявки */}
                                     <div
-                                        className={`${styles.cancel_block} ${visibleTestCancelOrder2 != "access" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_block} ${visibleTestCancelOrder2 !== "access" ? styles.display_none : null}`}>
                                         <img src="/img/message_green.png" alt=""/>
                                         <p>заказ успешно подтвержден 5:42</p>
                                     </div>
 
                                     <div
-                                        className={`${styles.cancel_client_confirm} ${visibleTestCancelOrder2 != "" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_client_confirm} ${visibleTestCancelOrder2 !== "" ? styles.display_none : null}`}>
                                         <button onClick={() => setVisibleTestCancelOrder2("access")}>Подтвердить заказ
                                         </button>
                                         <button onClick={() => setVisibleTestCancelOrder2("deny")}>Отменить зака
@@ -797,7 +796,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                     </div>
 
                                     <div
-                                        className={`${styles.cancel_block} ${visibleTestCancelOrder2 != "deny" ? styles.display_none : null}`}>
+                                        className={`${styles.cancel_block} ${visibleTestCancelOrder2 !== "deny" ? styles.display_none : null}`}>
                                         <img src="/img/cansel_message.png" alt=""/>
                                         <p>Вы предложили отменить заказ 5:42</p>
                                     </div>
@@ -810,7 +809,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                     <div className="correspondence df font_inter">
                                         <div className="correspondence_ciril df_chat">
                                             <div className="ciril-img">
-                                                <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -822,8 +821,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <div className="right_menu-img df align mini-gap">
                                                         <img className="ansver" onClick={() => Isanswer(true)}
-                                                             src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                        <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                             src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                        <img src="/img/chat_img/span.png" alt="img absent"/>
                                                         {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                     </div>
                                                 </div>
@@ -844,7 +843,7 @@ function ChoiceOfReplenishmentMethodCard() {
                             {/*        <div className="correspondence df font_inter">*/}
                             {/*            <div className="correspondence_ciril df_chat">*/}
                             {/*                <div className="ciril-img">*/}
-                            {/*                    <img src="/img/chat_img/кирил.png" alt="no photo"/>*/}
+                            {/*                    <img src="/img/chat_img/кирил.png" alt="img absent"/>*/}
                             {/*                </div>*/}
                             {/*                <div className="let">*/}
                             {/*                    <div className="letter_kiril df" style={{gap: "10px"}}>*/}
@@ -856,13 +855,13 @@ function ChoiceOfReplenishmentMethodCard() {
                             {/*                        </div>*/}
                             {/*                        <div className="right_menu-img df align mini-gap">*/}
                             {/*                            <img className="ansver" onClick={() => Isanswer(true)}*/}
-                            {/*                                 src="/img/chat_img/ответ.png" alt="no photo"/>*/}
-                            {/*                            <img src="/img/chat_img/span.png" alt="no photo"/>*/}
+                            {/*                                 src="/img/chat_img/ответ.png" alt="img absent"/>*/}
+                            {/*                            <img src="/img/chat_img/span.png" alt="img absent"/>*/}
                             {/*                            /!* <img className="delete_message" src="/img/icons/delete.png" alt="" /> *!/*/}
                             {/*                        </div>*/}
                             {/*                    </div>*/}
                             {/*                    <div className={styles.block_bid}>*/}
-                            {/*                        <p>Размещен на биржи заказ <a href="#"*/}
+                            {/*                        <p>Размещен на биржи заказ <a href="./"*/}
                             {/*                                                      className={styles.block_bid__link}>Замена*/}
                             {/*                            экрана на iphone 15 pro </a></p>*/}
                             {/*                        <p>Описание клиента ...</p>*/}
@@ -884,7 +883,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <div className="ciril-img">
                                                 <img src="/img/chat_img/2.png"
                                                      style={{width: '58px', height: '58px', opacity: '0'}}
-                                                     alt="no photo"/>
+                                                     alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df"
@@ -892,7 +891,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <div
                                                         className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}>
                                                         <img src="/img/chat_img/edid.png"
-                                                             onClick={() => Isedit(true)} alt="no photo"/>
+                                                             onClick={() => Isedit(true)} alt="img absent"/>
                                                         <div style={{position: "relative"}}>
                                                             {isVisibleDeleteMessage &&
                                                                 <div className={styles.modal_delete_message}
@@ -908,7 +907,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                         </div>
 
 
-                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="no photo" /> */}
+                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
                                                     </div>
                                                     <div className="letter_text-2">
                                                         <h3>13:44</h3>
@@ -918,11 +917,11 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <img src="/img/chat_img/2.png"
                                                          style={{width: '58px', height: '58px'}}
-                                                         alt="no photo"/>
+                                                         alt="img absent"/>
 
                                                 </div>
                                                 <div className={styles.block_bid}>
-                                                    <p>Размещен на биржи заказ <a href="#"
+                                                    <p>Размещен на биржи заказ <a href="./"
                                                                                   className={styles.block_bid__link}>Замена
                                                         экрана на iphone 15 pro </a></p>
                                                     <p>Описание клиента ...</p>
@@ -945,7 +944,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                          style={{flexDirection: "column", gap: "10px"}}>
                                         <div className="correspondence_ciril df_chat">
                                             <div className="ciril-img">
-                                                <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -957,8 +956,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <div className="right_menu-img df align mini-gap">
                                                         <img className="ansver" onClick={() => Isanswer(true)}
-                                                             src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                        <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                             src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                        <img src="/img/chat_img/span.png" alt="img absent"/>
                                                         {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                     </div>
                                                 </div>
@@ -1010,7 +1009,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <img src="/img/icons/box.png" alt=""/>
                                             <div>
                                                 <p>Заказ создан</p>
-                                                <p>Номер заказа <a className={styles.create_order__link} href="#"
+                                                <p>Номер заказа <a className={styles.create_order__link} href="./"
                                                                    onClick={() => setOpenZayavka(prev => !prev)}>№243</a>
                                                 </p>
                                             </div>
@@ -1026,7 +1025,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <div className={`correspondence df font_inter ${styles.create_order__message}`}>
                                             <div className="correspondence_ciril df_chat">
                                                 <div className="ciril-img">
-                                                    <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                    <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                                 </div>
                                                 <div className="let">
                                                     <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1068,7 +1067,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                 <p className={styles.create_order__price}>35000 ₽</p>
                                             </div>
                                             {isShowDetailsOrder ?
-                                                <div className={styles.create_order__data_visible}>
+                                                <div className={styles.create_order__dataVisible}>
                                                     <p>Условия заказа </p>
                                                     <p>Свернуть
                                                         <img style={{
@@ -1097,7 +1096,7 @@ function ChoiceOfReplenishmentMethodCard() {
                             {/*        <div className="correspondence df font_inter">*/}
                             {/*            <div className="correspondence_ciril df_chat">*/}
                             {/*                <div className="ciril-img">*/}
-                            {/*                    <img src="/img/chat_img/кирил.png" alt="no photo"/>*/}
+                            {/*                    <img src="/img/chat_img/кирил.png" alt="img absent"/>*/}
                             {/*                </div>*/}
                             {/*                <div className="let">*/}
                             {/*                    <div className="letter_kiril df" style={{gap: "10px"}}>*/}
@@ -1109,13 +1108,13 @@ function ChoiceOfReplenishmentMethodCard() {
                             {/*                        </div>*/}
                             {/*                        <div className="right_menu-img df align mini-gap">*/}
                             {/*                            <img className="ansver" onClick={() => Isanswer(true)}*/}
-                            {/*                                 src="/img/chat_img/ответ.png" alt="no photo"/>*/}
-                            {/*                            <img src="/img/chat_img/span.png" alt="no photo"/>*/}
+                            {/*                                 src="/img/chat_img/ответ.png" alt="img absent"/>*/}
+                            {/*                            <img src="/img/chat_img/span.png" alt="img absent"/>*/}
                             {/*                            /!* <img className="delete_message" src="/img/icons/delete.png" alt="" /> *!/*/}
                             {/*                        </div>*/}
                             {/*                    </div>*/}
                             {/*                    <div className={styles.block_bid}>*/}
-                            {/*                        <p>Выбранная модель устройства <a href="#"*/}
+                            {/*                        <p>Выбранная модель устройства <a href="./"*/}
                             {/*                                                          className={styles.block_bid__link}>iPhone*/}
                             {/*                            15 pro </a></p>*/}
                             {/*                        <p>Перечень работ:</p>*/}
@@ -1138,7 +1137,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <div className="ciril-img">
                                                 <img src="/img/chat_img/2.png"
                                                      style={{width: '58px', height: '58px', opacity: '0'}}
-                                                     alt="no photo"/>
+                                                     alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df"
@@ -1146,7 +1145,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <div
                                                         className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}>
                                                         <img src="/img/chat_img/edid.png"
-                                                             onClick={() => Isedit(true)} alt="no photo"/>
+                                                             onClick={() => Isedit(true)} alt="img absent"/>
                                                         <div style={{position: "relative"}}>
                                                             {isVisibleDeleteMessage &&
                                                                 <div className={styles.modal_delete_message}
@@ -1162,7 +1161,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                         </div>
 
 
-                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="no photo" /> */}
+                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
                                                     </div>
                                                     <div className="letter_text-2">
                                                         <h3>13:44</h3>
@@ -1172,11 +1171,11 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <img src="/img/chat_img/2.png"
                                                          style={{width: '58px', height: '58px'}}
-                                                         alt="no photo"/>
+                                                         alt="img absent"/>
 
                                                 </div>
                                                 <div className={styles.block_bid}>
-                                                    <p>Выбранная модель устройства <a href="#"
+                                                    <p>Выбранная модель устройства <a href="./"
                                                                                       className={styles.block_bid__link}>iPhone
                                                         15 pro </a></p>
                                                     <p>Перечень работ:</p>
@@ -1200,7 +1199,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                          style={{flexDirection: "column", gap: "10px"}}>
                                         <div className="correspondence_ciril df_chat">
                                             <div className="ciril-img">
-                                                <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1212,8 +1211,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <div className="right_menu-img df align mini-gap">
                                                         <img className="ansver" onClick={() => Isanswer(true)}
-                                                             src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                        <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                             src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                        <img src="/img/chat_img/span.png" alt="img absent"/>
                                                         {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                     </div>
                                                 </div>
@@ -1265,7 +1264,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <img src="/img/icons/box.png" alt=""/>
                                             <div>
                                                 <p>Заявка создана</p>
-                                                <p>Номер заявки <a className={styles.create_order__link} href="#"
+                                                <p>Номер заявки <a className={styles.create_order__link} href="./"
                                                                    onClick={() => setOpenOrder(prev => !prev)}>№243</a>
                                                 </p>
                                             </div>
@@ -1281,7 +1280,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <img src="/img/icons/box.png" alt="" />
                                         <div>
                                             <p>Заявка создана</p>
-                                            <p>Номер заявки <a className={styles.create_order__link} href="#" onClick={() => setOpenOrder(prev => !prev)}>№243</a></p>
+                                            <p>Номер заявки <a className={styles.create_order__link} href="./" onClick={() => setOpenOrder(prev => !prev)}>№243</a></p>
                                         </div>
                                     </div>
                                 </div>
@@ -1295,7 +1294,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <div className={`correspondence df font_inter ${styles.create_order__message}`}>
                                             <div className="correspondence_ciril df_chat">
                                                 <div className="ciril-img">
-                                                    <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                    <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                                 </div>
                                                 <div className="let">
                                                     <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1338,7 +1337,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                 <p className={styles.create_order__price}>35000 ₽</p>
                                             </div>
                                             {isShowDetailsOrder ?
-                                                <div className={styles.create_order__data_visible}>
+                                                <div className={styles.create_order__dataVisible}>
                                                     <p>Условия заказа </p>
                                                     <p>Свернуть
                                                         <img style={{
@@ -1369,7 +1368,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <div className="ciril-img">
                                                 <img src="/img/chat_img/2.png"
                                                      style={{width: '58px', height: '58px', opacity: '0'}}
-                                                     alt="no photo"/>
+                                                     alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df"
@@ -1377,7 +1376,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <div
                                                         className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}>
                                                         <img src="/img/chat_img/edid.png"
-                                                             onClick={() => Isedit(true)} alt="no photo"/>
+                                                             onClick={() => Isedit(true)} alt="img absent"/>
                                                         <div style={{position: "relative"}}>
                                                             {isVisibleDeleteMessage &&
                                                                 <div className={styles.modal_delete_message}
@@ -1393,7 +1392,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                         </div>
 
 
-                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="no photo" /> */}
+                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
                                                     </div>
                                                     <div className="letter_text-2">
                                                         <h3>13:44</h3>
@@ -1403,11 +1402,11 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <img src="/img/chat_img/2.png"
                                                          style={{width: '58px', height: '58px'}}
-                                                         alt="no photo"/>
+                                                         alt="img absent"/>
 
                                                 </div>
                                                 <div className={styles.block_bid}>
-                                                    <p>Размещена повторная заявка <a href="#"
+                                                    <p>Размещена повторная заявка <a href="./"
                                                                                      className={styles.block_bid__link}>Замена
                                                         экрана на iphone 15 pro </a></p>
                                                     <p>Описание клиента ...</p>
@@ -1428,7 +1427,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                          style={{flexDirection: "column", gap: "10px"}}>
                                         <div className="correspondence_ciril df_chat">
                                             <div className="ciril-img">
-                                                <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1440,8 +1439,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <div className="right_menu-img df align mini-gap">
                                                         <img className="ansver" onClick={() => Isanswer(true)}
-                                                             src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                        <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                             src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                        <img src="/img/chat_img/span.png" alt="img absent"/>
                                                         {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                     </div>
                                                 </div>
@@ -1493,7 +1492,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <img src="/img/icons/box.png" alt=""/>
                                             <div>
                                                 <p>Заявка создана</p>
-                                                <p>Номер заявки <a className={styles.create_order__link} href="#"
+                                                <p>Номер заявки <a className={styles.create_order__link} href="./"
                                                                    onClick={() => setOpenPovtor(prev => !prev)}>№243</a>
                                                 </p>
                                             </div>
@@ -1509,7 +1508,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <div className={`correspondence df font_inter ${styles.create_order__message}`}>
                                             <div className="correspondence_ciril df_chat">
                                                 <div className="ciril-img">
-                                                    <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                    <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                                 </div>
                                                 <div className="let">
                                                     <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1552,7 +1551,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                 <p className={styles.create_order__price}>35000 ₽</p>
                                             </div>
                                             {isShowDetailsOrder ?
-                                                <div className={styles.create_order__data_visible}>
+                                                <div className={styles.create_order__dataVisible}>
                                                     <p>Условия заказа </p>
                                                     <p>Свернуть
                                                         <img style={{
@@ -1583,7 +1582,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                         <div className="correspondence df font_inter">
                                             <div className="correspondence_ciril df_chat">
                                                 <div className="ciril-img">
-                                                    <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                    <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                                 </div>
                                                 <div className="let">
                                                     <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1595,8 +1594,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                         </div>
                                                         <div className="right_menu-img df align mini-gap">
                                                             <img className="ansver" onClick={() => Isanswer(true)}
-                                                                 src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                            <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                                 src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                            <img src="/img/chat_img/span.png" alt="img absent"/>
                                                             {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                         </div>
                                                     </div>
@@ -1658,21 +1657,21 @@ function ChoiceOfReplenishmentMethodCard() {
                                             </div>
                                         </div>
                                     </div>
-                                    {isCancelOrderItem_v4 || isDisputeArbitrItem ? null
+                                    {isCancelOrderItemV4 || isDisputeArbitrItem ? null
                                         : <div className={styles.dispute_row}>
                                             <button className={styles.dispute_button}
-                                                    onClick={() => setVisibleCancelOrderItem_v4(true)}>Подтвердить
+                                                    onClick={() => setVisibleCancelOrderItemV4(true)}>Подтвердить
                                                 отмену
                                                 заявки
                                             </button>
                                             <button className={styles.dispute_button}
-                                                    onClick={() => setVisibleModalArbitationItem_v5(true)}>Обратиться в
+                                                    onClick={() => setVisibleModalArbitationItemV5(true)}>Обратиться в
                                                 арбитраж
                                             </button>
                                         </div>
                                     }
 
-                                    {isCancelOrderItem_v4 && (
+                                    {isCancelOrderItemV4 && (
                                         <div className="chat_technical_message">
                                             <div className={`${styles.message_block} ${styles.text_center}`}>
                                                 <div className={styles.cancel_client_block}>
@@ -1717,20 +1716,20 @@ function ChoiceOfReplenishmentMethodCard() {
                                             </div>
                                         </div>
                                     </div>
-                                    {isCancelOrder_v4 || isDisputeArbitr ? null
+                                    {isCancelOrderV4 || isDisputeArbitr ? null
                                         : <div className={styles.dispute_row}>
                                             <button className={styles.dispute_button}
-                                                    onClick={() => setVisibleCancelOrder_v4(true)}>Подтвердить отмену
+                                                    onClick={() => setVisibleCancelOrderV4(true)}>Подтвердить отмену
                                                 заказа
                                             </button>
                                             <button className={styles.dispute_button}
-                                                    onClick={() => setVisibleModalArbitation_v5(true)}>Обратиться в
+                                                    onClick={() => setVisibleModalArbitationV5(true)}>Обратиться в
                                                 арбитраж
                                             </button>
                                         </div>
                                     }
 
-                                    {isCancelOrder_v4 && (
+                                    {isCancelOrderV4 && (
                                         <div className="chat_technical_message">
                                             <div className={`${styles.message_block} ${styles.text_center}`}>
                                                 <div className={styles.cancel_client_block}>
@@ -1764,7 +1763,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                     <div className="correspondence df font_inter">
                                         <div className="correspondence_ciril df_chat">
                                             <div className="ciril-img">
-                                                <img src="/img/chat_img/кирил.png" alt="no photo"/>
+                                                <img src="/img/chat_img/кирил.png" alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df" style={{gap: "10px"}}>
@@ -1776,8 +1775,8 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <div className="right_menu-img df align mini-gap">
                                                         <img className="ansver" onClick={() => Isanswer(true)}
-                                                             src="/img/chat_img/ответ.png" alt="no photo"/>
-                                                        <img src="/img/chat_img/span.png" alt="no photo"/>
+                                                             src="/img/chat_img/ответ.png" alt="img absent"/>
+                                                        <img src="/img/chat_img/span.png" alt="img absent"/>
                                                         {/* <img className="delete_message" src="/img/icons/delete.png" alt="" /> */}
                                                     </div>
                                                 </div>
@@ -1799,7 +1798,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                             <div className="ciril-img">
                                                 <img src="/img/chat_img/2.png"
                                                      style={{width: '58px', height: '58px', opacity: '0'}}
-                                                     alt="no photo"/>
+                                                     alt="img absent"/>
                                             </div>
                                             <div className="let">
                                                 <div className="letter_kiril df"
@@ -1807,7 +1806,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <div
                                                         className={`viewed_img-2 buttons_edit_message ${styles.btn_row}`}>
                                                         <img src="/img/chat_img/edid.png"
-                                                             onClick={() => Isedit(true)} alt="no photo"/>
+                                                             onClick={() => Isedit(true)} alt="img absent"/>
                                                         <div style={{position: "relative"}}>
                                                             {isVisibleDeleteMessage &&
                                                                 <div className={styles.modal_delete_message}
@@ -1823,7 +1822,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                         </div>
 
 
-                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="no photo" /> */}
+                                                        {/* <img src="/img/chat_img/просмотрено.png" alt="img absent" /> */}
                                                     </div>
                                                     <div className="letter_text-2">
                                                         <h3>13:44</h3>
@@ -1833,7 +1832,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     <img src="/img/chat_img/2.png"
                                                          style={{width: '58px', height: '58px'}}
-                                                         alt="no photo"/>
+                                                         alt="img absent"/>
 
                                                 </div>
                                                 <div className="sms_text-3" style={{marginRight: '60px'}}>
@@ -1861,7 +1860,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                     onClick={() => Isedit(false)}>X</button></p> : null}
 
                                 {/* заблок чат */}
-                                {Number(id) == 111 ?
+                                {Number(id) === 111 ?
                                     <div className={styles.chat_block_wrap}>
                                         <img src="/img/icons/chat_block.png" alt=""/>
                                         <p>Возможности для связи с пользователем нет, поскольку он заблокировал диалог с
@@ -1884,7 +1883,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <div className="frame_icon qwerewrf">
                                                         <div className="choice df block_file_attach__flex">
                                                             <div className="choice_img">
-                                                                <img src="/img/chat_img/img.png" alt="no photo"/>
+                                                                <img src="/img/chat_img/img.png" alt="img absent"/>
                                                             </div>
                                                             <div className="im_attach pull-left align">
                                                                 <input type="file" className="im_attach_input"
@@ -1897,7 +1896,7 @@ function ChoiceOfReplenishmentMethodCard() {
 
                                                         <div className="folder df block_file_attach__flex">
                                                             <div className="choice_img">
-                                                                <img src="/img/chat_img/folder.png" alt="no photo"/>
+                                                                <img src="/img/chat_img/folder.png" alt="img absent"/>
                                                             </div>
                                                             <div className="im_attach pull-left align">
                                                                 <input type="file" className="im_attach_input"
@@ -1913,12 +1912,12 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     <img onClick={(event) => {
                                                         IschooseFile(prev => !prev);
                                                         event.preventDefault()
-                                                    }} src="/img/chat_img/clip.png" alt="no photo"/>
+                                                    }} src="/img/chat_img/clip.png" alt="img absent"/>
                                                 </label>
                                             </div>
 
                                             <label htmlFor="file-input">
-                                                <img src="/img/icons/micro.png" alt="no photo"/>
+                                                <img src="/img/icons/micro.png" alt="img absent"/>
                                             </label>
 
                                             <div style={{position: "relative" }}>
@@ -1928,7 +1927,7 @@ function ChoiceOfReplenishmentMethodCard() {
                                                     </div>
                                                     : null}
                                                 <label htmlFor="file-input" onClick={() => setVisibleEmoji(prev => !prev)}>
-                                                    <img src="/img/chat_img/emoji.png" alt="no photo" />
+                                                    <img src="/img/chat_img/emoji.png" alt="img absent" />
                                                 </label>
                                             </div>
 

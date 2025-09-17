@@ -1,7 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { updateUserPhoto } from "../../services/user.service";
-import Sidebar from "../sidebar";
-import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../slices/user.slice";
 import './startff.css'

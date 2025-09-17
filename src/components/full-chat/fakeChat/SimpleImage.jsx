@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper';
 
 // Импорт стилей Swiper
 import 'swiper/swiper-bundle.min.css';
@@ -14,7 +12,7 @@ export default function SimpleImage() {
     const image =  '/img/sentence_img/iphone-x.png';
 
     // Функция для открытия модального окна
-    const openModal = (imageSrc: string) => {
+    const openModal = (imageSrc) => {
         setModalImage(imageSrc); // Устанавливаем путь к картинке
         setIsModalOpen(true); // Открываем модальное окно
     };
@@ -43,7 +41,7 @@ export default function SimpleImage() {
                         </button>
 
                         <div className='modal-content-info'>
-                            <img src={image} />
+                            <img src={image} alt='absent' />
                         </div>
                     </div>
                 </div>

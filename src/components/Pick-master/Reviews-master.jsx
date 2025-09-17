@@ -136,11 +136,11 @@ function Sidebar() {
                             <div className="grade-level">
                                 <div className="level_master df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1">
                                     </div>
@@ -151,11 +151,11 @@ function Sidebar() {
 
                                 <div className="level_master df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -165,11 +165,11 @@ function Sidebar() {
 
                                 <div className="level_master df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -179,11 +179,11 @@ function Sidebar() {
 
                                 <div className="level_master df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -193,11 +193,11 @@ function Sidebar() {
 
                                 <div className="level_master df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no photo" />
+                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1">
                                     </div>
@@ -263,6 +263,7 @@ function Sidebar() {
                                                             className="client-comment-image__img"
                                                             src={SERVER_PATH + v}
                                                             onClick={() => setPicture(SERVER_PATH + v)}
+                                                            alt="client comment img"
                                                         />
                                                     </SwiperSlide>
                                                 ))}
@@ -272,7 +273,7 @@ function Sidebar() {
                                                 onClose={() => setPicture("")}
                                                 className="contact-master__modal"
                                             >
-                                                <img src={picture} className="contact-master-modal__picture" />
+                                                <img src={picture} className="contact-master-modal__picture" alt="contact master img" />
                                             </Popup>
                                         </div>
                                     </div>

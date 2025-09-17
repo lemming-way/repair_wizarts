@@ -71,11 +71,11 @@ const Article = (props) => {
                     <h2 className={styles.headerTitle}>{data.title}</h2>
                     <div className={styles.headerInfo}>
                         <span className={styles.headerViews}>
-                            <img className={styles.headerIcon} src={groupIcon} />
+                            <img className={styles.headerIcon} src={groupIcon}  alt='no icon'/>
                             {data.views}
                         </span>
                         <span className={styles.headerDate}>
-                            <img className={styles.headerIcon} src={calendarIcon} />
+                            <img className={styles.headerIcon} src={calendarIcon} alt='no icon' />
                             {formatDate(data.created_at)}
                         </span>
                     </div>

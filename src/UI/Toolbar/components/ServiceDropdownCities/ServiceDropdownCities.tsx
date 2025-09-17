@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Dropdown from "react-multilevel-dropdown";
+import { useState, useRef, useEffect } from 'react';
 import arrowDown from "../../../../img/header/icons/arrow-down-icon.svg";
 import styles from './ServiceDropdown.module.scss';
 

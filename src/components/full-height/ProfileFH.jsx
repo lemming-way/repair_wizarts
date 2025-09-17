@@ -3,21 +3,18 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../../slices/user.slice";
 import { updateUser } from "../../services/user.service";
 import VerificationInput from "../VerificationInput";
-import { Link, useNavigate } from "react-router-dom";
 import style from "./ProfileFH.module.css"
-import ClientProfileNavigator from "./ClientProfileNavigator";
 
 function ProfileFH() {
     const user = useSelector(selectUser)
-    const navigate = useNavigate()
 
-    const listLinks = [
-        "/client/settings",
-        "/client/settings/picture",
-        "/client/settings/wallet",
-        "/client/settings/finance",
-        "/client/settings/balance",
-    ]
+    // const listLinks = [
+    //     "/client/settings",
+    //     "/client/settings/picture",
+    //     "/client/settings/wallet",
+    //     "/client/settings/finance",
+    //     "/client/settings/balance",
+    // ]
 
     const [succeeded, setSucceeded] = useState(false)
     const [error, setError] = useState("")
@@ -53,7 +50,7 @@ function ProfileFH() {
 
             setForm(obj)
         }
-    }, [user])
+    }, [user,form])
     useEffect(() => {
         document.title = 'Настройки';
     }, []);
@@ -65,41 +62,41 @@ function ProfileFH() {
 
     function correctPhoneNumder (e) {
         var text = e.target.value
-
+        let new_text = text
         // стирание
         if (text.length < mask_value.length) {
-            var new_text = text
+            new_text = text
             if (new_text.length < 4) {
                 new_text = "+7(9"
             }
         }
         // +7(988)-842-44-44
-        else if (text.length == 6) {
-            var new_text = text + ")-"
+        else if (text.length === 6) {
+            new_text = text + ")-"
         }
-        else if (text.length == 7) {
-            var new_text = text.slice(0, -1) + ')-' + text.slice(-1);
+        else if (text.length === 7) {
+            new_text = text.slice(0, -1) + ')-' + text.slice(-1);
         }
-        else if (text.length == 8) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 8) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 11) {
-            var new_text = text + "-" 
+        else if (text.length === 11) {
+            new_text = text + "-" 
         }
-        else if (text.length == 12) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 12) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 14) {
-            var new_text = text + "-"
+        else if (text.length === 14) {
+            new_text = text + "-"
         }
-        else if (text.length == 15) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 15) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            var new_text = text.slice(0,17)
+            new_text = text.slice(0,17)
         }
         else {
-            var new_text = text
+            new_text = text
         }
 
         setMask_value(new_text)

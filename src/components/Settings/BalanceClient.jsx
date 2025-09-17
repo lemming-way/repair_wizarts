@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
 import { selectUser } from "../../slices/user.slice"
-import { updateMasterPictures } from "../../services/user.service"
-import SERVER_PATH from "../../constants/SERVER_PATH"
 import style from "./Balance.module.css"
 import ModalConfirm from "./ModalConfirm"
 import ModalSuccess from "./ModalSuccess"
@@ -26,35 +24,34 @@ const BalanceClient = (props) => {
         }
     }, [user])
 
-    const pictureInputRef = useRef(null)
+    // const pictureInputRef = useRef(null)
 
-    const onSubmit = (e) => {
-        e.preventDefault()
-        const files = [
-            ...pictureInputRef.current.files,
-            ...pics
-        ]
-        return updateMasterPictures(user.id, files).then((v) => {
-            const filename = pictureInputRef.current.files[0]?.name
+    // const onSubmit = (e) => {
+    //     e.preventDefault()
+    //     const files = [
+    //         ...pictureInputRef.current.files,
+    //         ...pics
+    //     ]
+    //     return updateMasterPictures(user.id, files).then((v) => {
+    //         const filename = pictureInputRef.current.files[0]?.name
 
-            console.log(v)
+    //         console.log(v)
 
-            if (filename) {
-                setPics((prev) => [...prev, "files/" + filename])
-                pictureInputRef.current.value = null
-            }
-        })
-    }
-
-    const getDeleteHandle = (name) => (e) => {
-        e.preventDefault()
-        return updateMasterPictures(
-            user.id,
-            pics.filter((v) => v !== name),
-        ).then(() => {
-            setPics((prev) => prev.filter((v => v !== name)))
-        })
-    }
+    //         if (filename) {
+    //             setPics((prev) => [...prev, "files/" + filename])
+    //             pictureInputRef.current.value = null
+    //         }
+    //     })
+    // }
+    // const getDeleteHandle = (name) => (e) => {
+    //     e.preventDefault()
+    //     return updateMasterPictures(
+    //         user.id,
+    //         pics.filter((v) => v !== name),
+    //     ).then(() => {
+    //         setPics((prev) => prev.filter((v => v !== name)))
+    //     })
+    // } ###
 
     let active = 1;
 

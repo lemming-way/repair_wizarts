@@ -66,6 +66,7 @@ function Articles(){
                                                     <img
                                                         src={likeImage}
                                                         className="blog-card-stats__picture"
+                                                        alt="absent"
                                                     />
                                                     <span className="blog-card-stats__count">{v.likes}</span>
                                                 </div>
@@ -73,6 +74,7 @@ function Articles(){
                                                     <img
                                                         src={viewImage}
                                                         className="blog-card-stats__picture blog-card-stats__view-picture"
+                                                        alt="absent"
                                                     />
                                                     <span className="blog-card-stats__count">{v.views}</span>
                                                 </div>

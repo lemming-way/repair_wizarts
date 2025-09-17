@@ -2,7 +2,6 @@ import {
     useEffect,
     useState
 } from "react";
-import YooKassaLogo from '../../img/YooKassaLogo.svg'
 import { getBalanceHistory } from "../../services/balance.service";
 import {
     Link,

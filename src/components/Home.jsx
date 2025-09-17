@@ -1,6 +1,5 @@
 import {useEffect} from 'react';
 import '../scss/swiper.css'
-import { useService } from '../hooks/useService';
 import "swiper/css";
 import "swiper/css/navigation";
 
@@ -9,15 +8,10 @@ import WhyChooseUsBlock from "../features/HomePage/WhyChooseUsBlock/WhyChooseUsB
 
 import Order from "./Home/Order";
 import Articles from "./Home/Articles";
-import {
-    getCounters,
-    getCovers
-} from '../services/index.service';
-import SERVER_PATH from '../constants/SERVER_PATH';
 
 function App() {
-    const counters = useService(getCounters, {})
-    const covers = useService(getCovers, [])
+    // const counters = useService(getCounters, {})
+    // const covers = useService(getCovers, []) ###
 
     useEffect(() => {
         document.title = 'Главная';

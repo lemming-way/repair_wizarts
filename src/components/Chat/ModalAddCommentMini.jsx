@@ -1,11 +1,8 @@
-import { useState } from "react"
 import style from "./ModalAddComment.module.css"
 
 
 
-export default function ModalAddCommentMini({ setVisibleModalAddComment, setVisibleFinalOrder }) {
-
-    const [countStar, setCountStar] = useState(-1)
+export default function ModalAddCommentMini({ setVisibleModalAddComment }) {
 
     return (
         <>

@@ -1,14 +1,13 @@
 import styles from "./MyOrder.module.css"
-import { Link, useParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
+import { Navigation } from "swiper";
 import ModalConfirmMaster from "./ModalConfirmMaster";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import style from "../Service/serviceDetail.module.scss"
 import ModalDelete from "./ModalDelete";
 import ModalEditOrder from "./ModalEditOrder";
-import ModalConfirmPause from "../addDevices/ModalConfirmPause";
 import Popup from "reactjs-popup";
 import ModalConfirmPauseClientOrder from "../addDevices/ModalConfirmPauseClientOrder";
 
@@ -19,9 +18,9 @@ function MyOrder() {
     const [visibleModalDelete, setVisibleModalDelete] = useState(false)
     const [visibleModalEditOrder, setVisibleModalEditOrder] = useState(false)
     const [selectedIdx, setSelectedIdx] = useState(0);
-    const [errorBalance, setErrorBalance] = useState(true)
-    const [errorCash, setErrorCash] = useState(true)
-    const [errorSumm, setErrorSumm] = useState(true)
+    const [errorBalance] = useState(true)
+    const [errorCash] = useState(true)
+    const [errorSumm] = useState(true)
     const [isVisibleConfirmPause, setVisibleConfirmPause] = useState(false)
     const [orderstatus, setOrderStatus] = useState("сбор предложений")
     // тестовый список для слайдера
@@ -70,7 +69,6 @@ function MyOrder() {
     const [price, setPrice] = useState("")
     const [title, setTitle] = useState("")
     const [message, setMessage] = useState("")
-    const [status, setStatus] = useState("")
 
     return (
         <>
@@ -100,7 +98,7 @@ function MyOrder() {
                             <div className={style.block}>
                                 <p>Оплата через сайт</p>
                                 <div className={style.radio}>
-                                    <input type="radio" id="inputSite" name="radioPayments" checked={selectedIdx == 0} onChange={() => setSelectedIdx(0)} />
+                                    <input type="radio" id="inputSite" name="radioPayments" checked={selectedIdx === 0} onChange={() => setSelectedIdx(0)} />
                                     <label htmlFor="inputSite">Баланс: 0р</label>
                                 </div>
                                 <p>Обычная цена сделки без риска</p>
@@ -110,7 +108,7 @@ function MyOrder() {
                             <div className={style.block} style={{ position: "relative", top: "35px" }}>
                                 {/* <p>Оплата наличными</p> */}
                                 <div className={style.radio}>
-                                    <input type="radio" id="inputCash" name="radioPayments" checked={selectedIdx == 1} onChange={() => setSelectedIdx(1)} />
+                                    <input type="radio" id="inputCash" name="radioPayments" checked={selectedIdx === 1} onChange={() => setSelectedIdx(1)} />
                                     <label htmlFor="inputCash">Оплата наличными</label>
                                 </div>
                                 <p className={style.mini_text}>Оплата напрямую исполнителю <br /> Без гарантий и компенсаций RepairWizarts: вы напрямую договариваетесь с исполнителем об условиях и способе оплаты.</p>
@@ -212,8 +210,8 @@ function MyOrder() {
                                 ))}
                             </Swiper> */}
                         <div className={styles.order_row}>
-                            <div className={orderstatus == "сбор предложений" ? styles.order_button : styles.order_button_pause}>
-                                {orderstatus == "сбор предложений" 
+                            <div className={orderstatus === "сбор предложений" ? styles.order_button : styles.order_button_pause}>
+                                {orderstatus === "сбор предложений" 
                                  ? "Сбор предложений"
                                  : "На паузе"}
                             </div>
@@ -267,7 +265,7 @@ function MyOrder() {
                                                     <div className={`photo_upload ${style.photo_upload_block}`}>
                                                         <div className="photo_upload-img ">
                                                             <label htmlFor="upimg">
-                                                                <img src="/img/accommodation_img/photo.png" alt="no photo"/>
+                                                                <img src="/img/accommodation_img/photo.png" alt="no absent" />
                                                             </label>
                                                             <input
                                                                 type="file"

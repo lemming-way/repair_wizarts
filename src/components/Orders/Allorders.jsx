@@ -4,7 +4,6 @@ import '../../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 import { Link } from "react-router-dom";
-import SERVER_PATH from "../../constants/SERVER_PATH";
 import style from "./Allorders.module.css"
 
 import FilterBlock from "./FilterBlock";
@@ -20,20 +19,20 @@ function App() {
 
     // const requests = useService(getMasterRequests, [])
     // тестовые данные
-    const requests = {
-        "data": [
-            {
-                "id": 1,
-                title: "Заголовок запроса", // Заголовок
-                client: {
-                    name: "Имя клиента", // Имя клиента
-                    avatar: "profil_img/1.png", // Путь к изображению профиля
-                    number_of_submissions: 5 // Количество заказов
-                },
-                client_price: "1000 ₽" // Цена клиента
-            }
-        ]
-    }
+    // const requests = {
+    //     "data": [
+    //         {
+    //             "id": 1,
+    //             title: "Заголовок запроса", // Заголовок
+    //             client: {
+    //                 name: "Имя клиента", // Имя клиента
+    //                 avatar: "profil_img/1.png", // Путь к изображению профиля
+    //                 number_of_submissions: 5 // Количество заказов
+    //             },
+    //             client_price: "1000 ₽" // Цена клиента
+    //         }
+    //     ]
+    // }
 
     const [selectValue, setSelectValue] = useState("Все предложения")
 

@@ -1,11 +1,8 @@
-import { useState } from "react"
 import style from "./ModalVivod.module.css"
 
 
 
 export default function ModalVivod({ setInputModalVivod }) {
-
-    const [countStar, setCountStar] = useState(0)
 
     return (
         <>

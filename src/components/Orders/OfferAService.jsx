@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
 import { getRequestById } from '../../services/request.service'
 import { createOffer } from "../../services/offer.service";
 import { sendOfferCreate } from "../../services/notification.service";

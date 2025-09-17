@@ -1,26 +1,16 @@
-import { React, useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import {getMasterRequests, getRequestById} from "../../services/request.service";
+import { useState } from "react";
 import '../../scss/orders.css'
-import Sidebar from "../sidebar";
 import '../../scss/swiper.css'
-import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import { Link } from "react-router-dom";
 // import { Navigation } from "swiper";
-import { Pagination } from "swiper";
-import Popup from 'reactjs-popup';
-import { useService } from "../../hooks/useService";
 import SERVER_PATH from "../../constants/SERVER_PATH";
 import style from "./MyOrdersMaster.module.css"
-import EmptyOrder from "./EmptyOrder";
-import OrderRow from "./OrderRow";
 
 import NavigationOrdersClient from "../Settings/NavigationOrdersClient";
 import ModalEditOrder from "./ModalEditOrder";
 import PaginationPages from "../Settings/PaginationPages";
-import {forEach} from "react-bootstrap/ElementChildren";
 
 function MyOrdersMaster() {
     // const requests = useService(getMasterRequests(), {})

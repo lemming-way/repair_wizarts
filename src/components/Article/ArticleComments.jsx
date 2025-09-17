@@ -6,7 +6,6 @@ import {
     likeArticle,
     dislikeArticle
 } from "../../services/article.service"
-import { useService } from "../../hooks/useService"
 import ArticleComment from "./ArticleComment"
 import likeImage from '../../img/like.png'
 import dislikeImage from '../../img/dislike.png'

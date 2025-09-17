@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import MultiSelect, {Option} from "../../../components/MultiSelect/MultiSelect";
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics";
@@ -16,7 +16,7 @@ const RegistrationMasterPage = () => {
   const [categoryOptionSelected, setCategoryOptionSelected] = useState<Option[] | null>();
   const [brandOptionSelected, setBrandOptionSelected] = useState<Option[] | null>();
   const [modelPhoneOptionSelected, setModelPhoneOptionSelected] = useState<Option[] | null>();
-  const [typeOfRepairSelected, setTypeOfRepairOptionSelected] = useState<Option[] | null>();
+  // const [typeOfRepairSelected, setTypeOfRepairOptionSelected] = useState<Option[] | null>(); ###
 
   useEffect(() => {
     document.title = 'Регистрация мастера';
@@ -71,14 +71,14 @@ const RegistrationMasterPage = () => {
     { value: 7, label: "OnePlus" },
   ];
 
-  const typeOfRepairOptions = [
-    { value: 0, label: "Ремонт экрана" },
-    { value: 1, label: "Замена батареи" },
-    { value: 2, label: "Ремонт от воды" },
-    { value: 3, label: "Прошивка устройства" },
-    { value: 4, label: "Ремонт разъемов и портов" },
-    { value: 5, label: "Восстановление программного обеспечения" },
-  ];
+  // const typeOfRepairOptions = [
+  //   { value: 0, label: "Ремонт экрана" },
+  //   { value: 1, label: "Замена батареи" },
+  //   { value: 2, label: "Ремонт от воды" },
+  //   { value: 3, label: "Прошивка устройства" },
+  //   { value: 4, label: "Ремонт разъемов и портов" },
+  //   { value: 5, label: "Восстановление программного обеспечения" },
+  // ]; ###
 
   const onSubmit = (e) => {
     e.preventDefault()
@@ -95,11 +95,11 @@ const RegistrationMasterPage = () => {
     }
   };
 
-  const setPhoneHandler = (event) => {
+  const setPhoneHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = event.target.value.slice(1);
 
     // нельзя вводить не числа и больше 11 символов
-    if (/[^0-9()\-]/.test(inputValue) && inputValue !== '') {
+    if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
         setError('В номере, пожалуйста, введите только цифры.');
     } 
     // else if (inputValue.length > 9) {
@@ -114,7 +114,7 @@ const RegistrationMasterPage = () => {
     setPhone(n)
   };
 
-  function correctPhoneNumder (e) {
+  function correctPhoneNumder (e: React.ChangeEvent<HTMLInputElement>) {
     var text = e.target.value
     var new_text = ""
     // стирание
@@ -125,25 +125,25 @@ const RegistrationMasterPage = () => {
         }
     }
     // +7(988)-842-44-44
-    else if (text.length == 6) {
+    else if (text.length === 6) {
         new_text = text + ")-"
     }
-    else if (text.length == 7) {
+    else if (text.length === 7) {
         new_text = text.slice(0, -1) + ')-' + text.slice(-1);
     }
-    else if (text.length == 8) {
+    else if (text.length === 8) {
         new_text = text.slice(0, -1) + '-' + text.slice(-1);
     }
-    else if (text.length == 11) {
+    else if (text.length === 11) {
         new_text = text + "-" 
     }
-    else if (text.length == 12) {
+    else if (text.length === 12) {
         new_text = text.slice(0, -1) + '-' + text.slice(-1);
     }
-    else if (text.length == 14) {
+    else if (text.length === 14) {
         new_text = text + "-"
     }
-    else if (text.length == 15) {
+    else if (text.length === 15) {
         new_text = text.slice(0, -1) + '-' + text.slice(-1);
     }
     else if (text.length > 17) {

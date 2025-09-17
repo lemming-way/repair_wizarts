@@ -1,11 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Navigation } from "swiper"
 import { getArticles } from "../../services/article.service"
-import backgroundImg from '../../img/article.png'
+// import backgroundImg from '../../img/article.png'
 import styles from './Article.module.css'
-import SERVER_PATH from "../../constants/SERVER_PATH"
 
 
 const Articles = () => {
@@ -14,8 +11,8 @@ const Articles = () => {
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
 
-    const getImage = (path) =>
-        path ? SERVER_PATH + path : backgroundImg
+    // const getImage = (path) =>
+    //     path ? SERVER_PATH + path : backgroundImg
 
     const formatDate = (date) => {
         const _date = new Date(date)
@@ -23,8 +20,12 @@ const Articles = () => {
     }
 
     useEffect(() => {
-        getArticles().then(setArticles)
-    }, [])
+        getArticles()
+            .then(setArticles)
+            .catch((err) => {
+                console.log("Ошибка запроса:", err);
+            });
+    }, [articles])
 
     const [isOpenAsideMenu, setOpenAsideMenu] = useState(false)
 
@@ -68,7 +69,7 @@ const Articles = () => {
                 </li>
             </ul>
 
-            {articles.map((v) => (
+            {articles && articles.map((v) => (
                 <Link to={"/articles/" + v.id} className={styles.articlesLink} key={v.id}>
                     <div className={styles.card_wrap}>
                         <img

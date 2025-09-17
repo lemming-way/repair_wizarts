@@ -7,7 +7,6 @@ import { getMasterByUsername } from "../../services/user.service";
 import { getMasterRepairs } from "../../services/service.service";
 import { selectUser } from "../../slices/user.slice";
 import { useService } from "../../hooks/useService";
-import { getCovers, getCounters } from "../../services/index.service";
 import { Link } from "react-router-dom";
 import Map from '../Map'
 import './master.css'
@@ -16,7 +15,6 @@ import Popup from "reactjs-popup";
 import SERVER_PATH from "../../constants/SERVER_PATH";
 import InfoBlock from "./InfoBlock";
 import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
-import style from "../Orders/OrderRow.module.css";
 
 
 function App() {
@@ -24,14 +22,14 @@ function App() {
     const [master, setMaster] = useState({ })
     const user = useSelector(selectUser)
     const repairs = useService(getMasterRepairs, [])
-    const counters = useService(getCounters, { })
-    const covers = useService(getCovers, [])
+    // const counters = useService(getCounters, { })
+    // const covers = useService(getCovers, [])
     const [picture, setPicture] = useState("")
-    const images = [
-        '/img/sentence_img/iphone-x.png',
-        '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
-        '/img/sentence_img/iphone-x.png',
-    ];
+    // const images = [
+    //     '/img/sentence_img/iphone-x.png',
+    //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
+    //     '/img/sentence_img/iphone-x.png',
+    // ];
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalImage, setModalImage] = useState("");
 
@@ -383,7 +381,7 @@ function App() {
                                         onClose={() => setPicture("")}
                                         className="contact-master__modal"
                                     >
-                                        <img src={picture} className="contact-master-modal__picture" />
+                                        <img src={picture} className="contact-master-modal__picture" alt="absent" />
                                     </Popup>
                                 </div>
                             </div>

@@ -34,7 +34,7 @@ function TitleService() {
                             <h2>Ведите название зоголовок услуги</h2>
                         </div>
                         <div className="services_img df align mobile-services_img">
-                            <img style={{paddingRight: "7px"}} src="/img/other-service_img/fill.svg" alt="no photo"/>
+                            <img style={{paddingRight: "7px"}} src="/img/other-service_img/fill.svg" alt="no img"/>
                             <div className="servis_tex">
                                 <input type="text" value={title} placeholder='iPhone 13' onChange={(e) => setTitle(e.target.value)} />
                             </div>

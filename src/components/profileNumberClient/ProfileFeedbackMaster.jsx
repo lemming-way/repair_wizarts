@@ -1,14 +1,8 @@
 import { useState} from "react";
-import SERVER_PATH from "../../constants/SERVER_PATH";
-
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper";
-import { Pagination } from "swiper";
 import ModalDelete from "../Chat/ModalDelete";
 import ModalAddComment from "../Chat/ModalAddComment";
 import style from "./ProfileFeedbackMaster.module.css"
 import { useNavigate } from "react-router-dom";
-import MiniSlider from "../miniSlider/MiniSilder";
 import ProfileSlider  from "./ProfileSlider";
 
 export default function ProfileFeedbackMaster() {

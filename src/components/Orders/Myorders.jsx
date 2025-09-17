@@ -1,7 +1,5 @@
-import { useState, useEffect } from "react";
 import { getRequestById } from '../../services/request.service'
 import '../../scss/orders.css'
-import Sidebar from "../sidebar";
 import '../../scss/OfferAService.css'
 import '../../scss/swiper.css'
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,7 +7,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Link, useParams } from "react-router-dom";
 import { Navigation, Pagination } from "swiper";
-import Popup from 'reactjs-popup';
 import { useService } from "../../hooks/useService";
 import SERVER_PATH from "../../constants/SERVER_PATH";
 
@@ -18,8 +15,6 @@ import SERVER_PATH from "../../constants/SERVER_PATH";
 function App() {
     const { id } = useParams()
     const request = useService(getRequestById.bind(null, id), {})
-
-    const [yesGo, isYesGo] = useState(false)
 
     return (
         <>

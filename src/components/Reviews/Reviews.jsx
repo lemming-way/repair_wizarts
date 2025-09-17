@@ -6,11 +6,11 @@ import styles from './Reviews.module.css'
 
 const Reviews = (props) => {
     const reviews = useService(getReviews, [])
-    const test_reviews = [{sender: "Имя",
-        id: 1,
-        rating: 5,
-        message: "комментарий...",
-        created_at: "10-10-24"}]
+    // const test_reviews = [{sender: "Имя",
+    //     id: 1,
+    //     rating: 5,
+    //     message: "комментарий...",
+    //     created_at: "10-10-24"}]
 
     return (
         <div className={styles.container}>

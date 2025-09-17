@@ -3,20 +3,15 @@ import { updateUserPhoto, updateUser } from "../../services/user.service";
 import { useDispatch, useSelector } from "react-redux";
 import { selectUser } from "../../slices/user.slice";
 import '../../scss/settings-all.css'
-import Sidebar from "../sidebar";
 import "swiper/css";
 import "swiper/css/navigation";
-import SettingNav from "./Setting-nav";
 import VerificationInput from "../VerificationInput";
-import { Link, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { selectUI, setAuthorization } from "../../slices/ui.slice";
 import { deleteUser } from "../../services/user.service";
 import Popup from "reactjs-popup";
 import SERVER_PATH from "../../constants/SERVER_PATH";
-import Navigation from './Navigation';
-import MasterProfileNavigator from "../full-height/MasterProfileNavigator";
 import style from "./SettingsMaster.module.css"
-import { Outlet } from "react-router-dom";
 
 
 export default function SettingsMaster() {
@@ -46,41 +41,41 @@ export default function SettingsMaster() {
 
     function correctPhoneNumder (e) {
         var text = e.target.value
-
+        let new_text = text
         // стирание
         if (text.length < mask_value.length) {
-            var new_text = text
+            new_text = text
             if (new_text.length < 4) {
                 new_text = "+7(9"
             }
         }
         // +7(988)-842-44-44
-        else if (text.length == 6) {
-            var new_text = text + ")-"
+        else if (text.length === 6) {
+            new_text = text + ")-"
         }
-        else if (text.length == 7) {
-            var new_text = text.slice(0, -1) + ')-' + text.slice(-1);
+        else if (text.length === 7) {
+            new_text = text.slice(0, -1) + ')-' + text.slice(-1);
         }
-        else if (text.length == 8) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 8) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 11) {
-            var new_text = text + "-" 
+        else if (text.length === 11) {
+            new_text = text + "-" 
         }
-        else if (text.length == 12) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 12) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
-        else if (text.length == 14) {
-            var new_text = text + "-"
+        else if (text.length === 14) {
+            new_text = text + "-"
         }
-        else if (text.length == 15) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+        else if (text.length === 15) {
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            var new_text = text.slice(0,17)
+            new_text = text.slice(0,17)
         }
         else {
-            var new_text = text
+            new_text = text
         }
 
         setMask_value(new_text)

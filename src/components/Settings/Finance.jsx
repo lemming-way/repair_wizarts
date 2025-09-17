@@ -1,11 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useSelector } from "react-redux"
-import { Link } from "react-router-dom"
 import { selectUser } from "../../slices/user.slice"
-import Sidebar from "../sidebar"
-import { updateMasterPictures } from "../../services/user.service"
-import SERVER_PATH from "../../constants/SERVER_PATH"
-import Navigation from "./Navigation"
 import style from "./finance.module.css"
 import ModalConfirm from "./ModalConfirm"
 import ModalSuccess from "./ModalSuccess"
@@ -23,35 +18,35 @@ const Finance = (props) => {
         }
     }, [user])
 
-    const pictureInputRef = useRef(null)
+    // const pictureInputRef = useRef(null)
 
-    const onSubmit = (e) => {
-        e.preventDefault()
-        const files = [
-            ...pictureInputRef.current.files,
-            ...pics
-        ]
-        return updateMasterPictures(user.id, files).then((v) => {
-            const filename = pictureInputRef.current.files[0]?.name
+    // const onSubmit = (e) => {
+    //     e.preventDefault()
+    //     const files = [
+    //         ...pictureInputRef.current.files,
+    //         ...pics
+    //     ]
+    //     return updateMasterPictures(user.id, files).then((v) => {
+    //         const filename = pictureInputRef.current.files[0]?.name
 
-            console.log(v)
+    //         console.log(v)
 
-            if (filename) {
-                setPics((prev) => [...prev, "files/" + filename])
-                pictureInputRef.current.value = null
-            }
-        })
-    }
+    //         if (filename) {
+    //             setPics((prev) => [...prev, "files/" + filename])
+    //             pictureInputRef.current.value = null
+    //         }
+    //     })
+    // }
 
-    const getDeleteHandle = (name) => (e) => {
-        e.preventDefault()
-        return updateMasterPictures(
-            user.id,
-            pics.filter((v) => v !== name),
-        ).then(() => {
-            setPics((prev) => prev.filter((v => v !== name)))
-        })
-    }
+    // const getDeleteHandle = (name) => (e) => {
+    //     e.preventDefault()
+    //     return updateMasterPictures(
+    //         user.id,
+    //         pics.filter((v) => v !== name),
+    //     ).then(() => {
+    //         setPics((prev) => prev.filter((v => v !== name)))
+    //     })
+    // } ###
 
     const [isVisibleConfirm, setVisibleConfirm] = useState(false)
     const [isVisibleSuccess, setVisibleSuccess] = useState(false)

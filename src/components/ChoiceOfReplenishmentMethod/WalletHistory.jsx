@@ -1,32 +1,30 @@
 import {
-    useState,
     useEffect
 } from 'react';
 import '../../scss/ChoiceOfReplenishmentMethod.css'
 // import 'bootstrap/dist/css/bootstrap.min.css';
-import { replenishBalance } from '../../services/balance.service';
 import style from './style.module.css'
 import NavigationWallet from '../Settings/NavigationWallet';
 import { Link } from 'react-router-dom';
 
 function WalletHistory() {
 
-    const [error, setError] = useState("")
-    const [amount, setAmount] = useState("")
-    const updateAmount = (e) => {
-        const value = e.target.value
-        if (isNaN(value)) {
-            return
-        }
-        setAmount(value)
-    }
+    // const [error, setError] = useState("")
+    // const [amount, setAmount] = useState("")
+    // const updateAmount = (e) => {
+    //     const value = e.target.value
+    //     if (isNaN(value)) {
+    //         return
+    //     }
+    //     setAmount(value)
+    // }
 
-    const onSubmit = (e) => {
-        e.preventDefault()
-        return replenishBalance(amount).then((res) => {
-            window.location.replace(res.confirmation_url)
-        }).catch((err) => setError(err.message))
-    }
+    // const onSubmit = (e) => {
+    //     e.preventDefault()
+    //     return replenishBalance(amount).then((res) => {
+    //         window.location.replace(res.confirmation_url)
+    //     }).catch((err) => setError(err.message))
+    // }
 
     useEffect(() => {
         document.title = 'Кошелек';
@@ -36,7 +34,6 @@ function WalletHistory() {
 
 
 
-    const [inputPrice, setInputPrice] = useState("");
 
     return (
                 <div className="main-block df">

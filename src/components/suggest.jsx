@@ -107,7 +107,7 @@ const Suggest = (props) => {
                         <div className="offer-master__bar">
                             <div className="nav_bottom-text_active df align">
                                 <div className="nav_bottom-text_img">
-                                    <img src="/img/my_suggestion_img/Star 1.png" alt="no photo" />
+                                    <img src="/img/my_suggestion_img/Star 1.png" alt="no img" />
                                 </div>
                                 <h2><span>{master.rating}</span></h2>
                             </div>

@@ -1,12 +1,8 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { selectServices } from "../../slices/services.slice";
 import styles from './FooterDesktop.module.scss';
 import FooterInfo from "./components/FooterInfo";
 import ListItem from "../../components/ListItem/ListItem";
 import FooterMobile from "./FooterMobile/FooterMobile";
 function App() {
-    const services = useSelector(selectServices)
 
   return (
     <footer className={`${styles.footer} ${window.location.pathname.includes("/master") ? styles.footer_master : null}`}>

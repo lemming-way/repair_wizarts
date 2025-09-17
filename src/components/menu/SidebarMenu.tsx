@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
 import '../../scss/style.css'
-import DropdownService from "../dropdownService";
 import { Link, useLocation } from "react-router-dom";
-import { Rating } from 'react-simple-star-rating';
 
 const Menu = ({ active, setActive }) => {
-    const [visibleCountry, setVisibleCountry] = useState(false)
-    const [visibleService, setVisibleService] = useState(false)
-    const [menuActive, setMenuActive] = useState(false)
+    // const [visibleCountry, setVisibleCountry] = useState(false)
+    // const [visibleService, setVisibleService] = useState(false)
+    // const [menuActive, setMenuActive] = useState(false)
     const location = useLocation()
 
     return (

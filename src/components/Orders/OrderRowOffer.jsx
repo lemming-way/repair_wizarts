@@ -1,14 +1,12 @@
 import style from "./OrderRow.module.css"
-import { Link } from "react-router-dom"
 import { Navigation } from "swiper"
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useState } from "react"
-import ModalDelete from "./ModalDelete";
 import ModalOfferGo from "./ModalOfferGo";
 
 export default function OrderRowOffer () {
     // тестовый список для слайдера
-    const [photos, setPhotos] = useState([
+    const [photos] = useState([
         "/img/sentence_img/iphone-x.png",
         "/img/sentence_img/iphone-x.png",
         "/img/sentence_img/iphone-x.png",

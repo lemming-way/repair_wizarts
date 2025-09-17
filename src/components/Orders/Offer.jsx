@@ -2,7 +2,6 @@ import '../../scss/orders.css'
 import '../../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
-import SERVER_PATH from "../../constants/SERVER_PATH";
 import style from "./Orders.module.css"
 import OrderRowOffer from "./OrderRowOffer";
 import { useNavigate } from 'react-router-dom';
@@ -10,20 +9,20 @@ import { useNavigate } from 'react-router-dom';
 function Offer() {
     // const requests = useService(getMasterRequests, [])
     // тестовые данные
-    const requests = {
-        "data": [
-            {
-                "id": 1,
-                title: "Заголовок запроса", // Заголовок
-                client: {
-                    name: "Имя клиента", // Имя клиента
-                    avatar: "profil_img/1.png", // Путь к изображению профиля
-                    number_of_submissions: 5 // Количество заказов
-                },
-                client_price: "1000 ₽" // Цена клиента
-            }
-        ]
-    }
+    // const requests = {
+    //     "data": [
+    //         {
+    //             "id": 1,
+    //             title: "Заголовок запроса", // Заголовок
+    //             client: {
+    //                 name: "Имя клиента", // Имя клиента
+    //                 avatar: "profil_img/1.png", // Путь к изображению профиля
+    //                 number_of_submissions: 5 // Количество заказов
+    //             },
+    //             client_price: "1000 ₽" // Цена клиента
+    //         }
+    //     ]
+    // } ###
 
     const navigator = useNavigate()
 

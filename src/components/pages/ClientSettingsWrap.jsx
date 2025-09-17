@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../slices/user.slice";
-import { updateUser } from "../../services/user.service";
 import { useNavigate } from "react-router-dom";
 import style from "./ClientSettingsWrap.module.css"
 import ClientProfileNavigator from "../full-height/ClientProfileNavigator";
@@ -20,8 +19,8 @@ function ClientSettingsWrap() {
         "/client/settings/balance",
     ]
 
-    const [succeeded, setSucceeded] = useState(false)
-    const [error, setError] = useState("")
+    // const [succeeded, setSucceeded] = useState(false)
+    // const [error, setError] = useState("")
     const [form, setForm] = useState({
         name: "",
         lastname: "",
@@ -29,22 +28,22 @@ function ClientSettingsWrap() {
         email: "",
     })
 
-    const getFormAttrs = (field) => {
-        const attrs = { }
+    // const getFormAttrs = (field) => {
+    //     const attrs = { }
 
-        attrs.value = form[field]
-        attrs.onChange = (e) =>
-            setForm((prev) => ({ ...prev, [field]: e.target.value }))
+    //     attrs.value = form[field]
+    //     attrs.onChange = (e) =>
+    //         setForm((prev) => ({ ...prev, [field]: e.target.value }))
 
-        return attrs
-    }
+    //     return attrs
+    // }
 
-    const onSubmit = (e) => {
-        e.preventDefault()
-        updateUser(form, user.id)
-            .then(() => { setSucceeded(true); setError("") })
-            .catch((err) => { setSucceeded(false); setError(err.message) })
-    }
+    // const onSubmit = (e) => {
+    //     e.preventDefault()
+    //     updateUser(form, user.id)
+    //         .then(() => { setSucceeded(true); setError("") })
+    //         .catch((err) => { setSucceeded(false); setError(err.message) })
+    // }
 
     useEffect(() => {
         if (user.name) {
@@ -58,9 +57,6 @@ function ClientSettingsWrap() {
     useEffect(() => {
         document.title = 'Настройки';
     }, []);
-
-    const [visiblePassword, setVisiblePassword] = useState(false)
-    const [visiblePasswordConfirm, setVisiblePasswordConfirm] = useState(false)
 
     const [numberElementMenu, setNumberElementMenu] = useState(1)
     const [offsetMenu, setOffsetMenu] = useState(1)
@@ -97,7 +93,7 @@ function ClientSettingsWrap() {
         else {
             setOffsetMenu(n)
         }
-    });
+    },[]);
 
     
 
@@ -109,8 +105,8 @@ function ClientSettingsWrap() {
                         <h1>Настройки</h1>
                     </div>
                     <div className={style.arrows_block}>
-                        <img src="/img/img-right.png" style={{rotate: "180deg", opacity: numberElementMenu == 0 ? 0.5 : 1}} alt="" onClick={NavigateLeft} />
-                        <img src="/img/img-right.png" style={{opacity: numberElementMenu == listLinks.length-1 ? 0.5 : 1}} alt="" onClick={NavigateRight} />
+                        <img src="/img/img-right.png" style={{rotate: "180deg", opacity: numberElementMenu === 0 ? 0.5 : 1}} alt="" onClick={NavigateLeft} />
+                        <img src="/img/img-right.png" style={{opacity: numberElementMenu === listLinks.length-1 ? 0.5 : 1}} alt="" onClick={NavigateRight} />
                     </div>
                 </div>
 

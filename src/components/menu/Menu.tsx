@@ -1,14 +1,7 @@
-import React, { useState } from 'react';
 import '../../scss/style.css'
-import DropdownService from "../dropdownService";
-import {Link} from 'react-router-dom'
-
 
 
 const Menu = ({ active, setActive }) => {
-    const [visibleCountry, setVisibleCountry] = useState(false)
-    const [visibleService, setVisibleService] = useState(false)
-    const [menuActive, setMenuActive] = useState(false)
     return (
         <div className={active ? 'menu active' : 'menu'} onClick={() => setActive(false)}>
             <div className="menu__content" onClick={e => e.stopPropagation()}>
@@ -25,16 +18,16 @@ const Menu = ({ active, setActive }) => {
                         <a href="#footer">Услуги</a>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <a href="#">Город</a>
+                        <button>Город</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <a href="#">Статьи</a>
+                        <button>Статьи</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <a href="#">Отзывы</a>
+                        <button>Отзывы</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <a href="#">Контакты</a>
+                        <button>Контакты</button>
                     </li>
                 </ul>
             </div>

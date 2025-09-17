@@ -4,13 +4,10 @@ import { withYMaps } from "react-yandex-maps";
 import { selectUser } from "../../slices/user.slice";
 import { updateUser } from "../../services/user.service";
 import '../../scss/profile.css'
-import Sidebar from "../sidebar";
 import "swiper/css";
 import "swiper/css/navigation";
-import {Link} from "react-router-dom";
 import { selectUI } from "../../slices/ui.slice";
 import MultiSelect from "../MultiSelect/MultiSelect";
-import Navigation from "./Navigation";
 import style from "./Profile.module.css"
 
 function Profile({ ymaps }) {
@@ -75,14 +72,14 @@ function Profile({ ymaps }) {
         { value: 7, label: "OnePlus" },
       ];
     
-      const typeOfRepairOptions = [
-        { value: 0, label: "Ремонт экрана" },
-        { value: 1, label: "Замена батареи" },
-        { value: 2, label: "Ремонт от воды" },
-        { value: 3, label: "Прошивка устройства" },
-        { value: 4, label: "Ремонт разъемов и портов" },
-        { value: 5, label: "Восстановление программного обеспечения" },
-      ];
+    //   const typeOfRepairOptions = [
+    //     { value: 0, label: "Ремонт экрана" },
+    //     { value: 1, label: "Замена батареи" },
+    //     { value: 2, label: "Ремонт от воды" },
+    //     { value: 3, label: "Прошивка устройства" },
+    //     { value: 4, label: "Ремонт разъемов и портов" },
+    //     { value: 5, label: "Восстановление программного обеспечения" },
+    //   ]; ###
 
     const ui = useSelector(selectUI)
     const user = useSelector(selectUser)
@@ -248,7 +245,7 @@ function Profile({ ymaps }) {
                         </div>
                         <input type="text" placeholder="Основной бизнес" {...getFormAttrs('main_business')}/>
                         <input type="text" placeholder="Вид деятельности" {...getFormAttrs('specialty')}/>
-                        <textarea placeholder={business_model == "Частный мастер"? "О себе" : "Об организации"} {...getFormAttrs('bio')} />
+                        <textarea placeholder={business_model === "Частный мастер"? "О себе" : "Об организации"} {...getFormAttrs('bio')} />
                         <div>
                             <button type="submit" className="goooSaveButton">Сохранить</button>
                         </div>

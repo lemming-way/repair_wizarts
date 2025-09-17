@@ -32,7 +32,7 @@ export default function ModalConfirm({ setVisibleConfirm, setVisibleSuccess }) {
         }
 
         // ввод окончен
-        if (value && index == otp.length - 1) {
+        if (value && index === otp.length - 1) {
             setVisibleConfirm(false)
             setVisibleSuccess(true)
         }
@@ -46,10 +46,10 @@ export default function ModalConfirm({ setVisibleConfirm, setVisibleSuccess }) {
         }
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        alert(`OTP код: ${otp.join('')}`); // Выводим введенный код
-    };
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     alert(`OTP код: ${otp.join('')}`); // Выводим введенный код
+    // }; ###
 
     return (
         <>

@@ -1,28 +1,21 @@
 import {
     useState,
     useEffect,
-    useCallback,
 } from 'react'
 import { useSelector } from 'react-redux';
 import '../../scss/service.css'
 import '../../scss/register-master.scss'
-import { Link } from "react-router-dom";
-import Sidebar from "../sidebar";
 import { selectUser } from '../../slices/user.slice';
-import ServicesList from './Services/ServicesList';
-import ServicesForm from './Services/ServicesForm';
 import { getMasterRepairsByUsername } from '../../services/service.service';
-import styles from './Services/Services.module.css'
 import MultiSelect from "../MultiSelect/MultiSelect";
-import Navigation from './Navigation';
 
 import style from "./services.module.css"
 
-const FormMode = {
-    Hidden: 0,
-    Default: 1,
-    Custom: 2
-}
+// const FormMode = {
+//     Hidden: 0,
+//     Default: 1,
+//     Custom: 2
+// } ###
 
 function Services() {
     const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(null);
@@ -77,18 +70,17 @@ function Services() {
         { value: 7, label: "OnePlus" },
       ];
     
-      const typeOfRepairOptions = [
-        { value: 0, label: "Ремонт экрана" },
-        { value: 1, label: "Замена батареи" },
-        { value: 2, label: "Ремонт от воды" },
-        { value: 3, label: "Прошивка устройства" },
-        { value: 4, label: "Ремонт разъемов и портов" },
-        { value: 5, label: "Восстановление программного обеспечения" },
-      ];
+    //   const typeOfRepairOptions = [
+    //     { value: 0, label: "Ремонт экрана" },
+    //     { value: 1, label: "Замена батареи" },
+    //     { value: 2, label: "Ремонт от воды" },
+    //     { value: 3, label: "Прошивка устройства" },
+    //     { value: 4, label: "Ремонт разъемов и портов" },
+    //     { value: 5, label: "Восстановление программного обеспечения" },
+    //   ]; ###
 
     const user = useSelector(selectUser)
 
-    const [formMode, setFormMode] = useState(FormMode.Hidden)
     const [repairs, setRepairs] = useState([])
     const username = user.master?.[0].username
 
@@ -96,15 +88,14 @@ function Services() {
         if (!username) return
 
         getMasterRepairsByUsername(username).then(setRepairs)
-    }, [user])
+    }, [user, username])
 
-    const onDelete = useCallback((e, id) => {
-        getMasterRepairsByUsername(username).then(setRepairs)
-    }, [])
+    // const onDelete = useCallback((e, id) => {
+    //     getMasterRepairsByUsername(username).then(setRepairs)
+    // }, [])
 
-    const onSubmit = (e) =>
-        getMasterRepairsByUsername(username).then(setRepairs)
-
+    // const onSubmit = (e) =>
+    //     getMasterRepairsByUsername(username).then(setRepairs)
 
     const [servicesBlocks, setServicesBlocks] = useState({})
     useEffect(() => {
@@ -187,7 +178,7 @@ function Services() {
         obj[key]["select_state"] = e.target.value
         
 
-        if (e.target.value == "Свои услуги") {
+        if (e.target.value === "Свои услуги") {
             obj[key]["row"] = [{
                             "heading": "",
                             "description": "",
@@ -196,7 +187,7 @@ function Services() {
                         }]
         }
 
-        if (e.target.value == "Услуги по умолчанию") {
+        if (e.target.value === "Услуги по умолчанию") {
             obj[key]["row"] = [{
                                     "heading": "Замена стекла",
                                     "description": "",

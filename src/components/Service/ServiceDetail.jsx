@@ -14,14 +14,11 @@ import ServiceDetailContext from "./ServiceDetailContext"
 import '../../scss/detail.scss'
 import '../../scss/media.css'
 import { getMasterRepairs } from "../../services/service.service";
-import SERVER_PATH from "../../constants/SERVER_PATH";
 import { Link } from "react-router-dom";
 
 import style from "./serviceDetail.module.scss"
 
 function ServiceDetail() {
-
-    const [selectedImage, setSelectedImage] = useState(null);
 
     // тестовые данные - услуги
     const test_price = [
@@ -92,7 +89,6 @@ function ServiceDetail() {
 
     const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([])
 
-    const ui = useSelector(selectUI);
     const navigate = useNavigate()
     const { id } = useParams()
 
@@ -107,9 +103,9 @@ function ServiceDetail() {
     const [formError, setFormError] = useState("")
     const [visibleBlockPayment, setVisibleBlockPayment] = useState(false)
     const [selectedIdx, setSelectedIdx] = useState(0);
-    const [errorBalance, setErrorBalance] = useState(true)
-    const [errorCash, setErrorCash] = useState(true)
-    const [errorSumm, setErrorSumm] = useState(true)
+    const [errorBalance] = useState(true)
+    const [errorCash] = useState(true)
+    const [errorSumm] = useState(true)
 
     const [selected, setSelected] = useState([])
     const selectedValue = useMemo(() => ({ selected, setSelected }), [selected])
@@ -211,7 +207,7 @@ function ServiceDetail() {
         document.title = device.name;
     }, [device]);
 
-    const [goToR, isgoToR] = useState(false)
+    const [goToR] = useState(false)
 
 
     function getSumPrice() {
@@ -240,14 +236,14 @@ function ServiceDetail() {
     const [modalImage, setModalImage] = useState("");
 
     // Массив картинок для слайдера в модальном окне
-    const images = [
-        '/img/sentence_img/iphone-x.png',
-        '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
-        '/img/sentence_img/iphone-x.png',
-    ];
+    // const images = [
+    //     '/img/sentence_img/iphone-x.png',
+    //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
+    //     '/img/sentence_img/iphone-x.png',
+    // ]; ###
 
     // Функция для открытия модального окна
-    const openModal = (imageSrc: string) => {
+    const openModal = (imageSrc) => {
         setModalImage(imageSrc); // Устанавливаем путь к картинке
         setIsModalOpen(true); // Открываем модальное окно
     };
@@ -297,7 +293,7 @@ function ServiceDetail() {
                         <div className={style.block_v2}>
                             <p>Оплата через сайт</p>
                             <div className={style.radio}>
-                                <input type="radio" id="inputSite" name="radioPayments" checked={selectedIdx==0} onChange={() => setSelectedIdx(0)} />
+                                <input type="radio" id="inputSite" name="radioPayments" checked={selectedIdx===0} onChange={() => setSelectedIdx(0)} />
                                 <label htmlFor="inputSite">Баланс: 0р</label>
                             </div>
                             <p>Обычная цена сделки без риска</p>
@@ -307,7 +303,7 @@ function ServiceDetail() {
                         <div className={style.block} style={{position: "relative", top: "35px"}}>
                             {/* <p>Оплата наличными</p> */}
                             <div className={style.radio}>
-                                <input type="radio" id="inputCash" name="radioPayments" checked={selectedIdx==1} onChange={() => setSelectedIdx(1)} />
+                                <input type="radio" id="inputCash" name="radioPayments" checked={selectedIdx===1} onChange={() => setSelectedIdx(1)} />
                                 <label htmlFor="inputCash">Оплата наличными</label>
                             </div>
                             <p className={style.mini_text}>Оплата напрямую исполнителю <br/> Без гарантий и компенсаций RepairWizarts: вы напрямую договариваетесь с исполнителем об условиях и способе оплаты.</p>

@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { useService } from "../../hooks/useService";
-import { getMasterOrders } from "../../services/order.service";
 import '../../scss/applications.css'
 import NavApplication from './NavApplication'
 import Application from "./Application";
@@ -11,8 +9,8 @@ import { useNavigate } from "react-router-dom";
 
 function MyApplications() {
     const navigator = useNavigate()
-    const orders = useService(getMasterOrders, [])
-    const filteredOrders = orders.data.filter((v) => v.status === "Активно")
+    // const orders = useService(getMasterOrders, [])
+    // const filteredOrders = orders.data.filter((v) => v.status === "Активно")
 
     // test
     // const filteredOrders = [
