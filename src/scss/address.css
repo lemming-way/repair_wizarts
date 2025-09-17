@@ -1,0 +1,356 @@
+.img-content img {
+    padding: 2px;
+    border: 1px solid #fff;
+    border-radius: 50px;
+}
+
+.img-content h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 23px;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+}
+
+.main-optionsdfsadfsads {
+    padding-top: 50px;
+    display: grid;
+    grid-template-columns: 372px 372px;
+    grid-template-rows: 1fr;
+    grid-column-gap: 1px;
+}
+
+
+.stars p {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 24px;
+    margin: 15px 0;
+    color: #fff;
+}
+
+.stars img {
+    margin: 0 6px;
+}
+
+.ul-wrap li a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FDFDFD;
+    cursor: pointer;
+}
+
+.ul-wrap li {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 20px 60px;
+}
+
+.ul-wrap li img {
+    margin: 0 10px 0 0;
+}
+
+.active {
+    background-color: #353535;
+}
+
+.ul-wrap {
+    flex: 1 1 auto;
+    margin: 80px 0 0 0;
+}
+
+.left-content {
+    background-color: #131313;
+    width: 278px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.dffds {
+    text-align: center;
+    padding-top: 49px;
+}
+
+.icon h2 {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FFFFFF;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+}
+
+.icon {
+    align-items: center;
+    margin: 130px 0 0 60px;
+    padding-bottom: 50px;
+}
+
+.block-info-10 {
+    padding: 70px 0 0 115px;
+}
+
+.setting h1 {
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 46px;
+    color: #000000;
+}
+
+.setting img {
+    margin: 0 23px;
+}
+
+.setting {
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid #C5C5C5;
+    width: 998px;
+}
+
+.mini-wrap h3 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 30px;
+    color: #000000;
+    padding: 30px 0;
+    cursor: pointer;
+}
+
+.active2 {
+    border-bottom: 5px solid #D9573B;
+}
+
+.mini-wrap {
+    justify-content: space-between;
+    border-bottom: 1px solid #C5C5C5;
+    width: 998px;
+    margin: 10px 0 0 0;
+}
+
+input {
+    outline: none;
+}
+
+.main-options {
+    margin: 50px 0 0 0;
+    justify-content: space-between;
+    width: 65%;
+}
+
+/*the container must be positioned relative:*/
+.custom-select {
+    position: relative;
+    font-family: Arial;
+}
+
+.custom-select select {
+    display: none;
+    /*hide original SELECT element:*/
+}
+
+.select-selected {
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+    border-radius: 10px;
+    width: 250px;
+}
+
+/*style the arrow inside the select element:*/
+.select-selected:after {
+    position: absolute;
+    content: "";
+    top: 14px;
+    right: -40px;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-color: #000 transparent transparent transparent;
+}
+
+/*point the arrow upwards when the select box is open (active):*/
+.select-selected.select-arrow-active:after {
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+}
+
+/*style the items (options), including the selected item:*/
+.select-items div,
+.select-selected {
+    color: #000;
+    padding: 8px 20px;
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+    cursor: pointer;
+    user-select: none;
+    width: 250px;
+}
+
+/*style items (options):*/
+.select-items {
+    position: absolute;
+    background-color: #fff;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 99;
+}
+
+/*hide the items when the select box is closed:*/
+.select-hide {
+    display: none;
+}
+
+.select-items div:hover,
+.same-as-selected {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1875px) {
+    .icon {
+        padding-bottom: 31px;
+    }
+}
+
+@media (max-width: 1305px) {
+    .block-info-10 {
+        padding: 70px 0 0 20px;
+    }
+}
+
+@media (max-width: 1305px) {
+    .left-content {
+        width: 250px;
+    }
+
+    .stars img {
+        margin: 0 4px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .setting {
+        width: 600px;
+    }
+
+    .mini-wrap {
+        width: 600px;
+    }
+
+    .main-options {
+        width: 93%;
+    }
+}
+
+@media (max-width: 880px) {
+    .setting {
+        width: 500px;
+    }
+
+    .mini-wrap {
+        width: 500px;
+    }
+
+    .main-options {
+        width: 93%;
+    }
+}
+
+@media (max-width: 785px) {
+    .main {
+        flex-direction: column;
+    }
+
+    .left-content {
+        width: 278px;
+    }
+
+    .stars img {
+        margin: 0 6px;
+    }
+
+    .main-options {
+        width: 0;
+    }
+
+    .block-info-10 {
+        padding: 70px 0 20px 20px;
+    }
+
+    .custom-select {
+        margin: 0 60px 0 0;
+    }
+}
+
+@media (max-width: 785px) {
+    .custom-select {
+        margin: 0 5px 0 0;
+    }
+
+    .setting {
+        width: 460px;
+    }
+
+    .mini-wrap {
+        width: 460px;
+    }
+
+    .select-items div,
+    .select-selected  {
+        width: 180px;
+    }
+
+    .select-selected:after {
+        position: absolute;
+        content: "";
+        top: 14px;
+        right: 34px;
+        width: 0;
+        height: 0;
+        border: 6px solid transparent;
+        border-color: #000 transparent transparent transparent;
+    }
+}
+
+@media (max-width: 485px) {
+    .setting {
+        width: 370px;
+    }
+
+    .mini-wrap {
+        width: 370px;
+    }
+}
+
+@media (max-width: 485px) {
+    .setting {
+        width: 330px;
+    }
+
+    .mini-wrap {
+        width: 330px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 22px;
+    }
+
+    .select-items div,
+    .select-selected  {
+        width: 150px;
+    }
+
+    .select-selected:after {
+        position: absolute;
+        content: "";
+        top: 14px;
+        right: 84px;
+        width: 0;
+        height: 0;
+        border: 6px solid transparent;
+        border-color: #000 transparent transparent transparent;
+    }
+}

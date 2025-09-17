@@ -1,0 +1,301 @@
+* {
+    padding: 0;
+    margin: 0;
+    font-family: 'SF UI Display', serif;
+}
+.mini-wrap_links {
+    margin-top: 19px;
+    border-bottom: 1px solid #c5c5c5;
+}
+.mini-wrap_links a {
+    padding: 0 55px;
+}
+.mini-wrap_links h3 {
+    cursor: pointer;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 25px;
+    color: #000;
+}
+.nonepadding {
+    padding: 0 !important;
+}
+.peo {
+    padding-top: 81px !important;
+}
+
+/* #root {
+    position: relative;
+} */
+
+#root header {
+    z-index: 111;
+    position: fixed;
+    /* position: sticky; */
+    left: 0;
+    top: 0;
+    width: 100%;
+    background-color: #000;
+    border-bottom: 1px solid #b8b8b8;
+}
+#root header .container {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    height: 70px;
+}
+#root header .container .header__list {
+    display: flex;
+    align-items: center;
+}
+#root header .container .header__list li {
+    margin-right: 74px;
+    list-style: none;
+}
+#root header .container .header__list li img {
+    padding-left: 7px;
+}
+#root header .container .header__list li:last-child {
+    margin-right: 0;
+}
+#root header .container .header__list li .header__link {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+#root header .container .header__profile {
+    display: flex;
+    align-items: center;
+    color: #fff;
+}
+#root header .container .header__profile img {
+    margin-right: 14px;
+}
+#root header .container .header__profile .bordered {
+    padding: 10px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+}
+.bordereee {
+    padding: 10px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+}
+
+#root header .container .header__profile .login__link__pourhoie {
+    margin-right: 23px;
+}
+#root header .container .header__profile .regis__link__pourhoie {
+    background: #D9573B;
+    border: 1px solid #fff;
+    padding: 5px 21px;
+    border-radius: 5px;
+}
+/* #root main {
+    flex: 1 1 auto;
+} */
+/* #root footer {
+    background: #f4f4f4;
+    padding: 54px 0;
+    margin-top: 32px;
+}
+#root footer .container {
+    display: flex;
+    justify-content: space-around;
+}
+#root footer .container ul li {
+    list-style: none;
+    padding-bottom: 10px;
+}
+#root footer .container ul li a {
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+    text-align: center;
+    text-decoration: none;
+    color: #000;
+} */
+@font-face {
+    font-family: 'SF UI Display';
+    src: url('../font/sf-ui-display-medium-58646be638f96.woff');
+}
+@font-face {
+    font-family: 'ABeeZee';
+    src: url('../font/ABeeZee-Italic.ttf');
+}
+@font-face {
+    font-family: 'Roboto';
+    src: url('../font/Roboto-Regular.ttf');
+}
+@font-face {
+    font-family: 'Actor';
+    src: url('../font/Actor-Regular.ttf');
+}
+@font-face {
+    font-family: 'Inter';
+    src: url('../font/Inter.ttf');
+}
+@font-face {
+    font-family: 'Abel';
+    src: url('../font/Abel-Regular.ttf');
+}
+.sf {
+    font-family: 'SF UI Display';
+}
+.swiper-pagination-bullet-active {
+    background: #d9573b;
+}
+.swiper-pagination-bullet {
+    background: #d9573b;
+}
+.roboto {
+    font-family: 'Roboto', sans-serif;
+}
+.abel {
+    font-family: 'Abel', sans-serif;
+}
+.inter {
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 0;
+}
+
+.just  {
+    white-space: nowrap;
+}
+
+.container {
+    max-width: 90%;
+    margin: 0 auto;
+}
+@media (max-width: 1204px) {
+    .container {
+        max-width: 95%;
+   }
+    .main__info__content__card {
+        max-width: 656px;
+   }
+    .main__info__image p {
+        width: auto !important;
+   }
+}
+
+/*bldropdown*/
+.bldropdown {
+    position: relative;
+    display: block;
+    line-height: 70px;
+}
+.bldropdown .bldropdown-content {
+    display: none;
+    position: absolute;
+    left: -126px;
+    top: 70px;
+    background: #131313;
+    min-width: 273px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    padding: 12px 16px;
+    line-height: 14px;
+    z-index: 1;
+}
+.bldropdown:hover .bldropdown-content {
+    display: block;
+}
+.bldropdown .bldropdown-content .recent .repair__phone {
+    width: 228px;
+    font-style: normal;
+    font-weight: 400;
+    display: flex;
+    justify-content: space-between;
+    text-decoration: none;
+    align-items: center;
+    font-size: 15px;
+    background: #131313;
+    margin-bottom: 4px;
+    color: #fff;
+    border-bottom: 1px solid #515151;
+    padding: 12px 32px 13px 14px;
+}
+.bldropdown .bldropdown-content .recent .repair__phone__content {
+    position: relative;
+    display: inline-block;
+}
+.bldropdown .bldropdown-content .recent .repair__phone__content .repair__phone__content__link {
+    display: none;
+    background: #131313;
+    min-width: 273px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    padding: 19px 16px;
+    border-bottom: 1px solid #515151;
+    z-index: 1;
+    bottom: 4px;
+}
+
+.repair-phone-content__wrap {
+    top: -13px;
+    position: absolute;
+    left: 100%;
+}
+
+.bldropdown .bldropdown-content .recent .repair__phone__content .repair__phone__content__link a {
+    text-decoration: none;
+}
+.bldropdown .bldropdown-content .recent .repair__phone__content .repair__phone__content__link a h4 {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    color: #fff;
+}
+.repair__phone__content:hover .repair__phone__content__link {
+    display: block !important;
+}
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+.dropdown .dropdown-content {
+    position: absolute;
+    left: -126px;
+    top: 50px;
+    background: #fff;
+    border-radius: 10px;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+    padding: 12px 16px;
+    z-index: 1;
+}
+.dropdown .dropdown-content input {
+    background: #ededed;
+    border-radius: 6px;
+    border: 0;
+    width: 290px;
+    padding: 11px 51px 14px 14px;
+    margin-bottom: 18px;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 18px;
+    color: #000;
+}
+.dropdown .dropdown-content .recent {
+    background: #ededed;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    padding: 12px 51px 13px 14px;
+}
+.dropdown .dropdown-content .recent a {
+    color: #303030;
+    text-decoration: none;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 18px;
+}
+.dropdown .dropdown-content .recent a span {
+    color: #8d8d8d;
+    font-size: 10px;
+}
+
+
+
+/* Setout */
+

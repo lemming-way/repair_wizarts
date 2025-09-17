@@ -1,0 +1,31 @@
+.nav_block {
+    display: flex;
+    align-items: center;
+}
+
+.link {
+    padding: 10px 20px;
+    font-size: 25px;
+}
+
+@media (max-width: 850px) {
+    .link {
+        font-size: 20px;
+        white-space: nowrap;
+    }
+}
+
+
+
+@media (max-width: 660px) {
+    .link {
+        padding: 7px 10px;
+        font-size: 17px;
+    }
+}
+
+@media (max-width: 500px) {
+    .nav_block {
+        flex-wrap: wrap;
+    }
+}

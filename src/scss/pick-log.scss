@@ -1,0 +1,51 @@
+//@import 'settings';
+
+
+#root {
+  .header__profile {
+    a {
+      color: #fff;
+    }
+  }
+  main {
+    .pick {
+      padding-bottom: 30px;
+      h1 {
+        font-style: normal;
+        font-weight: 400;
+        font-size: 50px;
+        color: #000000;
+        padding-top: 100px;
+        padding-bottom: 50px;
+        text-align: center;
+      }
+      .pick {
+        display: flex;
+        justify-content: center;
+        .reg {
+          margin-right: 30px;
+          width: 500px;
+          height: 400px;
+          background: #FAFAFA;
+          border: 2px solid #C5C5C5;
+          border-radius: 20px;
+          a {
+            display: flex;
+            color: #9E9B9B;
+            justify-content: center;
+            align-items: center;
+            height: 400px;
+            text-decoration: none;
+            flex-direction: column;
+            p {
+              padding-top: 30px;
+            }
+            .cli {
+              padding-top: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
+}

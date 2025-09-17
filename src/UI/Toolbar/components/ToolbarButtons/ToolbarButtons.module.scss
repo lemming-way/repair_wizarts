@@ -1,0 +1,28 @@
+@use '../../../../styles/mixins';
+
+.buttons {
+  color: white;
+
+  &_login {
+    margin-right: 27px;
+
+    @include mixins.xl {
+      margin-right: 20px;
+    }
+
+    @include mixins.sm {
+      margin-right: 10px;
+    }
+  }
+
+  &_register {
+    background-color: #D9573B;
+    padding: 5px 20px;
+    border: 1px solid #fff;
+    border-radius: 5px;
+
+    @include mixins.sm {
+      padding: 5px 5px;
+    }
+  }
+}

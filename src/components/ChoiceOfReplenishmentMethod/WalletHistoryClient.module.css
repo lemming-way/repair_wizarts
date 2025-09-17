@@ -1,0 +1,49 @@
+
+.main_block_history {
+    padding: 100px 50px 30px 10%;
+}
+
+
+
+@media (max-width: 980px) {
+    .main_block_history {
+        padding: 90px 20px 30px;
+    } 
+}
+
+.main_block_history h1 {
+    margin: 0;
+    padding: 0;
+    font-size: 30px;
+}
+
+.table_wrap {
+    /* width: min-content; */
+    overflow-x: scroll;
+    max-width: 98vw;
+}
+
+.table {
+    margin-top: 20px;
+    /* width: 100%; */
+    /* max-width: 1200px; */
+    table-layout: auto;
+
+}
+
+.table > * {
+    text-align: center;
+}
+
+.table th {
+    /* width: calc(100% / 6); */
+    padding: 10px 0;
+}
+
+.table td {
+    padding: 8px 10px;
+}
+
+.border {
+    border-bottom: 1px solid #9F9F9F;
+}

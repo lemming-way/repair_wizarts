@@ -1,0 +1,39 @@
+@use '../../../../styles/mixins';
+
+$arrowSearchIconPath: '/img/header/icons/search.svg';
+
+.toolbarSearchBar {
+  display: flex;
+  border: none;
+  border-radius: 5px 15px 15px 5px;
+  margin-right: 10px;
+
+  &_input {
+    background: #6b6b6b url('#{$arrowSearchIconPath}') no-repeat left 5px center;
+    padding: 10px 50px 10px 20px;
+    color: white;
+    width: 125px;
+    font-size: 12px;
+    border: none;
+    border-radius: 5px 0 0 5px;
+  }
+
+  &_input::placeholder {
+    color: #fff;
+  }
+
+  &_button {
+    padding: 0 10px;
+    border: none;
+    background-color: #d9ad3b;
+    font-size: 14px;
+    color: #fff;
+    border-radius: 15px;
+    margin-left: -40px;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #D9573B;
+    }
+  }
+}

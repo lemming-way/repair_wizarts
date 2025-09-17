@@ -1,0 +1,39 @@
+@use '../../../../../styles/mixins';
+
+.searchForm {
+  display: flex;
+  margin-bottom: 25px;
+
+  &_input {
+    background: white url("../../../../../img/home/heroSection/icons/search-icon.svg") no-repeat left 10px center;
+    padding: 20px 20px 20px 40px;
+    width: 430px;
+    border-radius: 15px;
+    border-color: black;
+    font-size: 16px;
+    color: #a9abad;
+
+    @include mixins.sm {
+      font-size: 14px;
+    }
+  }
+
+  &_button {
+    padding: 0 25px;
+    border-radius: 15px;
+    border: none;
+    background-color: #d9ad3b;
+    margin-left: 10px;
+    font-size: 14px;
+    color: #fff;
+    transition: background-color 0.3s ease;
+
+    &:hover {
+      background-color: #D9573B;
+    }
+
+    @include mixins.sm {
+      padding: 0 20px;
+    }
+  }
+}

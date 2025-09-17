@@ -1,0 +1,12 @@
+.arrows_block {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    .arrows_block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+}

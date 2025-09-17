@@ -1,0 +1,9 @@
+.devices_block {
+    min-height: calc(100vh - 71px - 280px);
+}
+
+@media (max-width: 770px) {
+    .devices_block {
+        min-height: calc(100vh - 71px - 475px);
+    }
+}

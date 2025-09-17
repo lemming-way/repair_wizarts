@@ -1,0 +1,46 @@
+@use '../../../styles/mixins';
+
+.registrationPickPage {
+  margin-top: 150px;
+  margin-bottom: 100px;
+
+  @include mixins.md {
+    margin-top: 120px;
+    margin-bottom: 30px;
+  }
+
+  &_title {
+    font-weight: 400;
+    font-size: 50px;
+    color: #000000;
+    text-align: center;
+
+    @include mixins.md {
+      font-size: 38px;
+    }
+
+    @include mixins.sm {
+      font-size: 30px;
+    }
+  }
+
+  &_block {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+
+    @include mixins.md {
+      display: none;
+    }
+  }
+
+  &_swiper {
+    display: none;
+
+    @include mixins.md {
+      margin-top: 30px;
+      display: block;
+    }
+  }
+}

@@ -1,0 +1,12 @@
+@use '../../../../../../styles/mixins';
+
+.serviceCategoriesDropdown {
+  color: white;
+  background-color: #000;
+  max-width: 270px;
+  margin-right: 20px;
+
+  &_list {
+    font-size: 14px;
+  }
+}

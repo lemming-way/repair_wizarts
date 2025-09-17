@@ -1,0 +1,12 @@
+.appContainer {
+  max-width: 1458px;
+  min-height: 70px;
+  padding: 0 15px;
+  margin: 0 auto;
+}
+
+// Добавила для всех ссылок наследумеый цвет, что бы каждый раз не менять его
+
+a {
+  color: inherit;
+}

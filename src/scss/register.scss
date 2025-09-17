@@ -1,0 +1,68 @@
+@import 'settings';
+
+#root {
+  .register {
+    h1 {
+      font-style: normal;
+      font-weight: 400;
+      font-size: 50px;
+      line-height: 60px;
+      text-align: center;
+      padding-top: 150px;
+      padding-bottom: 50px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      width: 571px;
+      align-items: center;
+      margin: 0 auto;
+      input {
+        border: 2px solid #C5C5C5;
+        border-radius: 10px;
+        padding: 20px 31px;
+        width: 571px;
+        font-style: normal;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 19px;
+        outline: none;
+        margin-bottom: 30px;
+        &:focus {
+          border: 2px solid #2B2B2B;
+        }
+        &::placeholder {
+          color: #A4A4A4;
+        }
+      }
+      .rel {
+        display: flex;
+        justify-content: center;
+        margin: 0 auto;
+        input {
+          flex-basis: 4%;
+          padding: 0;
+          margin: 0;
+        }
+        label {
+          flex-basis: 96%;
+          width: 100%;
+        }
+      }
+      button {
+        margin-top: 49px;
+        padding: 15px 90px;
+        background: #D9573B;
+        border-radius: 15px;
+        font-style: normal;
+        font-weight: 400;
+        border: 0;
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 24px;
+        margin-bottom: 50px;
+        color: #FFFFFF;
+      }
+    }
+  }
+}

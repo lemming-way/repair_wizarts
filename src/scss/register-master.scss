@@ -1,0 +1,126 @@
+@import 'settings.css';
+
+#root {
+  main {
+    .register {
+      h1 {
+        font-style: normal;
+        font-weight: 400;
+        font-size: 50px;
+        line-height: 60px;
+        text-align: center;
+        padding-top: 150px;
+        padding-bottom: 50px;
+        color: #000000;
+
+        @media (max-width: 1000px) {
+            padding-top: 100px;
+            padding-bottom: 20px;
+        }
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        width: 571px;
+        align-items: center;
+        margin: 0 auto;
+        input {
+          border: 2px solid #C5C5C5;
+          border-radius: 10px;
+          padding: 20px 31px;
+          width: 571px;
+          font-style: normal;
+          font-weight: 400;
+          font-size: 16px;
+          outline: none;
+          
+          @media (max-width: 762px) {
+            width: 100%;
+            max-width: 385px !important;
+          }
+
+          &:focus {
+            border: 2px solid #2B2B2B;
+          }
+          margin-bottom: 26px;
+          &::placeholder {
+            color: #A4A4A4;
+          }
+        }
+        button {
+          margin-top: 25px;
+          padding: 15px 90px;
+          background: #D9573B;
+          border-radius: 15px;
+          font-style: normal;
+          font-weight: 400;
+          border: 0;
+          cursor: pointer;
+          font-size: 20px;
+          line-height: 24px;
+          margin-bottom: 30px;
+          color: #FFFFFF;
+        }
+        select {
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+          background: url("../../public/img/bot.png") white no-repeat calc(100% - 10px) !important; /* Better placement regardless of input width */
+          &::-ms-expand { display: none; }
+          border: 2px solid #C5C5C5;
+          border-radius: 10px;
+          padding: 20px 31px;
+          width: 571px;
+          background-color: transparent;
+          font-style: normal;
+          font-weight: 400;
+          font-size: 16px;
+          outline: none;
+          margin-bottom: 26px;
+          &:focus {
+            border: 2px solid #2B2B2B;
+          }
+          option {
+            font-style: normal;
+            font-weight: 400;
+            font-size: 19px;
+          }
+        }
+      }
+    }
+  }
+}
+
+#uslugiv, #uslugivasdf {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: url("../../public/img/bot.png") white no-repeat calc(100% - 10px) !important; /* Better placement regardless of input width */
+  &::-ms-expand { display: none; }
+  border: 2px solid #C5C5C5;
+  border-radius: 10px;
+  padding: 20px 31px;
+  width: 312px;
+  margin-right: 20px;
+  background-color: transparent;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 16px;
+  outline: none;
+  &:focus {
+    border: 2px solid #2B2B2B;
+  }
+  margin-bottom: 10px;
+  option {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 19px;
+  }
+}
+
+
+#uslugivasdf {
+  width: 312px;
+}
+
+

@@ -1,0 +1,31 @@
+@use '../../../../../styles/mixins';
+
+.registrationPickCard {
+  padding: 90px 0;
+  color: #9E9B9B;
+  width: 500px;
+  background: #FAFAFA;
+  border: 2px solid #C5C5C5;
+  border-radius: 20px;
+  text-align: center;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+
+  @include mixins.md {
+    max-width: 315px;
+  }
+
+  &:hover {
+    transform: scale(1.02);
+
+    @include mixins.md {
+      transform: none;
+    }
+  }
+
+  p {
+    padding-top: 10px;
+    width: 300px;
+    margin: 0 auto;
+  }
+}

@@ -1,0 +1,442 @@
+.df {
+    display: flex;
+}
+
+.img-content img {
+    padding: 2px;
+    border: 1px solid #fff;
+    border-radius: 50px;
+}
+
+.history__links a h3 {
+    font-size: 20px;
+}
+
+
+
+.img-content h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 23px;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+}
+
+.stars p {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 24px;
+    margin: 15px 0;
+    color: #fff;
+}
+
+.stars img {
+    margin: 0 6px;
+}
+
+.ul-wrap li a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FDFDFD;
+    cursor: pointer;
+}
+
+.ul-wrap li {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 20px 60px;
+}
+
+.ul-wrap li img {
+    margin: 0 10px 0 0;
+}
+
+.active {
+    background-color: #353535;
+}
+
+.ul-wrap {
+    flex: 1 1 auto;
+    margin: 80px 0 0 0;
+}
+
+.left-content {
+    background-color: #131313;
+    width: 278px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.dffds {
+    text-align: center;
+    padding-top: 49px;
+}
+
+.icon h2 {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FFFFFF;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+}
+
+.icon {
+    align-items: center;
+    margin: 130px 0 0 60px;
+    padding-bottom: 50px;
+}
+
+.block-info-3 {
+    padding: 70px 0 0 115px
+}
+
+.history__title h1 {
+    font-weight: 500;
+    font-size: 36px;
+    line-height: 43px;
+    color: #000000;
+    padding: 0 0 10px 0;
+    width: 820px;
+}
+
+.table__date {
+    width: 160px;
+}
+
+.table__clock {
+    width: 175px;
+}
+
+.table__history {
+    padding-top: 81px;
+}
+
+@media (max-width: 1300px) {
+    /*.table__scroll {*/
+    /*    width: 900px;*/
+    /*    overflow-x: scroll !important;*/
+    /*}*/
+    .table__scroll table {
+        display: block;
+        max-width: -moz-fit-content;
+        max-width: fit-content;
+        margin: 0 auto;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /*.table__scroll table tbody {*/
+    /*    display: table;*/
+    /*    width: 100%;*/
+    /*}*/
+
+    /*.table__scroll > * {*/
+    /*    overflow-x: scroll !important;*/
+    /*}*/
+
+}
+
+.history__title {
+    border-bottom: 1px solid #C5C5C5;
+}
+
+.table__qiwi {
+    width: 220px;
+}
+
+
+.table__title__wrap td, .table__title__wrap th {
+    border-bottom: 1px solid #C5C5C5;
+    padding-bottom: 5px;
+}
+
+
+.table__def__info {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    padding: 15px 0;
+    color: #000000;
+}
+
+.table__title {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 18px;
+    color: #000000;
+}
+
+
+
+
+tr {
+    text-align: left;
+}
+
+.table__bank {
+    width: 200px;
+}
+
+
+.table__money {
+    width: 90px;
+}
+
+.table__status {
+    width: 100px;
+}
+
+
+.mini-wrap h3 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 30px;
+    color: #000000;
+    padding: 30px 18px;
+    cursor: pointer;
+}
+
+.active2 {
+    border-bottom: 5px solid #D9573B;
+}
+
+.mini-wrap {
+    width: 100%;
+    border-bottom: 1px solid #C5C5C5;
+}
+
+.first-ul-wrap {
+    justify-content: space-between;
+    padding: 0 0 5px 0;
+    border-bottom: 1px solid #C5C5C5;
+    margin: 86px 0 0 0;
+}
+
+.first-ul-wrap li {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 21px;
+    color: #000000;
+}
+
+.list-item {
+    justify-content: space-between;
+    width: 40%;
+}
+
+.second-ul-wrap {
+    justify-content: space-between;
+    margin: 22px 0 30px 0;
+}
+
+.second-ul-wrap li {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 17px;
+    color: #000000;
+}
+
+.list-item-2 {
+    justify-content: space-between;
+    width: 46%;
+}
+
+@media (max-width: 1700px) {
+    .icon {
+        padding-bottom: 42px;
+    }
+}
+
+@media (max-width: 1215px) {
+    .block-info-3 {
+        padding: 70px 0 0 65px;
+    }
+}
+
+@media (max-width: 1170px) {
+    .block-info-3 {
+        padding: 70px 0 0 30px;
+    }
+}
+
+@media (max-width: 1132px) {
+    .block-info-3 {
+        padding: 70px 0 0 20px;
+    }
+
+    .history h1 {
+        width: 715px;
+    }
+}
+
+@media (max-width: 980px) {
+    .history h1 {
+        width: 650px;
+    }
+
+    .left-content {
+        width: 250px;
+    }
+}
+
+@media (max-width: 920px) {
+    .history h1 {
+        width: 620px;
+    }
+
+    .left-content {
+        width: 240px;
+    }
+
+    .stars img {
+        margin: 0 4px;
+    }
+}
+
+@media (max-width: 880px) {
+    .main {
+        display: block;
+    }
+
+    .left-content {
+        width: 278px;
+    }
+
+    .stars img {
+        margin: 0 6px;
+    }
+
+    .history h1 {
+        width: 750px;
+    }
+
+    .mini-wrap {
+        width: 87%;
+    }
+
+    .first-ul-wrap {
+        width: 87%;
+    }
+
+    .second-ul-wrap {
+        width: 87%;
+    }
+
+    .main-wrap {
+        padding: 0 0 30px 0;
+    }
+}
+
+@media (max-width: 840px) {
+    .history h1 {
+        width: 710px;
+    }
+}
+
+@media (max-width: 800px) {
+    .history h1 {
+        width: 680px;
+    }
+}
+
+@media (max-width: 760px) {
+    .history h1 {
+        width: 640px;
+    }
+}
+
+@media (max-width: 760px) {
+    .history h1 {
+        width: 610px;
+    }
+}
+
+@media (max-width: 680px) {
+    .history h1 {
+        width: 570px;
+    }
+}
+
+@media (max-width: 640px) {
+    .history h1 {
+        width: 540px;
+    }
+
+    .first-ul-wrap,
+    .second-ul-wrap {
+        overflow-x: scroll;
+        width: 731px;
+    }
+    .main-wrap{
+        overflow-y: scroll;
+    }
+}
+
+@media (max-width: 600px) {
+    .history h1 {
+        width: 500px;
+    }
+}
+
+@media (max-width: 560px) {
+    .history h1 {
+        width: 470px;
+    }
+
+    .mini-wrap {
+        padding: 0;
+    }
+
+    .mini-wrap h3 {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 520px) {
+    .history h1 {
+        width: 430px;
+    }
+}
+
+@media (max-width: 480px) {
+    .history h1 {
+        width: 400px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 19px;
+    }
+}
+
+@media (max-width: 440px) {
+    .history h1 {
+        width: 365px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 400px) {
+    .history h1 {
+        width: 330px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 370px) {
+    .history h1 {
+        width: 305px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 15px;
+    }
+}

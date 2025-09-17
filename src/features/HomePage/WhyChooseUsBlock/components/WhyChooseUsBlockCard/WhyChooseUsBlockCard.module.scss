@@ -1,0 +1,60 @@
+@use '../../../../../styles/mixins';
+
+.whyChooseUsBlockCard {
+  width: 60%;
+  display: flex;
+  border: 2px solid #e9eaf1;
+  padding: 20px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+
+  @include mixins.lg {
+    width: 100%;
+  }
+
+  @include mixins.md {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    margin-bottom: 0;
+  }
+
+  &_img {
+    border-radius: 20px;
+    padding: 20px;
+    background: #e9eaf1;
+  }
+
+  &_content {
+    margin-left: 20px;
+
+    @include mixins.md {
+      margin-left: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    &_title {
+      font-weight: 600;
+      font-size: 20px;
+
+      @include mixins.md {
+        text-align: center;
+        margin-top: 10px;
+      }
+    }
+
+    &_text {
+      font-size: 16px;
+      margin-top: 20px;
+
+      @include mixins.md {
+        padding-left: 10px;
+        padding-right: 10px;
+        text-align: center;
+      }
+    }
+
+  }
+}

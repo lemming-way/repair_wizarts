@@ -1,0 +1,511 @@
+.df {
+    display: flex;
+}
+
+.img-content img {
+    padding: 2px;
+    border: 1px solid #fff;
+    border-radius: 50px;
+}
+
+.img-content h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 23px;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+}
+
+
+
+.stars p {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 24px;
+    margin: 15px 0;
+    color: #fff;
+}
+
+.stars img {
+    margin: 0 6px;
+}
+
+.ul-wrap li a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FDFDFD;
+    cursor: pointer;
+}
+
+.ul-wrap li {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 20px 60px;
+}
+
+.ul-wrap li img {
+    margin: 0 10px 0 0;
+}
+
+.active {
+    background-color: #353535;
+}
+
+.ul-wrap {
+    flex: 1 1 auto;
+    margin: 80px 0 0 0;
+}
+
+.left-content {
+    background-color: #131313;
+    width: 278px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.dffds {
+    text-align: center;
+    padding-top: 49px;
+}
+
+.icon h2 {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FFFFFF;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+}
+
+.icon {
+    align-items: center;
+    margin: 130px 0 0 60px;
+    padding-bottom: 50px;
+}
+
+.block-info-9 {
+    padding: 70px 0 0 115px;
+}
+
+.setting h1 {
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 46px;
+    color: #000000;
+}
+
+.setting img {
+    margin: 0 23px;
+}
+
+.setting {
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid #C5C5C5;
+}
+
+.mini-wrap h3 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 30px;
+    color: #000000;
+    padding: 30px 0;
+    cursor: pointer;
+}
+
+.active2 {
+    border-bottom: 5px solid #D9573B;
+}
+
+.mini-wrap {
+    border-bottom: 1px solid #C5C5C5;
+    margin: 10px 0 0 0;
+}
+
+.inputs-wrap h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 21px;
+    color: #000000;
+    margin: 0 0 15px 0;
+}
+
+.inputs-wrap {
+    margin: 50px 0 0 0;
+}
+
+.wedmoney-content input {
+    width: 450px;
+    height: 60px;
+    border: 2px solid #C5C5C5;
+    border-radius: 10px;
+    margin: 0 30px;
+    padding: 0 0 0 30px;
+    outline: none;
+}
+
+.wedmoney-content input::placeholder {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 20px;
+    color: #000000;
+}
+
+.wedmoney-content .btn_4 {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25px;
+    color: #FFFFFF;
+    padding: 15px 50px;
+    background: #C5C5C5;
+    border-radius: 15px;
+    border: none;
+    cursor: default;
+}
+
+.wedmoney-content .btn_5 {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25px;
+    color: #D24A4A;
+    padding: 15px 50px;
+    border-radius: 15px;
+    border: 2px solid #D24A4A;
+    background: none;
+    margin: 0 0 0 24px;
+}
+
+.wedmoney-content {
+    margin: 10px 0 30px 0;
+}
+
+.containerPopUp {
+    max-width: 660px;
+    margin: 0 auto;
+}
+
+.btn_6PopUpBack {
+    padding: 15px 50px;
+    border: 1px solid #C5C5C5;
+    border-radius: 15px;
+    font-style: normal;
+    margin-right: 30px;
+    font-weight: 400;
+    font-size: 20px;
+    color: #000000;
+    background: transparent;
+}
+.popUpBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn_6PopUpOPen {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25px;
+    color: #FFFFFF;
+    padding: 15px 50px;
+    background: #D9573B;
+    border-radius: 15px;
+    border: none;
+}
+
+.btn_6PopUp {
+    font-weight: 400;
+    font-size: 20px;
+    color: #FFFFFF;
+    padding: 15px 50px;
+    background: #D9573B;
+    border-radius: 15px;
+    border: none;
+}
+
+.finance__popup__title {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 25px;
+    width: 320px;
+    margin: 70px auto 30px auto;
+    text-align: center;
+    color: #000000;
+}
+
+.finance__popup__subtitle {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    width: 560px;
+
+    color: #000000;
+
+}
+
+
+
+
+
+
+button {
+    cursor: pointer;
+}
+
+
+@media (max-width: 1875px) {
+    .icon {
+        padding-bottom: 31px;
+    }
+}
+
+@media (max-width: 1371px) {
+    .block-info-9 {
+        padding: 70px 0 0 40px;
+    }
+}
+
+@media (max-width: 1296px) {
+    .block-info-9 {
+        padding: 70px 0 0 20px;
+    }
+
+    .inputs-wrap .btn_4, .btn_5 {
+        padding: 15px 30px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 30px;
+    }
+
+    .wedmoney-content input {
+        width: 420px;
+    }
+}
+
+@media (max-width: 1206px) {
+    .setting {
+        width: 800px;
+    }
+
+    .mini-wrap {
+        width: 800px;
+    }
+
+    .inputs-wrap .btn_4, .btn_5 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content input {
+        width: 340px;
+    }
+}
+
+@media (max-width: 1100px) {
+    .left-content {
+        width: 250px;
+    }
+
+    .stars img {
+        margin: 0 4px;
+    }
+
+    .setting {
+        width: 760px;
+    }
+
+    .mini-wrap {
+        width: 760px;
+    }
+
+    .inputs-wrap .btn_4, .btn_5 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content input {
+        width: 310px;
+    }
+}
+
+@media (max-width: 1040px) {
+    .setting {
+        width: 720px;
+    }
+
+    .mini-wrap {
+        width: 720px;
+    }
+
+    .inputs-wrap .btn_4 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content .btn_5 {
+        padding: 15px 20px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content input {
+        width: 320px;
+    }
+}
+
+@media (max-width: 990px) {
+    .setting {
+        width: 680px;
+    }
+
+    .mini-wrap {
+        width: 680px;
+    }
+
+    .inputs-wrap .btn_4 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content .btn_5 {
+        padding: 15px 20px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content input {
+        width: 280px;
+    }
+
+    .left-content {
+        width: 240px;
+    }
+}
+
+@media (max-width: 940px) {
+    .main {
+        flex-direction: column;
+    }
+
+    .left-content {
+        width: 278px;
+    }
+
+    .stars img {
+        margin: 0 6px;
+    }
+}
+
+@media (max-width: 705px) {
+    .setting {
+        width: 630px;
+    }
+
+    .mini-wrap {
+        width: 630px;
+    }
+
+    .wedmoney-content input {
+        width: 230px;
+    }
+}
+
+@media (max-width: 665px) {
+    .finance__popup__title, .containerPopUp, .modal-content p {
+        width: auto !important;
+    }
+    .setting {
+        width: 570px;
+    }
+
+    .mini-wrap {
+        width:570px;
+    }
+
+    .wedmoney-content input {
+        width: 180px;
+    }
+
+    .wedmoney-content .btn_5 {
+        padding: 15px 15px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 13px 13px;
+    }
+}
+
+@media (max-width: 595px) {
+    .wedmoney-content {
+        flex-direction: column;
+        row-gap: 30px;
+    }
+
+    .wedmoney-content img {
+        width: 60px;
+        height: 60px;
+    }
+
+    .wedmoney-content input {
+        width: 100%;
+    }
+
+    .wedmoney-content .btn_4, .btn_5 {
+        padding: 15px 30px;
+    }
+
+    .wedmoney-content .btn_6 {
+        padding: 15px 30px;
+    }
+
+    .setting {
+        width: 470px;
+    }
+
+    .mini-wrap {
+        width: 470px;
+    }
+
+}
+
+@media (max-width: 490px) {
+    .setting {
+        width: 360px;
+    }
+
+    .mini-wrap {
+        width: 360px;
+    }
+    .popUpBtn {
+        flex-direction: column-reverse;   
+    }
+    .btn_6PopUpBack  {
+        margin-right: 0 !important;
+        margin-top: 10px;
+    }
+}
+
+@media (max-width: 490px) {
+    .setting {
+        width: 340px;
+    }
+
+    .mini-wrap {
+        width: 340px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 22px;
+    }
+}

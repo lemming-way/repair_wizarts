@@ -1,0 +1,116 @@
+.container {
+    width: 100%;
+    max-width: 1380px;
+    padding: 10px;
+    padding-top: 80px;
+    margin: auto;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    max-width: 680px;
+    margin-top: 50px;
+    padding: 36px 30px;
+    border: 1px solid #3c3c3c;
+    border-radius: 10px;
+}
+
+.formTitle {
+    font-size: 28px;
+    margin-bottom: 10px;
+    color: #3c3c3c;
+}
+
+.formInput {
+    margin-top: 20px;
+    padding: 12px;
+    border: 1px solid #3c3c3c;
+    outline: none;
+    color: #3c3c3c;
+    font-size: 16px;
+    resize: none;
+    border-radius: 4px;
+}
+
+.formSubmit {
+    border-radius: 4px;
+    outline: none;
+    border: none;
+    background: #D9573B;
+    color: #fff;
+    margin-top: 12px;
+    padding: 12px 0;
+    font-size: 16px;
+}
+
+.formModal {
+    border-radius: 12px;
+    background: #fff;
+    padding: 40px 60px;
+}
+
+.formModalTitle {
+    font-size: 28px;
+    margin-bottom: 21px;
+}
+
+.formModalButton {
+    display: block;
+    border: none;
+    background: #D9573B;
+    color: #fff;
+    padding: 12px 24px;
+    margin: auto;
+    font-size: 16px;
+    border-radius: 6px;
+}
+
+.reviews {
+    margin: 40px 0;
+}
+
+.review {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 30px;
+}
+
+.reviewHeader {
+    display: flex;
+    align-items: center;
+}
+
+.reviewHeaderImage {
+    width: 66px;
+    height: 66px;
+    border-radius: 33px;
+    object-fit: cover;
+}
+
+.reviewHeaderInfo {
+    margin-left: 20px;
+}
+
+.reviewHeaderTitle {
+    font-size: 24px;
+}
+
+.reviewHeaderDate {
+    color: #A9ABAD;
+}
+
+.reviewStars {
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+.reviewStarsCount {
+    margin-left: 8px;
+}
+
+.reviewMessageLabel {
+    display: inline-block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}

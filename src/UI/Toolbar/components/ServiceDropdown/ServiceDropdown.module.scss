@@ -1,0 +1,227 @@
+@use '../../../../styles/mixins';
+
+$arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
+
+.Submenu_submenu {
+  left: calc(100% + 2px);
+  top: 0 !important;
+}
+
+.Submenu_submenu_lvl3 {
+  top: 0;
+  left: calc(100% + 2px);
+}
+
+
+.serviceDropdown {
+  background-color: #131313 !important;
+  padding-bottom: 35px;
+
+  position: absolute;
+  top: 0;
+  left: 15px;
+  width: 270px;
+  border-radius: 6px;
+
+  top: calc(100% + 18px) !important;
+
+  @include mixins.xl {
+    left: -50px !important;
+    width: fit-content !important;
+  }
+
+  ul {
+    margin: 0 !important;
+  }
+
+  &_button {
+    background-color: #000000 !important;
+    color: white !important;
+    font-size: 16px !important;
+
+    // спрятать стрелку
+    // img {
+    //   display: none;
+    // }
+
+    @include mixins.xl {
+      padding: 0 !important;
+      font-size: 24px !important;
+      transition: all 0.4s ease !important;
+
+      &:hover {
+        scale: 1.05 !important;
+      }
+    }
+
+    &:focus {
+      box-shadow: none !important;
+    }
+  }
+
+  &_item {
+    background-color: #131313 !important;
+    color: white !important;
+    width: 270px;
+    font-size: 16px !important;
+    &:first-child {
+      border-radius: 4px 4px 0 0; // Закругление только сверху
+    }
+
+    &:last-child {
+      border-radius: 0 0 4px 4px; // Закругление только снизу
+    }
+
+    &_lvl3 {
+      width: 200px;
+    }
+
+    span {
+      padding: 10px 20px;
+      border-bottom: 1px solid #515151;
+      display: block;
+      width: 100%;
+
+      &:hover {
+        border-bottom: 1px solid white;
+      }
+    }
+
+    &_menu {
+      background: url('#{$arrowRightIconPath}') no-repeat right center;
+    }
+  }
+}
+
+
+
+.test ul{
+  margin: 0 !important;
+}
+
+// для городов
+.menu_cities {
+  background-color: white !important;
+  border-radius: 10px;
+  padding: 12px;
+
+  position: absolute;
+  top: 0;
+  left: 115px;
+  width: 320px;
+
+  top: calc(100% + 18px) !important;
+
+  li {
+    padding: 0 !important;
+  }
+
+  & div {
+    display: flex;
+    align-items: center;
+  }
+
+  & div:hover {
+    flex-direction: row !important;
+  }
+
+  input {
+    background-color: #ededed;
+    padding: 10px 10px;
+    width: 100%;
+    margin-bottom: 20px;
+
+    border-radius: 5px;
+    outline: none;
+    border: none;
+
+    &::placeholder {
+      color: #999999;
+    }
+
+    &:focus {
+      outline: none;
+      border: none;
+    }
+  }
+
+  .sity {
+    background-color: #ededed;
+    padding: 10px 10px;
+    border-radius: 5px;
+    outline: none;
+
+    color: #303030;
+
+    width: 100%;
+    margin-bottom: 5px;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #d1d1d1;
+    }
+  }
+}
+
+.small {
+  margin-left: 10px;
+  font-size: 10px;
+  color: #8D8D8D;
+}
+
+.serviceDropdown_lvl1 {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+
+  background-color: #131313 !important;
+  color: white !important;
+  width: 270px;
+  height: 315px;
+
+  font-size: 16px !important;
+  // padding-top: 15px;
+}
+
+.lvl1_row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  padding-left: 20px;
+  margin-bottom: 20px;
+}
+
+.lvl1_row img {
+  --size: 27px;
+  width: var(--size);
+  height: var(--size);
+}
+
+
+.serviceDropdown_item_lvl1 {
+  background-color: #131313 !important;
+  color: white !important;
+  width: 270px;
+  font-size: 16px !important;
+}
+
+.serviceDropdown_lvl1__span {
+  padding: 10px;
+  border-bottom: 1px solid #515151;
+  background: url('#{$arrowRightIconPath}') no-repeat right center;
+  // border-bottom: none !important;
+  display: block;
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  // border-bottom: 1px solid white;
+
+  &:hover {
+    border-bottom: 1px solid #8d8d8d;
+  }
+}

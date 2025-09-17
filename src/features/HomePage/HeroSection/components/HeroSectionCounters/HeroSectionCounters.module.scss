@@ -1,0 +1,24 @@
+@use '../../../../../styles/mixins';
+
+.heroSectionCounters {
+  margin-top: 40px;
+  display: flex;
+  column-gap: 20px;
+  flex-wrap: wrap;
+  width: 500px;
+  // width: 100%;
+
+  @include mixins.sm {
+    // display: none;
+    //flex-direction: column;
+    max-width: 500px;
+    width: 100%;
+  }
+
+  &_item {
+    font-size: 14px;
+    max-width: 230px;
+    padding: 10px 0 10px 50px;
+    background: url("../../../../../img/home/heroSection/icons/round-icon.svg") no-repeat left center;
+  }
+}

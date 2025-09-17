@@ -1,0 +1,88 @@
+.balloon {
+    position: absolute;
+    width: 380px;
+    padding: 20px;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.balloonClose {
+    position: absolute;
+    cursor: pointer;
+    line-height: 20px;
+    font-size: 26px;
+    right: 20px;
+    background: none;
+    border: none;
+}
+
+.balloonHeader {
+    display: flex;
+}
+
+.balloonHeaderPicture {
+    height: 80px;
+    width: 80px;
+    border-radius: 40px;
+    overflow: hidden;
+    user-select: none;
+}
+
+.balloonHeaderPictureImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.balloonHeaderInfo {
+    margin-left: 20px;
+    flex-grow: 1;
+}
+
+.balloonHeaderName {
+    font-size: 18px;
+}
+
+.balloonHeaderType {
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+.balloonHeaderRate {
+    margin-top: 4px;
+}
+
+.balloonBody {
+    font-size: 14px;
+}
+
+.balloonBodyAddress {
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+
+.balloonBodyBottom {
+    display: flex;
+    align-items: stretch;
+}
+
+.balloonBodyInfo {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.ballonBodyInfoTitle, .ballonBodyInfoContent {
+    flex-basis: 50%;
+}
+
+.balloonBodyButton {
+    margin-top: 10px;
+    flex-shrink: 0;
+    padding: 10px 15px;
+    font-size: 12px;
+    border-radius: 8px;
+    color: #fff;
+    border: none;
+    background: #D9573B;
+}

@@ -1,0 +1,35 @@
+@use '../../styles/mixins';
+
+.css-1s2u09g-control {
+  border: 2px solid #c5c5c5 !important;
+  border-radius: 10px !important;
+  color: #A4A4A4 !important;
+}
+
+.css-14el2xx-placeholder {
+  color: #A4A4A4 !important;
+  padding: 15px 10px !important;
+
+  @include mixins.md {
+    padding: 10px 5px !important;
+  }
+}
+
+.css-1pahdxg-control {
+  border: 2px solid #2B2B2B !important;
+  box-shadow: none !important;
+  border-radius: 10px !important;
+}
+
+.css-6j8wv5-Input {
+  padding: 15px 10px !important;
+
+  @include mixins.md {
+   padding: 10px 5px !important;
+  }
+}
+
+.custom_nvakasd .css-6j8wv5-Input {
+  // min-width: 365px;
+  // width: 100%;
+}

@@ -1,0 +1,24 @@
+.links_block {
+    display: flex;
+    /* flex-wrap: wrap; */
+
+    position: relative;
+}
+
+.links_block::before {
+    display: block;
+    content: "";
+    position: absolute;
+    /* bottom: -10px; */
+    left: 0;
+    bottom: 0;
+
+    width: 100%;
+    height: 1px;
+    background-color: rgba(128, 128, 128, 0.433);
+    z-index: 10;
+}
+
+.link {
+    padding: 10px 20px;
+}

@@ -1,0 +1,150 @@
+@use '../../../../../styles/mixins';
+
+.registrationMasterMoreInfoPage {
+  margin-top: 150px;
+  margin-bottom: 100px;
+
+  @include mixins.md {
+    margin-top: 120px;
+    margin-bottom: 30px;
+  }
+
+  &_title {
+    font-weight: 400;
+    font-size: 50px;
+    color: #000000;
+    text-align: center;
+
+    @include mixins.md {
+      font-size: 38px;
+    }
+
+    @include mixins.sm {
+      font-size: 30px;
+    }
+  }
+
+  &_form {
+    display: flex;
+    flex-direction: column;
+    margin: 50px auto 0 auto;
+    gap: 20px;
+    max-width: 570px;
+
+    @include mixins.md {
+      margin: 30px auto 0 auto;
+    }
+
+    @include mixins.md {
+      margin: 20px auto 0 auto;
+    }
+
+    &_input {
+      border: 2px solid #c5c5c5;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 16px;
+      color: black;
+
+      @include mixins.md {
+        padding: 15px;
+      }
+    }
+
+    &_input::placeholder {
+      color: #A4A4A4;
+    }
+
+    &_input:focus {
+      border: 2px solid #2B2B2B;
+    }
+
+    &_radio {
+      display: flex;
+      align-content: center;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+
+      @include mixins.sm {
+        display: block;
+      }
+
+      &_input[type="radio"] + &_label {
+        position: relative;
+
+        @include mixins.sm {
+          display: block;
+          margin: 10px 0;
+        }
+
+      }
+
+      &_input[type='radio'] {
+        display: none;
+      }
+
+      &_input[type="radio"] + &_label::before {
+        border: 2px solid black;
+        content: ' ';
+        display: inline-block;
+        margin-right: 5px;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        transition: border 0.15s ease-in-out;
+      }
+
+      &_input[type="radio"] + &_label::after {
+        border: 0 solid orange;
+        content: ' ';
+        background: transparent;
+        display: inline-block;
+        margin-right: 5px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        position: absolute;
+        top: 4.5px;
+        left: 4.5px;
+        transition: border 0.15s ease-in-out;
+      }
+
+      &_input[type="radio"]:checked + &_label::after {
+        background: #D9573B;
+      }
+
+      &_input[type="radio"]:checked + &_label::before {
+        border-color: black;
+      }
+
+      &_input[type="radio"]:checked  {
+        color: #D9573B;
+      }
+    }
+
+    &_button {
+      align-self: center;
+      border: none;
+      background-color: #D9573B;
+      border-radius: 15px;
+      padding: 15px 90px;
+      color: white;
+      font-size: 20px;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background-color: #d9ad3b;
+      }
+
+      @include mixins.md {
+        font-size: 18px;
+        padding: 15px 60px;
+      }
+    }
+  }
+}
+
+.css-319lph-ValueContainer {
+  border: 1px solid red !important;
+}

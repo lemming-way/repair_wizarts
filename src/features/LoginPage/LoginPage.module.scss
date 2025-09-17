@@ -1,0 +1,114 @@
+@use '../../styles/mixins';
+
+.loginPage {
+  margin-top: 150px;
+  margin-bottom: 100px;
+
+  @include mixins.md {
+    margin-top: 120px;
+    margin-bottom: 30px;
+  }
+
+  &_title {
+    font-weight: 400;
+    font-size: 50px;
+    color: #000000;
+    text-align: center;
+
+    @include mixins.md {
+      font-size: 38px;
+    }
+
+    @include mixins.sm {
+      font-size: 30px;
+    }
+  }
+
+  &_form {
+    display: flex;
+    flex-direction: column;
+    margin: 50px auto 0 auto;
+    gap: 20px;
+    max-width: 570px;
+
+    @include mixins.md {
+      margin: 30px auto 0 auto;
+    }
+
+    @include mixins.md {
+      margin: 20px auto 0 auto;
+    }
+
+    &_input {
+      border: 2px solid #c5c5c5;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 16px;
+      color: black;
+
+      @include mixins.md {
+        padding: 15px;
+      }
+    }
+
+    &_input::placeholder {
+      color: #A4A4A4;
+    }
+
+    &_input:focus {
+      border: 2px solid #2B2B2B;
+    }
+
+    &_loginKeep {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+
+      &_input {
+        width: 15px;
+        height: 20px;
+      }
+    }
+
+    &_button {
+      align-self: center;
+      border: none;
+      background-color: #D9573B;
+      border-radius: 15px;
+      padding: 15px 90px;
+      color: white;
+      font-size: 20px;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background-color: #d9ad3b;
+      }
+
+      @include mixins.md {
+        font-size: 18px;
+        padding: 15px 60px;
+      }
+    }
+  }
+
+  &_options {
+    margin-top: 30px;
+    text-align: center;
+
+    &_register {
+      text-decoration: underline;
+    }
+
+    &_recovery {
+      text-decoration: underline;
+      cursor: pointer;
+      display: block;
+      margin-top: 10px;
+    }
+
+    &_register:hover,
+    &_recovery:hover {
+      color: #D9573B;
+    }
+  }
+}

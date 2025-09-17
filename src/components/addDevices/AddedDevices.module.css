@@ -1,0 +1,112 @@
+.block {
+    max-width: 1458px;
+    padding: 0 15px;
+    padding-bottom: 50px;
+    margin: 0 auto;
+}
+
+.block_nav {
+    display: flex;
+    align-items: center;
+    /* justify-content: flex-start;
+    gap: 35px; */
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.button {
+    display: inline-block;
+    border-radius: 10px;
+    width: 200px;
+    height: 50px;
+    background-color: #D9573B;
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mobile__cards {
+    display: none;
+
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.relative {
+    position: relative;
+}
+
+.counter {
+    --size: 25px;
+    width: var(--size);
+    height: var(--size);
+
+    background-color: #D9573B;
+    border-radius: 50%;
+    color: white;
+    border: 2px solid white;
+
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 1200px) {
+    .table {
+        display: none !important;
+    }
+
+    .table_wrap {
+        display: flex;
+        flex-direction: column;
+        /* align-items: center; */
+        justify-content: center;
+    }
+}
+
+@media (max-width: 850px) {
+    .button {
+        position: absolute;
+        top: 200px;
+        left: 160px;
+
+        height: 35px;
+    }
+}
+
+@media (max-width: 800px) {
+    .button {
+        top: 130px;
+        left: 180px;
+    }
+}
+
+@media (max-width: 700px) {
+    .button {
+        top: 130px;
+        left: 140px;
+    }
+}
+
+@media (max-width: 650px) {
+    .button {
+        top: 125px;
+        left: 130px;
+    }
+}
+
+@media (max-width: 430px) {
+    .button {
+        top: 185px;
+        left: 130px;
+    }
+}

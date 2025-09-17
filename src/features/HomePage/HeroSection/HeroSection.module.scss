@@ -1,0 +1,82 @@
+@use '../../../styles/mixins';
+
+
+.heroSection {
+  padding-inline: 60px;
+  padding-top: 180px;
+  padding-bottom: 60px;
+  background-color: #000;
+  color: #fff;
+
+  @include mixins.sm {
+  //  padding-top: 130px;
+  padding: 80px 20px 0;
+
+  }
+
+ &_block {
+   display: flex;
+
+   @include mixins.lg {
+     display: block;
+   }
+
+   &_content {
+     width: 45%;
+
+     @include mixins.lg {
+       width: 100%;
+     }
+
+     &_title {
+       max-width: 523px;
+       font-size: 50px;
+       padding-bottom: 26px;
+
+       @include mixins.lg {
+         max-width: 800px;
+       }
+
+       @include mixins.sm {
+         font-size: 30px;
+       }
+     }
+
+     &_subtitle {
+       font-weight: 400;
+       font-size: 24px;
+       line-height: 29px;
+
+       @include mixins.sm {
+         font-size: 16px;
+         line-height: 22px;
+       }
+     }
+
+     &_button {
+       color: #fff;
+       display: inline-block;
+       padding: 10px 60px;
+       margin-top: 30px;
+       border-radius: 20px;
+       font-size: 14px;
+       background-color: #D9573B;
+       transition: background-color 0.3s ease;
+
+       &:hover {
+         background-color: #d9ad3b;
+       }
+     }
+   }
+
+   &_swiper {
+     width: 55%;
+
+     @include mixins.lg {
+       width: 100%;
+       margin-top: 30px;
+     }
+   }
+ }
+
+}

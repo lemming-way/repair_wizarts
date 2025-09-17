@@ -1,0 +1,441 @@
+.main-optifdsaons {
+    padding-top: 50px;
+}
+
+.multiselect {
+    width: 200px;
+}
+
+.selectBox {
+    position: relative;
+}
+
+.selectBox select {
+    width: 100%;
+    font-weight: bold;
+}
+
+.overSelect {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+#checkboxes {
+    display: none;
+    padding: 19px 0px 31px 14px;
+    background: #FFFFFF;
+    box-shadow: 0px 20px 40px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+#checkboxes label {
+    display: block;
+}
+
+
+
+#checkboxes label input {
+    margin-right: 10px;
+}
+
+#checkboxes label:first-child {
+    margin-bottom: 10px;
+}
+
+
+
+
+
+.img-content img {
+    padding: 2px;
+    border: 1px solid #fff;
+    border-radius: 50px;
+}
+
+.img-content h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 23px;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+}
+
+
+
+.stars p {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 24px;
+    margin: 15px 0;
+    color: #fff;
+}
+
+.stars img {
+    margin: 0 6px;
+}
+
+.ul-wrap li a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FDFDFD;
+    cursor: pointer;
+}
+
+.ul-wrap li {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 20px 60px;
+}
+
+.ul-wrap li img {
+    margin: 0 10px 0 0;
+}
+
+.active {
+    background-color: #353535;
+}
+
+.ul-wrap {
+    flex: 1 1 auto;
+    margin: 80px 0 0 0;
+}
+
+.left-content {
+    background-color: #131313;
+    width: 278px;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.dffds {
+    text-align: center;
+    padding-top: 49px;
+}
+
+.icon h2 {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FFFFFF;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+}
+
+.icon {
+    align-items: center;
+    margin: 130px 0 0 60px;
+    padding-bottom: 50px;
+}
+
+.block-info-8 {
+    padding: 70px 115px 0 115px;
+}
+
+.setting h1 {
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 46px;
+    color: #000000;
+}
+
+.setting img {
+    margin: 0 23px;
+}
+
+.setting {
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 10px 0;
+    border-bottom: 1px solid #C5C5C5;
+}
+
+.mini-wrap h3 {
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 30px;
+    color: #000000;
+    padding: 30px 0;
+    cursor: pointer;
+}
+
+.active2 {
+    border-bottom: 5px solid #D9573B;
+}
+
+.mini-wrap {
+    border-bottom: 1px solid #C5C5C5;
+    margin: 10px 0 0 0;
+}
+
+.main-options {
+    margin: 50px 0 0 0;
+    /* justify-content: space-between; */
+}
+
+/*the container must be positioned relative:*/
+.custom-select {
+    position: relative;
+}
+
+.second-one,
+.third-one {
+    margin: 0 150px 0 0;
+}
+
+
+
+.select-selected {
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+    border-radius: 10px;
+    width: 250px;
+}
+
+/*style the arrow inside the select element:*/
+.select-selected:after {
+    position: absolute;
+    content: "";
+    top: 14px;
+    right: -40px;
+    width: 0;
+    height: 0;
+    border: 6px solid transparent;
+    border-color: #000 transparent transparent transparent;
+}
+
+/*point the arrow upwards when the select box is open (active):*/
+.select-selected.select-arrow-active:after {
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+}
+
+/*style the items (options), including the selected item:*/
+.select-items div,
+.select-selected {
+    color: #000;
+    padding: 8px 20px;
+    background-color: #fff;
+    border: 2px solid #C5C5C5;
+    cursor: pointer;
+    user-select: none;
+    width: 250px;
+}
+
+/*style items (options):*/
+.select-items {
+    position: absolute;
+    background-color: #fff;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 99;
+}
+
+/*hide the items when the select box is closed:*/
+.select-hide {
+    display: none;
+}
+
+.select-items div:hover,
+.same-as-selected {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1875px) {
+    .icon {
+        padding-bottom: 31px;
+    }
+}
+
+@media (max-width: 1350px) {
+    .block-info-8 {
+        padding: 70px 0 0 30px;
+    }
+}
+
+@media (max-width: 1350px) {
+    .setting {
+        width: 800px;
+    }
+
+    .mini-wrap {
+        width: 800px;
+    }
+
+    .second-one,
+    .third-one {
+        margin: 0 75px 0 0;
+    }
+}
+
+@media (max-width: 1350px) {
+    .setting {
+        width: 740px;
+    }
+
+    .mini-wrap {
+        width: 740px;
+    }
+
+    .second-one,
+    .third-one {
+        margin: 0 60px 0 0;
+    }
+
+    .select-selected {
+        width: 200px;
+    }
+
+    .select-selected:after {
+        right: 16px;
+    }
+}
+
+@media (max-width: 1350px) {
+    .setting {
+        width: 640px;
+    }
+
+    .mini-wrap {
+        width: 640px;
+    }
+
+    .second-one,
+    .third-one {
+        margin: 0 20px 0 0;
+    }
+
+    .select-selected {
+        width: 200px;
+    }
+
+    .main-optifdsaons {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+}
+
+@media (max-width: 955px) {
+    .left-content {
+        width: 250px;
+    }
+
+    .stars img {
+        margin: 0 4px;
+    }
+
+    .setting {
+        width: 600px;
+    }
+
+    .mini-wrap {
+        width: 600px;
+    }
+
+    .second-one,
+    .third-one {
+        margin: 0 10px 0 0;
+    }
+
+    .select-selected {
+        width: 180px;
+    }
+
+    .select-selected:after {
+        right: 26px;
+    }
+}
+
+@media (max-width: 880px) {
+    .main {
+        display: block;
+    }
+
+    .left-content {
+        width: 278px;
+    }
+
+    .stars img {
+        margin: 0 6px;
+    }
+
+    .block-info-8 {
+        padding: 70px 0 30px 30px;
+    }
+
+    .main-options {
+        flex-direction: column;
+        row-gap: 20px;
+    }
+
+    .select-selected {
+        width: 220px;
+    }
+
+    .select-selected:after {
+        right: -5px;
+    }
+}
+
+@media (max-width: 700px) {
+    .main-optifdsaons {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+}
+
+@media (max-width: 630px) {
+    .setting {
+        width: 500px;
+    }
+
+    .mini-wrap {
+        width: 500px;
+    }
+
+}
+
+@media (max-width: 530px) {
+    .setting {
+        width: 400px;
+    }
+
+    .mini-wrap {
+        width: 400px;
+    }
+
+    .gosbnf {
+        display: flex;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 435px) {
+    .setting {
+        width: 360px;
+    }
+
+    .mini-wrap {
+        width: 360px;
+    }
+}
+
+@media (max-width: 435px) {
+    .setting {
+        width: 330px;
+    }
+
+    .mini-wrap {
+        width: 330px;
+    }
+
+    .mini-wrap h3 {
+        font-size: 21px;
+    }
+}

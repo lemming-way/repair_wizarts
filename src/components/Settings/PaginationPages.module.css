@@ -1,0 +1,28 @@
+.wrap {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.btn {
+    --size: 25px;
+    width: var(--size);
+    height: var(--size);
+    /* padding: 5px; */
+    /* color: white; */
+    /* background-color: #E5E5E5; */
+    background-color: white;
+    color: black;
+    border: 1px solid #e9e9e9;
+    border-radius: 2px;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn:hover {
+    background-color: #e9e9e9;
+    transition: .1s;
+}

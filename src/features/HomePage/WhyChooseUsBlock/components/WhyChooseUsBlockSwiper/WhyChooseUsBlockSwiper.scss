@@ -1,0 +1,14 @@
+@use '../../../../../styles/mixins';
+
+.whyChooseUsBlockSwiperSlider {
+  height: 100%;
+
+  &_item {
+    height: auto;
+  }
+
+  .swiper-button-prev,
+  .swiper-button-next {
+    color: #DECB8D;
+  }
+}

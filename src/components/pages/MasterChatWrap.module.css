@@ -1,0 +1,23 @@
+.main_block {
+    /* padding-top: 70px; */
+    display: flex;
+    align-items: flex-start;
+    padding-left: 278px;
+
+    box-sizing: border-box;
+}
+
+.content_block {
+    width: 100%;
+}
+
+@media (max-width: 1110px) {
+    .main_block {
+        padding-left: 0;
+    }
+}
+
+/* 
+.content_block section {
+    padding-top: 0;
+} */

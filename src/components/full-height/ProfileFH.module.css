@@ -1,0 +1,43 @@
+.input_wrap {
+    position: relative;
+}
+
+.password_icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    cursor: pointer;
+}
+
+.main_block {
+    padding-top: 100px;
+}
+
+.block_settings_client {
+    padding-left: 10%;
+}
+
+@media (max-width: 870px) {
+    .block_settings_client {
+        padding-left: 20px;
+    }
+}
+
+.error_block {
+    width: 426px;;
+    margin-top: 10px;
+    margin-bottom: -20px;
+}
+
+@media (max-width: 820px) {
+    .error_block {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+@media (max-width: 470px) {
+    .error_block {
+        width: 350px;
+    }
+}

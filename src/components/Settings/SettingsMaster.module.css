@@ -1,0 +1,41 @@
+.error {
+    width: 426px;
+    margin-bottom: 0;
+}
+
+.buttons_row {
+    margin-top: 20px;
+}
+
+@media (max-width: 780px) {
+    .form_wrap_flex {
+        flex-direction: column-reverse;
+        /* gap: 0; */
+        padding-top: 20px;
+        align-items: center;
+    }
+
+}
+
+@media (max-width: 450px) {
+    .error {
+        width: 100%;
+    }
+
+    .form {
+        width: 95vw;
+    }
+
+    .form > *,
+    .form > div > div,
+    .form input {
+        width: 100%;
+    }
+
+    .buttons_row {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}

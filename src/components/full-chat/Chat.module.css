@@ -1,0 +1,211 @@
+.container {
+    display: flex;
+    overflow: hidden;
+    padding-top: 75px;
+    height: 100vh;
+    width: 100%;
+}
+
+.content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.content_empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.contentTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+}
+
+.contentMain {
+    height: 100%;
+    overflow-y: scroll;
+    background: #F6F8F9;
+    border-top: 1px solid #e9eaf1;
+    border-bottom: 1px solid #e9eaf1;
+}
+
+.messageFile {
+    display: flex;
+    align-items: stretch;
+}
+
+.messageFileLink {
+    display: flex;
+    align-items: center;
+    color: #000;
+    padding: 10px 14px;
+    margin: 10px 0;
+    background: #F6F8F9;
+    border: 1px solid #e9eaf1;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.messageFileImage {
+    width: 18px;
+    margin-right: 9px;
+}
+
+.messageFileDelete {
+    font-size: 20px;
+    visibility: hidden;
+    cursor: pointer;
+    width: 0px;
+    padding-top: 20px;
+    text-align: center;
+    transition: 150ms width;
+}
+
+.messageContentTitle {
+    align-items: center;
+}
+
+.messageContentSMS {
+    display: flex;
+}
+
+.myMessage {
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+.myMessage .messageContent {
+    align-items: center;
+    flex-direction: row-reverse;
+}
+
+.myMessage .messageContentTitle {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+    width: auto;
+}
+
+.messageContentTitle > span {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.messageContentMain {
+    margin: 0 20px;
+}
+
+.myMessage .messageContentSMS {
+    justify-content: flex-end;
+}
+
+.myMessage .messageText {
+    color: #fff;
+    background: #D9573B
+}
+
+.messageActive {
+    background: #DEDEDE;
+}
+
+.messageActive .messageText {
+    background: #A8A8A8;
+}
+
+.order {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px 16px;
+}
+
+.orderTitle {
+    cursor: pointer;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    white-space: nowrap;
+    font-size: 24px;
+    max-width: 800px;
+}
+
+.orderTitleOpen {
+    white-space: normal;
+}
+
+.orderStatus {
+    margin-left: 10px;
+    padding: 5px 10px;
+    background: #D9573B;
+    font-size: 12px;
+    border-radius: 8px;
+    color: #fff;
+}
+
+.orderButton {
+    margin-left: 10px;
+    padding: 12px 32px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: none;
+    background: #D9573B;
+    color: #fff;
+}
+
+.empty_chat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.empty_chat img {
+    width: 161px;
+}
+
+.empty_chat p {
+    color: #515151;
+    font-size: 20px;
+}
+
+.dotted {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.dotted > div {
+    --size: 7px;
+    width: var(--size);
+    height: var(--size);
+    border-radius: 50%;
+    background-color: gray;
+}
+
+.drop_button {
+    /* padding: 5px; */
+    background-color: unset !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.drop_button:hover {
+    background-color: rgba(128, 128, 128, 0.422) !important;
+}
+
+.drop_menu {
+    right: unset;
+    left: 0;
+}
+
+.drop_menu li {
+    font-size: 15px;
+    font-weight: 500;
+}

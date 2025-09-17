@@ -1,0 +1,420 @@
+.blockPayment_wrap {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.311);
+    width: 100%;
+    height: 100%;
+    z-index: 115;
+    top: 0;
+    left: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.blockConfirm_wrap {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.311);
+    width: 100%;
+    height: 100%;
+    z-index: 115;
+    top: 0;
+    left: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.blockPayment {
+    position: relative;
+
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px 40px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+
+    max-width: 800px;
+
+    h2 {
+        text-align: center;
+    }
+
+    p {
+        text-align: left;
+    }
+}
+
+@media (max-width: 700px) {
+    .blockPayment {
+        width: 95%;
+        padding-top: 20px;    
+    }
+}
+
+
+
+
+.block {
+    width: 300px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+    input {
+        --size: 20px;
+        width: var(--size);
+        height: var(--size);
+        cursor: pointer;
+    }
+
+    label {
+        cursor: pointer;
+    }
+}
+
+.block_v2 {
+    width: 300px;
+
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+
+    input {
+        --size: 20px;
+        width: var(--size);
+        height: var(--size);
+        cursor: pointer;
+    }
+
+    label {
+        cursor: pointer;
+    }
+
+    @media (max-width: 700px) {
+            width: 250px;
+            // padding-top: 20px;    
+    }
+    
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    cursor: pointer;
+}
+
+.close:hover {
+    scale: 1.1;
+}
+
+.radio {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+
+    @media (max-width: 600px) {
+        flex-direction: column;   
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+}
+
+
+
+.mini_text {
+    font-size: 12px;
+}
+
+.button_confirm {
+    background-color: #D9573B;
+    color: white;
+    border-radius: 4px;
+    width: 127px;
+    height: 40px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.button_confirm:hover {
+    background-color: #ff6f4f;
+}
+
+.error {
+    background-color: #D9573B;
+    border-radius: 10px;
+    color: white;
+    // font-weight: 600;
+    font-size: 16px;
+
+    width: 95%;
+    max-width: 700px;
+    height: 42px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.swiper {
+    width: 360px;
+}
+
+.swiper__slide {
+    // padding-left: 20px;
+    // margin-right: 10px !important;
+}
+
+// вместо картинок тестовый блок
+.slide__empty {
+    width: 100px;
+    height: 100px;
+    background-color: rgba(128, 128, 128, 0.712);
+    border-radius: 10px;
+}
+
+// спайпер с ценами
+.swiper_price {
+    width: 100%;
+}
+
+.container_service {
+    margin: 0;
+    padding: 100px 30px 50px;
+
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.iphone_mobile {
+    display: none;
+
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.iphone_mobile__img {
+    width: 540px;
+    height: 570px;
+    object-fit: contain;
+}
+
+@media (max-width: 600px) {
+    .iphone_mobile__img {
+        width: 70%;
+        height: auto;
+    }
+}
+
+.orders_list {
+    width: 765px;
+    margin-bottom: 30px;
+    position: relative;
+    padding-bottom: 50px;
+}
+
+.button_services {
+    padding: 13px 32px;
+    width: 712px;
+    // max-width: 250px;
+    background: #D9573B;
+    border-radius: 10px;
+    font-style: normal;
+    font-weight: 400;
+    border: 0;
+    cursor: pointer;
+    font-size: 20px;
+    color: #FFFFFF;
+}
+
+.button {
+    margin-top: 53px;
+    padding: 13px 32px;
+    width: 200px;
+    // max-width: 250px;
+    background: #D9573B;
+    border-radius: 10px;
+    font-style: normal;
+    font-weight: 400;
+    border: 0;
+    cursor: pointer;
+    font-size: 20px;
+    color: #FFFFFF;
+    margin: auto;
+    text-align: center;
+}
+
+.button_absolut {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+.button_wrap {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.button_go {
+    margin-top: 53px;
+    padding: 13px 32px;
+    width: 150px;
+    // max-width: 250px;
+    background: #D9573B;
+    border-radius: 10px;
+    font-style: normal;
+    font-weight: 400;
+    border: 0;
+    cursor: pointer;
+    font-size: 20px;
+    color: #FFFFFF;
+    margin: auto;
+}
+
+@media (max-width: 1400px) {
+    .container_service {
+        flex-direction: column-reverse;
+        align-items: center;
+        padding-top: 80px;
+   }
+
+   .button_wrap {
+    justify-content: center;
+   }
+
+   .iphone_desktop {
+        display: none;
+   }
+
+   .iphone_mobile {
+       display: flex;
+   }
+
+   .orders_list {
+        width: max-content;
+        padding-right: 10px;
+        margin: auto;
+        margin-bottom: 30px;
+    }
+
+    .button_services {
+        margin-right: 20px;
+    }
+
+}
+
+@media (max-width: 1210px) {
+    .button_services {
+        width: 656px;
+        // margin-left: 47px;
+    }
+}
+
+@media (max-width: 800px) {
+    .button_services {
+        margin-left: 0px;
+    }
+}
+
+
+@media (max-width: 775px) {
+
+    .order_row {
+        width: 95%;
+    }
+}
+
+@media (max-width: 760px) {
+    .button_services {
+        width: 440px;
+        // margin-left: 55px;
+        margin-right: 40px;
+    }
+}
+
+
+@media (max-width: 600px) {
+    .order_row {
+        width: 400px;
+    }
+
+    .orders_list {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .button_services {
+        width: 400px;
+        margin: auto;
+        position: relative;
+        right: 10px;
+    }
+
+}
+
+@media (max-width: 550px) {
+    .modal_from_row {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 500px) {
+    .order_row {
+        width: 350px;
+    }
+
+    .button_services {
+        width: 350px;
+        margin: 0;
+        margin-right: 5px;
+    }
+
+}
+
+@media (max-width: 420px) {
+    .order_row {
+        width: 320px;
+    }
+
+    .button_services {
+        width: 320px;
+    }
+}
+
+
+.fix_btn {
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+

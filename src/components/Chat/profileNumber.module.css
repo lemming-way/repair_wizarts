@@ -1,0 +1,25 @@
+.stars_row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+
+    margin: 10px 0;
+}
+
+.stars_row p {
+    margin-left: 10px;
+}
+
+.comment_body {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.button {
+    border: none;
+    outline: none;
+    background-color: #D9573B;
+    padding: 10px 20px;
+    border-radius: 10px;
+    color: white;
+}

@@ -1,0 +1,25 @@
+.wrap_custom_field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 426px;
+}
+
+@media (max-width: 830px) {
+    .wrap_flex {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wrap_check {
+        width: 100%;
+        max-width: 426px;
+    }
+}
+
+@media (max-width: 470px) {
+    .wrap_custom_field {
+        width: 350px;
+    }
+}

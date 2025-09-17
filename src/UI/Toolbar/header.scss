@@ -1,0 +1,58 @@
+.header {
+    &__profile {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        @media (max-width: 1200px) {
+            margin-right: 20px;
+        }
+
+        @media (max-width: 500px) {
+            gap: 10px;
+        }
+    }
+
+    &__icons {
+        --size: 30px;
+        width: var(--size);
+        height: var(--size);
+
+        border-radius: 50%;
+        border: 2px solid white;
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        img {
+            width: 60%;
+        }
+    }
+
+    &__button {
+        border: none;
+        border-radius: 10px;
+
+        &:hover {
+            background-color: #d9ad3b;
+        }
+
+        @media (max-width: 520px) {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin: 0;
+        }
+    }
+
+    
+    @media (max-width: 1200px) {
+        &__visible-mobile {
+        display: none;
+        }
+    }
+}
+
+.master__moneys {
+    color:  white;
+}

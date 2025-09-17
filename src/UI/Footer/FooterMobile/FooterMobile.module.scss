@@ -1,0 +1,26 @@
+@use '../../../styles/mixins';
+
+.mobileFooter {
+  margin-top: 10px;
+
+  &_mainBlock {
+    display: flex;
+    flex-direction: column-reverse;
+    border-top: 2px solid #C5C5C5;
+    margin-top: 20px;
+
+    //&_services {
+    //  border-top: 2px solid #C5C5C5;
+    //  max-width: 45%;
+    //  margin-top: 20px;
+    //  padding-top: 20px;
+    //}
+
+    &_corpInfo {
+      display: flex;
+      flex-direction: row-reverse;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+  }
+}

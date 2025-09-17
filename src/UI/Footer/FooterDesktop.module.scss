@@ -1,0 +1,72 @@
+ @use '../../styles/mixins';
+
+.footer_master {
+  padding-left: 278px;
+
+  @media (max-width: 1110px) {
+    padding-left: 0;
+  }
+}
+
+.footer {
+  background-color: #f4f4f4;
+
+
+  ul {
+    li {
+      margin-bottom: 10px;
+
+      a {
+        color: inherit;
+      }
+    }
+  }
+
+  &_footerContainer {
+    max-width: 1458px;
+    padding: 30px 15px;
+    margin: 0 auto;
+
+    @include mixins.md {
+      padding-top: 0
+     }
+
+    &_inner {
+      display: flex;
+      justify-content: space-between;
+
+      @include mixins.md {
+        display: none;
+      }
+    }
+
+    &_politics {
+      display: flex;
+      margin-top: 20px;
+      justify-content: end;
+
+      li {
+        list-style: disc;
+        text-decoration: underline;
+      }
+
+      @include mixins.sm {
+        margin-left: 15px;
+      }
+    }
+  }
+
+  &_mobile {
+    display: none;
+
+    @include mixins.md {
+     display: block;
+     padding-top: 15px;
+     padding-right: 15px;
+    }
+  }
+}
+
+
+
+

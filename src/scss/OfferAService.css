@@ -1,0 +1,624 @@
+.img-content img {
+    padding: 2px;
+    border: 1px solid #fff;
+    border-radius: 50px;
+}
+
+
+.block-info-5 {
+    width: 79%;
+}
+
+.first-option {
+    align-items: center;
+}
+
+
+.mysuggest__title {
+    width: 459px;
+    margin: 0 auto;
+    margin-bottom: 76px;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 20px;
+    color: #030303;
+}
+
+.doneofferasevice {
+    padding: 19px 45px !important;
+}
+
+.img-content h3 {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 23px;
+    color: #FFFFFF;
+    margin: 5px 0 0 0;
+}
+
+
+.third-option {
+    display: flex;
+    align-items: center;
+}
+
+.stars p {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 24px;
+    margin: 15px 0;
+    color: #fff;
+}
+
+.stars img {
+    margin: 0 6px;
+}
+
+.ul-wrap li a {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FDFDFD;
+    cursor: pointer;
+}
+
+.ul-wrap li {
+    display: flex;
+    align-items: center;
+    padding: 20px 0 20px 60px;
+}
+
+
+.ul-wrap li img {
+    margin: 0 10px 0 0;
+}
+
+.active {
+    background-color: #353535;
+}
+
+.ul-wrap {
+    flex: 1 1 auto;
+    margin: 80px 0 0 0;
+}
+
+.left-content {
+    background-color: #131313;
+    width: 278px;
+    display: flex;
+    flex-direction: column;
+    height: 92.4vh;
+}
+
+.dffds {
+    text-align: center;
+    padding-top: 49px;
+}
+
+.icon h2 {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 19px;
+    color: #FFFFFF;
+    padding: 0 0 0 10px;
+    cursor: pointer;
+}
+
+.icon {
+    align-items: center;
+    margin: 130px 0 0 60px;
+    padding-bottom: 50px;
+}
+
+.block-info-4 {
+    padding: 47px 0 0 85px;
+}
+
+.huge-content h1 {
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 46px;
+    color: #000000;
+    padding: 0 0 0 20px;
+}
+
+.huge-input-content input::placeholder {
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 16px;
+    color: #000000;
+}
+
+.huge-input-content input {
+    width: 228px;
+    height: 32px;
+    border: 1px solid #C5C5C5;
+    border-radius: 5px;
+    padding: 0 0 0 7px;
+    outline: none;
+}
+
+.only-input input {
+    width: 342px;
+    height: 68px;
+}
+
+.two-input {
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+}
+
+.huge-input-content {
+    justify-content: space-between;
+    width: 48%;
+    margin: 45px 0 0 0;
+}
+
+.img-user h4 {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #000000;
+    margin: 0 0 17px 20px;
+    width: 295px;
+}
+
+.img-user {
+    align-items: center;
+}
+
+.small-content-user h4 {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #000000;
+    margin: 75px 0 0 0;
+}
+
+.small-content-user h5 {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #000000;
+    margin: 10px 0 0 0;
+}
+
+.small-content-user p {
+    font-weight: 400;
+    font-size: 12pt;
+    line-height: 16px;
+    color: #000000;
+    width: 50%;
+}
+
+.small-content-user h6 {
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 15px;
+    color: #000000;
+    width: 50%;
+}
+
+.small-into-small {
+    margin: 63px 0 0 0;
+}
+
+.kichkina p {
+    font-weight: 400;
+    font-size: 15px;
+    line-height: 18px;
+    color: #000000;
+    padding: 0 0 0 15px;
+}
+
+.info-user h3 {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #000000;
+    margin: 11px 0 0 0;
+}
+
+.info-user {
+    margin: 0 0 0 30px;
+}
+
+.slider-user button {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 23px;
+    color: #FFFFFF;
+    background: #D9573B;
+    border-radius: 15px;
+    padding: 15px 60px;
+    border: none;
+    margin: 30px 0 0 0;
+}
+
+
+.slider-content {
+    justify-content: space-between;
+    flex-direction: column;
+    align-items: center;
+    height: auto;
+}
+
+.img__2 {
+    background: #F8F9FB;
+    border-radius: 16px;
+    width: 199px;
+    height: 169px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 12px;
+}
+
+
+.info-about-person {
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #C5C5C5;
+    border-radius: 15px;
+    padding: 20px;
+    margin: 40px 0 0 0;
+}
+
+.two-content h1 {
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 56px;
+    color: #000000;
+}
+
+.two-content button {
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 25px;
+    color: #000000;
+    padding: 15px 50px;
+    border: 1px solid #C5C5C5;
+    border-radius: 15px;
+    background-color: #fff;
+    margin: 15px 0 0 0;
+}
+
+.two-content {
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 25px 0;
+}
+
+.block-info-5 {
+    padding: 43px 0 0 72px;
+}
+
+.area-content h1 {
+    font-weight: 400;
+    font-size: 48px;
+    line-height: 56px;
+    color: #000000;
+    margin: 67px 0 43px 0;
+}
+
+.area-content textarea {
+    font-size: 13pt;
+    outline: none;
+    width: 100%;
+    height: 229px;
+    background: #FFFFFF;
+    border: 1px solid #C5C5C5;
+    border-radius: 15px;
+    padding: 28px 0 0 29px;
+}
+
+.area-content textarea::placeholder {
+    font-weight: 400;
+    font-size: 18px;
+    line-height: 21px;
+    color: #000000;
+}
+
+.area-content img {
+    margin: 0 23px 0 0;
+    width: 55.83px;
+    height: 49.5px;
+}
+
+.first-option h2 {
+    font-weight: 400;
+    font-size: 36px;
+    line-height: 42px;
+    color: #000000;
+    margin: 0 0 0 18px;
+}
+
+.first-option {
+    align-items: center;
+}
+
+.second-option input {
+    width: 228px;
+    height: 53px;
+    border: 3px solid #C4C4C4;
+    border-radius: 8px;
+    padding: 0 0 0 20px;
+}
+
+.second-option img {
+    transform: translateY(10px);
+    margin-left: 6px;
+}
+
+.second-option p {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #000000;
+}
+
+.second-option button {
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 28px;
+    color: #FFFFFF;
+    background: #D9573B;
+    border-radius: 15px;
+    padding: 15px 111px 15px 71px;
+    border: #D9573B;
+}
+
+
+.option-content {
+    justify-content: space-between;
+    margin: 15px 0;
+}
+
+
+
+
+#time {
+    background: #fff;
+    border: 2px solid #C5C5C5;
+    border-radius: 10px;
+    -webkit-appearance: none;
+    -moz-appearance: none;  
+    color: #494949;
+    padding: 20px 31px;
+    font-style: normal;
+    font-weight: 400;
+    background: url() white no-repeat calc(100% - 10px) !important;
+    font-size: 16px;
+    outline: none;
+    background: url("../../public/img/bot.png") white no-repeat calc(100% - 10px) !important; /* Better placement regardless of input width */
+    max-width: 300px;
+}
+
+#time::-ms-expand { display: none; }
+
+
+#time:focus {
+    border: 2px solid #2B2B2B;
+}
+
+#time option {
+    font-style: normal;
+    font-weight: 400;
+    font-size: 19px;
+}
+
+
+.offer-continue__wrapper {
+    text-align: center;
+    padding-top: 94px;
+}
+
+.offer-continue {
+    background: #D9573B;
+    border-radius: 15px;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 24px;
+    border: 0;
+    padding: 16px 71px;
+    text-align: center  ;
+    color: #FFFFFF;
+}
+
+@media (max-width: 1750px) {
+    .area-content textarea {
+        width: 859px;
+    }
+}
+
+@media (max-width: 1690px) {
+
+    .area-content textarea {
+        width: 840px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .block-info-5 {
+        padding: 43px 0 0 37px;
+    }
+
+    .area-content textarea {
+        width: 723px;
+    }
+
+    .left-content {
+        height: 151.5vh;
+    }
+}
+
+@media (max-width: 1135px) {
+    .block-info-5 {
+        padding: 43px 0 0 15px;
+    }
+
+
+    .area-content textarea {
+        width: 400px;
+    }
+
+    .third-option {
+        display: flex;
+        row-gap: 30px;
+    }
+
+
+    .third-option img {
+        width: 69px;
+        height: 63px;
+    }
+
+    .info-about-person {
+        flex-direction: column;
+    }
+
+    .two-content h1 {
+        font-size: 36px;
+    }
+
+    .left-content {
+        height: 188.5vh;
+    }
+}
+
+@media (max-width: 990px) {
+
+    .second-option button {
+        padding: 15px 65px 15px 50px;
+    }
+}
+
+@media (max-width: 785px) {
+    .main {
+        display: block;
+    }
+
+    .left-content {
+        height: 100vh;
+    }
+
+
+
+
+    .area-content textarea {
+        width: 450px;
+    }
+
+    .third-option {
+        display: flex!important;
+    }
+
+    .option-content {
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .first-option {
+        margin: 0 0 40px 0;
+    }
+
+    .second-option, .third-option {
+        margin: 10px 0;
+    }
+
+    .block-info-5{
+        padding: 43px 0 0 25px;
+    }
+}
+
+
+
+@media (max-width: 610px) {
+
+    .area-content textarea {
+        width: 400px;
+    }
+
+    .kichkina {
+        flex-direction: column;
+    }
+
+    .kichkina img {
+        width: 50px;
+        height: 50px;
+    }
+    .small-into-small {
+        flex-direction: column;
+        align-items: center;
+        row-gap: 20px;
+    }
+
+    .small-content-user {
+        text-align: center;
+    }
+
+    .img-user {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 10px;
+    }
+
+    .two-content {
+        flex-direction: column;
+    }
+
+    .info-user h3 {
+        width: 30%;
+    }
+
+    .kichkina p {
+        padding: 0 0 0 0;
+    }
+
+    .area-content h1 {
+        width: 40%;
+    }
+
+    .area-content textarea {
+        width: 320px;
+    }
+}
+
+@media (max-width: 450px) {
+    .info-about-person {
+        width: 350px;
+        height: 803px;
+        padding: 0 0 20px 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .info-about-person {
+        height: 813px;
+        padding: 0;
+    }
+}
+
+@media (max-width: 410px) {
+    .info-about-person {
+        padding: 10px 0 20px 0;
+    }
+}
+
+@media (max-width: 380px) {
+    .info-about-person {
+        width: 320px;
+        padding: 10px 0 20px 0;
+    }
+
+    .first-option {
+        transform: translateX(79px);
+    }
+
+
+    .two-content {
+        width: 301px;
+    }
+}

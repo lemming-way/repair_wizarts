@@ -1,0 +1,57 @@
+.input_wrap {
+    position: relative;
+}
+
+.password_icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    cursor: pointer;
+}
+
+.main_block {
+    padding-top: 100px;
+}
+
+.block_settings_client {
+    /* padding-left: 10%;
+    padding-bottom: 50px; */
+    max-width: 1458px;
+    padding: 0 15px;
+    padding-bottom: 50px;
+    margin: 0 auto;
+}
+
+@media (max-width: 870px) {
+    .block_settings_client {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+.block_heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    width: 100%;
+    max-width: 830px;
+    /* border-bottom: 1px solid gray; */
+}
+
+.block_heading h1 {
+    margin-bottom: 20px;
+}
+
+.arrows_block {
+    display: none;
+}
+
+@media (max-width: 800px) {
+    .arrows_block {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+}

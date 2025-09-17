@@ -1,0 +1,19 @@
+@use '../../styles/mixins';
+
+.notFoundPage {
+  margin-top: 150px;
+  text-align: center;
+
+    &_title {
+      font-weight: 400;
+      font-size: 50px;
+
+      @include mixins.md {
+        font-size: 38px;
+      }
+
+      @include mixins.sm {
+        font-size: 30px;
+      }
+    }
+}

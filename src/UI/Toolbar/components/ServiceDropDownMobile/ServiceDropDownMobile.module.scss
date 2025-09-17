@@ -1,0 +1,22 @@
+.serviceDropdown {
+  color: white;
+  background-color: #000;
+  max-width: 270px;
+  margin-right: 20px;
+
+  &_list {
+    &_item {
+      border-bottom: 2px solid #515151;
+      display: flex;
+      justify-content: space-between;
+
+      &_arrow {
+        cursor: pointer;
+      }
+
+      &_dropdown {
+        background-color: #000;
+      }
+    }
+  }
+}
