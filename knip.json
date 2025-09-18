@@ -1,0 +1,15 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  "entry": [
+    "src/index.jsx",
+  ],
+  "project": ["src/**/*.{js,jsx,ts,tsx,css,scss,svg}"],
+  "ignore": [
+    "src/setupTests.js",
+    "src/reportWebVitals.js",
+    "**/node_modules/**",
+    "**/*.d.ts",
+    "public/**/*",
+    "build/**/*"
+  ],
+}
