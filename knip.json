@@ -2,14 +2,32 @@
   "$schema": "https://unpkg.com/knip@latest/schema.json",
   "entry": [
     "src/index.jsx",
+    "src/components/menu/SidebarMenu.tsx",
+    "src/components/Settings/Navigation.jsx",
+    "src/components/Orders/Myorders.jsx",
+    "src/components/Pick-master/Reviews-master.jsx",
+    "src/features/LoginPage/LoginPage.tsx",
+    "src/components/dropdownMaster.tsx",
+    "src/features/RegistrationPage/RegistrationMasterPage/components/RegistrationMasterMoreInfoPage/RegistrationMasterMoreInfoPage.tsx",
+    "src/features/RegistrationPage/RegistrationUserPage/RegistrationUserPage.tsx",
+    "src/features/RegistrationPage/RegistrationPickPage/components/RegistrationPickSwiper/RegistrationPickSwiper.tsx",
+    "src/features/NotFoundPage/NotFoundPage.tsx",
+    "src/features/RegistrationPage/RegistrationPickPage/RegistrationPickPage.tsx",
+    "src/features/HomePage/HomePage.tsx",
+    "src/features/HomePage/WhyChooseUsBlock/components/WhyChooseUsBlockSwiper/WhyChooseUsBlockSwiper.tsx",
+    "src/UI/Toolbar/components/ToolbarSearchBar/ToolbarSearchBar.tsx",
+    "src/components/Footer.tsx",
+    "src/components/Registration/Login.jsx",
   ],
-  "project": ["src/**/*.{js,jsx,ts,tsx,css,scss,svg}"],
+  "project": ["src/**/*.{js,jsx,ts,tsx,json,css,scss,svg,png,wav}"],
   "ignore": [
     "src/setupTests.js",
     "src/reportWebVitals.js",
     "**/node_modules/**",
-    "**/*.d.ts",
     "public/**/*",
     "build/**/*"
   ],
+  "webpack": {
+	  "config": "node_modules/react-scripts/config/webpack.config.js"
+  }
 }
