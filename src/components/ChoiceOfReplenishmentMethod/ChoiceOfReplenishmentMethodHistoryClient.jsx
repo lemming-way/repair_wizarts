@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { getBalanceHistory } from '../../services/balance.service';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
@@ -11,8 +10,7 @@ function ChoiceOfReplenishmentMethodHistoryClient() {
   useEffect(() => {
     if (user?.u_details?.history_of_pay)
       setHistory(user?.u_details?.history_of_pay);
-    // getBalanceHistory().then(setHistory);
-  }, [user]);
+  }, [user?.u_details?.history_of_pay]);
   const historyOfPaymentsItems = history.map((item) => (
     <div className="blocks">
       <div className="block df">

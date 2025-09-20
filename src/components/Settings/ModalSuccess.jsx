@@ -1,4 +1,3 @@
-import { useState, useRef } from "react"
 import style from "./ModalSuccess.module.css"
 
 

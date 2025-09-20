@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   useMemo,
+  useCallback,
   FC,
   Dispatch,
   SetStateAction,
@@ -18,36 +19,17 @@ import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
 import styles from './Chat.module.css';
 import Dropdown from 'react-multilevel-dropdown';
-import MiniSlider from '../../miniSlider/MiniSilder';
 import BlackListModal from './BlackListModal';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
 import AddOrderModal from './AddOrderModal';
 import AddFeedbackModal from './AddFeedbackModal';
-import FinalOrder from './FinalOrder';
-import DisputeModal from './DisputeModal';
-import DisputeFinalModal from './DisputeFinalModal';
-import ConfirmOrder from './ConfirmOrder';
-import ConfirmOrderFinal from './ConfirmOrderFinal';
 
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import ModalАrbitration from './ModalАrbitration';
-import CancelOrder from './CancelOrder';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
-import ConfirmOrderV2 from './ConfirmOrder_v2';
-import ConfirmOrderFinalV2 from './ConfirmOrderFinal_v2';
-import ConfirmOrderV3 from './ConfirmOrder_v3';
-import ConfirmOrderFinalV3 from './ConfirmOrderFinal_v3';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
-import CancelOrderV4 from './CancelOrder_v4';
-import CancelOrderItemV4 from './CancelOrderItem_v4';
-import ModalАrbitrationItem from './ModalАrbitrationItem';
-import DisputeFinalModalV5 from './DisputeFinalModal_v5';
-import DisputeFinalItemModalV5 from './DisputeFinalItemModal_v5';
-import SimpleImage from './SimpleImage';
-import { updateUser } from '../../../services/user.service';
 import appFetch from '../../../utilities/appFetch';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
@@ -121,18 +103,13 @@ interface TimelineSimpleItem extends TimelineItemBase {
 type TimelineItem = TimelineChatItem | TimelineSimpleItem;
 // =================================================
 
-// Тип для фото-ссылки
-interface PhotoUrl {
-  url: string;
-}
-
 /**
  * ВСПОМОГАТЕЛЬНОЕ: парсинг имени файла из заголовка Content-Disposition
  */
 const parseFilename = (cd: string | null): string | null => {
   if (!cd) return null;
   // filename*=UTF-8''name or filename="name"
-  const utf8 = /filename\*\=UTF-8''([^;]+)/i.exec(cd);
+  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(cd);
   if (utf8?.[1]) {
     try {
       return decodeURIComponent(utf8[1]);
@@ -140,7 +117,7 @@ const parseFilename = (cd: string | null): string | null => {
       return utf8[1];
     }
   }
-  const simple = /filename\=\"([^"]+)\"/i.exec(cd);
+  const simple = /filename="([^"]+)"/i.exec(cd);
   if (simple?.[1]) return simple[1];
   return null;
 };
@@ -696,14 +673,10 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   // =====================================================
 
   // Локальное состояние для каждого блока заказа
-  const [isOpenZayavka, setOpenZayavka] = useState(false);
-  const [isShowDetailsOrder, setShowDetailsOrder] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  //~ const [isLoading, setIsLoading] = useState(false);
 
   // Состояния для управления UI конкретного заказа
-  const [dispute__isVisibleModal, dispute__SetVisibleModal] = useState(false);
   const [isVisibleAddFeedback, setVisibleAddFeedback] = useState(false);
-  const [isVisibleDispute, setVisibleDispute] = useState(false);
 
   // Add balance check
   useEffect(() => {
@@ -721,151 +694,151 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       setIsBalanceError(false);
       setBalanceErrorNum(0);
     }
-  }, [order, user?.u_details?.balance]);
+  }, [order, user?.u_details?.balance, setIsBalanceError, setBalanceErrorNum]);
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
-  const handleConfirmOrder = async () => {
-    const masterReqData =
-      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
-        ?.c_options || {};
+  //~ const handleConfirmOrder = async () => {
+    //~ const masterReqData =
+      //~ order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
+        //~ ?.c_options || {};
 
-    // Calculate total amount with 9% commission
-    const commission = Number(masterReqData.bind_amount) * 0.09;
-    const totalAmount = Number(masterReqData.bind_amount) + commission;
+    //~ // Calculate total amount with 9% commission
+    //~ const commission = Number(masterReqData.bind_amount) * 0.09;
+    //~ const totalAmount = Number(masterReqData.bind_amount) + commission;
 
-    if (totalAmount > Number(user?.u_details?.balance || 0)) {
-      console.log(masterUser);
-      setIsBalanceError(true);
-      setBalanceErrorNum(totalAmount - Number(user?.u_details?.balance || 0));
-      return;
-    }
+    //~ if (totalAmount > Number(user?.u_details?.balance || 0)) {
+      //~ console.log(masterUser);
+      //~ setIsBalanceError(true);
+      //~ setBalanceErrorNum(totalAmount - Number(user?.u_details?.balance || 0));
+      //~ return;
+    //~ }
 
-    setIsLoading(true);
-    try {
-      await appFetch(`/drive/get/${order.b_id}`, {
-        body: {
-          u_a_role: 1,
-          u_id: masterUser.u_id,
-          action: 'set_performer',
-        },
-      });
+    //~ setIsLoading(true);
+    //~ try {
+      //~ await appFetch(`/drive/get/${order.b_id}`, {
+        //~ body: {
+          //~ u_a_role: 1,
+          //~ u_id: masterUser.u_id,
+          //~ action: 'set_performer',
+        //~ },
+      //~ });
 
-      // Шаг 2: Завершаем заказ
-      await appFetch(`/drive/get/${order.b_id}`, {
-        body: {
-          u_a_role: 1,
-          action: 'set_complete_state',
-        },
-      }).then((v) => console.log(v));
+      //~ // Шаг 2: Завершаем заказ
+      //~ await appFetch(`/drive/get/${order.b_id}`, {
+        //~ body: {
+          //~ u_a_role: 1,
+          //~ action: 'set_complete_state',
+        //~ },
+      //~ }).then((v) => console.log(v));
 
-      // Update master's balance (full amount)
-      updateUser(
-        {
-          details: {
-            balance:
-              Number(masterReqData.bind_amount) +
-              Number(masterUser.u_details.balance),
-          },
-        },
-        masterUser.u_id,
-        true,
-      );
+      //~ // Update master's balance (full amount)
+      //~ updateUser(
+        //~ {
+          //~ details: {
+            //~ balance:
+              //~ Number(masterReqData.bind_amount) +
+              //~ Number(masterUser.u_details.balance),
+          //~ },
+        //~ },
+        //~ masterUser.u_id,
+        //~ true,
+      //~ );
 
-      // Update client's balance (amount + commission)
-      updateUser(
-        {
-          details: {
-            balance: Number(user.u_details?.balance || 0) - totalAmount,
-          },
-        },
-        user.u_id,
-        true,
-      );
+      //~ // Update client's balance (amount + commission)
+      //~ updateUser(
+        //~ {
+          //~ details: {
+            //~ balance: Number(user.u_details?.balance || 0) - totalAmount,
+          //~ },
+        //~ },
+        //~ user.u_id,
+        //~ true,
+      //~ );
 
-      // ====== ДОБАВИЛИ отметку времени завершения в b_options ======
-      await updateRequest(
-        order.b_id,
-        {
-          complete_ts: nowIso(),
-        },
-        true,
-        order.u_id,
-      );
+      //~ // ====== ДОБАВИЛИ отметку времени завершения в b_options ======
+      //~ await updateRequest(
+        //~ order.b_id,
+        //~ {
+          //~ complete_ts: nowIso(),
+        //~ },
+        //~ true,
+        //~ order.u_id,
+      //~ );
 
-      console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
-      refetchRequests(); // Обновляем список заказов
-    } catch (error) {
-      console.error('Ошибка при подтверждении заказа:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      //~ console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
+      //~ refetchRequests(); // Обновляем список заказов
+    //~ } catch (error) {
+      //~ console.error('Ошибка при подтверждении заказа:', error);
+    //~ } finally {
+      //~ setIsLoading(false);
+    //~ }
+  //~ };
 
-  const handleCancelOrder = async () => {
-    setIsLoading(true);
-    try {
-      // Обновляем b_options, добавляя флаг отмены + время
-      await updateRequest(order.b_id, {
-        is_request_for_cancel_exist: true,
-        cancel_requested_ts: nowIso(), // <— отметка времени
-      });
-      console.log(`Запрос на отмену заказа ${order.b_id} отправлен.`);
-      refetchRequests(); // Обновляем список
-    } catch (error) {
-      console.error('Ошибка при отмене заказа:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  const handleOpenDispute = async () => {
-    setOrderId(order.b_id);
-    setIsOpenDisput(true);
-    try {
-      await updateRequest(order.b_id, {
-        is_open_dispute: true,
-        dispute_opened_ts: nowIso(), // <— отметка времени
-      });
-    } catch (e) {
-      console.error('open dispute error', e);
-    }
-  };
+  //~ const handleCancelOrder = async () => {
+    //~ setIsLoading(true);
+    //~ try {
+      //~ // Обновляем b_options, добавляя флаг отмены + время
+      //~ await updateRequest(order.b_id, {
+        //~ is_request_for_cancel_exist: true,
+        //~ cancel_requested_ts: nowIso(), // <— отметка времени
+      //~ });
+      //~ console.log(`Запрос на отмену заказа ${order.b_id} отправлен.`);
+      //~ refetchRequests(); // Обновляем список
+    //~ } catch (error) {
+      //~ console.error('Ошибка при отмене заказа:', error);
+    //~ } finally {
+      //~ setIsLoading(false);
+    //~ }
+  //~ };
+  //~ const handleOpenDispute = async () => {
+    //~ setOrderId(order.b_id);
+    //~ setIsOpenDisput(true);
+    //~ try {
+      //~ await updateRequest(order.b_id, {
+        //~ is_open_dispute: true,
+        //~ dispute_opened_ts: nowIso(), // <— отметка времени
+      //~ });
+    //~ } catch (e) {
+      //~ console.error('open dispute error', e);
+    //~ }
+  //~ };
   // --- КОНЕЦ: Логика для кнопок ---
 
-  function formatTimeByHours(hours: number) {
-    if (Number.isNaN(hours)) return 'Готов ждать';
-    if (hours >= 24) {
-      const days = Math.floor(hours / 24);
-      const lastDigit = days % 10;
-      const lastTwo = days % 100;
-      let word = 'дней';
-      if (lastTwo < 11 || lastTwo > 14) {
-        if (lastDigit === 1) word = 'день';
-        else if (lastDigit >= 2 && lastDigit <= 4) word = 'дня';
-      }
-      return `${days} ${word}`;
-    } else {
-      const lastDigit = hours % 10;
-      const lastTwo = hours % 100;
-      let word = 'часов';
-      if (lastTwo < 11 || lastTwo > 14) {
-        if (lastDigit === 1) return 'час';
-        else if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
-      }
-      return `${hours} ${word}`;
-    }
-  }
+  //~ function formatTimeByHours(hours: number) {
+    //~ if (Number.isNaN(hours)) return 'Готов ждать';
+    //~ if (hours >= 24) {
+      //~ const days = Math.floor(hours / 24);
+      //~ const lastDigit = days % 10;
+      //~ const lastTwo = days % 100;
+      //~ let word = 'дней';
+      //~ if (lastTwo < 11 || lastTwo > 14) {
+        //~ if (lastDigit === 1) word = 'день';
+        //~ else if (lastDigit >= 2 && lastDigit <= 4) word = 'дня';
+      //~ }
+      //~ return `${days} ${word}`;
+    //~ } else {
+      //~ const lastDigit = hours % 10;
+      //~ const lastTwo = hours % 100;
+      //~ let word = 'часов';
+      //~ if (lastTwo < 11 || lastTwo > 14) {
+        //~ if (lastDigit === 1) return 'час';
+        //~ else if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
+      //~ }
+      //~ return `${hours} ${word}`;
+    //~ }
+  //~ }
 
   const driverData = order.drivers?.find(
     (d: any) => d.u_id === order.b_options.winnerMaster,
   );
   const masterReqData = driverData?.c_options || {};
-  const isOrderCompleted = order.b_state === '4';
-  const isCancelRequested =
-    !!order.b_options?.is_request_for_cancel_exist || order.b_state == '3';
-  const isOwner = order.u_id === user?.u_id;
-  const isMasterAgreeWithCancelRequest =
-    order.b_options.is_master_agree_with_cancel || order.b_state == '3';
-  const isOpenDispute = order.b_options.is_open_dispute;
-  const isMasterAgreeWithDispute = order.b_options.is_master_agree_with_dispute;
+  //~ const isOrderCompleted = order.b_state === '4';
+  //~ const isCancelRequested =
+    //~ !!order.b_options?.is_request_for_cancel_exist || order.b_state == '3';
+  //~ const isOwner = order.u_id === user?.u_id;
+  //~ const isMasterAgreeWithCancelRequest =
+    //~ order.b_options.is_master_agree_with_cancel || order.b_state == '3';
+  //~ const isOpenDispute = order.b_options.is_open_dispute;
+  //~ const isMasterAgreeWithDispute = order.b_options.is_master_agree_with_dispute;
   // Получаем массив ссылок на фото
   const photoUrls: string[] =
     (order.b_options?.client_feedback_photo_urls as string[]) ||
@@ -1396,10 +1369,10 @@ function ChoiceOfReplenishmentMethodCard() {
   const footerRef = useRef<HTMLDivElement>(null);
   const [footerHeight, setFooterHeight] = useState<number>(0);
 
-  const measureFooter = () => {
+  const measureFooter = useCallback(() => {
     const h = footerRef.current?.offsetHeight || 0;
     if (h !== footerHeight) setFooterHeight(h);
-  };
+  }, [footerRef.current?.offsetHeight || 0, footerHeight]);
 
   useEffect(() => {
     measureFooter();
@@ -1411,13 +1384,33 @@ function ChoiceOfReplenishmentMethodCard() {
       window.removeEventListener('resize', onResize);
       ro.disconnect();
     };
-  }, []);
+  }, [measureFooter]);
+
+  // Помощники автоскролла
+  const scrollToBottom = useCallback(() => {
+    if (chatBlockRef.current) {
+      chatBlockRef.current.scrollTop = chatBlockRef.current.scrollHeight;
+    }
+  }, [chatBlockRef]);
+  const scrollToBottomSoon = useCallback(() => {
+    setTimeout(scrollToBottom, 50);
+    setTimeout(scrollToBottom, 200);
+    setTimeout(scrollToBottom, 600);
+  }, [scrollToBottom]);
+
+  const handleScroll = () => {
+    if (chatBlockRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatBlockRef.current;
+      const atBottom = scrollHeight - (scrollTop + clientHeight) > 200;
+      setIsAtBottom(atBottom);
+    }
+  };
 
   useEffect(() => {
     // при открытии emoji/добавлении превью — переизмеряем и скроллим вниз
     measureFooter();
     scrollToBottomSoon();
-  }, [isVisibleEmoji, previewFiles.length]);
+  }, [isVisibleEmoji, previewFiles.length, measureFooter, scrollToBottomSoon]);
 
   // ===== file -> base64
   const fileToBase64 = (file: File) =>
@@ -1599,26 +1592,6 @@ function ChoiceOfReplenishmentMethodCard() {
     scrollToBottomSoon();
   };
 
-  // Помощники автоскролла
-  const scrollToBottom = () => {
-    if (chatBlockRef.current) {
-      chatBlockRef.current.scrollTop = chatBlockRef.current.scrollHeight;
-    }
-  };
-  const scrollToBottomSoon = () => {
-    setTimeout(scrollToBottom, 50);
-    setTimeout(scrollToBottom, 200);
-    setTimeout(scrollToBottom, 600);
-  };
-
-  const handleScroll = () => {
-    if (chatBlockRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = chatBlockRef.current;
-      const atBottom = scrollHeight - (scrollTop + clientHeight) > 200;
-      setIsAtBottom(atBottom);
-    }
-  };
-
   // отправка по Enter
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1642,7 +1615,7 @@ function ChoiceOfReplenishmentMethodCard() {
 
   useEffect(() => {
     scrollToBottomSoon();
-  }, [userRequests.data, id]);
+  }, [userRequests.data, id, scrollToBottomSoon]);
 
   // Псевдо-вебсокет — опрос каждые 30 секунд
   useEffect(() => {
@@ -1651,7 +1624,7 @@ function ChoiceOfReplenishmentMethodCard() {
       scrollToBottomSoon();
     }, 30000);
     return () => clearInterval(t);
-  }, [userRequests]);
+  }, [userRequests, scrollToBottomSoon]);
 
   // Helpers last online
   const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {

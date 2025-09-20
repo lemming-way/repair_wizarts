@@ -25,6 +25,9 @@ import phoneIcon from './icons/phone.svg';
 import mailIcon from './icons/mail.svg';
 import mapPinIcon from './icons/map-pin.svg';
 
+// @deleteme: временно выключил предупреждения, надо убрать
+/* eslint-disable jsx-a11y/anchor-is-valid */
+
 function HomeV2() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

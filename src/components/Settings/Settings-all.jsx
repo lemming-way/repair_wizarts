@@ -8,16 +8,16 @@ import style from './settings_all.module.css';
 import { Outlet } from 'react-router-dom';
 // import { useNavigate } from "react-router-dom";
 
+const listLinks = [
+  '/master/settings',
+  '/master/settings/profile',
+  '/master/settings/services',
+  '/master/settings/finance',
+  '/master/settings/balance',
+];
+
 function App() {
   const navigate = useNavigate();
-
-  const listLinks = [
-    '/master/settings',
-    '/master/settings/profile',
-    '/master/settings/services',
-    '/master/settings/finance',
-    '/master/settings/balance',
-  ];
 
   const [numberElementMenu, setNumberElementMenu] = useState(1);
   const [offsetMenu, setOffsetMenu] = useState(1);

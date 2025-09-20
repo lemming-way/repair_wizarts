@@ -28,19 +28,20 @@ import style from './Profile.module.css';
 //       ]
 //   }
 // }
+const EMPTY_OBJECT = {}
+const experienceOptions = [
+{ value: 1, label: '1 год' },
+{ value: 2, label: '2 года' },
+{ value: 3, label: '3 года' },
+{ value: 5, label: '5 лет' },
+{ value: 6, label: 'Более 5 лет' },
+];
+
 function Profile({ ymaps }) {
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(
     [],
   );
   const [experience, setExperience] = useState(null);
-
-  const experienceOptions = [
-    { value: 1, label: '1 год' },
-    { value: 2, label: '2 года' },
-    { value: 3, label: '3 года' },
-    { value: 5, label: '5 лет' },
-    { value: 6, label: 'Более 5 лет' },
-  ];
 
   //   const typeOfRepairOptions = [
   //     { value: 0, label: "Ремонт экрана" },
@@ -54,7 +55,7 @@ function Profile({ ymaps }) {
   const ui = useSelector(selectUI);
   const { categories } = useSelector((state) => state.categories);
   const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -76,115 +77,115 @@ function Profile({ ymaps }) {
   });
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
-  const [gender, setGender] = useState('Мужской');
+  //~ const [gender, setGender] = useState('Мужской');
   const [business_model, setBusiness] = useState('Частный мастер');
-  const getData = async (type, sectionId, subsectionId, userDetails) => {
-    try {
-      switch (type) {
-        case 'section': {
-          const res = await fetch(
-            'https://profiback.itest24.com/api/sections',
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer 123',
-              },
-            },
-          );
-          const sections = await res.json();
-          console.log(sections);
-          setSections(
-            sections?.map((section) => ({
-              value: section.id,
-              label: section.name,
-            })),
-          );
-          if (userDetails) {
-            const currentSection = sections?.find(
-              (item) => item.id === userDetails?.section,
-            );
-            setCategoryMainOptionSelected(
-              currentSection
-                ? [{ value: currentSection.id, label: currentSection.name }]
-                : null,
-            );
-          }
-          break;
-        }
-        case 'subsection': {
-          const res = await fetch(
-            `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer 123',
-              },
-            },
-          );
-          const subsections = await res.json();
-          console.log(subsections);
+  //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
+    //~ try {
+      //~ switch (type) {
+        //~ case 'section': {
+          //~ const res = await fetch(
+            //~ 'https://profiback.itest24.com/api/sections',
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: 'Bearer 123',
+              //~ },
+            //~ },
+          //~ );
+          //~ const sections = await res.json();
+          //~ console.log(sections);
+          //~ setSections(
+            //~ sections?.map((section) => ({
+              //~ value: section.id,
+              //~ label: section.name,
+            //~ })),
+          //~ );
+          //~ if (userDetails) {
+            //~ const currentSection = sections?.find(
+              //~ (item) => item.id === userDetails?.section,
+            //~ );
+            //~ setCategoryMainOptionSelected(
+              //~ currentSection
+                //~ ? [{ value: currentSection.id, label: currentSection.name }]
+                //~ : null,
+            //~ );
+          //~ }
+          //~ break;
+        //~ }
+        //~ case 'subsection': {
+          //~ const res = await fetch(
+            //~ `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: 'Bearer 123',
+              //~ },
+            //~ },
+          //~ );
+          //~ const subsections = await res.json();
+          //~ console.log(subsections);
 
-          setSubsections([
-            ...subsections?.map((subsection) => ({
-              value: subsection.id,
-              label: subsection.name,
-            })),
-          ]);
-          if (userDetails) {
-            const currentSubsection = subsections?.find(
-              (item) => item.id === userDetails.subsection,
-            );
-            setSelectedSubsections(
-              currentSubsection
-                ? [
-                    {
-                      value: currentSubsection.id,
-                      label: currentSubsection.name,
-                    },
-                  ]
-                : null,
-            );
-          }
-          break;
-        }
-        case 'service': {
-          const res = await fetch(
-            `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer 123',
-              },
-            },
-          );
-          console.log(subsectionId, sectionId);
-          const services = await res.json();
-          if (userDetails) {
-            const currentServices = services?.find(
-              (item) => item.id === userDetails.service,
-            );
-            setSelectedServices(
-              currentServices
-                ? [{ value: currentServices.id, label: currentServices.name }]
-                : null,
-            );
-          }
-          setServices([
-            ...services.map((service) => ({
-              value: service.id,
-              label: service.name,
-            })),
-          ]);
+          //~ setSubsections([
+            //~ ...subsections?.map((subsection) => ({
+              //~ value: subsection.id,
+              //~ label: subsection.name,
+            //~ })),
+          //~ ]);
+          //~ if (userDetails) {
+            //~ const currentSubsection = subsections?.find(
+              //~ (item) => item.id === userDetails.subsection,
+            //~ );
+            //~ setSelectedSubsections(
+              //~ currentSubsection
+                //~ ? [
+                    //~ {
+                      //~ value: currentSubsection.id,
+                      //~ label: currentSubsection.name,
+                    //~ },
+                  //~ ]
+                //~ : null,
+            //~ );
+          //~ }
+          //~ break;
+        //~ }
+        //~ case 'service': {
+          //~ const res = await fetch(
+            //~ `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: 'Bearer 123',
+              //~ },
+            //~ },
+          //~ );
+          //~ console.log(subsectionId, sectionId);
+          //~ const services = await res.json();
+          //~ if (userDetails) {
+            //~ const currentServices = services?.find(
+              //~ (item) => item.id === userDetails.service,
+            //~ );
+            //~ setSelectedServices(
+              //~ currentServices
+                //~ ? [{ value: currentServices.id, label: currentServices.name }]
+                //~ : null,
+            //~ );
+          //~ }
+          //~ setServices([
+            //~ ...services.map((service) => ({
+              //~ value: service.id,
+              //~ label: service.name,
+            //~ })),
+          //~ ]);
 
-          break;
-        }
-        default:
-          break;
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
+          //~ break;
+        //~ }
+        //~ default:
+          //~ break;
+      //~ }
+    //~ } catch (error) {
+      //~ console.error(error);
+    //~ }
+  //~ };
 
   const getFormAttrs = (field) => {
     const isNested = field.includes('.');
@@ -227,7 +228,7 @@ function Profile({ ymaps }) {
     //   .geometry.getCoordinates();
     const payload = {
       ...form,
-      gender,
+      //~ gender,
       details: {
         ...form.details,
         business_model,
@@ -352,14 +353,14 @@ function Profile({ ymaps }) {
     ) {
       fetchAllData();
     }
-  }, [ui.isAuthorized]);
+  }, [ui.isAuthorized, categories, user]);
 
   useEffect(() => {
     document.title = 'Настройки';
     setSections(
       categories.map((item) => ({ label: item.name, value: item.id })),
     );
-  }, []);
+  }, [categories]);
   //   useEffect(() => {
   //     ymaps.ready(() => {
   //       const suggestView = new ymaps.SuggestView('suggest-input');

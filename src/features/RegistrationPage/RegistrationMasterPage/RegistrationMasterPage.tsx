@@ -10,9 +10,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import appFetch from '../../../utilities/appFetch';
 
-const API_BASE_URL = 'https://ibronevik.ru/taxi/c/tutor/api/v1/'; // Assuming API is on the same domain, otherwise specify full base URL e.g. 'https://ibronevik.ru/taxi'
-const REGISTRATION_ENDPOINT = `${API_BASE_URL}/api/v1/register/`;
-
 const RegistrationMasterPage = () => {
   const { categories } = useSelector((state: RootState) => state.categories);
 

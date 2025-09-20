@@ -58,7 +58,7 @@ const StatusEnum = {
   ACTIVE: 'Активно',
   PAUSED: 'Пауза',
   WORKING: 'В работе',
-  COMPLETED: 'Выполнено',
+  //~ COMPLETED: 'Выполнено',
   COMPLETED: 'Завершено',
   CANCELED: 'Отменено',
 };
@@ -225,6 +225,7 @@ const AddedDevice = (props) => {
             })),
           );
           break;
+          default:
       }
     } catch (error) {
       console.error(error);

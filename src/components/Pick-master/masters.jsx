@@ -1,11 +1,9 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useSelector } from "react-redux";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper";
 import { Rating } from "react-simple-star-rating";
 import { getMasterByUsername } from "../../services/user.service";
 import { getMasterRepairs } from "../../services/service.service";
-import { selectUser } from "../../slices/user.slice";
 import { useService } from "../../hooks/useService";
 import { Link } from "react-router-dom";
 import Map from '../Map'
@@ -20,7 +18,6 @@ import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
 function App() {
     const [params] = useSearchParams()
     const [master, setMaster] = useState({ })
-    const user = useSelector(selectUser)
     const repairs = useService(getMasterRepairs, [])
     // const counters = useService(getCounters, { })
     // const covers = useService(getCovers, [])
@@ -31,11 +28,10 @@ function App() {
     //     '/img/sentence_img/iphone-x.png',
     // ];
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalImage, setModalImage] = useState("");
 
     // Функция для открытия модального окна
     const openModal = (imageSrc) => {
-        setModalImage(imageSrc); // Устанавливаем путь к картинке
+        //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
         setIsModalOpen(true); // Открываем модальное окно
     };
 
@@ -57,7 +53,7 @@ function App() {
             latitude: repair.address_latitude,
             longitude: repair.address_longitude
         }]
-    }, []), [repairs.data, user.master])
+    }, []), [repairs.data])
 
     const onMasterSelect = (e, data) => {
         getMasterByUsername(data).then(setMaster)
@@ -70,7 +66,7 @@ function App() {
                     document.documentElement.scrollHeight - document.documentElement.clientHeight
             }, 1000);
         }
-    }, [])
+    }, [pics])
 
     useEffect(() => {
         if (masterId) {

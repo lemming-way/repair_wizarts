@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import Header from './Header';
 import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
 import '../scss/swiper.css';
 import Footer from '../UI/Footer/FooterDesktop';
 import { useDispatch, useSelector } from 'react-redux';
-import { Routes, Route, useLocation, matchPath } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 
 import Home from './Home';
 import PickLog from './Registration/pick-log';
@@ -48,14 +47,11 @@ import AuthLogin from './Registration/AuthLogin';
 import Mysuggest from './mysuggest';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
-import Notifications from './Notifications/Notifications';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
-import Photo from './Settings/Photo';
 import Article from './Article';
 import FetchStatus from '../constants/FetchStatus';
-import { fetchMessages } from '../slices/messages.slice';
 import { fetchServices } from '../slices/services.slice';
 import {
   setAuthorization,
@@ -82,7 +78,6 @@ import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
 import HomeV2 from './home_v2/HomeV2';
 import { setCategories } from '../slices/cateories.slice';
-import { updateBalance } from '../services/balance.service';
 
 function App() {
   const user =
@@ -140,7 +135,7 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dispatch, user]);
+  }, [dispatch, user.u_id]);
 
   useEffect(() => {
     const isMaster = getUserMode();
@@ -153,11 +148,40 @@ function App() {
       dispatch(setMaster(true));
     }
   }, [dispatch]);
+
   useEffect(() => {
     const token = getToken();
     if (token) dispatch(fetchUser());
-  }, [__location__.pathname]);
+  }, [__location__.pathname, dispatch]);
+
   useEffect(() => {
+    const fetchFullDataAboutCategories = async () => {
+      try {
+        const sectionData = JSON.parse(localStorage.getItem('sections'));
+        console.log(sectionData);
+        if (sectionData) return dispatch(setCategories(sectionData));
+        const response = await fetch(
+          'https://profiback.itest24.com/api/full-data',
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${'123'}`,
+            },
+          },
+        );
+        const data = await response.json();
+        data.forEach((item) =>
+          item.subsections
+            .slice(0, 5)
+            .forEach((item) => item.services.slice(0, 5)),
+        );
+        localStorage.setItem('sections', JSON.stringify(data));
+        dispatch(setCategories(data));
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     const currentVersion = new URLSearchParams(window.location.search).get(
       'main',
     );
@@ -165,7 +189,7 @@ function App() {
     if (categories.length === 0) {
       fetchFullDataAboutCategories();
     }
-  }, []);
+  }, [categories, dispatch]);
   useEffect(() => {
     const token = getToken();
     if (userStatus === FetchStatus.IDLE) {
@@ -188,32 +212,6 @@ function App() {
       dispatch(setLoading(false));
     }
   }, [userStatus, dispatch]);
-  const fetchFullDataAboutCategories = async () => {
-    try {
-      const sectionData = JSON.parse(localStorage.getItem('sections'));
-      console.log(sectionData);
-      if (sectionData) return dispatch(setCategories(sectionData));
-      const response = await fetch(
-        'https://profiback.itest24.com/api/full-data',
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${'123'}`,
-          },
-        },
-      );
-      const data = await response.json();
-      data.forEach((item) =>
-        item.subsections
-          .slice(0, 5)
-          .forEach((item) => item.services.slice(0, 5)),
-      );
-      localStorage.setItem('sections', JSON.stringify(data));
-      dispatch(setCategories(data));
-    } catch (error) {
-      console.error(error);
-    }
-  };
   if (categories.length === 0) {
     return 'Loading...';
   }

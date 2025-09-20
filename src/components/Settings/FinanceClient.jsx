@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
 import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalSuccess from './ModalSuccess';
 import ModalDelete from './ModalDelete';
-import appFetch from '../../utilities/appFetch';
 import { updateUser } from '../../services/user.service';
 
 const FinanceClient = () => {
@@ -27,7 +26,7 @@ const FinanceClient = () => {
 
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
-  }, [user]);
+  }, [user.u_details?.wallets]);
 
   const onSubmitWallets = async () => {
     try {

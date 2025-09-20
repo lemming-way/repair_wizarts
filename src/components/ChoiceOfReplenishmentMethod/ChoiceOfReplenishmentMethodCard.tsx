@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 
 function ChoiceOfReplenishmentMethodCard() {
 
@@ -21,25 +21,21 @@ function ChoiceOfReplenishmentMethodCard() {
 
 
 
-    const [classname, setClassName] = useState("")
-    const Active = (e) => {
-        setClassName(" border")
-    }
     return (
         <>
             <h2>Выберите способ пополнения: </h2>
             <div className="mini-cards">
-                <div onClick={Active} className="mini-card df border" style={{justifyContent:"center", gap:0}} id="card">
+                <div className="mini-card df border" style={{justifyContent:"center", gap:0}} id="card">
                     <img src="/img/img-box.png" alt="" />
                     <h2>Банковская карта </h2>
                 </div>
 
-                <div onClick={Active} className="mini-card df" style={{justifyContent:"center", gap:0}}  id="card-2">
+                <div className="mini-card df" style={{justifyContent:"center", gap:0}}  id="card-2">
                     <img src="/img/img-card.png" alt="" />
                     <h2>Сбербанк онлайн</h2>
                 </div>
 
-                <div onClick={Active} className="mini-card df" style={{justifyContent:"center", gap:0}}  id="card-3">
+                <div className="mini-card df" style={{justifyContent:"center", gap:0}}  id="card-3">
                     <img src="/img/img-qivi.png" alt="wallet" />
                     <h2>Qiwi кошелек </h2>
                 </div>

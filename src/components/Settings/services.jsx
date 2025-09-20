@@ -3,21 +3,24 @@ import { useSelector } from 'react-redux';
 import '../../scss/service.css';
 import '../../scss/register-master.scss';
 import { selectUser } from '../../slices/user.slice';
-import { getMasterRepairsByUsername } from '../../services/service.service';
+//~ import { getMasterRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
 
 import style from './services.module.css';
 import { updateUser } from '../../services/user.service';
+
+const EMPTY_OBJECT = {}
+
 function Services() {
   const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
   const [brandOptionSelected, setBrandOptionSelected] = useState(null);
   const [modelPhoneOptionSelected, setModelPhoneOptionSelected] =
     useState(null);
-  const [repairs, setRepairs] = useState([]);
+  //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
   const username = user.u_details?.login;
   const { categories } = useSelector((state) => state.categories);
@@ -45,7 +48,7 @@ function Services() {
       );
       setServicesBlocks({ ...user.u_details.servicesBlocks });
     }
-    getMasterRepairsByUsername(username).then(setRepairs);
+    //~ getMasterRepairsByUsername(username).then(setRepairs);
   }, [user, username]);
   useEffect(() => {
     var obj = {};
@@ -53,7 +56,7 @@ function Services() {
       return;
     }
 
-    const rr = brandOptionSelected.forEach((object) => {
+    brandOptionSelected.forEach((object) => {
       servicesBlocks[object.label]
         ? (obj[object.label] = servicesBlocks[object.label])
         : (obj[object.label] = {
@@ -88,7 +91,7 @@ function Services() {
           });
     });
     setServicesBlocks(obj);
-  }, [brandOptionSelected]);
+  }, [brandOptionSelected, servicesBlocks]);
   function changeInputs(value, key, field, index) {
     setServicesBlocks((prev) => {
       const updated = { ...prev };
@@ -197,7 +200,7 @@ function Services() {
   }));
 
   const categoriesOptions =
-    categoryMainOptionSelected?.length ?? 0 > 0
+    ( categoryMainOptionSelected?.length ?? 0 ) > 0
       ? categories.flatMap((item) => {
           const isSelectedSectionId = categoryMainOptionSelected?.find(
             (selec) => selec.value === item.id,

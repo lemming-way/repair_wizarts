@@ -1,33 +1,32 @@
-import { useEffect } from 'react'
-import { useSelector } from "react-redux"
+//~ import { useEffect } from 'react'
+//~ import { useSelector } from "react-redux"
 import {
     useOutlet
 } from "react-router-dom"
-import { selectUser } from '../slices/user.slice'
-import { selectUI } from '../slices/ui.slice'
+//~ import { selectUser } from '../slices/user.slice'
+//~ import { selectUI } from '../slices/ui.slice'
 
 const MasterRoute = () => {
     const children = useOutlet()
-    const ui = useSelector(selectUI)
-    const user = useSelector(selectUser)
+    //~ const ui = useSelector(selectUI)
+    //~ const user = useSelector(selectUser)
 
-    useEffect(() => {
-        if (ui.isLoading) {
-            return
-        }
-        if (ui.isAuthorized) {
-            if (user.master?.[0]) {
-                return
-            }
+    //~ useEffect(() => {
+        //~ if (ui.isLoading) {
+            //~ return
+        //~ }
+        //~ if (ui.isAuthorized) {
+            //~ if (user.master?.[0]) {
+                //~ return
+            //~ }
 
-            // return navigate("/register/master")
-        }
+            //~ // return navigate("/register/master")
+        //~ }
         
-        // navigate('/login')
-    }, [ui.isAuthorized])
+        //~ // navigate('/login')
+    //~ }, [ui.isAuthorized])
 
     return children
 }
 
 export default MasterRoute
-

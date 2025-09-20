@@ -72,7 +72,7 @@ function App() {
     };
 
     fetchFeedback();
-  }, [user]);
+  }, [user.u_id, user.u_details?.login]);
 
   useEffect(() => {
     document.title = 'Отзывы';

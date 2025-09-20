@@ -88,38 +88,38 @@ const getAllClientRequests = () => {
   ]);
 };
 
-const getClientRequestsTestData = () => {
-  return new Promise((resolve) => {
-    const mockResponse = [
-      {
-        id: 36,
-        client_id: 6,
-        client: {
-          id: 6,
-          phone: '+79111111111',
-          name: 'test',
-          lastname: 'test',
-          avatar: 'files/Снимок экрана от 2025-01-28 11-58-29.png',
-          number_of_submissions: 4,
-        },
-        title: 'test',
-        description: 'test',
-        pictures: [],
-        client_price: 1000.0,
-        service_type_id: 1,
-        service_type: { name: 'Ремонт телефона' },
-        status: 'Активно',
-        created_at: '2025-02-25T20:06:08.132360',
-        expires_at: '2025-02-26T20:06:08.130533',
-        number_of_offers: 0,
-        views: 0,
-      },
-    ];
+//~ const getClientRequestsTestData = () => {
+  //~ return new Promise((resolve) => {
+    //~ const mockResponse = [
+      //~ {
+        //~ id: 36,
+        //~ client_id: 6,
+        //~ client: {
+          //~ id: 6,
+          //~ phone: '+79111111111',
+          //~ name: 'test',
+          //~ lastname: 'test',
+          //~ avatar: 'files/Снимок экрана от 2025-01-28 11-58-29.png',
+          //~ number_of_submissions: 4,
+        //~ },
+        //~ title: 'test',
+        //~ description: 'test',
+        //~ pictures: [],
+        //~ client_price: 1000.0,
+        //~ service_type_id: 1,
+        //~ service_type: { name: 'Ремонт телефона' },
+        //~ status: 'Активно',
+        //~ created_at: '2025-02-25T20:06:08.132360',
+        //~ expires_at: '2025-02-26T20:06:08.130533',
+        //~ number_of_offers: 0,
+        //~ views: 0,
+      //~ },
+    //~ ];
 
-    // Simulate network delay
-    setTimeout(() => resolve(mockResponse), 500);
-  });
-};
+    //~ // Simulate network delay
+    //~ setTimeout(() => resolve(mockResponse), 500);
+  //~ });
+//~ };
 
 const getMasterRequests = () => appFetch('drive', { body: { u_a_role: 1 } });
 // appFetch('drive', { body: { u_a_role: 2 } }),

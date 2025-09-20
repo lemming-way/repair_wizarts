@@ -3,8 +3,6 @@ import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useState, useEffect } from 'react';
 import ModalOfferGo from './ModalOfferGo';
-import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 
 import { useRef } from 'react';

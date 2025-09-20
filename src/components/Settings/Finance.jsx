@@ -1,15 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+import { useState } from 'react';
 import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalSuccess from './ModalSuccess';
 import ModalDelete from './ModalDelete';
 
 const Finance = (props) => {
-  const user = useSelector(selectUser);
+  //~ const user = useSelector(selectUser);
   //   const userPictures = user.u_photo.filter((v) => v !== '');
-  const [pics, setPics] = useState([]);
+  //~ const [pics, setPics] = useState([]);
 
   //   useEffect(() => {
   //     if (user.master) {

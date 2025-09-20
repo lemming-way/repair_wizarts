@@ -26,9 +26,6 @@ function MyOrder() {
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalEditOrder, setVisibleModalEditOrder] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const [errorBalance] = useState(true);
-  const [errorCash] = useState(true);
-  const [errorSumm] = useState(true);
   const [isVisibleConfirmPause, setVisibleConfirmPause] = useState(false);
   const [orderstatus, setOrderStatus] = useState('сбор предложений');
   // тестовый список для слайдера
@@ -40,7 +37,7 @@ function MyOrder() {
     const fetchData = async () => {
       try {
         console.log(id);
-        const response = await appFetch(`drive/get/`, {
+        await appFetch(`drive/get/`, {
           body: {
             u_a_role: 2,
             b_max_waiting: Math.floor(
@@ -73,65 +70,66 @@ function MyOrder() {
       }
     };
     fetchData();
-  }, []);
-  const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
-    try {
-      switch (type) {
-        case 'section':
-          const sectionsResponse = await fetch(
-            'https://profiback.itest24.com/api/sections',
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const sections = await sectionsResponse.json();
-          return (
-            sections.find((item) => item.id === sectionId)?.name || 'не найдено'
-          );
-          break;
-        case 'subsection':
-          const subsectionResponse = await fetch(
-            `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const subsections = await subsectionResponse.json();
-          return (
-            subsections.find((item) => item.id === subsectionId)?.name ||
-            'не найдено'
-          );
-          break;
-        case 'service':
-          console.log(sectionId, subsectionId);
-          const serviceResponse = await fetch(
-            `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const services = await serviceResponse.json();
-          return (
-            services.find((item) => item.id === serviceId)?.name || 'не найдено'
-          );
-          break;
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  }, [id]);
+  //~ const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
+    //~ try {
+      //~ switch (type) {
+        //~ case 'section':
+          //~ const sectionsResponse = await fetch(
+            //~ 'https://profiback.itest24.com/api/sections',
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: `Bearer ${'123'}`,
+              //~ },
+            //~ },
+          //~ );
+          //~ const sections = await sectionsResponse.json();
+          //~ return (
+            //~ sections.find((item) => item.id === sectionId)?.name || 'не найдено'
+          //~ );
+          //~ break;
+        //~ case 'subsection':
+          //~ const subsectionResponse = await fetch(
+            //~ `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: `Bearer ${'123'}`,
+              //~ },
+            //~ },
+          //~ );
+          //~ const subsections = await subsectionResponse.json();
+          //~ return (
+            //~ subsections.find((item) => item.id === subsectionId)?.name ||
+            //~ 'не найдено'
+          //~ );
+          //~ break;
+        //~ case 'service':
+          //~ console.log(sectionId, subsectionId);
+          //~ const serviceResponse = await fetch(
+            //~ `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
+            //~ {
+              //~ headers: {
+                //~ 'Content-Type': 'application/json',
+                //~ Authorization: `Bearer ${'123'}`,
+              //~ },
+            //~ },
+          //~ );
+          //~ const services = await serviceResponse.json();
+          //~ return (
+            //~ services.find((item) => item.id === serviceId)?.name || 'не найдено'
+          //~ );
+          //~ break;
+      //~ }
+    //~ } catch (error) {
+      //~ console.error(error);
+    //~ }
+  //~ };
   // Состояние для управления модальным окном
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalImage, setModalImage] = useState('');
+  //~ const [modalImage, setModalImage] = useState('');
+  const modalImage = '';
 
   // Массив картинок для слайдера в модальном окне
   const images = [
@@ -139,11 +137,11 @@ function MyOrder() {
     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
     '/img/sentence_img/iphone-x.png',
   ];
-  // Функция для открытия модального окна
-  const openModal = (imageSrc) => {
-    setModalImage(imageSrc); // Устанавливаем путь к картинке
-    setIsModalOpen(true); // Открываем модальное окно
-  };
+  //~ // Функция для открытия модального окна
+  //~ const openModal = (imageSrc) => {
+    //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
+    //~ setIsModalOpen(true); // Открываем модальное окно
+  //~ };
 
   // Функция для закрытия модального окна
   const closeModal = () => {
@@ -204,9 +202,9 @@ function MyOrder() {
       console.log(v, id);
     });
   };
-  const setRequestStatus = (status) => {
-    return updateRequest(id, { status: status }).then((v) => {});
-  };
+  //~ const setRequestStatus = (status) => {
+    //~ return updateRequest(id, { status: status }).then((v) => {});
+  //~ };
   return (
     <>
       {visibleModalConfirmMaster ? (

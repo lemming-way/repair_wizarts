@@ -11,7 +11,7 @@ import phoneIcon from '../img/mobile-phone.png';
 import '../scss/verification-input.css';
 
 const VerificationInput = (props) => {
-  const { isConfirmed, isEmail, mask_value, onChangeMask, value } = props;
+  const { isConfirmed, isEmail, onChangeMask, value } = props;
 
   const sendCode = isEmail ? sendEmailCode : sendPhoneCode;
   const sendVerificationCode = isEmail
@@ -23,7 +23,7 @@ const VerificationInput = (props) => {
 
   useEffect(() => {
     if (isModalOpen) sendCode().then((v) => console.log(v));
-  }, [isModalOpen]);
+  }, [isModalOpen, sendCode]);
 
   const onSubmit = (e) => {
     e.preventDefault();

@@ -14,8 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import { selectUI, setAuthorization } from '../../slices/ui.slice';
 import { deleteUser } from '../../services/user.service';
 import Popup from 'reactjs-popup';
-import SERVER_PATH from '../../constants/SERVER_PATH';
 import style from './SettingsMaster.module.css';
+
+const EMPTY_OBJECT = {}
 
 export default function SettingsMaster() {
   const dispatch = useDispatch();
@@ -27,7 +28,7 @@ export default function SettingsMaster() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('данные сохранились');
   const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
   const ui = useSelector(selectUI);
 
   const [mask_value, setMask_value] = useState('+7(9');
@@ -175,7 +176,7 @@ export default function SettingsMaster() {
     if (user.u_photo) {
       setPreviewUrl(user.u_photo);
     }
-  }, [ui, user.u_photo]);
+  }, [ui, user]);
   useEffect(() => {
     document.title = 'Настройки';
   }, []);

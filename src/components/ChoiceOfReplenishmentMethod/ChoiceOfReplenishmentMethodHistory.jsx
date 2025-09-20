@@ -1,20 +1,8 @@
 import {
-    useEffect,
-    useState
-} from "react";
-import { getBalanceHistory } from "../../services/balance.service";
-import {
     Link,
 } from "react-router-dom";
 
 function ChoiceOfReplenishmentMethodHistory(){
-    const [history, setHistory] = useState([])
-
-    useEffect(() => {
-        getBalanceHistory()
-            .then(setHistory)
-    }, [])
-
     return (
         <div className="middle-block-2 middle-block-2ffsdfas">
 

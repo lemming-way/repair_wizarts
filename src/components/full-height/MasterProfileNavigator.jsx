@@ -1,7 +1,5 @@
-import Swiper, { Navigation } from 'swiper';
 import style from './MasterProfileNavigator.module.css';
 import { Link } from 'react-router-dom';
-import { SwiperSlide } from 'swiper/react';
 // import { useNavigate, useParams } from 'react-router-dom'
 // import "./ClientProfileNavigator.css"
 

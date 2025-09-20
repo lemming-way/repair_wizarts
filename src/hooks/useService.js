@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 
+// todo: Перевести все вызовы апи на единый интерфейс
 const useService = (service, init) => {
   const [response, setResponse] = useState({
     data: init,
@@ -47,7 +48,7 @@ const useService = (service, init) => {
           },
         }));
       });
-  }, []);
+  }, [service, init]);
 
   return response;
 };
@@ -60,7 +61,7 @@ const useServices = (serviceList = []) => {
         error: null,
         refetch: () => {},
       })),
-    [],
+    [serviceList],
   );
   const [response, setResponse] = useState(initialState);
 
@@ -128,7 +129,7 @@ const useServices = (serviceList = []) => {
         }),
       );
     });
-  }, []);
+  }, [initialState, serviceList]);
 
   return response;
 };

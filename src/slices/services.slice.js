@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
-  getServices,
   getServiceRepairsTestData,
 } from '../services/service.service';
 import FetchStatus from '../constants/FetchStatus';

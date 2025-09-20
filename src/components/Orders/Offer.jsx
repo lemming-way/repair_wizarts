@@ -15,7 +15,7 @@ function Offer() {
     const fetchData = async () => {
       try {
         console.log(id);
-        const response = await appFetch(`drive/get/`, {
+        await appFetch(`drive/get/`, {
           body: {
             u_a_role: 2,
             b_max_waiting: Math.floor(
@@ -47,7 +47,7 @@ function Offer() {
       }
     };
     fetchData();
-  }, []);
+  }, [id]);
   // const requests = useService(getMasterRequests, [])
   // тестовые данные
   // const requests = {

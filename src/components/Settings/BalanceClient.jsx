@@ -29,12 +29,12 @@ const BalanceClient = () => {
   const [selectedType, setSelectedType] = useState('');
 
   useEffect(() => {
-    if (user) {
+    //~ if (user) {
       setInputCard(user?.u_details?.wallets?.[0]?.value || 'не указано');
       setInputPrice(user?.u_details?.balance || '0.0');
       setCurrentPage(1); // сбрасываем страницу при смене данных
-    }
-  }, [user]);
+    //~ }
+  }, [user?.u_details?.wallets?.[0]?.value, user?.u_details?.balance]);
 
   const allPayments = user?.u_details?.history_of_pay || [];
 

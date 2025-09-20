@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react"
-import { useSelector } from "react-redux"
-import { selectUser } from "../../slices/user.slice"
+import { useState } from "react"
 import style from "./Balance.module.css"
 import ModalVivod from "../ChoiceOfReplenishmentMethod/ModalVivod"
 
@@ -12,16 +10,16 @@ const Balance = (props) => {
 
 
 
-    const user = useSelector(selectUser)
-    const userPictures = user.master?.[0]?.pictures
-        .filter((v) => v !== "")
-    const [pics, setPics] = useState([])
+    //~ const user = useSelector(selectUser)
+    //~ const userPictures = user.master?.[0]?.pictures
+        //~ .filter((v) => v !== "")
+    //~ const [pics, setPics] = useState([])
 
-    useEffect(() => {
-        if (user.master) {
-            setPics(userPictures)
-        }
-    }, [user])
+    //~ useEffect(() => {
+        //~ if (user.master) {
+            //~ setPics(userPictures)
+        //~ }
+    //~ }, [user])
 
     // const pictureInputRef = useRef(null)
 

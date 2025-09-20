@@ -120,7 +120,7 @@ function App() {
 
     fetchOrders();
     fetchUserOrderReqs();
-  }, []);
+  }, [fetchUserOrderReqs]);
   const stats = useMemo(() => {
     // Статистика считается на основе всех загруженных заказов, до применения фильтров
     const totalProjects = allOrders.length;

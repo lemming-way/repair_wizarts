@@ -6,17 +6,17 @@ import style from './ClientSettingsWrap.module.css';
 import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
 import { Outlet } from 'react-router-dom';
 
+const listLinks = [
+  '/client/settings',
+  '/client/settings/picture',
+  '/client/settings/wallet',
+  '/client/settings/finance',
+  '/client/settings/balance',
+];
+
 function ClientSettingsWrap() {
   const user = useSelector(selectUser);
   const navigate = useNavigate();
-
-  const listLinks = [
-    '/client/settings',
-    '/client/settings/picture',
-    '/client/settings/wallet',
-    '/client/settings/finance',
-    '/client/settings/balance',
-  ];
 
   // const [succeeded, setSucceeded] = useState(false)
   // const [error, setError] = useState("")
@@ -52,7 +52,7 @@ function ClientSettingsWrap() {
 
       setForm(obj);
     }
-  }, [user]);
+  }, [user, form]);
   useEffect(() => {
     document.title = 'Настройки';
   }, []);
@@ -92,7 +92,7 @@ function ClientSettingsWrap() {
     }
   }, []);
 
-  https: return (
+  return (
     <div className={style.main_block}>
       <div className={style.block_settings_client}>
         <div className={style.block_heading}>

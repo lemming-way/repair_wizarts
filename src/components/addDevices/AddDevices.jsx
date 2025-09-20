@@ -7,8 +7,6 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { createRequest } from '../../services/request.service';
 import style from './AddDevices.module.css';
-import { useSelector } from 'react-redux';
-import { getToken } from '../../services/token.service';
 import appFetch from '../../utilities/appFetch';
 
 // Вспомогательная функция для преобразования файла в base64
@@ -54,7 +52,6 @@ function Profile() {
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const [URLSearchParams] = useSearchParams();
-  const { categories } = useSelector((state) => state.categories);
   const title = URLSearchParams.get('title');
   const [error, setError] = useState('');
   const [description, setDescription] = useState('');
@@ -144,6 +141,7 @@ function Profile() {
             })),
           );
           break;
+         default:
       }
     } catch (error) {
       console.error(error);

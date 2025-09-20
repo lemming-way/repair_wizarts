@@ -5,10 +5,12 @@ import { updateUser } from '../../../services/user.service';
 import { useEffect, useState } from 'react';
 import appFetch from '../../../utilities/appFetch';
 
+const EMPTY_ARRAY = []
+
 export default function BlackListModal({ setVisibleBlackList }) {
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
-  const blackList = user?.u_details?.black_list || [];
+  const blackList = user?.u_details?.black_list || EMPTY_ARRAY;
 
   const [blackListData, setBlackListData] = useState([]);
 

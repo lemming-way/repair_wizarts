@@ -3,7 +3,6 @@ import { updateUserPhoto } from '../../services/user.service';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
 import './startff.css';
-import SERVER_PATH from '../../constants/SERVER_PATH';
 
 function App() {
   const user =

@@ -3,22 +3,11 @@ import arrowRight from '../../../../img/header/icons/arrow-right-icon.svg';
 import styles from '../ServiceDropDownMobile/ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './components/ServiceCategoriesDropdown/ServiceCategoriesDropdown';
 import { useSelector } from 'react-redux';
-import { useLanguage } from '../../../../context/LanguageContext';
 const ServiceDropdownMobile = () => {
-  const { t } = useLanguage();
   
   const categories = useSelector(
     (state: any) => state.categories.categories || [],
   );
-  // Для скоращения кода и пройтись по циклу сохранила данные в массиве
-  const data: string[] = [
-    t('Phone repair'),
-    t('Tablet repair'),
-    t('Laptop repair'),
-    t('Computer repair'),
-    t('Watch repair'),
-    t('Accessories'),
-  ];
   const [openItem, setOpenItem] = useState<number | null>(null);
 
   // Что бы отображался dropdown для подкатегории услуг и кнопка аниммировала только по клику на конкетный элемент

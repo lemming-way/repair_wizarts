@@ -9,7 +9,6 @@ import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMet
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
 import { updateUser } from '../../services/user.service';
-import Balance from '../Settings/Balance';
 
 function ChoiceOfReplenishmentMethodClient() {
   const user =

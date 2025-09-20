@@ -5,7 +5,6 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { Link } from 'react-router-dom';
 // import { Navigation } from "swiper";
-import SERVER_PATH from '../../constants/SERVER_PATH';
 import style from './MyOrdersMaster.module.css';
 
 import NavigationOrdersClient from '../Settings/NavigationOrdersClient';
@@ -13,7 +12,6 @@ import ModalEditOrder from './ModalEditOrder';
 import PaginationPages from '../Settings/PaginationPages';
 import {
   getClientRequests,
-  getMasterRequests,
 } from '../../services/request.service';
 import { useService } from '../../hooks/useService';
 const statusEnum = {

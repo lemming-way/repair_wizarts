@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { removeToken } from '../services/token.service';
-import { selectUser, wipeUser } from '../slices/user.slice';
+import { wipeUser } from '../slices/user.slice';
 import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
 import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';

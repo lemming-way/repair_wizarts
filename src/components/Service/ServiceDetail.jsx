@@ -2,24 +2,23 @@ import { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { selectUI } from '../../slices/ui.slice';
 import { Navigation } from 'swiper';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { selectUser } from '../../slices/user.slice';
 import { selectServices } from '../../slices/services.slice';
-import { getMasterByUsername } from '../../services/user.service';
-import { createOrder } from '../../services/order.service';
-import { useService } from '../../hooks/useService';
 import Map from '../Map';
 import ServiceDetailContext from './ServiceDetailContext';
 import '../../scss/detail.scss';
 import '../../scss/media.css';
-import { getMasterRepairs } from '../../services/service.service';
+//~ import { getMasterRepairs } from '../../services/service.service';
 import { Link } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
 
 import style from './serviceDetail.module.scss';
 import appFetch from '../../utilities/appFetch';
 import { createRequest } from '../../services/request.service';
+
+const EMPTY_ARRAY = []
 
 function ServiceDetail() {
   const test_price = [
@@ -86,20 +85,19 @@ function ServiceDetail() {
     useState(false);
   const [visibleConfirm, setVisibleConfirm] = useState(false);
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
-  const navigate = useNavigate();
   const { id } = useParams();
   const { categories } = useSelector((state) => state.categories);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const ui = useSelector(selectUI);
   const services = useSelector(selectServices);
-  const repairMasters = getMasterRepairs();
+  //~ const repairMasters = getMasterRepairs();
   const { sectionId, subsectionId } = useParams();
   const device =
     useMemo(
       () => services?.find((v) => v.id === +id) || {},
-      [services.devices, id],
-    ) || [];
+      [services, id],
+    ) || EMPTY_ARRAY;
 
   const [show, setShow] = useState(false);
 
@@ -122,6 +120,7 @@ function ServiceDetail() {
   const [mastersList, setMastersList] = useState([]);
   const [masterCarData, setMasterCarData] = useState(null);
 
+  // todo: вынести загрузку пользователя в глобальное состояние
   useEffect(() => {
     appFetch('user', { body: { lc: 99999999999 } }, true)
       .then((response) => {
@@ -180,7 +179,7 @@ function ServiceDetail() {
   useEffect(() => {
     setPhone(user.u_phone);
     setName(user.u_name);
-  }, [user]);
+  }, [user.u_phone, user.u_name]);
 
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
@@ -227,39 +226,40 @@ function ServiceDetail() {
     setMasterCarData(null);
   };
 
-  const [invoice, setInvoice] = useState({
-    final: 0,
-    list: [],
-  });
+  //~ const [invoice, setInvoice] = useState({
+    //~ final: 0,
+    //~ list: [],
+  //~ });
   const [description, setDescription] = useState('');
 
   const masters = useMemo(() => mastersList, [mastersList]);
 
-  const repairFiltered = useMemo(
-    () => repairMasters,
-    [selectedMaster.username],
-  );
+  //~ // непонятный код, основанный на побочных эффектах. привести в понятный вид
+  //~ const repairFiltered = useMemo(
+    //~ () => repairMasters,
+    //~ [selectedMaster.username],
+  //~ );
 
-  useEffect(() => {
-    const invoiceDefault = {
-      final: 0,
-      list: [],
-    };
-    const invoice = selected.reduce((state, value) => {
-      const { name, price } = repairFiltered.find((v) => v.id === value);
-      return {
-        final: state.final + price,
-        list: [
-          ...state.list,
-          {
-            name,
-            price,
-          },
-        ],
-      };
-    }, invoiceDefault);
-    setInvoice(invoice);
-  }, [selected]);
+  //~ useEffect(() => {
+    //~ const invoiceDefault = {
+      //~ final: 0,
+      //~ list: [],
+    //~ };
+    //~ const invoice = selected.reduce((state, value) => {
+      //~ const { name, price } = repairFiltered.find((v) => v.id === value);
+      //~ return {
+        //~ final: state.final + price,
+        //~ list: [
+          //~ ...state.list,
+          //~ {
+            //~ name,
+            //~ price,
+          //~ },
+        //~ ],
+      //~ };
+    //~ }, invoiceDefault);
+    //~ setInvoice(invoice);
+  //~ }, [selected]);
 
   const [search, setSearch] = useState('');
 
@@ -376,13 +376,13 @@ function ServiceDetail() {
 
   useEffect(() => {
     document.title = device.name;
-  }, [device]);
+  }, [device.name]);
 
   const [goToR] = useState(false);
 
   function getSumPrice() {
     var sum = 0;
-    selectedService.map((index) => {
+    selectedService.forEach((index) => {
       if (!ignoreSelectedServices.includes(index)) {
         sum += test_price[index]['price'];
       }
@@ -401,10 +401,10 @@ function ServiceDetail() {
   }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalImage, setModalImage] = useState('');
+  //~ const [modalImage, setModalImage] = useState('');
 
   const openModal = (imageSrc) => {
-    setModalImage(imageSrc);
+    //~ setModalImage(imageSrc);
     setIsModalOpen(true);
   };
 
@@ -421,6 +421,7 @@ function ServiceDetail() {
     }
     setSelectedService(list);
   }
+  // todo: проверить, совпадают ли типы categ.id, sectionId, subsec.id, subsectionId и можно ли использовать строгое сравнение
   const prices = categories.flatMap((categ) => {
     return categ.id == sectionId
       ? categ.subsections.flatMap((subsec) => {

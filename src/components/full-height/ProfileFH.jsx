@@ -4,11 +4,12 @@ import { selectUser } from '../../slices/user.slice';
 import { updatePassword, updateUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
-import appFetch from '../../utilities/appFetch';
+
+const EMPTY_OBJECT = {}
 
 function ProfileFH() {
   const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -70,7 +71,7 @@ function ProfileFH() {
         email: user.u_email,
       });
     }
-  }, [user]);
+  }, [user, form.name]);
 
   useEffect(() => {
     document.title = 'Настройки';

@@ -20,7 +20,6 @@ const STATE_ENUM = {
 function Orders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
   const [orderState, setOrderState] = useState('Активно');
 
   // Безопасное получение user.u_id
@@ -35,7 +34,6 @@ function Orders() {
     }
 
     setIsLoading(true);
-    setFetchError(null);
 
     try {
       const allOrder = await appFetch('/drive', {
@@ -71,7 +69,6 @@ function Orders() {
       setOrders(ordersByStatus);
     } catch (error) {
       console.error(error);
-      setFetchError(error.message);
     } finally {
       setIsLoading(false);
     }

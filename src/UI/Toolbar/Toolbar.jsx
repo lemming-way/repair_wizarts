@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import SERVER_PATH from '../../constants/SERVER_PATH';
 import { selectUI } from '../../slices/ui.slice';
 import { selectUser } from '../../slices/user.slice';
 import DropdownSetout from '../../components/dropdownSetout';
@@ -22,10 +21,9 @@ import { useLanguage } from '../../context/LanguageContext';
 // 4: стилей
 
 const Toolbar = () => {
-  const [visibleCountry, setVisibleCountry] = useState(false);
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const ui = useSelector(selectUI);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
@@ -106,7 +104,6 @@ const Toolbar = () => {
                 className="header__icons"
                 style={{ display: 'flex', position: 'relative' }}
                 onClick={() => {
-                  setVisibleCountry(false);
                   setVisibleSetout(false);
                 }}
               >
@@ -119,7 +116,6 @@ const Toolbar = () => {
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
                   setVisibleSetout(!visibleSetout);
-                  setVisibleCountry(false);
                 }}
               >
                 <img

@@ -1,21 +1,19 @@
 import { useEffect, useState } from 'react';
 import '../../scss/applications.css';
 import NavApplication from './NavApplication';
-import Application from './Application';
 import style from './applications.module.css';
-import MiniSlider from '../miniSlider/MiniSilder';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import EmojiPicker from 'emoji-picker-react';
 import { useNavigate } from 'react-router-dom';
 import { getMasterOrders } from '../../services/order.service';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
 import { useService } from '../../hooks/useService';
-const statusEnum = {
-  '#order': 'Активно',
-  '#all': 'Активно',
-  '#working': 'В работе',
-  '#cancel': 'Отменено',
-};
+//~ const statusEnum = {
+  //~ '#order': 'Активно',
+  //~ '#all': 'Активно',
+  //~ '#working': 'В работе',
+  //~ '#cancel': 'Отменено',
+//~ };
 const StylesStatusEnum = {
   Активно: 'status_green',
   'В работе': 'status_in_progress',

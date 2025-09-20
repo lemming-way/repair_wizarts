@@ -11,7 +11,7 @@ const WalletConfirm = () => {
 
     useEffect(() => {
         updateBalance(id).then(() => nav('/master/wallet'))
-    }, [])
+    }, [id, nav])
 }
 
 export default WalletConfirm

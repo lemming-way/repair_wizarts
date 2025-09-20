@@ -1,23 +1,39 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectServices } from '../slices/services.slice';
-import SERVER_PATH from '../constants/SERVER_PATH';
 import style from './remont.module.css';
 
 import '../scss/remont.css';
 
 function Remont() {
-  const id = 1;
-
   const { sectionId, subsectionId } = useParams();
   const [currentServices, setCurrentServices] = useState([]);
   console.log(sectionId, subsectionId);
   const { categories } = useSelector((state) => state.categories);
+
   useEffect(() => {
+    const getData = async () => {
+      try {
+        const subsectionResponse = await fetch(
+          `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${'123'}`,
+            },
+          },
+        );
+        const subsections = await subsectionResponse.json();
+        console.log(subsections);
+        setCurrentServices(subsections);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
     document.title = 'Ремонт iPhone';
     getData();
-  }, []);
+  }, [sectionId]);
   useEffect(() => {
     const searchParam = new URLSearchParams(window.location.search).get(
       'search',
@@ -27,25 +43,7 @@ function Remont() {
         currentServices.filter((item) => item.name === searchParam),
       );
     }
-  }, [currentServices.length]);
-  const getData = async () => {
-    try {
-      const subsectionResponse = await fetch(
-        `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${'123'}`,
-          },
-        },
-      );
-      const subsections = await subsectionResponse.json();
-      console.log(subsections);
-      setCurrentServices(subsections);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  }, [currentServices]);
   const selectedService = categories.find((item) => item.id == sectionId);
   const searchParam = new URLSearchParams(window.location.search).get('search');
   return (

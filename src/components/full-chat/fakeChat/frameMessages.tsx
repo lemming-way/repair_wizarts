@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'; // Добавил useMemo
+import { useEffect, useMemo } from 'react';
 import '../../../scss/chat.css';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -88,7 +88,7 @@ function App() {
         orders: orders,
       };
     });
-  }, [userRequests.data]);
+  }, [userRequests.data, user.u_id]);
 
   useEffect(() => {
     document.title = 'Чат';
