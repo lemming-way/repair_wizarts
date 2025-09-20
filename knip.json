@@ -18,6 +18,12 @@
     "src/UI/Toolbar/components/ToolbarSearchBar/ToolbarSearchBar.tsx",
     "src/components/Footer.tsx",
     "src/components/Registration/Login.jsx",
+    "src/components/dropdownCountry.jsx",
+    "src/components/full-chat/fakeChat/SimpleImage.jsx",
+    "src/components/Header.jsx",
+    "src/components/menu/Menu.tsx",
+    "src/components/Notifications/Notifications.jsx",
+    "src/components/Settings/Photo.jsx"
   ],
   "project": ["src/**/*.{js,jsx,ts,tsx,json,css,scss,svg,png,wav}"],
   "ignore": [
