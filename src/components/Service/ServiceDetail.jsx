@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { selectUser } from '../../slices/user.slice';
 import { selectServices } from '../../slices/services.slice';
-import Map from '../Map';
+import YMap from '../Map';
 import ServiceDetailContext from './ServiceDetailContext';
 import '../../scss/detail.scss';
 import '../../scss/media.css';
@@ -862,7 +862,7 @@ function ServiceDetail() {
         </section>
 
         <section className="map">
-          <Map
+          <YMap
             masters={masters}
             selectedMaster={selectedMaster}
             selectMaster={onSelectMaster}

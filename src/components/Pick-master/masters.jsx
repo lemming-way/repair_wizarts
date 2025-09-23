@@ -6,7 +6,7 @@ import { getMasterByUsername } from "../../services/user.service";
 import { getMasterRepairs } from "../../services/service.service";
 import { useService } from "../../hooks/useService";
 import { Link } from "react-router-dom";
-import Map from '../Map'
+import YMap from '../Map'
 import './master.css'
 import { useSearchParams } from "react-router-dom";
 import Popup from "reactjs-popup";
@@ -186,7 +186,7 @@ function App() {
             <HeroSection />
             <section className="master__map">
                 <h1 className="master__map__title">Карта наших мастеров </h1>
-                <Map
+                <YMap
                     masters={masters}
                     selectedMaster={master}
                     selectMaster={onMasterSelect}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { withYMaps } from 'react-yandex-maps';
 import { selectUser } from '../../slices/user.slice';
 import { updateUser } from '../../services/user.service';
 import '../../scss/profile.css';
@@ -37,7 +36,7 @@ const experienceOptions = [
 { value: 6, label: 'Более 5 лет' },
 ];
 
-function Profile({ ymaps }) {
+function Profile() {
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(
     [],
   );
@@ -595,4 +594,4 @@ function Profile({ ymaps }) {
   );
 }
 
-export default withYMaps(Profile, true, ['SuggestView', 'geocode']);
+export default Profile;
