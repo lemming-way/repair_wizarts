@@ -41,6 +41,16 @@ const Toolbar = () => {
       setIsOpen(false);
     });
   }, []);
+
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (!e.target.closest('.yosetout')) {
+        setVisibleSetout(false);
+      }
+    };
+    document.addEventListener('click', onDocClick);
+    return () => document.removeEventListener('click', onDocClick);
+  }, []);
   console.log(ui.isAuthorized);
   return (
     <header>
@@ -113,7 +123,7 @@ const Toolbar = () => {
                 <div className="chat-message-counter">1</div>
               </Link>
               <div
-                className="yosetout"
+                className={visibleSetout ? 'yosetout yosetout--open' : 'yosetout'}
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
                   setVisibleSetout(!visibleSetout);
@@ -141,9 +151,8 @@ const Toolbar = () => {
                   />
                 </div>
 
-                {/* {visibleSetout ? <DropdownSetout /> : null} */}
                 <div className="bldropdown">
-                  <DropdownSetout />
+                  {visibleSetout ? <DropdownSetout /> : null}
                 </div>
                 {/* </Link> */}
               </div>

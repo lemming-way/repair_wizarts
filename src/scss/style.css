@@ -802,7 +802,11 @@ li.dropdown:hover > .dropdown-content {
     margin-left: 5px;
 }
 
-.yosetout:hover .bldropdown {
+/* .yosetout:hover .bldropdown {
+    display: block;
+} */
+
+.yosetout--open .bldropdown {
     display: block;
 }
 
@@ -810,7 +814,11 @@ li.dropdown:hover > .dropdown-content {
     transition: 0.3s;
 }
 
-.yosetout:hover .dropdownuser_arrow {
+/* .yosetout:hover .dropdownuser_arrow {
+    rotate: -90deg;
+} */
+
+.yosetout--open .dropdownuser_arrow {
     rotate: -90deg;
 }
 
