@@ -20,6 +20,7 @@ import ArticleComments from './ArticleComments'
 import SERVER_PATH from '../../constants/SERVER_PATH'
 import { selectUI } from '../../slices/ui.slice'
 import { useSelector } from 'react-redux'
+import DOMPurify from 'dompurify'
 
 const Article = (props) => {
     const { id } = useParams()
@@ -96,7 +97,14 @@ const Article = (props) => {
             <div className={styles.body}>
                 <div
                     className={`${styles.bodyContent} ${offsetContent? styles.offset_content : ""}`}
-                    dangerouslySetInnerHTML={{ __html: Array(100).fill(data.text).join('') }}
+                    dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(
+                            Array(100).fill(data.text).join('') || '',
+                            {
+                                USE_PROFILES: { html: true },
+                            },
+                        ),
+                    }}
                 >
                 </div>
                 {offsetContent ? 
