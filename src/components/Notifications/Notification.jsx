@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
-import { removeNotification } from '../../slices/notifications.slice'
+import { Link } from 'react-router-dom'
+
 import styles from './Notifications.module.css'
+import { removeNotification } from '../../slices/notifications.slice'
 
 const Notification = (props) => {
     const {

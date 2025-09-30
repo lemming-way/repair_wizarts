@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { updateUserPhoto } from '../../services/user.service';
 import { useSelector } from 'react-redux';
+
+import { updateUserPhoto } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
 import './startff.css';
 

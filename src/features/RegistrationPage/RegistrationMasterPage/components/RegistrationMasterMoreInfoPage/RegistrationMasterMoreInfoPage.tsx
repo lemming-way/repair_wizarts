@@ -1,5 +1,6 @@
 import React from 'react';
 import CreatableSelect from "react-select/creatable";
+
 import styles from './RegistrationMasterMoreInfoPage.module.scss';
 import { useLanguage } from '../../../../../context/LanguageContext';
 

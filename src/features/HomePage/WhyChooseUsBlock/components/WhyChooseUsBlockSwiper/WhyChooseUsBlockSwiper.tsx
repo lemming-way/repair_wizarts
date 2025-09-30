@@ -1,16 +1,17 @@
 import React from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import {Navigation } from "swiper";
+import { Swiper, SwiperSlide } from 'swiper/react';
+
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
-import WhyChooseUsBlockCard from "../WhyChooseUsBlockCard/WhyChooseUsBlockCard";
-import mastersImage from '../../../../../img/home/whyChooseUsBlock/masters.svg';
-import qualityImage from '../../../../../img/home/whyChooseUsBlock/quality.svg';
-import priceImage from '../../../../../img/home/whyChooseUsBlock/price.svg';
-import clockImage from "../../../../../img/home/whyChooseUsBlock/clock.svg";
-import './WhyChooseUsBlockSwiper.scss';
 import { useLanguage } from '../../../../../context/LanguageContext';
+import clockImage from "../../../../../img/home/whyChooseUsBlock/clock.svg";
+import mastersImage from '../../../../../img/home/whyChooseUsBlock/masters.svg';
+import priceImage from '../../../../../img/home/whyChooseUsBlock/price.svg';
+import qualityImage from '../../../../../img/home/whyChooseUsBlock/quality.svg';
+import WhyChooseUsBlockCard from "../WhyChooseUsBlockCard/WhyChooseUsBlockCard";
+import './WhyChooseUsBlockSwiper.scss';
 
 const WhyChooseUsBlockSwiper = () => {
   const { t } = useLanguage();

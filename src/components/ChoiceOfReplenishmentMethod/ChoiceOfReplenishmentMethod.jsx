@@ -2,11 +2,13 @@ import {
     useState,
     useEffect
 } from 'react';
+
 import '../../scss/ChoiceOfReplenishmentMethod.css'
+import { useNavigate } from 'react-router-dom';
+
+import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistory from "./ChoiceOfReplenishmentMethodHistory";
 import style from './style.module.css'
-import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
-import { useNavigate } from 'react-router-dom';
 
 function ChoiceOfReplenishmentMethod() {
 

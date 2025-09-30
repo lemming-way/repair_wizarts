@@ -1,17 +1,19 @@
-import {Swiper, SwiperSlide} from "swiper/react";
 import { Link } from "react-router-dom";
+import {Navigation} from "swiper";
+import {Swiper, SwiperSlide} from "swiper/react";
+
+import SERVER_PATH from "../../constants/SERVER_PATH";
 import { useService } from "../../hooks/useService";
 import defaultImage from "../../img/article.png"
-import formatDate from "../../utilities/formatDate";
 import likeImage from "../../img/like.png"
 import viewImage from "../../img/view.png"
 
-import {Navigation} from "swiper";
+
 import '../../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 import { getArticles } from '../../services/article.service';
-import SERVER_PATH from "../../constants/SERVER_PATH";
+import formatDate from "../../utilities/formatDate";
 
 
 function Articles(){

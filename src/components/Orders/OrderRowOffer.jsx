@@ -1,11 +1,12 @@
-import style from './OrderRow.module.css';
+import { useState, useEffect } from 'react';
+import { useRef } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useState, useEffect } from 'react';
+
 import ModalOfferGo from './ModalOfferGo';
+import style from './OrderRow.module.css';
 import appFetch from '../../utilities/appFetch';
 
-import { useRef } from 'react';
 // Компонент для отображения dropbox-фото через POST-запрос
 const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
   const [imgUrl, setImgUrl] = useState(

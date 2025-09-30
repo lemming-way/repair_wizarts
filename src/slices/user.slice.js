@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
-import { getUser } from '../services/user.service';
+
 import FetchStatus from '../constants/FetchStatus';
+import { getUser } from '../services/user.service';
 
 const fetchUser = createAsyncThunk('user/fetch', (_, { rejectWithValue }) =>
   getUser().catch(rejectWithValue),

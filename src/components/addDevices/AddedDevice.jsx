@@ -1,17 +1,17 @@
-import { useEffect, useState } from 'react';
 import cn from 'classnames';
+import { useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Popup from 'reactjs-popup';
-import formatDate from '../../utilities/formatDate';
-import { deleteRequest, updateRequest } from '../../services/request.service';
-import ModalConfirmPause from './ModalConfirmPause';
-import ModalConfirmDelete from './ModalConfirmDelete';
-import { useRef } from 'react';
-
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
+
 import style from './AddedDevice.module.css';
+import ModalConfirmDelete from './ModalConfirmDelete';
+import ModalConfirmPause from './ModalConfirmPause';
+import { deleteRequest, updateRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
+import formatDate from '../../utilities/formatDate';
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../slices/user.slice';
 import { Link, useLocation } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
+
+import { selectUser } from '../slices/user.slice';
 import AlertMessage from './AlertMessage/AlertMessage';
 import { useUserRating } from '../hooks/useUserRating';
 function Sidebar() {

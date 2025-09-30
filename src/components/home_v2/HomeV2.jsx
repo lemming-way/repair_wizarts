@@ -1,29 +1,30 @@
 import React, { useState } from 'react';
+
 import styles from './HomeV2.module.css';
 
 // Импорт SVG-иконок
-import menuIcon from './icons/menu.svg';
-import closeIcon from './icons/close.svg';
-import searchIcon from './icons/search.svg';
-import chevronRightIcon from './icons/chevron-right.svg';
 import arrowRightIcon from './icons/arrow-right.svg';
-import clipboardIcon from './icons/clipboard.svg';
-import userCheckIcon from './icons/user-check.svg';
-import messageIcon from './icons/message.svg';
 import checkCircleIcon from './icons/check-circle.svg';
-import creditCardIcon from './icons/credit-card.svg';
+import chevronRightIcon from './icons/chevron-right.svg';
+import clipboardIcon from './icons/clipboard.svg';
 import clockIcon from './icons/clock.svg';
-import shieldIcon from './icons/shield.svg';
-import usersIcon from './icons/users.svg';
-import thumbsUpIcon from './icons/thumbs-up.svg';
-import starIcon from './icons/star.svg';
-import starEmptyIcon from './icons/star-empty.svg';
+import closeIcon from './icons/close.svg';
+import creditCardIcon from './icons/credit-card.svg';
 import facebookIcon from './icons/facebook.svg';
-import twitterIcon from './icons/twitter.svg';
 import instagramIcon from './icons/instagram.svg';
 import phoneIcon from './icons/phone.svg';
 import mailIcon from './icons/mail.svg';
 import mapPinIcon from './icons/map-pin.svg';
+import menuIcon from './icons/menu.svg';
+import messageIcon from './icons/message.svg';
+import searchIcon from './icons/search.svg';
+import shieldIcon from './icons/shield.svg';
+import starEmptyIcon from './icons/star-empty.svg';
+import starIcon from './icons/star.svg';
+import thumbsUpIcon from './icons/thumbs-up.svg';
+import twitterIcon from './icons/twitter.svg';
+import userCheckIcon from './icons/user-check.svg';
+import usersIcon from './icons/users.svg';
 
 // @deleteme: временно выключил предупреждения, надо убрать
 /* eslint-disable jsx-a11y/anchor-is-valid */

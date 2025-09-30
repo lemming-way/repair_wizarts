@@ -1,4 +1,5 @@
 import React from 'react';
+
 // import {useService} from "../../../../../hooks/useService";
 // import {getCounters} from "../../../../../services/index.service";
 import styles from './HeroSectionCounters.module.scss';

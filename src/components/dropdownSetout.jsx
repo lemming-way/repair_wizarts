@@ -1,8 +1,9 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+
 import { removeToken } from '../services/token.service';
-import { wipeUser } from '../slices/user.slice';
 import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
+import { wipeUser } from '../slices/user.slice';
 import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../context/LanguageContext'; // путь поправьте под свой

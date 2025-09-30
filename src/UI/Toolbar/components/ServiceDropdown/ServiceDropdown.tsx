@@ -102,11 +102,12 @@
 // export default ServiceDropdown;
 import { useState } from 'react';
 import Dropdown from 'react-multilevel-dropdown';
-import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
-import styles from './ServiceDropdown.module.scss';
-import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
+import { Link } from 'react-router-dom';
+
+import styles from './ServiceDropdown.module.scss';
+import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
+import type { RootState } from '../../../../store';
 
 const ServiceDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
-import { updateUserPhoto } from '../../services/user.service';
-import SERVER_PATH from '../../constants/SERVER_PATH';
+
 import style from './SettingsMaster.module.css';
+import SERVER_PATH from '../../constants/SERVER_PATH';
+import { updateUserPhoto } from '../../services/user.service';
+import { selectUser } from '../../slices/user.slice';
 
 const Photo = () => {
   const user = useSelector(selectUser);

@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import '../../../scss/chat.css';
-import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../../slices/user.slice';
-import { getAllClientRequests } from '../../../services/request.service';
+import { Link } from 'react-router-dom';
+
 import { useService } from '../../../hooks/useService';
-import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
+import { getAllClientRequests } from '../../../services/request.service';
+import { selectUI } from '../../../slices/ui.slice';
+import { selectUser } from '../../../slices/user.slice';
 
 function App() {
   const ui = useSelector(selectUI);

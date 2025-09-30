@@ -4,16 +4,16 @@ import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { Link } from 'react-router-dom';
-// import { Navigation } from "swiper";
-import style from './MyOrdersMaster.module.css';
 
-import NavigationOrdersClient from '../Settings/NavigationOrdersClient';
+// import { Navigation } from "swiper";
 import ModalEditOrder from './ModalEditOrder';
-import PaginationPages from '../Settings/PaginationPages';
+import style from './MyOrdersMaster.module.css';
+import { useService } from '../../hooks/useService';
 import {
   getClientRequests,
 } from '../../services/request.service';
-import { useService } from '../../hooks/useService';
+import NavigationOrdersClient from '../Settings/NavigationOrdersClient';
+import PaginationPages from '../Settings/PaginationPages';
 const statusEnum = {
   '#order': 'Активно',
   '#all': 'Активно',

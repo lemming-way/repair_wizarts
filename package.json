@@ -38,13 +38,15 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
+    "typecheck": "tsc --noEmit",
+    "ci:check": "npm run lint && npm run format:check && npm run typecheck && npm run test -- --watchAll=false --coverage",
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
+    "size": "size-limit"
   },
   "browserslist": {
     "production": [
@@ -58,10 +60,28 @@
       "last 1 safari version"
     ]
   },
+  "size-limit": [
+    {
+      "path": "build/static/js/*.js",
+      "limit": "170 KB"
+    }
+  ],
   "devDependencies": {
+    "@size-limit/preset-app": "^11.2.0",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.0",
     "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "eslint-plugin-testing-library": "^7.11.0",
     "knip": "^5.63.1",
-    "sass": "^1.92.1"
+    "prettier": "^3.6.2",
+    "sass": "^1.92.1",
+    "size-limit": "^11.2.0",
+    "source-map-explorer": "^2.5.3"
   }
 }

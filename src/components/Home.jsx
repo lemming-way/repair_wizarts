@@ -3,11 +3,11 @@ import '../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 
+import Articles from "./Home/Articles";
+import Order from "./Home/Order";
 import HeroSection from '../features/HomePage/HeroSection/HeroSection';
 import WhyChooseUsBlock from "../features/HomePage/WhyChooseUsBlock/WhyChooseUsBlock"
 
-import Order from "./Home/Order";
-import Articles from "./Home/Articles";
 
 function App() {
     // const counters = useService(getCounters, {})

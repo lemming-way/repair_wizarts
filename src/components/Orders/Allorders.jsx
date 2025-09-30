@@ -3,18 +3,19 @@ import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import Dropdown from 'react-bootstrap/Dropdown';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import style from './Allorders.module.css';
 
+import style from './Allorders.module.css';
+import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
-import EmailSettings from './EmailSettings';
-import Dropdown from 'react-bootstrap/Dropdown';
+import { selectUser } from '../../slices/user.slice';
+import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
-import appFetch from '../../utilities/appFetch';
-import { selectUser } from '../../slices/user.slice';
-import { useSelector } from 'react-redux';
+
 
 // Переименовал App в AllOrders для большей ясности
 function App() {

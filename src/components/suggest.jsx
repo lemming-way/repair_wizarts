@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react"
 import { useSelector } from "react-redux";
-import { selectUser } from "../slices/user.slice";
 import { Link, useNavigate } from "react-router-dom";
 import { Rating } from "react-simple-star-rating";
-import { getMasterByUsername } from "../services/user.service";
-import { getMasterServices } from "../services/service.service"
+
+import SERVER_PATH from "../constants/SERVER_PATH";
 import { createDialog } from "../services/dialog.service";
 import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
-import SERVER_PATH from "../constants/SERVER_PATH";
+import { getMasterServices } from "../services/service.service"
+import { getMasterByUsername } from "../services/user.service";
+import { selectUser } from "../slices/user.slice";
 
 const Suggest = (props) => {
     const {
