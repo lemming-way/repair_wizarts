@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import ReactDom from 'react-dom';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 
 import { selectUI } from '../../slices/ui.slice';
@@ -39,7 +39,7 @@ function Map(props) {
     // selectedMaster, // Больше не нужен внутри этого компонента
     selectMaster, // Функция из родителя для выбора мастера
   } = props;
-  const YMaps = useQuery( 'YMaps', queryYMaps, { initialData: null } ).data;
+  const YMaps = useQuery( { queryKey: [ 'YMaps' ], queryFn: queryYMaps, placeholderData: null } ).data;
   const ui = useSelector(selectUI);
 
   const mapDefaultLocation = useMemo( () => {
