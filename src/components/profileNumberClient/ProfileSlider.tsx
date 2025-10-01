@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { Navigation, Pagination } from 'swiper';
-import { Swiper, SwiperSlide } from 'swiper/react';
+import React, { useState, Suspense } from 'react';
 
 import 'swiper/swiper-bundle.min.css';
+
+const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
+const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 interface ProfileSliderProps {
   images?: string[];
@@ -32,43 +33,44 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
       <div className="swiper">
         <div className="swiper-wrapper">
           <div className="swiper">
-            <Swiper
-              pagination={true}
-              navigation={{
-                nextEl: '.image-swiper-button-next',
-                prevEl: '.image-swiper-button-prev',
-              }}
-              modules={[Navigation, Pagination]}
-              className="swiperPhoneNumber"
-            >
-              <div className="swiper-button image-swiper-button-next">
-                <img
-                  className="image-swiper-button-next"
-                  src="/img/sliderright.png"
-                  alt="next"
-                />
-              </div>
-              <div className="swiper-button image-swiper-button-prev">
-                <img src="/img/sliderleft.png" alt="prev" />
-              </div>
+            <Suspense fallback={<div className="swiper-loading" />}>
+              <LazySwiper
+                pagination={true}
+                navigation={{
+                  nextEl: '.image-swiper-button-next',
+                  prevEl: '.image-swiper-button-prev',
+                }}
+                className="swiperPhoneNumber"
+              >
+                <div className="swiper-button image-swiper-button-next">
+                  <img
+                    className="image-swiper-button-next"
+                    src="/img/sliderright.png"
+                    alt="next"
+                  />
+                </div>
+                <div className="swiper-button image-swiper-button-prev">
+                  <img src="/img/sliderleft.png" alt="prev" />
+                </div>
 
-              <SwiperSlide className="swiperPhoneNumber__slide">
-                <img
-                  src="/img/img-iPhone.png"
-                  alt="iPhone"
-                  onClick={() => openModal('/img/img-iPhone.png')}
-                  style={{ cursor: 'pointer' }}
-                />
-              </SwiperSlide>
-              <SwiperSlide className="swiperPhoneNumber__slide">
-                <img
-                  src="/img/img-iPhone.png"
-                  alt="iPhone"
-                  onClick={() => openModal('/img/img-iPhone.png')}
-                  style={{ cursor: 'pointer' }}
-                />
-              </SwiperSlide>
-            </Swiper>
+                <LazySwiperSlide className="swiperPhoneNumber__slide">
+                  <img
+                    src="/img/img-iPhone.png"
+                    alt="iPhone"
+                    onClick={() => openModal('/img/img-iPhone.png')}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </LazySwiperSlide>
+                <LazySwiperSlide className="swiperPhoneNumber__slide">
+                  <img
+                    src="/img/img-iPhone.png"
+                    alt="iPhone"
+                    onClick={() => openModal('/img/img-iPhone.png')}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </LazySwiperSlide>
+              </LazySwiper>
+            </Suspense>
           </div>
         </div>
       </div>
@@ -79,21 +81,22 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
               &times;
             </button>
 
-            <Swiper
-              initialSlide={images.indexOf(modalImage)}
-              pagination={true}
-              navigation={true}
-              modules={[Navigation, Pagination]}
-              className="modalSwiper"
-            >
-              {images.map((image, index) => (
-                <SwiperSlide key={index}>
-                  <div className="modal-content-info">
-                    <img src={image} alt={`Slide ${index + 1}`} />
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
+            <Suspense fallback={<div className="swiper-loading" />}>
+              <LazySwiper
+                initialSlide={images.indexOf(modalImage)}
+                pagination={true}
+                navigation={true}
+                className="modalSwiper"
+              >
+                {images.map((image, index) => (
+                  <LazySwiperSlide key={index}>
+                    <div className="modal-content-info">
+                      <img src={image} alt={`Slide ${index + 1}`} />
+                    </div>
+                  </LazySwiperSlide>
+                ))}
+              </LazySwiper>
+            </Suspense>
           </div>
         </div>
       )}

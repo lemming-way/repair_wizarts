@@ -3,12 +3,13 @@ import type {
   Dispatch,
   SetStateAction,
   KeyboardEvent} from 'react';
-import {
+import React, {
   useEffect,
   useRef,
   useState,
   useMemo,
-  useCallback
+  useCallback,
+  Suspense
 } from 'react';
 import '../../../scss/chat.css';
 import Dropdown from 'react-multilevel-dropdown';
@@ -16,7 +17,6 @@ import { useSelector } from 'react-redux';
 import MediaQuery from 'react-responsive';
 import { Link, useParams } from 'react-router-dom';
 
-import { Swiper, SwiperSlide } from 'swiper/react';
 import AddFeedbackModal from './AddFeedbackModal';
 import AddOrderModal from './AddOrderModal';
 import BlackListModal from './BlackListModal';
@@ -31,7 +31,6 @@ import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
 
 import type { EmojiClickData } from 'emoji-picker-react';
-import EmojiPicker from 'emoji-picker-react';
 
 import appFetch from '../../../utilities/appFetch';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
@@ -40,7 +39,9 @@ import DisputeFinalModalV2 from './DisputeFinalModal';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
 
-import { Navigation } from 'swiper';
+const LazySwiper = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
+const LazySwiperSlide = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
+const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
 // ====== ЧАТ: типы и утилиты ===============================================
 type ChatAuthor = 'client' | 'master' | 'admin';
@@ -931,28 +932,29 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       {/* Фото заказа (если есть массив ссылок в заказе) */}
       {photoUrls.length > 0 && (
         <div style={{ margin: '10px 0' }}>
-          <Swiper
-            slidesPerView={3}
-            spaceBetween={10}
-            navigation={true}
-            modules={[Navigation]}
-            style={{ width: 300, height: 120 }}
-          >
-            {photoUrls.map((url, idx) => (
-              <SwiperSlide key={idx}>
-                <DropboxImage
-                  url={typeof url === 'string' ? url : (url as any).url}
-                  alt={`Фото ${idx + 1}`}
-                  style={{
-                    width: '100%',
-                    height: 120,
-                    objectFit: 'cover',
-                    borderRadius: 8,
-                  }}
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          <Suspense fallback={<div className="swiper-loading" />}>
+            <LazySwiper
+              slidesPerView={3}
+              spaceBetween={10}
+              navigation={true}
+              style={{ width: 300, height: 120 }}
+            >
+              {photoUrls.map((url, idx) => (
+                <LazySwiperSlide key={idx}>
+                  <DropboxImage
+                    url={typeof url === 'string' ? url : (url as any).url}
+                    alt={`Фото ${idx + 1}`}
+                    style={{
+                      width: '100%',
+                      height: 120,
+                      objectFit: 'cover',
+                      borderRadius: 8,
+                    }}
+                  />
+                </LazySwiperSlide>
+              ))}
+            </LazySwiper>
+          </Suspense>
         </div>
       )}
 
@@ -2155,7 +2157,9 @@ function ChoiceOfReplenishmentMethodCard() {
                                 bottom: Math.max(110, footerHeight + 30),
                               }}
                             >
-                              <EmojiPicker onEmojiClick={addEmojiToMessage} />
+                              <Suspense fallback={<div className="emoji-loading" />}>
+                                <EmojiPickerLazy onEmojiClick={addEmojiToMessage} />
+                              </Suspense>
                             </div>
                           ) : null}
                           <label
