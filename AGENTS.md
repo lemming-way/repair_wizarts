@@ -48,7 +48,7 @@
 - Manual checks:
   - `npm install`, `npm run lint`, `npm run typecheck`, `npm run build` succeed.
   - `npm run analyze` shows bundle contents; `npm run size` within provisional budget.
-  - No unused legacy configs (e.g., document or remove `webpack.config.js`).
+  - Legacy config status: `webpack.config.js` documented in `docs/legacy.md`; manual runtime check optional/deferrable under CRA.
 
 ### Day 2 — Visible Wins
 - Lazy-load 2–3 heavy blocks/pages (e.g., Swiper, emoji picker) via `React.lazy` + `Suspense`.
@@ -56,6 +56,7 @@
 - Add `shared/api` client (axios/fetch wrapper) and migrate one key feature call to it.
 - Migrate one server-state feature to React Query; keep Redux for client-only UI state.
 - Reduce obvious redundant `useEffect` in 1–2 components; extract complex logic into a model hook + subcomponents where easy.
+- Audit and wrap all hardcoded text strings in `useLanguage`/`t()` calls for proper internationalization support.
 - Manual checks:
   - Build shows lazy chunks for heavy widgets; size is stable or improved.
   - Replaced modals pass a11y basics (focus trap, Esc, Tab).
@@ -76,14 +77,17 @@
 ### Plan Progress (live)
 - [x] PR1 — Enforce npm; remove `yarn.lock`; build green. Status: PR created, awaiting frontend review.
 - [x] PR2 — Enable `<React.StrictMode>`; add DOMPurify-backed `sanitizeHtml` helper; replace unsafe HTML in components (e.g., Article); add unit tests (`src/shared/lib/sanitizeHtml.test.ts`) and setup (`src/setupTests.ts`). Status: tests green locally; awaiting frontend review.
-- [ ] PR3 — Baseline lint/format + size budgets + PR template; document legacy webpack config. Status: in progress.
+- [x] PR3 — Baseline lint/format + size budgets; document legacy webpack config; add Article sanitized render test. Status: merged/ready. Note: PR template intentionally skipped (manual descriptions used consistently).
+
+- [x] PR4 — Fix typecheck error: convert `src/components/profileNumberClient/ProfileSlider.jsx` to TSX and add prop types; update imports. Status: completed.
+- [x] PR5 — Header profile dropdown UX: open on click, close on outside, remove `:hover` logic (Toolbar/DropdownSetout). Status: completed.
 
 PR3 scope and checks:
 - Scope:
   - Add baseline `.eslintrc.js` and `.prettierrc`.
   - Update `package.json` scripts: `lint`, `format`, `typecheck`, `ci:check`, `analyze`, `size`.
   - Configure `size-limit` and `source-map-explorer`.
-  - Add `.github/PULL_REQUEST_TEMPLATE.md` (short checklist).
+  - PR template: skipped by choice (keep rich manual descriptions in PRs).
   - Document or remove `webpack.config.js` (CRA ignores it) in `docs/legacy.md`.
   - Add an integration test for `Article` rendering sanitized HTML: `src/components/Article/Article.test.jsx`.
 - Manual checks:
@@ -93,3 +97,6 @@ PR3 scope and checks:
 
 PR3 suggested title:
 - `chore(lint): add ESLint/Prettier; perf: add size budgets; test: Article sanitized render`
+
+Notes for Day 2 kickoff
+- PR4 and PR5 are completed. Proceed with Day 2 tasks (lazy-loading, shared/api, modal swap, React Query, and minor effects cleanups).
