@@ -1,7 +1,7 @@
-import styles from './FooterDesktop.module.scss';
 import FooterInfo from "./components/FooterInfo";
-import ListItem from "../../components/ListItem/ListItem";
+import styles from './FooterDesktop.module.scss';
 import FooterMobile from "./FooterMobile/FooterMobile";
+import ListItem from "../../components/ListItem/ListItem";
 import { useLanguage } from '../../context/LanguageContext';
 
 function App() {

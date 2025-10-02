@@ -1,18 +1,21 @@
 import { useEffect, useMemo } from 'react';
+
 import { getOffers } from '../services/offer.service';
 import styles from './mysuggest.module.css';
+
 import '../scss/mysuggest.css';
 import { Link, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { Navigation, Pagination } from 'swiper';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../slices/user.slice';
+import { Navigation, Pagination } from 'swiper';
+
 import Suggest from './suggest';
+import SERVER_PATH from '../constants/SERVER_PATH';
 import { useService } from '../hooks/useService';
 import { getClientRequests } from '../services/request.service';
-import SERVER_PATH from '../constants/SERVER_PATH';
+import { selectUser } from '../slices/user.slice';
 
 function MySuggest() {
   const { id } = useParams();

@@ -1,8 +1,8 @@
-import { useService } from '../../hooks/useService'
+import styles from './Reviews.module.css'
 import ReviewsForm from './ReviewsForm'
 import ReviewsReview from './ReviewsReview'
+import { useService } from '../../hooks/useService'
 import { getReviews } from '../../services/reviews.service'
-import styles from './Reviews.module.css'
 
 const Reviews = (props) => {
     const reviews = useService(getReviews, [])

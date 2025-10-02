@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { selectUI } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
-import DropdownSetout from '../../components/dropdownSetout';
-import ListItem from '../../components/ListItem/ListItem';
-import ToolbarButtons from './components/ToolbarButtons/ToolbarButtons';
+
 import MobileMenu from './MobileMenu';
+import DropdownSetout from '../../components/dropdownSetout';
 import ServiceDropdown from './components/ServiceDropdown/ServiceDropdown';
 import ServiceDropdownCities from './components/ServiceDropdownCities/ServiceDropdownCities';
-import logo from '../../img/header/new-logotype.svg';
+import ToolbarButtons from './components/ToolbarButtons/ToolbarButtons';
 import styles from './Toolbar.module.scss';
+import ListItem from '../../components/ListItem/ListItem';
 import './header.scss';
 import { useLanguage } from '../../context/LanguageContext';
+import logo from '../../img/header/new-logotype.svg';
+import { selectUI } from '../../slices/ui.slice';
+import { selectUser } from '../../slices/user.slice';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React

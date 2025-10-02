@@ -1,9 +1,9 @@
-import { updateOnline } from "../slices/online.slice"
+import { getToken } from "./token.service"
+import { SERVER_WSPATH } from "../constants/SERVER_PATH"
+import popit from "../img/popit.wav"
 import { updateMessages } from "../slices/messages.slice"
 import { pushNotification } from "../slices/notifications.slice"
-import { getToken } from "./token.service"
-import popit from "../img/popit.wav"
-import { SERVER_WSPATH } from "../constants/SERVER_PATH"
+import { updateOnline } from "../slices/online.slice"
 
 let ws = null
 

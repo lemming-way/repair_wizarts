@@ -2,17 +2,18 @@ import React, {useEffect, useState} from 'react';
 import {useDispatch} from "react-redux";
 import {Link, useNavigate} from "react-router-dom";
 import Popup from "reactjs-popup";
+
+import styles from './LoginPage.module.scss';
+import Error from "../../components/Error/Error";
+import { useLanguage } from '../../context/LanguageContext';
+import {login} from "../../services/auth.service";
 import {
   keepUserAuthorized,
   recoverPassword,
   recoverPasswordSend,
   recoverPasswordVerify
 } from "../../services/user.service";
-import {login} from "../../services/auth.service";
 import {fetchUser} from "../../slices/user.slice";
-import styles from './LoginPage.module.scss';
-import Error from "../../components/Error/Error";
-import { useLanguage } from '../../context/LanguageContext';
 const RecoveryState = {
   IDLE: 0,
   PHONE: 1,

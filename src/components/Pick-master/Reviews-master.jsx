@@ -6,8 +6,9 @@ import './pick-master.css'
 import Popup from "reactjs-popup";
 import './reviews-master.css'
 import { Rating } from "react-simple-star-rating";
-import { getFeedback, createFeedback } from "../../services/feedback.service";
+
 import SERVER_PATH from "../../constants/SERVER_PATH";
+import { getFeedback, createFeedback } from "../../services/feedback.service";
 import 'swiper/css'
 
 function Sidebar() {

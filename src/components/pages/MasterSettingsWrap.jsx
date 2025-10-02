@@ -1,5 +1,6 @@
-import style from "./MasterSettingsWrap.module.css"
 import { Outlet } from "react-router-dom";
+
+import style from "./MasterSettingsWrap.module.css"
 import Sidebar from "../sidebar";
 
 function MasterSettingsWrap() {

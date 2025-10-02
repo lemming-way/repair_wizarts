@@ -72,3 +72,24 @@
 ### Rollback & Safety
 - Keep changes atomic to allow quick revert.
 - Document any functional risk and fallback before merging.
+
+### Plan Progress (live)
+- [x] PR1 — Enforce npm; remove `yarn.lock`; build green. Status: PR created, awaiting frontend review.
+- [x] PR2 — Enable `<React.StrictMode>`; add DOMPurify-backed `sanitizeHtml` helper; replace unsafe HTML in components (e.g., Article); add unit tests (`src/shared/lib/sanitizeHtml.test.ts`) and setup (`src/setupTests.ts`). Status: tests green locally; awaiting frontend review.
+- [ ] PR3 — Baseline lint/format + size budgets + PR template; document legacy webpack config. Status: in progress.
+
+PR3 scope and checks:
+- Scope:
+  - Add baseline `.eslintrc.js` and `.prettierrc`.
+  - Update `package.json` scripts: `lint`, `format`, `typecheck`, `ci:check`, `analyze`, `size`.
+  - Configure `size-limit` and `source-map-explorer`.
+  - Add `.github/PULL_REQUEST_TEMPLATE.md` (short checklist).
+  - Document or remove `webpack.config.js` (CRA ignores it) in `docs/legacy.md`.
+  - Add an integration test for `Article` rendering sanitized HTML: `src/components/Article/Article.test.jsx`.
+- Manual checks:
+  - `npm run lint`, `npm run typecheck`, `npm test -- --watchAll=false`, `npm run build` pass locally.
+  - `npm run analyze` shows bundle contents; `npm run size` within provisional budget.
+  - Article page renders sanitized content without console errors.
+
+PR3 suggested title:
+- `chore(lint): add ESLint/Prettier; perf: add size budgets; test: Article sanitized render`

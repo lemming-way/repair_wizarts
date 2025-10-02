@@ -1,40 +1,45 @@
+import type {
+  FC,
+  Dispatch,
+  SetStateAction,
+  KeyboardEvent} from 'react';
 import {
   useEffect,
   useRef,
   useState,
   useMemo,
-  useCallback,
-  FC,
-  Dispatch,
-  SetStateAction,
-  KeyboardEvent,
+  useCallback
 } from 'react';
 import '../../../scss/chat.css';
-import { Link, useParams } from 'react-router-dom';
+import Dropdown from 'react-multilevel-dropdown';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../../slices/user.slice';
-import { getAllClientRequests } from '../../../services/request.service';
+import MediaQuery from 'react-responsive';
+import { Link, useParams } from 'react-router-dom';
+
+import { Swiper, SwiperSlide } from 'swiper/react';
+import AddFeedbackModal from './AddFeedbackModal';
+import AddOrderModal from './AddOrderModal';
+import BlackListModal from './BlackListModal';
+import styles from './Chat.module.css';
 import { useService } from '../../../hooks/useService';
+import { getAllClientRequests } from '../../../services/request.service';
+import { selectUser } from '../../../slices/user.slice';
 import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
-import styles from './Chat.module.css';
-import Dropdown from 'react-multilevel-dropdown';
-import BlackListModal from './BlackListModal';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
-import AddOrderModal from './AddOrderModal';
-import AddFeedbackModal from './AddFeedbackModal';
 
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import type { EmojiClickData } from 'emoji-picker-react';
+import EmojiPicker from 'emoji-picker-react';
+
+import appFetch from '../../../utilities/appFetch';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
-import appFetch from '../../../utilities/appFetch';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
-import MediaQuery from 'react-responsive';
-import { Swiper, SwiperSlide } from 'swiper/react';
+
 import { Navigation } from 'swiper';
 
 // ====== ЧАТ: типы и утилиты ===============================================

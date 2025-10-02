@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react';
+
 import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
+
 import '../scss/swiper.css';
-import Footer from '../UI/Footer/FooterDesktop';
 import { useDispatch, useSelector } from 'react-redux';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
-import Home from './Home';
-import PickLog from './Registration/pick-log';
-import Register from './Registration/register';
-import Remont from './remont';
-import { ServiceDetail } from './Service';
-import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
-import Applications from './Applications/applications';
-import Toolbar from '../UI/Toolbar/Toolbar';
-import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
 import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClient';
 import ClientSettingsWrap from './pages/ClientSettingsWrap';
 import MasterSettingsWrap from './pages/MasterSettingsWrap';
@@ -43,8 +35,8 @@ import OfferAService from './Orders/OfferAService';
 import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
+import Applications from './Applications/applications';
 import AuthLogin from './Registration/AuthLogin';
-import Mysuggest from './mysuggest';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
@@ -64,20 +56,29 @@ import { getToken } from '../services/token.service';
 import { getUserMode, updateUser } from '../services/user.service';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
+import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
+import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
 import MyOrdersMaster from './Orders/MyOrdersMaster';
-
-import MyOrder from './Orders/MyOrder';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
-import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 
 import FChatKirill from './full-chat/fakeChat/Kirill';
+import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
-import BalanceClient from './Settings/BalanceClient';
 import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
 import HomeV2 from './home_v2/HomeV2';
+import Mysuggest from './mysuggest';
+import MyOrder from './Orders/MyOrder';
+import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
+import PickLog from './Registration/pick-log';
+import Register from './Registration/register';
+import Remont from './remont';
+import { ServiceDetail } from './Service';
+import BalanceClient from './Settings/BalanceClient';
 import { setCategories } from '../slices/cateories.slice';
+import Footer from '../UI/Footer/FooterDesktop';
+import Toolbar from '../UI/Toolbar/Toolbar';
 
 function App() {
   const user =

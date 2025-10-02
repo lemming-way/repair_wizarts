@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+
 import arrowRight from '../../../../img/header/icons/arrow-right-icon.svg';
 import styles from '../ServiceDropDownMobile/ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './components/ServiceCategoriesDropdown/ServiceCategoriesDropdown';
-import { useSelector } from 'react-redux';
 const ServiceDropdownMobile = () => {
   
   const categories = useSelector(

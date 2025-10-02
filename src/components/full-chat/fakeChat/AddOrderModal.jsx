@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../../slices/user.slice';
+import { useParams } from 'react-router-dom';
+
 import style from './AddOrderModal.module.css';
 import { updateRequest } from '../../../services/request.service';
-import { useParams } from 'react-router-dom';
-import { useRef } from 'react';
 import { getToken } from '../../../services/token.service';
+import { selectUser } from '../../../slices/user.slice';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>

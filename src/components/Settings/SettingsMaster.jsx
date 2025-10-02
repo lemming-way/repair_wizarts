@@ -1,20 +1,24 @@
 import { useEffect, useState, useRef } from 'react';
+
 import {
   updateUserPhoto,
   updateUser,
   updatePassword,
 } from '../../services/user.service';
+
 import { useDispatch, useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+
 import '../../scss/settings-all.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import VerificationInput from '../VerificationInput';
 import { useNavigate } from 'react-router-dom';
-import { selectUI, setAuthorization } from '../../slices/ui.slice';
-import { deleteUser } from '../../services/user.service';
 import Popup from 'reactjs-popup';
+
 import style from './SettingsMaster.module.css';
+import { deleteUser } from '../../services/user.service';
+import { selectUI, setAuthorization } from '../../slices/ui.slice';
+import { selectUser } from '../../slices/user.slice';
+import VerificationInput from '../VerificationInput';
 
 const EMPTY_OBJECT = {}
 

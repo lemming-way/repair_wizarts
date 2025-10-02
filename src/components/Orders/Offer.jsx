@@ -2,10 +2,11 @@ import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import style from './Orders.module.css';
-import OrderRowOffer from './OrderRowOffer';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+
+import OrderRowOffer from './OrderRowOffer';
+import style from './Orders.module.css';
 import appFetch from '../../utilities/appFetch';
 
 function Offer() {

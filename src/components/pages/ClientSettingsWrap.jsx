@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
 import { useNavigate } from 'react-router-dom';
-import style from './ClientSettingsWrap.module.css';
-import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
 import { Outlet } from 'react-router-dom';
+
+import style from './ClientSettingsWrap.module.css';
+import { selectUser } from '../../slices/user.slice';
+import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
+
 
 const listLinks = [
   '/client/settings',

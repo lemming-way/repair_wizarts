@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import ReactDom from 'react-dom';
 import { useQuery } from 'react-query';
 import { useSelector } from 'react-redux';
+
 import { selectUI } from '../../slices/ui.slice';
 
 // --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---

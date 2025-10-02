@@ -1,11 +1,11 @@
+import styles from "./Article.module.css"
+import dislikeImage from "../../img/dislike.png"
+import likeImage from "../../img/like.png"
 import {
     likeArticleComment,
     dislikeArticleComment
 } from "../../services/article.service"
 import formatDate from "../../utilities/formatDate"
-import likeImage from "../../img/like.png"
-import dislikeImage from "../../img/dislike.png"
-import styles from "./Article.module.css"
 
 const ArticleComment = (props) => {
     const {

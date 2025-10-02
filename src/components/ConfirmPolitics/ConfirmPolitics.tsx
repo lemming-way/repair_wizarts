@@ -1,7 +1,8 @@
 import React from 'react';
-import SERVER_PATH from "../../constants/SERVER_PATH";
-import {useConfirmPolitics} from "./ConfirmPoliticsContext";
+
 import styles from './ConfirmPolitics.module.scss';
+import {useConfirmPolitics} from "./ConfirmPoliticsContext";
+import SERVER_PATH from "../../constants/SERVER_PATH";
 
 const ConfirmPolitics = () => {
   const { accept, setAccept } = useConfirmPolitics();

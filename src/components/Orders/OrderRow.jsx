@@ -1,8 +1,9 @@
-import style from './OrderRow.module.css';
+import { useState } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useState } from 'react';
+
 import ModalDelete from './ModalDelete';
+import style from './OrderRow.module.css';
 // --- 1. Импортируем нашу API-функцию ---
 import { cancelMasterResponse } from '../../services/order.service';
 

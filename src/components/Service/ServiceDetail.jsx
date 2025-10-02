@@ -1,22 +1,23 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUI } from '../../slices/ui.slice';
-import { Navigation } from 'swiper';
 import { useParams } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { selectUser } from '../../slices/user.slice';
-import { selectServices } from '../../slices/services.slice';
-import YMap from '../Map';
-import ServiceDetailContext from './ServiceDetailContext';
+
 import '../../scss/detail.scss';
 import '../../scss/media.css';
 //~ import { getMasterRepairs } from '../../services/service.service';
 import { Link } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
 
 import style from './serviceDetail.module.scss';
-import appFetch from '../../utilities/appFetch';
+import ServiceDetailContext from './ServiceDetailContext';
 import { createRequest } from '../../services/request.service';
+import { selectServices } from '../../slices/services.slice';
+import { selectUI } from '../../slices/ui.slice';
+import { selectUser } from '../../slices/user.slice';
+import appFetch from '../../utilities/appFetch';
+import YMap from '../Map';
 
 const EMPTY_ARRAY = []
 

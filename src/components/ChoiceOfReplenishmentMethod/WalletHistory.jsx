@@ -1,11 +1,13 @@
 import {
     useEffect
 } from 'react';
+
 import '../../scss/ChoiceOfReplenishmentMethod.css'
 // import 'bootstrap/dist/css/bootstrap.min.css';
+import { Link } from 'react-router-dom';
+
 import style from './style.module.css'
 import NavigationWallet from '../Settings/NavigationWallet';
-import { Link } from 'react-router-dom';
 
 function WalletHistory() {
 

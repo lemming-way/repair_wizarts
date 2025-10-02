@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+
 import '../../scss/added.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { createRequest } from '../../services/request.service';
 import style from './AddDevices.module.css';
+import { createRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
 
 // Вспомогательная функция для преобразования файла в base64

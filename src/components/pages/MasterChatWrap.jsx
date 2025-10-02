@@ -1,5 +1,6 @@
-import style from "./MasterChatWrap.module.css"
 import { Outlet } from "react-router-dom";
+
+import style from "./MasterChatWrap.module.css"
 import Sidebar from "../sidebar";
 
 function MasterChatWrap() {

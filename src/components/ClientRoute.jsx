@@ -3,6 +3,7 @@ import { useSelector } from "react-redux"
 import {
     useOutlet
 } from "react-router-dom"
+
 import { selectUI } from '../slices/ui.slice'
 
 const ProtectedRoute = () => {

@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+
+import styles from "./Article.module.css"
+import ArticleComment from "./ArticleComment"
+import dislikeImage from '../../img/dislike.png'
+import likeImage from '../../img/like.png'
 import {
     getArticleComments,
     createArticleComment,
     likeArticle,
     dislikeArticle
 } from "../../services/article.service"
-import ArticleComment from "./ArticleComment"
-import likeImage from '../../img/like.png'
-import dislikeImage from '../../img/dislike.png'
-import styles from "./Article.module.css"
 
 const ArticleComments = (props) => {
     const {

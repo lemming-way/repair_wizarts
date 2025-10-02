@@ -1,14 +1,15 @@
 import React from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import {Navigation } from "swiper";
+import { Swiper, SwiperSlide } from 'swiper/react';
+
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
-import RegistrationPickCard from "../RegistrationPickCard/RegistrationPickCard";
-import registrationDefaultUserImg from "../../../../../img/users/registrationPick/registration-user.svg";
-import registrationDefaultMasterImg from "../../../../../img/users/registrationPick/registration-master.svg";
-import './RegistrationPickSwiper.scss';
 import { useLanguage } from '../../../../../context/LanguageContext';  // импорт контекста перевода
+import registrationDefaultMasterImg from "../../../../../img/users/registrationPick/registration-master.svg";
+import registrationDefaultUserImg from "../../../../../img/users/registrationPick/registration-user.svg";
+import RegistrationPickCard from "../RegistrationPickCard/RegistrationPickCard";
+import './RegistrationPickSwiper.scss';
 
 const RegistrationPickSwiper = () => {
   const { t } = useLanguage(); // получаем функцию t

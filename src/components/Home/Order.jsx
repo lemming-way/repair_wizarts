@@ -1,14 +1,16 @@
 import { useService } from "../../hooks/useService";
+
 import { Link } from "react-router-dom"
 import { Swiper, SwiperSlide } from "swiper/react";
-
 import { Navigation } from "swiper";
+
 import '../../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
-import { getReviews } from "../../services/reviews.service";
 import { Rating } from "react-simple-star-rating";
+
 import SERVER_PATH from "../../constants/SERVER_PATH";
+import { getReviews } from "../../services/reviews.service";
 
 function Order() {
     const reviews = useService(getReviews, [])

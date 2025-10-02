@@ -1,26 +1,27 @@
+import DOMPurify from 'dompurify'
 import {
     useEffect,
     useState
 } from 'react'
+import { useSelector } from 'react-redux'
 import { useParams, Link } from 'react-router-dom'
-import {
-    getArticle,
-    getArticles
-} from '../../services/article.service'
+import { Navigation } from 'swiper'
 import {
     Swiper,
     SwiperSlide,
 } from 'swiper/react'
-import { Navigation } from 'swiper'
-import backgroundImg from '../../img/article.png'
-import groupIcon from '../../img/group.png'
-import calendarIcon from '../../img/calendar.png'
+
 import styles from './Article.module.css'
 import ArticleComments from './ArticleComments'
 import SERVER_PATH from '../../constants/SERVER_PATH'
+import backgroundImg from '../../img/article.png'
+import calendarIcon from '../../img/calendar.png'
+import groupIcon from '../../img/group.png'
+import {
+    getArticle,
+    getArticles
+} from '../../services/article.service'
 import { selectUI } from '../../slices/ui.slice'
-import { useSelector } from 'react-redux'
-import DOMPurify from 'dompurify'
 
 const Article = (props) => {
     const { id } = useParams()
