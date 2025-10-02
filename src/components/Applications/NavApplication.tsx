@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import '../../scss/applications.css'
 import { Link, useLocation } from "react-router-dom";
+
 import style from "./NavApplication.module.css"
 
 

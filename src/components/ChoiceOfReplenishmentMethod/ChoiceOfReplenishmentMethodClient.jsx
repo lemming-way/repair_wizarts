@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import '../../scss/ChoiceOfReplenishmentMethod.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import style from './style.module.css';
-import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
-import { useNavigate } from 'react-router-dom';
-import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+import { useNavigate } from 'react-router-dom';
+
+import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
+import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
+import style from './style.module.css';
 import { updateUser } from '../../services/user.service';
+import { selectUser } from '../../slices/user.slice';
 
 function ChoiceOfReplenishmentMethodClient() {
   const user =

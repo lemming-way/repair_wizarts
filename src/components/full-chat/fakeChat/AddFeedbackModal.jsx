@@ -1,7 +1,8 @@
 import { useState } from 'react';
+
 import style from './AddFeedbackModal.module.css';
-import appFetch from '../../../utilities/appFetch';
 import { createRequest } from '../../../services/request.service';
+import appFetch from '../../../utilities/appFetch';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>

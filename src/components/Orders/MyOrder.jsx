@@ -1,19 +1,22 @@
-import styles from './MyOrder.module.css';
-import { Link, useParams } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation } from 'swiper';
-import ModalConfirmMaster from './ModalConfirmMaster';
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import style from '../Service/serviceDetail.module.scss';
+import Popup from 'reactjs-popup';
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
+
+import ModalConfirmMaster from './ModalConfirmMaster';
 import ModalDelete from './ModalDelete';
 import ModalEditOrder from './ModalEditOrder';
-import Popup from 'reactjs-popup';
-import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
-import appFetch from '../../utilities/appFetch';
+import styles from './MyOrder.module.css';
 import { deleteRequest, updateRequest } from '../../services/request.service';
-import { useSelector } from 'react-redux';
 import { selectUser } from '../../slices/user.slice';
+import appFetch from '../../utilities/appFetch';
+import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
+import style from '../Service/serviceDetail.module.scss';
+
+
 
 function MyOrder() {
   const user =

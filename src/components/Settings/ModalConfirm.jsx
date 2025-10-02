@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+
 import style from './ModalConfirm.module.css';
 
 export default function ModalConfirm({ setVisibleConfirm, setVisibleSuccess }) {

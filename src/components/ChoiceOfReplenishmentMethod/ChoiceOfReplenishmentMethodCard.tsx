@@ -4,7 +4,7 @@ function ChoiceOfReplenishmentMethodCard() {
 
 
     useEffect(() => {
-        let mini_card = document.querySelectorAll('.mini-card')
+        const mini_card = document.querySelectorAll('.mini-card')
         console.log(mini_card)
         mini_card.forEach((e) => {
             e.addEventListener('click', () => {

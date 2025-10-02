@@ -1,10 +1,11 @@
 import React, {useEffect} from 'react';
-import registrationDefaultUserImg from '../../../img/users/registrationPick/registration-user.svg';
-import registrationDefaultMasterImg from '../../../img/users/registrationPick/registration-master.svg';
+
 import RegistrationPickCard from "./components/RegistrationPickCard/RegistrationPickCard";
 import RegistrationPickSwiper from "./components/RegistrationPickSwiper/RegistrationPickSwiper";
 import styles from './RegistrationPickPage.module.scss';
 import { useLanguage } from '../../../context/LanguageContext';  // импортируем контекст перевода
+import registrationDefaultMasterImg from '../../../img/users/registrationPick/registration-master.svg';
+import registrationDefaultUserImg from '../../../img/users/registrationPick/registration-user.svg';
 
 const RegistrationPickPage = () => {
   const { t } = useLanguage(); // получаем функцию t для перевода

@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getRequestById } from '../../services/request.service'
-import { createOffer } from "../../services/offer.service";
-import { sendOfferCreate } from "../../services/notification.service";
+
 import '../../scss/OfferAService.css'
 import '../../scss/swiper.css'
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -10,8 +8,12 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Link } from "react-router-dom";
 import { Navigation, Pagination } from "swiper";
-import { useService } from "../../hooks/useService";
+
 import SERVER_PATH from "../../constants/SERVER_PATH";
+import { useService } from "../../hooks/useService";
+import { sendOfferCreate } from "../../services/notification.service";
+import { createOffer } from "../../services/offer.service";
+import { getRequestById } from '../../services/request.service'
 
 function App() {
     const navigate = useNavigate()

@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import '../../scss/profileNumber.css';
 import '../../scss/swiper.css';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+
+import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
-import ModalAddCommentMini from './ModalAddCommentMini';
-import ProfileSlider from '../profileNumberClient/ProfileSlider';
+import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
+import ProfileSlider from '../profileNumberClient/ProfileSlider';
 
 function App() {
   const user =

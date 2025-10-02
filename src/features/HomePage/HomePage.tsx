@@ -1,8 +1,9 @@
 import React, {useEffect} from 'react';
+
 import HeroSection from "./HeroSection/HeroSection";
 import WhyChooseUsBlock from "./WhyChooseUsBlock/WhyChooseUsBlock";
-import Order from "../../components/Home/Order";
 import Articles from "../../components/Home/Articles";
+import Order from "../../components/Home/Order";
 // import Loader from "../../components/Loader/Loader";
 import { useLanguage } from '../../context/LanguageContext';
 

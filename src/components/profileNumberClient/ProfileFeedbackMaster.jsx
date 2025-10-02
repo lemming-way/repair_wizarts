@@ -1,9 +1,10 @@
 import { useState} from "react";
-import ModalDelete from "../Chat/ModalDelete";
-import ModalAddComment from "../Chat/ModalAddComment";
-import style from "./ProfileFeedbackMaster.module.css"
 import { useNavigate } from "react-router-dom";
+
+import style from "./ProfileFeedbackMaster.module.css"
 import ProfileSlider  from "./ProfileSlider";
+import ModalAddComment from "../Chat/ModalAddComment";
+import ModalDelete from "../Chat/ModalDelete";
 
 export default function ProfileFeedbackMaster() {
 

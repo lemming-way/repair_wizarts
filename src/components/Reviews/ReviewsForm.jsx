@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Popup } from 'reactjs-popup'
 import { Rating } from 'react-simple-star-rating'
-import { selectUser } from '../../slices/user.slice'
-import { createReview } from '../../services/reviews.service'
+import { Popup } from 'reactjs-popup'
+
 import styles from './Reviews.module.css'
+import { createReview } from '../../services/reviews.service'
+import { selectUser } from '../../slices/user.slice'
 
 const ReviewsForm = (props) => {
     const user = useSelector(selectUser)

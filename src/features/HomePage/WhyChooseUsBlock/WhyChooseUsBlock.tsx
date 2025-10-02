@@ -1,10 +1,10 @@
 import WhyChooseUsBlockCard from "./components/WhyChooseUsBlockCard/WhyChooseUsBlockCard";
-import mastersImage from '../../../img/home/whyChooseUsBlock/masters.svg';
-import qualityImage from '../../../img/home/whyChooseUsBlock/quality.svg';
-import priceImage from '../../../img/home/whyChooseUsBlock/price.svg';
-import clockImage from '../../../img/home/whyChooseUsBlock/clock.svg';
 import styles from './WhyChooseUsBlock.module.scss';
 import { useLanguage } from '../../../context/LanguageContext';
+import clockImage from '../../../img/home/whyChooseUsBlock/clock.svg';
+import mastersImage from '../../../img/home/whyChooseUsBlock/masters.svg';
+import priceImage from '../../../img/home/whyChooseUsBlock/price.svg';
+import qualityImage from '../../../img/home/whyChooseUsBlock/quality.svg';
 
 // Создала директорию features в ней HomePage для главной старницы, что бы ориентироваться
 // в features  мы создаем страницы и внутри блоки которые относятся к этой странице

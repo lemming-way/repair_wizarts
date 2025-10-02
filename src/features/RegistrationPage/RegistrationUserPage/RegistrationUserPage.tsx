@@ -1,11 +1,12 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from "react-router-dom";
-import {registerAsClient} from "../../../services/auth.service";
+
+import styles from './RegistrationUserPage.module.scss';
 import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics";
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 // import Error from "../../../components/Error/Error";
-import styles from './RegistrationUserPage.module.scss';
 import { useLanguage } from '../../../context/LanguageContext';  // импорт контекста перевода
+import {registerAsClient} from "../../../services/auth.service";
 
 const RegistrationUserPage = () => {
   const { t } = useLanguage(); // функция для перевода

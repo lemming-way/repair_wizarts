@@ -3,9 +3,10 @@ import '../../scss/settings-all.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { useNavigate } from 'react-router-dom';
-import MasterProfileNavigator from '../full-height/MasterProfileNavigator';
-import style from './settings_all.module.css';
 import { Outlet } from 'react-router-dom';
+
+import style from './settings_all.module.css';
+import MasterProfileNavigator from '../full-height/MasterProfileNavigator';
 // import { useNavigate } from "react-router-dom";
 
 const listLinks = [

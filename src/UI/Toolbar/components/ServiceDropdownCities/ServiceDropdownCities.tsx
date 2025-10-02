@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import arrowDown from "../../../../img/header/icons/arrow-down-icon.svg";
+
 import styles from './ServiceDropdown.module.scss';
 import { useLanguage } from '../../../../context/LanguageContext';
+import arrowDown from "../../../../img/header/icons/arrow-down-icon.svg";
 
 const ServiceDropdownCities = () => {
   const { t } = useLanguage();

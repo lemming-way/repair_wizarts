@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
 
 // Импорт стилей Swiper
 import 'swiper/swiper-bundle.min.css';

@@ -1,8 +1,9 @@
 import React from 'react';
 import {Link} from "react-router-dom";
-import HeroSectionSwiper from "./components/HeroSectionSwiper/HeroSectionSwiper";
+
 import HeroSectionCounters from "./components/HeroSectionCounters/HeroSectionCounters";
 import HeroSectionSearchBar from "./components/HeroSectionSearchBar/HeroSectionSearchBar";
+import HeroSectionSwiper from "./components/HeroSectionSwiper/HeroSectionSwiper";
 import styles from './HeroSection.module.scss';
 import { useLanguage } from '../../../context/LanguageContext';
 

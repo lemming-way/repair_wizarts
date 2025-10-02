@@ -1,8 +1,9 @@
 import { useState } from "react"
+
 import style from "./Balance.module.css"
+import PaginationPages from "./PaginationPages"
 import ModalVivod from "../ChoiceOfReplenishmentMethod/ModalVivod"
 
-import PaginationPages from "./PaginationPages"
 
 const Balance = (props) => {
 

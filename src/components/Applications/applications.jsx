@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
+
 import '../../scss/applications.css';
-import NavApplication from './NavApplication';
-import style from './applications.module.css';
-import EmojiPicker from 'emoji-picker-react';
-import { useNavigate } from 'react-router-dom';
-import { getMasterOrders } from '../../services/order.service';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+import { useNavigate } from 'react-router-dom';
+
+import style from './applications.module.css';
+import NavApplication from './NavApplication';
+
+import EmojiPicker from 'emoji-picker-react';
+
 import { useService } from '../../hooks/useService';
+import { getMasterOrders } from '../../services/order.service';
+import { selectUser } from '../../slices/user.slice';
 //~ const statusEnum = {
   //~ '#order': 'Активно',
   //~ '#all': 'Активно',

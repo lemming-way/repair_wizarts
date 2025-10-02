@@ -1,13 +1,17 @@
 import React, { useEffect, useState, useContext } from 'react';
-import MultiSelect, {
+import { useSelector } from 'react-redux';
+
+import styles from './RegistrationMasterPage.module.scss';
+import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
+import { ConfirmPoliticsContext } from '../../../components/ConfirmPolitics/ConfirmPoliticsContext';
+import type {
   Option,
 } from '../../../components/MultiSelect/MultiSelect';
-import { ConfirmPoliticsContext } from '../../../components/ConfirmPolitics/ConfirmPoliticsContext';
-import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
+import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
-import styles from './RegistrationMasterPage.module.scss';
-import { useSelector } from 'react-redux';
-import { RootState } from '../../../store';
+
+
+import type { RootState } from '../../../store';
 import appFetch from '../../../utilities/appFetch';
 
 const RegistrationMasterPage = () => {

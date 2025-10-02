@@ -1,5 +1,6 @@
-import style from "./ClientProfileNavigator.module.css"
 import { Link } from "react-router-dom"
+
+import style from "./ClientProfileNavigator.module.css"
 // import { useNavigate, useParams } from 'react-router-dom'
 // import "./ClientProfileNavigator.css"
 

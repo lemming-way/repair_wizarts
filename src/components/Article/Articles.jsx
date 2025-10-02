@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
+
+import styles from './Article.module.css'
 import { getArticles } from "../../services/article.service"
 // import backgroundImg from '../../img/article.png'
-import styles from './Article.module.css'
 
 
 const Articles = () => {

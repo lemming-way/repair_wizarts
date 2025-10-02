@@ -1,5 +1,6 @@
-import style from './ModalConfirmMaster.module.css';
 import { useNavigate } from 'react-router-dom';
+
+import style from './ModalConfirmMaster.module.css';
 
 export default function ModalConfirmMaster({
   setVisibleModalConfirmMaster,

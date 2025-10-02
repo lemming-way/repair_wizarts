@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+
 import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
-import ModalSuccess from './ModalSuccess';
 import ModalDelete from './ModalDelete';
+import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
+import { selectUser } from '../../slices/user.slice';
 
 const FinanceClient = () => {
   const user =

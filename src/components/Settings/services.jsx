@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+
 import '../../scss/service.css';
 import '../../scss/register-master.scss';
+import style from './services.module.css';
+import { updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
 //~ import { getMasterRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
 
-import style from './services.module.css';
-import { updateUser } from '../../services/user.service';
 
 const EMPTY_OBJECT = {}
 

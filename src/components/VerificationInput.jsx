@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Popup } from 'reactjs-popup';
+
+import mailIcon from '../img/mail.png';
+import phoneIcon from '../img/mobile-phone.png';
 import {
   sendEmailCode,
   sendEmailVerificationCode,
   sendPhoneCode,
   sendPhoneVerificationCode,
 } from '../services/verification.service';
-import mailIcon from '../img/mail.png';
-import phoneIcon from '../img/mobile-phone.png';
 import '../scss/verification-input.css';
 
 const VerificationInput = (props) => {

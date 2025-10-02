@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { updateRequest } from '../../../services/request.service';
+
 import style from './Dispute.module.css';
+import { updateRequest } from '../../../services/request.service';
 
 export default function DisputeModal_v2({
   setVisibleDispute,

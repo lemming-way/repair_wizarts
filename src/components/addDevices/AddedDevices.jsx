@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+
 import AddedDevice from './AddedDevice';
 import './added-devices.css';
+import styles from './AddedDevices.module.css';
 import { useService } from '../../hooks/useService';
 import { getClientRequests } from '../../services/request.service';
-import styles from './AddedDevices.module.css';
 import appFetch from '../../utilities/appFetch';
 
 function AddedDevices() {
