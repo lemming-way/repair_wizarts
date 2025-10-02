@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 
 import '../../scss/applications.css';
 import { useSelector } from 'react-redux';
@@ -6,12 +6,11 @@ import { useNavigate } from 'react-router-dom';
 
 import style from './applications.module.css';
 import NavApplication from './NavApplication';
-
-import EmojiPicker from 'emoji-picker-react';
-
 import { useService } from '../../hooks/useService';
 import { getMasterOrders } from '../../services/order.service';
 import { selectUser } from '../../slices/user.slice';
+
+const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 //~ const statusEnum = {
   //~ '#order': 'Активно',
   //~ '#all': 'Активно',
@@ -168,7 +167,9 @@ function MyApplications() {
                 <div className={style.chat_wrap}>
                   {isVisibleEmoji ? (
                     <div className={style.emoji_pos}>
-                      <EmojiPicker onEmojiClick={addEmojiToMessage} />
+                      <Suspense fallback={<div className="emoji-loading" />}>
+                        <EmojiPickerLazy onEmojiClick={addEmojiToMessage} />
+                      </Suspense>
                     </div>
                   ) : null}
                   <input

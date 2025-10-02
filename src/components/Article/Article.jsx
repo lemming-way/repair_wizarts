@@ -1,15 +1,11 @@
 import DOMPurify from 'dompurify'
-import {
+import React, {
     useEffect,
-    useState
+    useState,
+    Suspense
 } from 'react'
 import { useSelector } from 'react-redux'
 import { useParams, Link } from 'react-router-dom'
-import { Navigation } from 'swiper'
-import {
-    Swiper,
-    SwiperSlide,
-} from 'swiper/react'
 
 import styles from './Article.module.css'
 import ArticleComments from './ArticleComments'
@@ -22,6 +18,9 @@ import {
     getArticles
 } from '../../services/article.service'
 import { selectUI } from '../../slices/ui.slice'
+
+const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
+const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 const Article = (props) => {
     const { id } = useParams()
@@ -128,50 +127,51 @@ const Article = (props) => {
                 likes={data.likes}
             />
             <div className={styles.articles}>
-                <Swiper
-                    slidesPerView={4}
-                    spaceBetween={30}
-                    navigation={true}
-                    modules={[Navigation]}
-                    className="mySwiper"
-                    breakpoints={{
-                        0: {
-                            slidesPerView: 2
-                        },
-                        775: {
-                            slidesPerView: 2
-                        },
-                        1099: {
-                            slidesPerView: 3
-                        },
-                        1585: {
-                            slidesPerView: 4
-                        },
-                    }}
-                >
-                    {articles.map((v) => (
-                        <SwiperSlide className="swiper-slier" key={v.id}>
-                            <Link
-                                to={"/articles/" + v.id}
-                                className={styles.articlesLink}
-                                onClick={() => document.documentElement.scrollTop = 0}
-                            >
-                                <div className="blog__card">
-                                    <img
-                                        className="blog-card__picture"
-                                        src={getImage(v.cover_image)}
-                                        alt=""
-                                    />
-                                    <div className="blog__card__content">
-                                        <h4 className={styles.articlesTitle}>{v.title}</h4>
-                                        <p className={styles.articlesContent}>{filterText(v.text)}</p>
-                                        <span className={styles.articlesDate}>{formatDate(v.created_at)}</span>
+                <Suspense fallback={<div className="swiper-loading" />}>
+                    <LazySwiper
+                        slidesPerView={4}
+                        spaceBetween={30}
+                        navigation={true}
+                        className="mySwiper"
+                        breakpoints={{
+                            0: {
+                                slidesPerView: 2
+                            },
+                            775: {
+                                slidesPerView: 2
+                            },
+                            1099: {
+                                slidesPerView: 3
+                            },
+                            1585: {
+                                slidesPerView: 4
+                            },
+                        }}
+                    >
+                        {articles.map((v) => (
+                            <LazySwiperSlide className="swiper-slier" key={v.id}>
+                                <Link
+                                    to={"/articles/" + v.id}
+                                    className={styles.articlesLink}
+                                    onClick={() => document.documentElement.scrollTop = 0}
+                                >
+                                    <div className="blog__card">
+                                        <img
+                                            className="blog-card__picture"
+                                            src={getImage(v.cover_image)}
+                                            alt=""
+                                        />
+                                        <div className="blog__card__content">
+                                            <h4 className={styles.articlesTitle}>{v.title}</h4>
+                                            <p className={styles.articlesContent}>{filterText(v.text)}</p>
+                                            <span className={styles.articlesDate}>{formatDate(v.created_at)}</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
+                                </Link>
+                            </LazySwiperSlide>
+                        ))}
+                    </LazySwiper>
+                </Suspense>
             </div>
         </div>
     )
