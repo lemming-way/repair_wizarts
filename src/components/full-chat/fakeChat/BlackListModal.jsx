@@ -1,8 +1,9 @@
-import { useSelector } from 'react-redux';
-import style from './blackListModal.module.css';
-import { selectUser } from '../../../slices/user.slice';
-import { updateUser } from '../../../services/user.service';
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+
+import style from './blackListModal.module.css';
+import { updateUser } from '../../../services/user.service';
+import { selectUser } from '../../../slices/user.slice';
 import appFetch from '../../../utilities/appFetch';
 
 const EMPTY_ARRAY = []

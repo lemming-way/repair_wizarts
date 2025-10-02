@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper";
 import { Rating } from "react-simple-star-rating";
-import { getMasterByUsername } from "../../services/user.service";
-import { getMasterRepairs } from "../../services/service.service";
-import { useService } from "../../hooks/useService";
 import { Link } from "react-router-dom";
-import YMap from '../Map'
+
 import './master.css'
 import { useSearchParams } from "react-router-dom";
 import Popup from "reactjs-popup";
-import SERVER_PATH from "../../constants/SERVER_PATH";
+import { Navigation, Pagination } from "swiper";
+
 import InfoBlock from "./InfoBlock";
+import SERVER_PATH from "../../constants/SERVER_PATH";
 import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
+import { useService } from "../../hooks/useService";
+import { getMasterRepairs } from "../../services/service.service";
+import { getMasterByUsername } from "../../services/user.service";
+import YMap from '../Map'
 
 
 function App() {

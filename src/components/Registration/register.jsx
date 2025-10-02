@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { registerAsClient } from '../../services/auth.service';
 import '../../scss/register.css';
 import SERVER_PATH from '../../constants/SERVER_PATH';

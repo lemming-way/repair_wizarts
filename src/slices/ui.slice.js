@@ -1,4 +1,5 @@
 import { createSlice, createAction } from '@reduxjs/toolkit';
+
 import { setLocation as setLocationService } from '../services/location.service';
 
 const initialState = {

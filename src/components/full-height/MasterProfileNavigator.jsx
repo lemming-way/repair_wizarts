@@ -1,5 +1,6 @@
-import style from './MasterProfileNavigator.module.css';
 import { Link } from 'react-router-dom';
+
+import style from './MasterProfileNavigator.module.css';
 // import { useNavigate, useParams } from 'react-router-dom'
 // import "./ClientProfileNavigator.css"
 

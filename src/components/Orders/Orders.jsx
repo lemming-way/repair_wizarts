@@ -2,14 +2,14 @@ import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import { useEffect, useState, useCallback } from 'react'; // Добавляем useCallback
 import { Link } from 'react-router-dom';
-import style from './Orders.module.css';
+
 import EmptyOrder from './EmptyOrder';
 import OrderRow from './OrderRow';
-
-import NavigationOrders from '../Settings/NavigationOrders';
-import { useEffect, useState, useCallback } from 'react'; // Добавляем useCallback
+import style from './Orders.module.css';
 import appFetch from '../../utilities/appFetch';
+import NavigationOrders from '../Settings/NavigationOrders';
 
 const STATE_ENUM = {
   active: 'Активно',

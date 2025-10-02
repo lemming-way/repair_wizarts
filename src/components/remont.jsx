@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { Link, useParams } from 'react-router-dom';
+
 import style from './remont.module.css';
 
 import '../scss/remont.css';

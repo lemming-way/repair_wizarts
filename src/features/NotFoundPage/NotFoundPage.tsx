@@ -1,4 +1,5 @@
 import React from 'react';
+
 import styles from './NotFoundPage.module.scss';
 import { useLanguage } from '../../context/LanguageContext';
 

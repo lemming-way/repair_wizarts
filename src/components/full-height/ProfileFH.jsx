@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+
 import { updatePassword, updateUser } from '../../services/user.service';
+import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
 

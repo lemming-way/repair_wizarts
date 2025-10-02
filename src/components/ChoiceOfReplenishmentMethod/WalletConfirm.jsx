@@ -3,6 +3,7 @@ import {
     useNavigate,
     useParams
 } from "react-router-dom"
+
 import { updateBalance } from "../../services/balance.service"
 
 const WalletConfirm = () => {

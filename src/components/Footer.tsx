@@ -1,8 +1,9 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { selectServices } from "../slices/services.slice";
+
 import { useLanguage } from "../context/LanguageContext"; // путь поправьте под свой
+import { selectServices } from "../slices/services.slice";
 
 function App() {
     const services = useSelector(selectServices)

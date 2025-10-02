@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
+import Pagination from 'react-bootstrap/Pagination';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../slices/user.slice';
+
 import style from './Balance.module.css';
 import ModalConfirm from './ModalConfirm';
-import ModalSuccess from './ModalSuccess';
 import ModalDelete from './ModalDelete';
-import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
-import Pagination from 'react-bootstrap/Pagination';
+import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
+import { selectUser } from '../../slices/user.slice';
+import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
 
 const BalanceClient = () => {
   const user =
