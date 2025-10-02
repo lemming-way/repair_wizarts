@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './state/global';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from "react-router-dom";
 import {CustomProvider} from 'rsuite';
@@ -11,8 +12,6 @@ import "./App.scss"
 import { LanguageProvider } from './context/LanguageContext';
 import reportWebVitals from './reportWebVitals';
 import store from './store'
-
-const queryClient = new QueryClient()
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
