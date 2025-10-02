@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
 
 import styles from './ToolbarSearchBar.module.scss';
-import { useLanguage } from '../../../../context/LanguageContext';
+import { useLanguage } from '../../../../state/language';
 
 const ToolbarSearchBar = () => {
   const [service, setService] = useState<string>('');
-  const { t } = useLanguage();
+  const text = useLanguage();
 
   const submitFormHandler = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +23,12 @@ const ToolbarSearchBar = () => {
         className={styles.toolbarSearchBar_input}
         type="text"
         name="services"
-        placeholder={t('Search')}
+        placeholder={text('Search')}
         onChange={(e) => setService(e.target.value)}
         value={service}
       />
       <button className={styles.toolbarSearchBar_button} type="submit">
-        {t('Find')}
+        {text('Find')}
       </button>
     </form>
   );

@@ -1,6 +1,10 @@
 /** @file Настройки и константы для сайта */
 
 const CONFIG = {
+	APP: {
+		language: 'ru',
+	},
+	
 	SITE: {
 		keywords: '',
 		title: 'Заголовок сайта',	

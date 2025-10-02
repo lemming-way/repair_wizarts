@@ -7,7 +7,7 @@ import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
-import { useLanguage } from "../context/LanguageContext"; // поправьте путь под себя
+import { useLanguage } from '../state/language';
 import { selectUnreadMessages } from '../slices/messages.slice';
 import { selectUI } from '../slices/ui.slice';
 import { selectUser } from '../slices/user.slice';
@@ -20,7 +20,7 @@ function Header() {
     const ui = useSelector(selectUI)
     const user = useSelector(selectUser)
     const messages = useSelector(selectUnreadMessages)
-    const { t } = useLanguage();
+    const text = useLanguage();
     return (
         <>
             <header >
@@ -35,7 +35,7 @@ function Header() {
                                     setVisibleCountry(false)
                                     setVisibleSetout(false)
                                 }}>
-                                    <span className="header__link">{t("Services")}</span>
+                                    <span className="header__link">{text("Services")}</span>
                                     <img src="/img/afdsfads.png" alt="" />
                                 </div>
                             </DropdownService>
@@ -45,25 +45,25 @@ function Header() {
                                 setVisibleCountry(!visibleCountry)
                                 setVisibleSetout(false)
                             }}>
-                                <span className="header__link">{t("City")}</span>
+                                <span className="header__link">{text("City")}</span>
                                 <img src="/img/afdsfads.png" alt="" />
                             </div>
                             <DropdownCountry />
                         </li>
                         <li>
-                            <Link to="/articles" className="header__link">{t("Articles")}</Link>
+                            <Link to="/articles" className="header__link">{text("Articles")}</Link>
                         </li>
                         <li>
-                            <Link to="/reviews" className="header__link">{t("Reviews")}</Link>
+                            <Link to="/reviews" className="header__link">{text("Reviews")}</Link>
                         </li>
                         <li>
-                            <Link to="/contact" className="header__link">{t("Contacts")}</Link>
+                            <Link to="/contact" className="header__link">{text("Contacts")}</Link>
                         </li>
                     </ul>
                     <div className="header__profile">
                         {ui.isAuthorized ? (
                             <div className="header__profile">
-                                <Link to={"/client/requests/create/title"} className="header__button">{t("Give task")}</Link>
+                                <Link to={"/client/requests/create/title"} className="header__button">{text("Give task")}</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
@@ -106,7 +106,7 @@ function Header() {
                                             {parseFloat(user.master[0].balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
-                                            <Link to="/master/wallet">{t("Top up balance")}</Link>
+                                            <Link to="/master/wallet">{text("Top up balance")}</Link>
                                         </div>
                                     </>
                                 )}
@@ -115,10 +115,10 @@ function Header() {
                         ) : (
                             <div className='header__profile'>
                                 <Link to="/login" className='login__link__pourhoie'>
-                                    {t("Login")}
+                                    {text("Login")}
                                 </Link>
                                 <Link to="/register" className='regis__link__pourhoie'>
-                                    {t("Register")}
+                                    {text("Register")}
                                 </Link>
                             </div>
                         )}

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 
-import { useLanguage } from "../context/LanguageContext";  // путь поправь под свой
+import { useLanguage } from '../state/language';
 import { getCities } from "../services/location.service"
 import { setLocation } from "../slices/ui.slice"
 
 function DropdownCountry() {
     const dispatch = useDispatch()
-    const { t } = useLanguage() 
+    const text = useLanguage() 
     const [query, setQuery] = useState("")
     const [cities, setCities] = useState([])
 
@@ -22,7 +22,7 @@ function DropdownCountry() {
         <div className="dropdown-content">
             <input
                 type="text"
-                placeholder={t("Select a city")}
+                placeholder={text("Select a city")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
             />

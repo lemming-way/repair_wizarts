@@ -3,33 +3,33 @@ import React, {useEffect} from 'react';
 import RegistrationPickCard from "./components/RegistrationPickCard/RegistrationPickCard";
 import RegistrationPickSwiper from "./components/RegistrationPickSwiper/RegistrationPickSwiper";
 import styles from './RegistrationPickPage.module.scss';
-import { useLanguage } from '../../../context/LanguageContext';  // импортируем контекст перевода
+import { useLanguage } from '../../../state/language';
 import registrationDefaultMasterImg from '../../../img/users/registrationPick/registration-master.svg';
 import registrationDefaultUserImg from '../../../img/users/registrationPick/registration-user.svg';
 
 const RegistrationPickPage = () => {
-  const { t } = useLanguage(); // получаем функцию t для перевода
+  const text = useLanguage(); // получаем функцию t для перевода
 
   useEffect(() => {
-    document.title = t('Registration selection');
+    document.title = text('Registration selection');
   }, []);
 
   return (
     <div className={`${styles.registrationPickPage} appContainer`}>
-      <h1 className={styles.registrationPickPage_title}>{t('Registration selection')}</h1>
+      <h1 className={styles.registrationPickPage_title}>{text('Registration selection')}</h1>
       <div className={styles.registrationPickPage_block}>
         {/*Вынесла в отдельный компонет т.к. будет переиспользован в свайпере*/}
         {/*Скачала дефолтные картинки в формате и svg*/}
         <RegistrationPickCard
           link="/register/client"
           img={registrationDefaultUserImg}
-          title={t("User registration")}
-          subtitle={t("Registration type for users (clients only)")}
+          title={text("User registration")}
+          subtitle={text("Registration type for users (clients only)")}
         />
         <RegistrationPickCard
           link="/register/master"
           img={registrationDefaultMasterImg}
-          title={t("Service and master registration")}
+          title={text("Service and master registration")}
         />
       </div>
 

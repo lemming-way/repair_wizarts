@@ -2,10 +2,10 @@ import FooterInfo from "./components/FooterInfo";
 import styles from './FooterDesktop.module.scss';
 import FooterMobile from "./FooterMobile/FooterMobile";
 import ListItem from "../../components/ListItem/ListItem";
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../state/language';
 
 function App() {
-  const { t } = useLanguage();
+  const text = useLanguage();
   return (
     <footer className={`${styles.footer} ${window.location.pathname.includes("/master") ? styles.footer_master : null}`}>
       <div className={styles.footer_footerContainer}>
@@ -31,18 +31,18 @@ function App() {
           {/*</ul>*/}
 
           <ul>
-            <ListItem link="/" name={t("News")} />
-            <ListItem link="/" name={t("Blog")} />
-            <ListItem link="/" name={t("Promotions and Discounts")} />
-            <ListItem link="/" name={t("Customer Reviews")} />
+            <ListItem link="/" name={text("News")} />
+            <ListItem link="/" name={text("Blog")} />
+            <ListItem link="/" name={text("Promotions and Discounts")} />
+            <ListItem link="/" name={text("Customer Reviews")} />
           </ul>
 
           <ul>
-            <ListItem link="/" name={t("About Us")} />
-            <ListItem link="/" name={t("How We Work")} />
-            <ListItem link="/" name={t("Warranty")} />
-            <ListItem link="/" name={t("Vacancies")} />
-            <ListItem link="/" name={t("Contacts")} />
+            <ListItem link="/" name={text("About Us")} />
+            <ListItem link="/" name={text("How We Work")} />
+            <ListItem link="/" name={text("Warranty")} />
+            <ListItem link="/" name={text("Vacancies")} />
+            <ListItem link="/" name={text("Contacts")} />
           </ul>
         </div>
         <div className={styles.footer_mobile}>
@@ -50,8 +50,8 @@ function App() {
         </div>
         <div className={styles.footer_footerContainer_politics}>
           <ul>
-            <ListItem link="/" name={t("Privacy Policy")} />
-            <ListItem link="/" name={t("User Agreement")} />
+            <ListItem link="/" name={text("Privacy Policy")} />
+            <ListItem link="/" name={text("User Agreement")} />
           </ul>
         </div>
       </div>

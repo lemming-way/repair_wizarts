@@ -1,27 +1,27 @@
 import React from 'react';
 
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../state/language';
 
 const FooterInfo = () => {
-  const { t } = useLanguage();
+  const text = useLanguage();
 
   return (
     <div>
       <ul>
         <li>
-          <a href="tel:+7(969)7148750">{t("Phone")}: +7 (969) 7148750</a>
+          <a href="tel:+7(969)7148750">{text("Phone")}: +7 (969) 7148750</a>
         </li>
         <li>
-          {t("Address")}: {t("City SPB Kakhovskogo 7")}
+          {text("Address")}: {text("City SPB Kakhovskogo 7")}
         </li>
         <li>
-          ({t("Custom address note")})
+          ({text("Custom address note")})
         </li>
         <li>
-          {t("We work daily")} 10:00 - 20:00,
+          {text("We work daily")} 10:00 - 20:00,
         </li>
         <li>
-          {t("No breaks or days off")}
+          {text("No breaks or days off")}
         </li>
       </ul>
     </div>

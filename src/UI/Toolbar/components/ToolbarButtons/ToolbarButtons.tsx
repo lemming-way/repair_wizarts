@@ -2,18 +2,18 @@ import React from 'react';
 import {Link} from "react-router-dom";
 
 import styles from "./ToolbarButtons.module.scss";
-import { useLanguage } from '../../../../context/LanguageContext';
+import { useLanguage } from '../../../../state/language';
 
 const ToolbarButtons = () => {
-  const { t } = useLanguage();
+  const text = useLanguage();
 
   return (
     <div className={styles.buttons}>
       <Link to="/login" className={styles.buttons_login}>
-        {t('Login')}
+        {text('Login')}
       </Link>
       <Link to="/register" className={styles.buttons_register}>
-        {t('Register')}
+        {text('Register')}
       </Link>
     </div>
   );

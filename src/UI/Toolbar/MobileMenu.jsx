@@ -5,7 +5,7 @@ import ServiceDropDownMobile from './components/ServiceDropDownMobile/ServiceDro
 import styles from './MobileMenu.module.scss';
 import ListItem from '../../components/ListItem/ListItem';
 import ListItemElectronic from '../../components/ListItem/ListItemElectronic';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
 
 
@@ -13,10 +13,10 @@ const MobileMenu = ({ setMenuActive }) => {
   const [openItem, setOpenItem] = useState(false);
   const [openElectronic, setOpenElectronic] = useState(false);
   const [openItemCity, setOpenItemCity] = useState(false);
-  const { t } = useLanguage();
+  const text = useLanguage();
   const menu = [
-    [t('Moscow'), t('and Moscow region')],
-    [t('Saint Petersburg'), t('and Leningrad region')],
+    [text('Moscow'), text('and Moscow region')],
+    [text('Saint Petersburg'), text('and Leningrad region')],
   ];
   const [search, setSearch] = useState('');
 
@@ -29,7 +29,7 @@ const MobileMenu = ({ setMenuActive }) => {
       <ul className={styles.mobileMenu_lists}>
         <ListItem
           link="#"
-          name={t('Services')}
+          name={text('Services')}
           className={styles.mobileMenu_lists_item}
           item={true}
           openItem={openElectronic}
@@ -38,7 +38,7 @@ const MobileMenu = ({ setMenuActive }) => {
         {openElectronic && (
           <ListItemElectronic
             link="#footer"
-            name={t('Electronics')}
+            name={text('Electronics')}
             item={true}
             openItem={openItem}
             className={styles.mobileMenu_lists_item_electronic}
@@ -48,7 +48,7 @@ const MobileMenu = ({ setMenuActive }) => {
         {openItem && <ServiceDropDownMobile />}
         <ListItem
           link="#"
-          name={t('City')}
+          name={text('City')}
           className={styles.mobileMenu_lists_item}
           item={true}
           openItem={openItemCity}
@@ -63,7 +63,7 @@ const MobileMenu = ({ setMenuActive }) => {
               onChange={(event) => setSearch(event.target.value)}
               id=""
               style={{ fontSize: '15px' }}
-              placeholder={t('select region or city')}
+              placeholder={text('select region or city')}
             />
 
             {menu.map((menu, index) => (
@@ -84,22 +84,22 @@ const MobileMenu = ({ setMenuActive }) => {
         <ListItem
           onClick={() => setMenuActive(false)}
           link="/articles"
-          name={t('Articles')}
+          name={text('Articles')}
         />
         <ListItem
           onClick={() => setMenuActive(false)}
           link="/reviews"
-          name={t('Reviews')}
+          name={text('Reviews')}
         />
         <ListItem
           onClick={() => setMenuActive(false)}
           link="/contact"
-          name={t('Contacts')}
+          name={text('Contacts')}
         />
         <ListItem
           onClick={() => setMenuActive(false)}
           link="/client/requests/my_orders"
-          name={t('My orders')}
+          name={text('My orders')}
         />
       </ul>
     </div>

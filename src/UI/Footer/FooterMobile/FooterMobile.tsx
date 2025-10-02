@@ -2,11 +2,11 @@ import React from 'react';
 
 import styles from './FooterMobile.module.scss';
 import ListItem from "../../../components/ListItem/ListItem";
-import { useLanguage } from '../../../context/LanguageContext';
+import { useLanguage } from '../../../state/language';
 import FooterInfo from "../components/FooterInfo";
 
 const FooterMobile = () => {
-  const { t } = useLanguage();
+  const text = useLanguage();
 
   return (
     <div className={styles.mobileFooter}>
@@ -25,18 +25,18 @@ const FooterMobile = () => {
 
         <div className={styles.mobileFooter_mainBlock_corpInfo}>
           <ul>
-            <ListItem link="/" name={t("News")} />
-            <ListItem link="/" name={t("Blog")} />
-            <ListItem link="/" name={t("Promotions and Discounts")} />
-            <ListItem link="/" name={t("Customer Reviews")} />
+            <ListItem link="/" name={text("News")} />
+            <ListItem link="/" name={text("Blog")} />
+            <ListItem link="/" name={text("Promotions and Discounts")} />
+            <ListItem link="/" name={text("Customer Reviews")} />
           </ul>
 
           <ul>
-            <ListItem link="/" name={t("About Us")} />
-            <ListItem link="/" name={t("How We Work")} />
-            <ListItem link="/" name={t("Warranty")} />
-            <ListItem link="/" name={t("Vacancies")} />
-            <ListItem link="/" name={t("Contacts")} />
+            <ListItem link="/" name={text("About Us")} />
+            <ListItem link="/" name={text("How We Work")} />
+            <ListItem link="/" name={text("Warranty")} />
+            <ListItem link="/" name={text("Vacancies")} />
+            <ListItem link="/" name={text("Contacts")} />
           </ul>
         </div>
       </div>

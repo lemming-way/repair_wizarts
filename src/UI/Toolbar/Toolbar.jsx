@@ -10,7 +10,7 @@ import ToolbarButtons from './components/ToolbarButtons/ToolbarButtons';
 import styles from './Toolbar.module.scss';
 import ListItem from '../../components/ListItem/ListItem';
 import './header.scss';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
 import { selectUI } from '../../slices/ui.slice';
 import { selectUser } from '../../slices/user.slice';
@@ -24,7 +24,7 @@ import { selectUser } from '../../slices/user.slice';
 const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
-  const { t } = useLanguage();
+  const text = useLanguage();
   const ui = useSelector(selectUI);
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
@@ -74,17 +74,17 @@ const Toolbar = () => {
           <ListItem
             link="/articles"
             className={styles.toolbar_lists_item_link}
-            name={t('articles')}
+            name={text('articles')}
           />
           <ListItem
             link="/reviews"
             className={styles.toolbar_lists_item_link}
-            name={t('reviews')}
+            name={text('reviews')}
           />
           <ListItem
             link="/contact"
             className={styles.toolbar_lists_item_link}
-            name={t('contacts')}
+            name={text('contacts')}
           />
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
@@ -96,14 +96,14 @@ const Toolbar = () => {
                   to={'/client/requests/create/title'}
                   className="header__button"
                 >
-                   {t('give_task')}
+                   {text('give_task')}
                 </Link>
               ) : (
                 <Link
                   to={'/client/requests/create/title'}
                   className="header__button"
                 >
-                    {t('order_on_exchange')}
+                    {text('order_on_exchange')}
                 </Link>
               )}
 
@@ -165,7 +165,7 @@ const Toolbar = () => {
                   </>
                 </p> */}
                 <div className="master__moneys__full">
-                  <Link to="/master/wallet">{t('replenish_balance')}</Link>
+                  <Link to="/master/wallet">{text('replenish_balance')}</Link>
                 </div>
               </>
             </div>
@@ -213,10 +213,10 @@ const Toolbar = () => {
       {isOpen && (
         <div className={styles.toolbar_burger2_menu}>
           <Link onClick={() => setIsOpen(false)} to="/login">
-          {t('login')}
+          {text('login')}
           </Link>
           <Link onClick={() => setIsOpen(false)} to="/register">
-          {t('register')}
+          {text('register')}
           </Link>
         </div>
       )}

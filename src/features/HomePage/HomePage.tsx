@@ -5,18 +5,18 @@ import WhyChooseUsBlock from "./WhyChooseUsBlock/WhyChooseUsBlock";
 import Articles from "../../components/Home/Articles";
 import Order from "../../components/Home/Order";
 // import Loader from "../../components/Loader/Loader";
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage } from '../../state/language';
 
 const HomePage = () => {
   // Добавила все что было в старом Home, если вдруг сломается
 
   // const counters = useService(getCounters, {})
   // const covers = useService(getCovers, [])
-  const { t } = useLanguage();
+  const text = useLanguage();
 
   useEffect(() => {
-    document.title = t("Home");
-  }, [t]);
+    document.title = text("Home");
+  }, [text]);
 
 
   return (

@@ -2,10 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 import './scss/setout.css'
-import { useLanguage } from "../context/LanguageContext"; // путь поправьте под свой
+import { useLanguage } from '../state/language';
 
 function DropdownService() {
-    const { t } = useLanguage();  // получаем функцию t для перевода
+    const text = useLanguage();  // получаем функцию t для перевода
 
     function reload() {
         // window.location.reload
@@ -18,7 +18,7 @@ function DropdownService() {
                     <h4
                         onClick={() => window.location.reload()}
                     >
-                        {t("I am a client")}
+                        {text("I am a client")}
                     </h4>
                 </Link>
             </div>
@@ -27,14 +27,14 @@ function DropdownService() {
                     <h4
                         onClick={() => window.location.reload()}
                     >
-                        {t("Personal account")}
+                        {text("Personal account")}
                     </h4>
                 </Link>
             </div>
             <div className="recent">
                 <Link to="/" className="repair__phonffe">
-                    <img src="/img/logout.png" alt={t("Logout")} />
-                    <h4>{t("Logout")}</h4>
+                    <img src="/img/logout.png" alt={text("Logout")} />
+                    <h4>{text("Logout")}</h4>
                 </Link>
             </div>
         </div>

@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import styles from './HeroSectionSearchBar.module.scss';
-import { useLanguage } from '../../../../../context/LanguageContext';
+import { useLanguage } from '../../../../../state/language';
 
 
 const HeroSectionSearchBar = () => {
-  const { t } = useLanguage();
+  const text = useLanguage();
   const [service, setService] = useState<string>('');
   const navigate = useNavigate();
   const submitFormHandler = (e: React.FormEvent) => {
@@ -20,12 +20,12 @@ const HeroSectionSearchBar = () => {
         className={styles.searchForm_input}
         type="text"
         name="services"
-        placeholder={t("Find a repair service")}
+        placeholder={text("Find a repair service")}
         onChange={(e) => setService(e.target.value)}
         value={service}
       />
       <button className={styles.searchForm_button} type="submit">
-      {t("Find")}
+      {text("Find")}
       </button>
     </form>
   );

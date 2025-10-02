@@ -2,10 +2,10 @@ import React from 'react';
 import CreatableSelect from "react-select/creatable";
 
 import styles from './RegistrationMasterMoreInfoPage.module.scss';
-import { useLanguage } from '../../../../../context/LanguageContext';
+import { useLanguage } from '../../../../../state/language';
 
 const RegistrationMasterMoreInfoPage = () => {
-  const { t } = useLanguage();
+  const text = useLanguage();
   const options = [
     { value: 0, label: "Apple" },
     { value: 1, label: "Samsung" },
@@ -19,18 +19,18 @@ const RegistrationMasterMoreInfoPage = () => {
 
   return (
     <div className={`${styles.registrationMasterMoreInfoPage} appContainer`}>
-      <h1 className={styles.registrationMasterMoreInfoPage_title}>{t("Additional information")}</h1>
+      <h1 className={styles.registrationMasterMoreInfoPage_title}>{text("Additional information")}</h1>
       <form className={styles.registrationMasterMoreInfoPage_form}>
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="name"
-          placeholder={t("Organization name")}
+          placeholder={text("Organization name")}
           required
         />
 
         <div className={styles.registrationMasterMoreInfoPage_form_radio}>
-          <p>{t("Gender")}:</p>
+          <p>{text("Gender")}:</p>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
             checked
@@ -42,7 +42,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="man"
           >
-            {t("Male")}
+            {text("Male")}
           </label>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
@@ -54,7 +54,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="woman"
           >
-            {t("Female")}
+            {text("Female")}
           </label>
         </div>
 
@@ -62,26 +62,26 @@ const RegistrationMasterMoreInfoPage = () => {
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="type"
-          placeholder={t("Type of activity")}
+          placeholder={text("Type of activity")}
           required
         />
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="business"
-          placeholder={t("Main business")}
+          placeholder={text("Main business")}
           required
         />
         <input
           className={styles.registrationMasterMoreInfoPage_form_input}
           type="text"
           name="activity"
-          placeholder={t("Main direction")}
+          placeholder={text("Main direction")}
           required
         />
 
         <div className={styles.registrationMasterMoreInfoPage_form_radio}>
-          <p>{t("Business model")}:</p>
+          <p>{text("Business model")}:</p>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
             checked
@@ -93,7 +93,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="master"
           >
-            {t("Private master")}
+            {text("Private master")}
           </label>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
@@ -105,36 +105,36 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="service"
           >
-            {t("Service")}
+            {text("Service")}
           </label>
         </div>
 
         <CreatableSelect
-          placeholder={t("City")}
+          placeholder={text("City")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder={t("District")}
+          placeholder={text("District")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder={t("Metro station")}
+          placeholder={text("Metro station")}
           isClearable
           options={options}
         />
 
         <CreatableSelect
-          placeholder={t("Address")}
+          placeholder={text("Address")}
           isClearable
           options={options}
         />
 
         <button className={styles.registrationMasterMoreInfoPage_form_button} type="submit">
-          {t("Registration")}
+          {text("Registration")}
         </button>
       </form>
 

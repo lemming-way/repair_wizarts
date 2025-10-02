@@ -9,7 +9,6 @@ import {CustomProvider} from 'rsuite';
 import App from './components/App';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
-import { LanguageProvider } from './context/LanguageContext';
 import reportWebVitals from './reportWebVitals';
 import store from './store'
 
@@ -22,9 +21,7 @@ root.render(
       <Provider store={store}>
         <BrowserRouter>
           <CustomProvider theme="dark">
-            <LanguageProvider>
-              <App />
-            </LanguageProvider>
+            <App />
           </CustomProvider>
         </BrowserRouter>
       </Provider>

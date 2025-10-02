@@ -5,14 +5,14 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
-import { useLanguage } from '../../../../../context/LanguageContext';  // импорт контекста перевода
+import { useLanguage } from '../../../../../state/language';
 import registrationDefaultMasterImg from "../../../../../img/users/registrationPick/registration-master.svg";
 import registrationDefaultUserImg from "../../../../../img/users/registrationPick/registration-user.svg";
 import RegistrationPickCard from "../RegistrationPickCard/RegistrationPickCard";
 import './RegistrationPickSwiper.scss';
 
 const RegistrationPickSwiper = () => {
-  const { t } = useLanguage(); // получаем функцию t
+  const text = useLanguage(); // получаем функцию t
 
   return (
     <Swiper
@@ -30,8 +30,8 @@ const RegistrationPickSwiper = () => {
         <RegistrationPickCard
           link="/register/client"
           img={registrationDefaultUserImg}
-          title={t("User registration")}
-          subtitle={t("Registration type for users (clients only)")}
+          title={text("User registration")}
+          subtitle={text("Registration type for users (clients only)")}
         />
       </SwiperSlide>
 
@@ -39,7 +39,7 @@ const RegistrationPickSwiper = () => {
         <RegistrationPickCard
           link="/register/master"
           img={registrationDefaultMasterImg}
-          title={t("Service and master registration")}
+          title={text("Service and master registration")}
         />
       </SwiperSlide>
     </Swiper>
