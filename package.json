@@ -48,6 +48,12 @@
     "analyze": "source-map-explorer 'build/static/js/*.js'",
     "size": "size-limit"
   },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
   "browserslist": {
     "production": [
       ">0.5%",

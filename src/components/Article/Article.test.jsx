@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
@@ -15,6 +15,12 @@ jest.mock('swiper/react', () => ({
 jest.mock('swiper', () => ({
   Navigation: {},
 }));
+
+jest.mock('./ArticleComments', () => {
+  return function ArticleComments() {
+    return <div data-testid="article-comments">Comments</div>;
+  };
+});
 
 const mockStore = configureStore({
   reducer: {
@@ -51,9 +57,11 @@ describe('Article Component - HTML Sanitization', () => {
       </Provider>
     );
 
-    const bodyContent = container.querySelector('[class*="bodyContent"]');
-    expect(bodyContent).toBeInTheDocument();
-    expect(bodyContent?.innerHTML).toContain('Содержимое статьи в формате HTML');
+    await waitFor(() => {
+      const bodyContent = container.querySelector('[class*="bodyContent"]');
+      expect(bodyContent).toBeInTheDocument();
+      expect(bodyContent?.innerHTML).toContain('Содержимое статьи в формате HTML');
+    });
   });
 
   it('removes script tags from rendered content', async () => {
@@ -65,8 +73,10 @@ describe('Article Component - HTML Sanitization', () => {
       </Provider>
     );
 
-    const scripts = container.querySelectorAll('script');
-    expect(scripts.length).toBe(0);
+    await waitFor(() => {
+      const scripts = container.querySelectorAll('script');
+      expect(scripts.length).toBe(0);
+    });
   });
 
   it('removes dangerous inline event handlers from rendered content', async () => {
@@ -78,14 +88,16 @@ describe('Article Component - HTML Sanitization', () => {
       </Provider>
     );
 
-    const bodyContent = container.querySelector('[class*="bodyContent"]');
-    const elementsWithOnError = bodyContent?.querySelectorAll('[onerror]');
-    const elementsWithOnClick = bodyContent?.querySelectorAll('[onclick]');
-    const elementsWithOnLoad = bodyContent?.querySelectorAll('[onload]');
+    await waitFor(() => {
+      const bodyContent = container.querySelector('[class*="bodyContent"]');
+      const elementsWithOnError = bodyContent?.querySelectorAll('[onerror]');
+      const elementsWithOnClick = bodyContent?.querySelectorAll('[onclick]');
+      const elementsWithOnLoad = bodyContent?.querySelectorAll('[onload]');
 
-    expect(elementsWithOnError?.length || 0).toBe(0);
-    expect(elementsWithOnClick?.length || 0).toBe(0);
-    expect(elementsWithOnLoad?.length || 0).toBe(0);
+      expect(elementsWithOnError?.length || 0).toBe(0);
+      expect(elementsWithOnClick?.length || 0).toBe(0);
+      expect(elementsWithOnLoad?.length || 0).toBe(0);
+    });
   });
 
   it('preserves safe HTML elements', async () => {
@@ -97,9 +109,11 @@ describe('Article Component - HTML Sanitization', () => {
       </Provider>
     );
 
-    const bodyContent = container.querySelector('[class*="bodyContent"]');
-    const paragraphs = bodyContent?.querySelectorAll('p');
+    await waitFor(() => {
+      const bodyContent = container.querySelector('[class*="bodyContent"]');
+      const paragraphs = bodyContent?.querySelectorAll('p');
 
-    expect(paragraphs && paragraphs.length > 0).toBe(true);
+      expect(paragraphs && paragraphs.length > 0).toBe(true);
+    });
   });
 });
