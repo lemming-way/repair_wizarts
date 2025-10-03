@@ -42,7 +42,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     document.title = text("Login");
-  }, []);
+  }, [text]);
 
   const onSendPhone = (e) => {
     e.preventDefault()

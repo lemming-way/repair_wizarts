@@ -12,7 +12,7 @@ const RegistrationPickPage = () => {
 
   useEffect(() => {
     document.title = text('Registration selection');
-  }, []);
+  }, [text]);
 
   return (
     <div className={`${styles.registrationPickPage} appContainer`}>

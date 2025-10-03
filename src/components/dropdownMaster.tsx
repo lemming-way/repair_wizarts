@@ -7,10 +7,6 @@ import { useLanguage } from '../state/language';
 function DropdownService() {
     const text = useLanguage();  // получаем функцию t для перевода
 
-    function reload() {
-        // window.location.reload
-        console.log('helou');
-    }
     return (
         <div className="bldropdownfff-content">
             <div className="recent">

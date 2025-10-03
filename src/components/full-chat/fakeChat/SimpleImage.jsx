@@ -6,14 +6,14 @@ import 'swiper/swiper-bundle.min.css';
 export default function SimpleImage() {
     // Состояние для управления модальным окном
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalImage, setModalImage] = useState("");
+    //~ const [modalImage, setModalImage] = useState("");
 
     // Массив картинок для слайдера в модальном окне
     const image =  '/img/sentence_img/iphone-x.png';
 
     // Функция для открытия модального окна
     const openModal = (imageSrc) => {
-        setModalImage(imageSrc); // Устанавливаем путь к картинке
+        //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
         setIsModalOpen(true); // Открываем модальное окно
     };
 

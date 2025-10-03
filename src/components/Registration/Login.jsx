@@ -53,41 +53,42 @@ function Login() {
 
     function correctPhoneNumder (e) {
         var text = e.target.value
+        var new_text
 
         // стирание
         if (text.length < phone.length) {
-            var new_text = text
+            new_text = text
             if (new_text.length < 4) {
                 new_text = "+7(9"
             }
         }
         // +7(988)-842-44-44
         else if (text.length === 6) {
-            var new_text = text + ")-"
+            new_text = text + ")-"
         }
         else if (text.length === 7) {
-            var new_text = text.slice(0, -1) + ')-' + text.slice(-1);
+            new_text = text.slice(0, -1) + ')-' + text.slice(-1);
         }
         else if (text.length === 8) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 11) {
-            var new_text = text + "-" 
+            new_text = text + "-" 
         }
         else if (text.length === 12) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 14) {
-            var new_text = text + "-"
+            new_text = text + "-"
         }
         else if (text.length === 15) {
-            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            var new_text = text.slice(0,17)
+            new_text = text.slice(0,17)
         }
         else {
-            var new_text = text
+            new_text = text
         }
         return new_text
     }

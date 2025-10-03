@@ -1,3 +1,6 @@
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { getGlobal, setGlobal, resetGlobal, isGlobalExists, useGlobalState, queryClient } from './global';
+
 jest.mock('../constants', () => ({
   __esModule: true,
   default: {
@@ -11,9 +14,6 @@ jest.mock('../constants', () => ({
     }
   }
 }));
-
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { getGlobal, setGlobal, resetGlobal, isGlobalExists, useGlobalState, queryClient } from './global';
 
 describe('Global State Manager', () => {
   it('should load default "queryStaleTime" and "retry" from config', () => {
@@ -90,7 +90,7 @@ describe('Global State Manager', () => {
     it('should trigger render on value change', async () => {
       let renderCount = 0;
 
-      const { result } = renderHook(() => {
+      renderHook(() => {
         renderCount++;
         return useGlobalState('counter');
       });
@@ -115,7 +115,7 @@ describe('Global State Manager', () => {
     it('should not trigger render when setting the same value', async () => {
       let renderCount = 0;
 
-      const { result } = renderHook(() => {
+      renderHook(() => {
         renderCount++;
         return useGlobalState('counter');
       });
@@ -140,7 +140,7 @@ describe('Global State Manager', () => {
     it('should not trigger render when setting other values', async () => {
       let renderCount = 0;
 
-      const { result } = renderHook(() => {
+      renderHook(() => {
         renderCount++;
         return useGlobalState('counter');
       });
