@@ -6,7 +6,8 @@ import { fetchUser } from '../../slices/user.slice'
 import { login } from '../../services/auth.service'
 
 import './login.css'
-import Popup from 'reactjs-popup'
+import { Modal } from '../../shared/ui'
+import modalStyles from '../../features/LoginPage/PasswordRecoveryModal.module.scss'
 
 import { keepUserAuthorized, recoverPassword, recoverPasswordSend, recoverPasswordVerify } from '../../services/user.service'
 
@@ -237,86 +238,72 @@ function Login() {
                 >
                     Забыли пароль?
                 </span>
-                <Popup
-                    className="password-recovery__modal"
+                <Modal
                     open={recoveryState !== RecoveryState.IDLE}
                     onClose={() => setRecoveryState(RecoveryState.IDLE)}
+                    size="sm"
+                    className={modalStyles.modal}
+                    closeButton={true}
                 >
-                    <button
-                        className="password-recovery__close"
-                        onClick={() => setRecoveryState(RecoveryState.IDLE)}
-                    >
-                        ×
-                    </button>
-                    <h2 className="password-recovery__title">
+                    <h2 className={modalStyles.title}>
                         Восстановление пароля
                     </h2>
-                    <p className="password-recovery__info">
+                    <p className={modalStyles.info}>
                         Введите номер телефона, после чего на почту, привязанную к вашему аккаунту придёт письмо подтверждения.
                     </p>
                     {recoveryState === RecoveryState.CODE ? (
                         <form
-                            className="password-recovery-form password-recovery-form--extended"
+                            className={modalStyles.form}
                             onSubmit={onSendCode}
                         >
                             {recoveryError && (
-                                <div className="password-recovery-form__error">
+                                <div className={modalStyles.error}>
                                     {recoveryError}
                                 </div>
                             )}
                             <input
-                                className="password-recovery-form__input password-recovery-form__input--extended"
+                                className={modalStyles.input}
                                 placeholder="Введите код с почты"
                                 onChange={(e) => setRecoveryCode(e.target.value)}
                                 value={recoveryCode}
                             />
                             <input
-                                className="password-recovery-form__input password-recovery-form__input--extended"
+                                className={modalStyles.input}
                                 placeholder="Новый пароль"
                                 onChange={(e) => setRecoveryPassword(e.target.value)}
                                 value={recoveryPassword}
                             />
-                            <button className="password-recovery-form__button">
+                            <button className={modalStyles.button} type="submit">
                                 Отправить
                             </button>
-                            
                         </form>
                     ) : (
                         <form
-                            className="password-recovery-form"
+                            className={modalStyles.form}
                             onSubmit={onSendPhone}
                         >
                             {recoveryError && (
-                                <div className="password-recovery-form__error">
+                                <div className={modalStyles.error}>
                                     {recoveryError}
                                 </div>
                             )}
 
                             <div className="input_phone_wrap_recovery">
                                 <input
-                                // className="heheinput"
-                                className={`password-recovery-form__input ${recoveryPhone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'}`}
+                                className={`${modalStyles.input} ${recoveryPhone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'}`}
                                 type="text"
                                 name="phone"
-                                // placeholder="Телефон"
                                 value={recoveryPhone}
                                 onChange={(e)=>setRecoveryPhoneHandler(e)}
                                 required
                                 />
                             </div>
-                            {/* <input
-                                className="password-recovery-form__input"
-                                placeholder="Номер телефона"
-                                onChange={(e) => setRecoveryPhoneHandler(e)}
-                                value={recoveryPhone}
-                            /> */}
-                            <button className="password-recovery-form__button">
+                            <button className={modalStyles.button} type="submit">
                                 Отправить
                             </button>
-                            
                         </form>
                     )}
-                </Popup>
+                </Modal>
             </form>
         </section>
     )

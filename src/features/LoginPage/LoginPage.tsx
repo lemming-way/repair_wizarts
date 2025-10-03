@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {useDispatch} from "react-redux";
 import {Link, useNavigate} from "react-router-dom";
-import Popup from "reactjs-popup";
 
 import styles from './LoginPage.module.scss';
+import modalStyles from './PasswordRecoveryModal.module.scss';
+import { Modal } from '../../shared/ui';
 import Error from "../../components/Error/Error";
 import { useLanguage } from '../../state/language';
 import {login} from "../../services/auth.service";
@@ -158,74 +159,67 @@ const LoginPage = () => {
         </span>
       </div>
 
-      {/*Оставила Popup без изменений*/}
-      <Popup
-        className="password-recovery__modal"
+      <Modal
         open={recoveryState !== RecoveryState.IDLE}
         onClose={() => setRecoveryState(RecoveryState.IDLE)}
+        size="sm"
+        className={modalStyles.modal}
+        closeButton={true}
       >
-        <button
-          className="password-recovery__close"
-          type="button"
-          onClick={() => setRecoveryState(RecoveryState.IDLE)}
-        >
-          ×
-        </button>
-        <h2 className="password-recovery__title">
+        <h2 className={modalStyles.title}>
           {text("Password recovery")}
         </h2>
-        <p className="password-recovery__info">
+        <p className={modalStyles.info}>
           {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
         </p>
         {recoveryState === RecoveryState.CODE ? (
           <form
-            className="password-recovery-form password-recovery-form--extended"
+            className={modalStyles.form}
             onSubmit={onSendCode}
           >
             {recoveryError && (
-              <div className="password-recovery-form__error">
+              <div className={modalStyles.error}>
                 {recoveryError}
               </div>
             )}
             <input
-              className="password-recovery-form__input password-recovery-form__input--extended"
+              className={modalStyles.input}
               placeholder={text("Enter the code from email")}
               onChange={(e) => setRecoveryCode(e.target.value)}
               value={recoveryCode}
             />
             <input
-              className="password-recovery-form__input password-recovery-form__input--extended"
+              className={modalStyles.input}
               placeholder={text("New password")}
               onChange={(e) => setRecoveryPassword(e.target.value)}
               value={recoveryPassword}
             />
-            <button className="password-recovery-form__button">
+            <button className={modalStyles.button} type="submit">
               {text("Send")}
             </button>
-
           </form>
         ) : (
           <form
-            className="password-recovery-form"
+            className={modalStyles.form}
             onSubmit={onSendPhone}
           >
             {recoveryError && (
-              <div className="password-recovery-form__error">
+              <div className={modalStyles.error}>
                 {recoveryError}
               </div>
             )}
             <input
-              className="password-recovery-form__input"
+              className={modalStyles.input}
               placeholder={text("Phone number")}
               onChange={(e) => setRecoveryPhone(e.target.value)}
               value={recoveryPhone}
             />
-            <button className="password-recovery-form__button" type="submit">
+            <button className={modalStyles.button} type="submit">
               {text("Send")}
             </button>
           </form>
         )}
-      </Popup>
+      </Modal>
     </div>
   );
 };
