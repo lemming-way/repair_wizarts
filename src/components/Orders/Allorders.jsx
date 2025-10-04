@@ -15,14 +15,16 @@ import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
+import { useLanguage } from '../../state/language';
 
 
 // Переименовал App в AllOrders для большей ясности
 function App() {
+  const text = useLanguage();
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
-  const [selectValue, setSelectValue] = useState('Все предложения');
+  const [selectValue, setSelectValue] = useState('All offers');
   const [serviceInPage, setServiceInPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [allOrders, setAllOrders] = useState([]); // Храним все загруженные заказы
@@ -151,8 +153,8 @@ function App() {
     if (ownerId && String(ownerId) === String(user.u_id)) return false;
 
     // Фильтр "Новые" / "Просмотренные"
-    if (selectValue === 'Новые' && !order.isNew) return false;
-    if (selectValue === 'Просмотренные' && order.isNew) return false;
+    if (selectValue === 'New' && !order.isNew) return false;
+    if (selectValue === 'Viewed' && order.isNew) return false;
 
     // Фильтрация по категории
     if (categoryFilter && order.b_options?.category !== categoryFilter) {
@@ -196,7 +198,7 @@ function App() {
         <EmailSettings setVisibvleEmailSettings={setVisibvleEmailSettings} />
       )}
       <div className="mini-text">
-        <h1>Заявки</h1>
+        <h1>{text('Requests')}</h1>
       </div>
 
       <div className={style.top_row}>
@@ -205,13 +207,13 @@ function App() {
             <Link to="/master/requests/orders#active">
               <div className="myorders">
                 <p>
-                  Мои отклики <span>{userOrderReqs}</span>
+                  {text('My responses')} <span>{userOrderReqs}</span>
                 </p>
               </div>
             </Link>
             <Link to="/master/requests">
               <div className="myorders">
-                <p>Все заказы</p>
+                <p>{text('All orders')}</p>
               </div>
             </Link>
           </div>
@@ -221,7 +223,7 @@ function App() {
           onClick={() => setVisibvleEmailSettings(true)}
         >
           <img src="/img/email.png" alt="" />
-          <p>Настройка Email уведомления</p>
+          <p>{text('Email notification settings')}</p>
         </div>
       </div>
 
@@ -245,12 +247,12 @@ function App() {
         <div className={style.allorders}>
           <div className={style.heading__row}>
             <h1 className={style.heading__h1}>
-              Новое на бирже
-              <span>{filteredOrders.length} проектов</span>
+              {text('New on the exchange')}
+              <span>{filteredOrders.length} {text('projects')}</span>
             </h1>
             <div style={{ flex: 1 }}></div>
             <div className={style.flex_row_select}>
-              <p className={style.heading__p}>Показать</p>
+              <p className={style.heading__p}>{text('Show')}</p>
               <Dropdown>
                 <Dropdown.Toggle
                   variant="success"
@@ -262,21 +264,21 @@ function App() {
                 <Dropdown.Menu>
                   <Dropdown.Item
                     className={style.select__item}
-                    onClick={() => setSelectValue('Все предложения')}
+                    onClick={() => setSelectValue('All offers')}
                   >
-                    Все предложения
+                    {text('All offers')}
                   </Dropdown.Item>
                   <Dropdown.Item
                     className={style.select__item}
-                    onClick={() => setSelectValue('Новые')}
+                    onClick={() => setSelectValue('New')}
                   >
-                    Новые
+                    {text('New')}
                   </Dropdown.Item>
                   <Dropdown.Item
                     className={style.select__item}
-                    onClick={() => setSelectValue('Просмотренные')}
+                    onClick={() => setSelectValue('Viewed')}
                   >
-                    Просмотренные
+                    {text('Viewed')}
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
@@ -284,21 +286,21 @@ function App() {
           </div>
 
           {isLoading ? (
-            <p>Загрузка заказов...</p>
+            <p>{text('Loading orders...')}</p>
           ) : fetchError ? (
-            <p>Ошибка загрузки: {fetchError}</p>
+            <p>{text('Loading error')}: {fetchError}</p>
           ) : filteredOrders.length === 0 ? (
-            <p>Нет доступных заказов, удовлетворяющих фильтрам.</p>
+            <p>{text('No orders available that match the filters.')}</p>
           ) : (
             <div>
               <div className={`${style.heading_table}`}>
                 <div
                   className={`fsdfsaooo mobile-big_nav-text_1 ${style.heading_table_row}`}
                 >
-                  <p className="inter">Проект</p>
+                  <p className="inter">{text('Project')}</p>
                   <div className={style.empty}></div>
-                  <p className="inter">Покупатель</p>
-                  <p className="inter">Цена</p>
+                  <p className="inter">{text('Buyer')}</p>
+                  <p className="inter">{text('Price')}</p>
                 </div>
               </div>
               {filteredOrders
@@ -314,7 +316,7 @@ function App() {
                     <div className={style.block_title}>
                       <Link to={`/master/requests/offer/${order.b_id}`}>
                         <h3 className={style.heading}>
-                          {order.b_options?.title || 'Без названия'}
+                          {order.b_options?.title || text('Untitled')}
                         </h3>
                       </Link>
                       <p className={style.text_navigation}>
@@ -328,8 +330,8 @@ function App() {
                           alignItems: 'flex-start',
                         }}
                       >
-                        <p>осталось еще 3 дня</p>
-                        <p>предложений {order.drivers?.length ?? 0}</p>
+                        <p>{text('3 days left')}</p>
+                        <p>{text('offers')} {order.drivers?.length ?? 0}</p>
                       </div>
                     </div>
 
@@ -348,9 +350,9 @@ function App() {
                           />
                         </div>
                         <div className={style.col}>
-                          <p>{order.b_options?.author?.name || 'Без имени'}</p>
-                          <p>1 проект на сайте</p>
-                          <p>100% нанято</p>
+                          <p>{order.b_options?.author?.name || text('Unnamed')}</p>
+                          <p>1 {text('project on site')}</p>
+                          <p>100% {text('hired')}</p>
                         </div>
                       </div>
 
@@ -358,11 +360,11 @@ function App() {
                         <p className={style.price}>
                           {order.b_options?.client_price
                             ? `${order.b_options.client_price} ₽`
-                            : 'Цена не указана'}
+                            : text('Price not specified')}
                         </p>
                         <p className={style.status}>
                           <img src="/img/icon-confirm.png" alt="" />
-                          {order.b_options?.status || 'Без статуса'}
+                          {order.b_options?.status || text('No status')}
                         </p>
                       </div>
                     </div>
@@ -379,15 +381,15 @@ function App() {
               onPageChange={setCurrentPage}
             />
             <div className={style.select_pages_wrap}>
-              <p className={style.select_pages_wrap}>Показать:</p>
+              <p className={style.select_pages_wrap}>{text('Show')}:</p>
               <select
                 className={style.select_pages__select}
                 value={serviceInPage}
                 onChange={(e) => setServiceInPage(Number(e.target.value))}
               >
-                <option value="10">10 на странице</option>
-                <option value="20">20 на странице</option>
-                <option value="50">50 на странице</option>
+                <option value="10">10 {text('per page')}</option>
+                <option value="20">20 {text('per page')}</option>
+                <option value="50">50 {text('per page')}</option>
               </select>
             </div>
           </div>

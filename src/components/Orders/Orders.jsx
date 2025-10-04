@@ -10,17 +10,19 @@ import OrderRow from './OrderRow';
 import style from './Orders.module.css';
 import appFetch from '../../utilities/appFetch';
 import NavigationOrders from '../Settings/NavigationOrders';
+import { useLanguage } from '../../state/language';
 
 const STATE_ENUM = {
-  active: 'Активно',
-  success: 'Выполнено',
-  cancel: 'Отменено',
+  active: 'Active',
+  success: 'Completed',
+  cancel: 'Canceled',
 };
 
 function Orders() {
+  const text = useLanguage();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [orderState, setOrderState] = useState('Активно');
+  const [orderState, setOrderState] = useState('Active');
 
   // Безопасное получение user.u_id
   const user = JSON.parse(localStorage.getItem('userdata'))?.user || {};
@@ -76,7 +78,7 @@ function Orders() {
 
   useEffect(() => {
     const currentFilter =
-      STATE_ENUM[window.location.hash.slice(1)] || 'Активно';
+      STATE_ENUM[window.location.hash.slice(1)] || 'Active';
     setOrderState(currentFilter);
   }, []); // Этот useEffect для установки начального состояния по хэшу
 
@@ -94,19 +96,19 @@ function Orders() {
     <>
       <div className={style.order_row} style={{ marginBottom: 20 }}>
         <div>
-          <h1 className={style.heading}>Биржа заказы</h1>
+          <h1 className={style.heading}>{text('Exchange orders')}</h1>
           <div className="df" style={{ paddingBottom: 0 }}>
             <div className="two-input">
               <Link to="/master/requests">
                 <div className="myorders">
                   <p>
-                    Мои отклики<span>{orders.length}</span>
+                    {text('My responses')}<span>{orders.length}</span>
                   </p>
                 </div>
               </Link>
               <Link to="/master/requests">
                 <div className="myorders">
-                  <p>Все заказы </p>
+                  <p>{text('All orders')} </p>
                 </div>
               </Link>
             </div>
@@ -116,7 +118,7 @@ function Orders() {
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>Загрузка...</div>
+        <div style={{ textAlign: 'center', padding: '20px' }}>{text('Loading...')}</div>
       ) : orders.length === 0 ? (
         <EmptyOrder />
       ) : (
@@ -150,7 +152,7 @@ function Orders() {
                 {
                   description: item.b_options?.title,
                   time: item.driverData?.c_options?.time
-                    ? `${item.driverData.c_options.time} час`
+                    ? `${item.driverData.c_options.time} ${text('hour')}`
                     : '-',
                   price: item.driverData?.c_options?.bind_amount,
                 },
@@ -159,7 +161,7 @@ function Orders() {
                 {
                   class: 'status',
                   icon: '/img/icons/eye_white.png',
-                  text: 'просмотрено',
+                  text: text('viewed'),
                 },
               ],
             }}

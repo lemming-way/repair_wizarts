@@ -15,10 +15,12 @@ import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import style from '../Service/serviceDetail.module.scss';
+import { useLanguage } from '../../state/language';
 
 
 
 function MyOrder() {
+  const text = useLanguage();
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const navigate = useNavigate();
@@ -30,7 +32,7 @@ function MyOrder() {
   const [visibleModalEditOrder, setVisibleModalEditOrder] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [isVisibleConfirmPause, setVisibleConfirmPause] = useState(false);
-  const [orderstatus, setOrderStatus] = useState('сбор предложений');
+  const [orderstatus, setOrderStatus] = useState('collecting offers');
   // тестовый список для слайдера
   const [photos, setPhotos] = useState([
     'https://cdn.motor1.com/images/mgl/VzMq0z/s1/bugatti-chiron-1500.webp',
@@ -326,9 +328,9 @@ function MyOrder() {
       {/* <Sidebar /> */}
       <div className={styles.main_block}>
         <div className={styles.heading_row}>
-          <h1>Мое предложение ({currentOrder.b_id})</h1>
+          <h1>{text('My offer')} ({currentOrder.b_id})</h1>
           <button className={styles.button_back} onClick={() => navigate(-1)}>
-            Назад
+            {text('Back')}
           </button>
         </div>
 
@@ -346,8 +348,8 @@ function MyOrder() {
               />
               <div className={styles.block_info}>
                 <h2>{currentOrder?.b_options?.author?.name}</h2>
-                <h3>Размещено 10 проектов</h3>
-                <h3>Нанято 100 %</h3>
+                <h3>{text('Posted 10 projects')}</h3>
+                <h3>{text('Hired 100%')}</h3>
               </div>
             </div>
             <div className={styles.description}>
@@ -355,16 +357,16 @@ function MyOrder() {
               <p>{currentOrder?.b_options?.description}</p>
             </div>
             <div className={styles.left_row_bottom}>
-              <p>Осталось 5 дней </p>
+              <p>{text('5 days left')} </p>
               <p className={styles.view}>
                 <img src="/img/icons/eye.png" alt="" />
-                {currentOrder?.drivers?.length || 0} Просмотренно
+                {currentOrder?.drivers?.length || 0} {text('Viewed')}
               </p>
             </div>
           </div>
           <div className={styles.right}>
             <p>
-              Желаемый бюджет{' '}
+              {text('Desired budget')}{' '}
               <span className={styles.price}>
                 {currentOrder.b_options?.client_price} ₽
               </span>
@@ -426,14 +428,14 @@ function MyOrder() {
             <div className={styles.order_row}>
               <div
                 className={
-                  orderstatus === 'сбор предложений'
+                  orderstatus === 'collecting offers'
                     ? styles.order_button
                     : styles.order_button_pause
                 }
               >
-                {orderstatus === 'сбор предложений'
-                  ? 'Сбор предложений'
-                  : 'На паузе'}
+                {orderstatus === 'collecting offers'
+                  ? text('Collecting offers')
+                  : text('Paused')}
               </div>
               <div className={styles.buttons_icon}>
                 <div
@@ -621,8 +623,8 @@ function MyOrder() {
           return (
             <>
               <section>
-                <h2>{currentOrder.drivers?.length || 0} Предложения</h2>
-                <p className={styles.heading}>Номер профиля ({item.u_id})</p>
+                <h2>{currentOrder.drivers?.length || 0} {text('Offers')}</h2>
+                <p className={styles.heading}>{text('Profile number')} ({item.u_id})</p>
 
                 <div className={styles.about_block}>
                   <div className={styles.about_row}>
@@ -773,23 +775,23 @@ function MyOrder() {
                 </div>
               </section>
               <section className={styles.order_block}>
-                <h2>Что входит в предложение</h2>
+                <h2>{text('What is included in the offer')}</h2>
                 <div className={styles.order_block__row}>
-                  <p>Услуга</p>
+                  <p>{text('Service')}</p>
                   <div style={{ flex: 1 }} />
                   <p>
-                    Срок <br />
-                    {item.c_options.time} Часа
+                    {text('Term')} <br />
+                    {item.c_options.time} {text('hours')}
                   </p>
                   <p>
-                    Цена <br />
+                    {text('Price')} <br />
                     {item.c_options.bind_amount} ₽
                   </p>
                 </div>
                 <div className={styles.line}></div>
                 <div className={styles.order_block__row2}>
-                  <p>Итого:</p>
-                  <p>{item.c_options.time} часа</p>
+                  <p>{text('Total')}:</p>
+                  <p>{item.c_options.time} {text('hours')}</p>
                   <p>{item.c_options.bind_amount} ₽</p>
                 </div>
               </section>
@@ -805,10 +807,10 @@ function MyOrder() {
                     setVisibleBlockPayment(true);
                   }}
                 >
-                  Выбрать мастера
+                  {text('Select master')}
                 </button>
                 <Link to={`/client/feedback/${item.u_id}`}>
-                  <button className={styles.button}>Отзывы о мастере</button>
+                  <button className={styles.button}>{text('Reviews about the master')}</button>
                 </Link>
               </div>
             </>
