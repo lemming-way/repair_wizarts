@@ -7,8 +7,10 @@ import styles from './AddedDevices.module.css';
 import { useService } from '../../hooks/useService';
 import { getClientRequests } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
+import { useLanguage } from '../../state/language';
 
 function AddedDevices() {
+  const text = useLanguage();
   const requests = useService(getClientRequests, []);
   const [archiveOrders, setArchiveOrders] = useState([]);
   const tabsFilter = window.location.hash;
@@ -39,8 +41,8 @@ function AddedDevices() {
     );
   const onDeviceUpdate = (e) => requests.refetch();
   useEffect(() => {
-    document.title = 'Добавленные устройства';
-  }, []);
+    document.title = text('Added devices');
+  }, [text]);
 
   return (
     <section className="page_7">
@@ -48,8 +50,8 @@ function AddedDevices() {
         <div className="adding_devices font_abel">
           <div className="device">
             <div className="device_text-2">
-              <h2>Добавленные устройства</h2>
-              <h3>Заявки</h3>
+              <h2>{text('Added devices')}</h2>
+              <h3>{text('Applications')}</h3>
             </div>
           </div>
           <div className={styles.block_nav}>
@@ -63,7 +65,7 @@ function AddedDevices() {
                                       <h2>Актуальное</h2>
                                   </Link> */}
                 <Link className="just__flexingfaa" to="/client/requests">
-                  <h2>Актуальное</h2>
+                  <h2>{text('Current')}</h2>
                 </Link>
                 <div className={styles.counter}>
                   <span>{filteredRequests.length}</span>
@@ -75,7 +77,7 @@ function AddedDevices() {
                 } ${styles.relative}`}
               >
                 <Link className="just__flexingfaa" to="#archive">
-                  <h2>Архив</h2>
+                  <h2>{text('Archive')}</h2>
                 </Link>
                 <div className={styles.counter}>
                   <span>{archiveOrders.length || 0}</span>
@@ -83,7 +85,7 @@ function AddedDevices() {
               </div>
             </div>
             <Link className={styles.button} to="/client/requests/create/title">
-              Добавить устройство
+              {text('Add device')}
             </Link>
           </div>
 
@@ -93,16 +95,16 @@ function AddedDevices() {
               style={{ marginBottom: 0 }}
             >
               <div className="">
-                <h2>Заказы</h2>
+                <h2>{text('Orders')}</h2>
               </div>
               <div className="big_nav-text_2 df align">
                 <div className="tex-1 df">
-                  <h2 className="nav-text-left">Цена</h2>
+                  <h2 className="nav-text-left">{text('Price')}</h2>
 
-                  <h2 className="nav-text-center">Предложение</h2>
+                  <h2 className="nav-text-center">{text('Offer')}</h2>
 
-                  <h2 className="nav-text-center">Статус</h2>
-                  <h2 className="nav-text-right">Управлять</h2>
+                  <h2 className="nav-text-center">{text('Status')}</h2>
+                  <h2 className="nav-text-right">{text('Manage')}</h2>
                 </div>
               </div>
             </div>

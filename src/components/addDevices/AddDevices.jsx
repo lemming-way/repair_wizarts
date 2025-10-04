@@ -9,6 +9,7 @@ import 'swiper/css/navigation';
 import style from './AddDevices.module.css';
 import { createRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
+import { useLanguage } from '../../state/language';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -50,6 +51,7 @@ const uploadPhoto = async (file) => {
   }
 };
 function Profile() {
+  const text = useLanguage();
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const [URLSearchParams] = useSearchParams();
@@ -71,7 +73,7 @@ function Profile() {
   const handleImageChange = (event) => {
     const files = Array.from(event.target.files);
     if (photos.length + files.length > 10) {
-      setError('Вы можете загрузить не более 10 файлов.');
+      setError(text('You can upload no more than 10 files.'));
       return;
     }
     setError('');
@@ -178,15 +180,15 @@ function Profile() {
       if (err.message) {
         return setError(err.message);
       }
-      setError('Проверьте корректность введённых данных');
+      setError(text('Check the correctness of the entered data'));
       console.error(err);
     }
   };
 
   useEffect(() => {
-    document.title = 'Добавить устройства';
+    document.title = text('Add device');
     getData('section');
-  }, []);
+  }, [text]);
 
   return (
     <section className="page_8">

@@ -1,12 +1,14 @@
 import {useEffect, useState} from 'react';
 import './titleService.css'
 import {Link} from 'react-router-dom'
+import { useLanguage } from '../../state/language'
 
 function TitleService() {
+    const text = useLanguage();
     const [title, setTitle] = useState("")
 
     useEffect(() => {
-        document.title = 'Зоголовок услуги';
+        document.title = text('Service title');
     }, []);
     return (
         <>
@@ -14,24 +16,18 @@ function TitleService() {
                 <div className="container_other mobile-container_other fix_width_title">
                     <div className="other_services">
                         <div className="other_services-text">
-                            <h2>Разместите устройство которого нет в списке </h2>
+                            <h2>{text('List a device that is not on the list')} </h2>
                         </div>
 
                         <div className="other-text">
                             <p>
-                                Разместите свое устройство на бирже. Ваше устройство станет видимым для тысяч мастеров,
-                                и
-                                некоторые из них сделают вам предложения. Изучите их рейтинг, портфолио и выберите
-                                лучших из
-                                них. Подтвердите заказ, когда будете удовлетворены результатом на 100%. Только после
-                                этого
-                                можете проводить оплату в пользу мастера
+                                {text('List your device on the exchange. Your device will become visible to thousands of masters, and some of them will make you offers. Study their rating, portfolio and choose the best of them. Confirm the order when you are 100% satisfied with the result. Only after that you can pay the master')}
                             </p>
                         </div>
                     </div>
                     <div className="services">
                         <div className="services_text">
-                            <h2>Ведите название зоголовок услуги</h2>
+                            <h2>{text('Enter the name of the service title')}</h2>
                         </div>
                         <div className="services_img df align mobile-services_img">
                             <img style={{paddingRight: "7px"}} src="/img/other-service_img/fill.svg" alt="no img"/>
@@ -39,11 +35,11 @@ function TitleService() {
                                 <input type="text" value={title} placeholder='iPhone 13' onChange={(e) => setTitle(e.target.value)} />
                             </div>
                         </div>
-                        <p>0 из 55 символов</p>
+                        <p>{text('0 of 55 characters')}</p>
                     </div>
                     <div className="services_but">
                         <Link to={"/client/requests/create/data?title=" + title}>
-                            Продолжить
+                            {text('Continue')}
                         </Link>
                     </div>
                 </div>

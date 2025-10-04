@@ -12,6 +12,7 @@ import ModalConfirmPause from './ModalConfirmPause';
 import { deleteRequest, updateRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
 import formatDate from '../../utilities/formatDate';
+import { useLanguage } from '../../state/language';
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
@@ -55,12 +56,12 @@ const getDropboxUrl = (urlOrId) => {
 };
 
 const StatusEnum = {
-  ACTIVE: 'Активно',
-  PAUSED: 'Пауза',
-  WORKING: 'В работе',
-  //~ COMPLETED: 'Выполнено',
-  COMPLETED: 'Завершено',
-  CANCELED: 'Отменено',
+  ACTIVE: 'Active',
+  PAUSED: 'Paused',
+  WORKING: 'In progress',
+  //~ COMPLETED: 'Completed',
+  COMPLETED: 'Completed',
+  CANCELED: 'Canceled',
 };
 
 // Компонент для отображения dropbox-фото через POST-запрос
@@ -103,13 +104,14 @@ const DropboxImage = ({ url, alt = '' }) => {
   if (!imgUrl)
     return (
       <div style={{ width: '100%', height: 120, background: '#eee' }}>
-        Загрузка...
+        Loading...
       </div>
     );
   return <img src={imgUrl} alt={alt} style={{ width: '100%' }} />;
 };
 
 const AddedDevice = (props) => {
+  const text = useLanguage();
   const {
     id,
     title: titleProps,
@@ -334,7 +336,7 @@ const AddedDevice = (props) => {
 
             <div className={style.card__count}>
               <Link to={'/client/requests/my_order/' + id}>
-                Предложений: {number_of_offers}
+                {text('Offers')}: {number_of_offers}
               </Link>
             </div>
 
@@ -389,7 +391,7 @@ const AddedDevice = (props) => {
 
                       <div className={style.top_block}>
                         <h1 style={{ textAlign: 'center' }}>
-                          Редактирование проекта
+                          {text('Editing the project')}
                         </h1>
                         <div
                           className="modal-content__row_swiper"
@@ -465,7 +467,7 @@ const AddedDevice = (props) => {
                         style={{ display: 'flex', flexDirection: 'column' }}
                       >
                         <p className="form__light-text">
-                          Заголовок
+                          {text('Title')}
                           <img
                             className="modal_edit__icon"
                             src="/img/blank.png"
@@ -474,13 +476,13 @@ const AddedDevice = (props) => {
                         </p>
                         <input
                           type="text"
-                          placeholder="Заголовок"
+                          placeholder={text('Title')}
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                         />
 
                         <p className="form__light-text">
-                          Описание заказа
+                          {text('Order description')}
                           <img
                             className="modal_edit__icon"
                             src="/img/pencil_modal.svg"
@@ -489,14 +491,14 @@ const AddedDevice = (props) => {
                         </p>
                         <textarea
                           className="descdetail"
-                          placeholder="Описание заказа"
+                          placeholder={text('Order description')}
                           style={{ resize: 'none' }}
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}
                         ></textarea>
 
                         <p className="form__light-text">
-                          Категория услуг
+                          {text('Service category')}
                           <img
                             className="modal_edit__icon"
                             src="/img/multi_box.png"
@@ -521,7 +523,7 @@ const AddedDevice = (props) => {
                             }}
                           >
                             <option value="" disabled>
-                              Категория
+                              {text('Category')}
                             </option>
                             {Sections.map((item) => (
                               <option key={item.value} value={item.value}>
@@ -550,7 +552,7 @@ const AddedDevice = (props) => {
                             }}
                           >
                             <option value="" disabled>
-                              Вид категории
+                              {text('Type of category')}
                             </option>
                             {Subsections.map((item) => (
                               <option value={item.value} key={item.value}>
@@ -570,7 +572,7 @@ const AddedDevice = (props) => {
                             disabled={!selectedService.subsection}
                           >
                             <option value="" disabled>
-                              Бренд
+                              {text('Brand')}
                             </option>
                             {Services.map((item) => (
                               <option value={item.value} key={item.value}>
@@ -581,7 +583,7 @@ const AddedDevice = (props) => {
                         </div>
 
                         <p className="form__light-text">
-                          Бюджет
+                          {text('Budget')}
                           <img
                             className="modal_edit__icon"
                             src="/img/price_icon.png"
@@ -591,7 +593,7 @@ const AddedDevice = (props) => {
                         <input
                           type="text"
                           style={{ width: '200px', marginBottom: '20px' }}
-                          placeholder="Цена"
+                          placeholder={text('Price')}
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
                         />
@@ -601,7 +603,7 @@ const AddedDevice = (props) => {
                           className="done button__edit"
                           type="submit"
                         >
-                          Сохранить
+                          {text('Save')}
                         </button>
                       </form>
                     </div>
@@ -632,10 +634,9 @@ const AddedDevice = (props) => {
                           alt=""
                         />
                       </span>
-                      <h1>Подтверждение удаление</h1>
+                      <h1>{text('Confirm deletion')}</h1>
                       <p style={{ width: '80%', margin: 'auto' }}>
-                        Вы подтверждаете остановку проекта? Продавцы не смогут
-                        больше добавлять в него свои предложения.
+                        {text('Do you confirm the stop of the project? Sellers will not be able to add their offers to it anymore.')}
                       </p>
                       <div className="df" style={{ justifyContent: 'center' }}>
                         <form
@@ -654,7 +655,7 @@ const AddedDevice = (props) => {
                             }}
                             onClick={close}
                           >
-                            Отмена
+                            {text('Cancel')}
                           </button>
                           <button
                             className="btn_6PopUp"
@@ -662,7 +663,7 @@ const AddedDevice = (props) => {
                             style={{ margin: 0 }}
                             onClick={() => setStatus(StatusEnum.CANCELED)}
                           >
-                            Удалить
+                            {text('Delete')}
                           </button>
                         </form>
                       </div>
@@ -676,11 +677,11 @@ const AddedDevice = (props) => {
       </div>
       <div className={style.info_block}>
         <div className="inf_text-1">
-          <p>Опубликованно {formatDate(created_at)}</p>
+          <p>{text('Published')} {formatDate(created_at)}</p>
         </div>
         <div className={style.view_row}>
           <img src="/img/icons/eye.png" alt="" />
-          просмотрено 20
+          {text('viewed 20')}
         </div>
       </div>
     </div>
