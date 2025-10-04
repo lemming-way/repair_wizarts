@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 
 import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
 
@@ -29,7 +29,6 @@ import WalletFH from './full-height/WalletFH';
 
 // after login end
 
-import MapMaster from './Pick-master/masters';
 import ProfileNumber from './Chat/profileNumber';
 import OfferAService from './Orders/OfferAService';
 import AddDevices from './addDevices/AddDevices';
@@ -62,23 +61,27 @@ import MyOrdersMaster from './Orders/MyOrdersMaster';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
 
-import FChatKirill from './full-chat/fakeChat/Kirill';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
 import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
-import HomeV2 from './home_v2/HomeV2';
 import Mysuggest from './mysuggest';
 import MyOrder from './Orders/MyOrder';
 import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
 import Register from './Registration/register';
 import Remont from './remont';
-import { ServiceDetail } from './Service';
 import BalanceClient from './Settings/BalanceClient';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
+
+const SuspenseFallback = <div>Loading...</div>;
+
+const HomeV2 = lazy(() => import('./home_v2/HomeV2'));
+const MapMaster = lazy(() => import('./Pick-master/masters'));
+const FChatKirill = lazy(() => import('./full-chat/fakeChat/Kirill'));
+const ServiceDetail = lazy(() => import('./Service/ServiceDetail'));
 
 function App() {
   const user =
@@ -220,7 +223,9 @@ function App() {
   return (
     <>
       {currentHome === 'new' ? (
-        <HomeV2 />
+        <Suspense fallback={SuspenseFallback}>
+          <HomeV2 />
+        </Suspense>
       ) : (
         <>
           {/* <Notifications /> */}
@@ -235,12 +240,23 @@ function App() {
                 />
                 <Route
                   path="services/:sectionId/:subsectionId/:serviceId"
-                  element={<ServiceDetail />}
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <ServiceDetail />
+                    </Suspense>
+                  }
                 />
                 <Route path="articles/:id" element={<Article />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="articles" element={<Articles />} />
-                <Route path="contact" element={<MapMaster />} />
+                <Route
+                  path="contact"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <MapMaster />
+                    </Suspense>
+                  }
+                />
                 <Route path="login" element={<AuthLogin />} />
                 <Route path="register">
                   <Route index element={<PickLog />} />
@@ -284,8 +300,22 @@ function App() {
                 {/* <Route path="chat" element={<FChat />} /> */}
                 {/* <Route path="chat/:id" element={<FChat />} /> */}
                 {/* Чат без связи с бэком, только заготовка */}
-                <Route path="chat" element={<FChatKirill />} />
-                <Route path="chat/:id" element={<FChatKirill />} />
+                <Route
+                  path="chat"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <FChatKirill />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="chat/:id"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <FChatKirill />
+                    </Suspense>
+                  }
+                />
 
                 {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
                 {/* <Route path="feedback/:username" element={<ReviewsMaster />} /> */}
@@ -294,8 +324,22 @@ function App() {
               <Route basename="master" path="master" element={<MasterRoute />}>
                 {/* Чат без связи с бэком, только заготовка */}
                 <Route element={<MasterChatWrap />}>
-                  <Route path="chat" element={<FChatKirill />} />
-                  <Route path="chat/:id" element={<FChatKirill />} />
+                  <Route
+                    path="chat"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <FChatKirill />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="chat/:id"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <FChatKirill />
+                      </Suspense>
+                    }
+                  />
                   {/* прежний чат, был связана с бэком */}
                   {/* <Route path="chat/" element={<FChat baseRoute="/master/chat/" showSidebar />} />
                             <Route path="chat/:id" element={<FChat baseRoute="/master/chat/" showSidebar />} /> */}
