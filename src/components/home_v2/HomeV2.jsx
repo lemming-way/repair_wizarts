@@ -246,7 +246,7 @@ function HomeV2() {
               </p>
             </div>
             <div className={styles['steps-grid']}>
-              {/* Шаг 1 */}
+            {/* Step 1 */}
               <div className={styles.step}>
                 <div className={styles['step-icon']}>
                   <img
@@ -262,7 +262,7 @@ function HomeV2() {
                   {text('Describe your project, specify requirements and budget')}
                 </p>
               </div>
-              {/* Шаг 2 */}
+            {/* Step 2 */}
               <div className={styles.step}>
                 <div className={styles['step-icon']}>
                   <img
@@ -278,7 +278,7 @@ function HomeV2() {
                   {text('Contractors respond with their services and pricing')}
                 </p>
               </div>
-              {/* Шаг 3 */}
+            {/* Step 3 */}
               <div className={styles.step}>
                 <div className={styles['step-icon']}>
                   <img
@@ -294,7 +294,7 @@ function HomeV2() {
                   {text('Compare offers or pick directly from the catalog')}
                 </p>
               </div>
-              {/* Шаг 4 */}
+            {/* Step 4 */}
               <div className={styles.step}>
                 <div className={styles['step-icon']}>
                   <img
@@ -310,7 +310,7 @@ function HomeV2() {
                   {text('Agree on all project details with the contractor')}
                 </p>
               </div>
-              {/* Шаг 5 */}
+            {/* Step 5 */}
               <div className={styles.step}>
                 <div className={styles['step-icon']}>
                   <img
@@ -341,7 +341,7 @@ function HomeV2() {
               </p>
             </div>
             <div className={styles['categories-grid']}>
-              {/* Карточка категории 1 */}
+              {/* Category card 1 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -353,8 +353,8 @@ function HomeV2() {
                 </div>
                 <div className={styles['category-content']}>
                   <img
-                    src="/placeholder.svg?height=200&width=400" // Оставляем плейсхолдеры для картинок категорий
-                    alt="Наружная реклама"
+                    src="/placeholder.svg?height=200&width=400" // Keep placeholder images for categories
+                    alt={text('Outdoor advertising')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -372,7 +372,7 @@ function HomeV2() {
                   </button>
                 </div>
               </div>
-              {/* Карточка категории 2 */}
+              {/* Category card 2 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -385,7 +385,7 @@ function HomeV2() {
                 <div className={styles['category-content']}>
                   <img
                     src="/placeholder.svg?height=200&width=400"
-                    alt="Полиграфия"
+                    alt={text('Printing')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -403,7 +403,7 @@ function HomeV2() {
                   </button>
                 </div>
               </div>
-              {/* Карточка категории 3 */}
+              {/* Category card 3 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -416,7 +416,7 @@ function HomeV2() {
                 <div className={styles['category-content']}>
                   <img
                     src="/placeholder.svg?height=200&width=400"
-                    alt="Сувенирная продукция"
+                    alt={text('Promotional merchandise')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -434,7 +434,7 @@ function HomeV2() {
                   </button>
                 </div>
               </div>
-              {/* Карточка категории 4 */}
+              {/* Category card 4 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -447,7 +447,7 @@ function HomeV2() {
                 <div className={styles['category-content']}>
                   <img
                     src="/placeholder.svg?height=200&width=400"
-                    alt="Дизайн"
+                    alt={text('Design')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -465,7 +465,7 @@ function HomeV2() {
                   </button>
                 </div>
               </div>
-              {/* Карточка категории 5 */}
+              {/* Category card 5 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -478,7 +478,7 @@ function HomeV2() {
                 <div className={styles['category-content']}>
                   <img
                     src="/placeholder.svg?height=200&width=400"
-                    alt="Широкоформатная печать"
+                    alt={text('Large-format printing')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -496,7 +496,7 @@ function HomeV2() {
                   </button>
                 </div>
               </div>
-              {/* Карточка категории 6 */}
+              {/* Category card 6 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
@@ -509,7 +509,7 @@ function HomeV2() {
                 <div className={styles['category-content']}>
                   <img
                     src="/placeholder.svg?height=200&width=400"
-                    alt="Цифровая реклама"
+                    alt={text('Digital advertising')}
                     className={styles['category-image']}
                   />
                 </div>
@@ -548,28 +548,30 @@ function HomeV2() {
           <div className={styles.container}>
             <div className={styles['section-header']}>
               <h2 className={styles['section-title']}>
-                Популярные исполнители
+                {text('Popular contractors')}
               </h2>
               <p className={styles['section-description']}>
-                Выберите проверенного исполнителя из нашего каталога
+                {text('Choose a vetted contractor from our catalog')}
               </p>
             </div>
             <div className={styles['providers-grid']}>
-              {/* Карточка исполнителя 1 */}
+              {/* Contractor card 1 */}
               <div className={styles['provider-card']}>
                 <div className={styles['provider-header']}>
                   <div className={styles['provider-info']}>
-                    {/* Аватар: используем div или img */}
+                    {/* Avatar: use div or img */}
                     <div
                       className={styles['provider-avatar']}
                       role="img"
-                      aria-label="Аватар ПринтМастер"
+                      aria-label={text('Avatar PrintMaster')}
                     ></div>
                     <div>
-                      <h3 className={styles['provider-name']}>ПринтМастер</h3>
+                      <h3 className={styles['provider-name']}>
+                        {text('PrintMaster')}
+                      </h3>
                       <div
                         className={styles['provider-rating']}
-                        aria-label="Рейтинг: 5 из 5"
+                        aria-label={text('Rating: 5 of 5')}
                       >
                         <img
                           src={starIcon || '/placeholder.svg'}
@@ -606,40 +608,44 @@ function HomeV2() {
                     </div>
                   </div>
                   <div className={styles['provider-tags']}>
-                    <span className={styles.tag}>Полиграфия</span>
-                    <span className={styles.tag}>Визитки</span>
-                    <span className={styles.tag}>Буклеты</span>
+                    <span className={styles.tag}>{text('Printing')}</span>
+                    <span className={styles.tag}>{text('Business cards')}</span>
+                    <span className={styles.tag}>{text('Brochures')}</span>
                   </div>
                 </div>
                 <div className={styles['provider-content']}>
                   <p className={styles['provider-description']}>
-                    Типография полного цикла с современным оборудованием.
-                    Выполняем заказы любой сложности в кратчайшие сроки.
+                    {text('Full-cycle print shop with modern equipment.')}
+                    {text('We complete orders of any complexity quickly.')}
                   </p>
                 </div>
                 <div className={styles['provider-footer']}>
-                  <span className={styles['provider-location']}>Москва</span>
+                  <span className={styles['provider-location']}>
+                    {text('Moscow')}
+                  </span>
                   <button
                     className={`${styles.button} ${styles['button-outline']} ${styles['button-sm']}`}
                   >
-                    Предложить заказ
+                    {text('Offer an order')}
                   </button>
                 </div>
               </div>
-              {/* Карточка исполнителя 2 */}
+              {/* Contractor card 2 */}
               <div className={styles['provider-card']}>
                 <div className={styles['provider-header']}>
                   <div className={styles['provider-info']}>
                     <div
                       className={styles['provider-avatar']}
                       role="img"
-                      aria-label="Аватар РекламаПлюс"
+                      aria-label={text('Avatar ReklamaPlus')}
                     ></div>
                     <div>
-                      <h3 className={styles['provider-name']}>РекламаПлюс</h3>
+                      <h3 className={styles['provider-name']}>
+                        {text('ReklamaPlus')}
+                      </h3>
                       <div
                         className={styles['provider-rating']}
-                        aria-label="Рейтинг: 4 из 5"
+                        aria-label={text('Rating: 4 of 5')}
                       >
                         <img
                           src={starIcon || '/placeholder.svg'}
@@ -671,48 +677,50 @@ function HomeV2() {
                           className={styles['star-icon']}
                           aria-hidden="true"
                         />{' '}
-                        {/* Пустая звезда */}
+                        {/* Empty star */}
                         <span className={styles['rating-count']}>(94)</span>
                       </div>
                     </div>
                   </div>
                   <div className={styles['provider-tags']}>
-                    <span className={styles.tag}>Наружная реклама</span>
-                    <span className={styles.tag}>Вывески</span>
-                    <span className={styles.tag}>Монтаж</span>
+                    <span className={styles.tag}>{text('Outdoor advertising')}</span>
+                    <span className={styles.tag}>{text('Signage')}</span>
+                    <span className={styles.tag}>{text('Installation')}</span>
                   </div>
                 </div>
                 <div className={styles['provider-content']}>
                   <p className={styles['provider-description']}>
-                    Производство и монтаж наружной рекламы любой сложности.
-                    Собственное производство, гарантия качества.
+                    {text('Production and installation of outdoor advertising of any complexity.')}
+                    {text('In-house production with quality guarantee.')}
                   </p>
                 </div>
                 <div className={styles['provider-footer']}>
                   <span className={styles['provider-location']}>
-                    Санкт-Петербург
+                    {text('Saint Petersburg')}
                   </span>
                   <button
                     className={`${styles.button} ${styles['button-outline']} ${styles['button-sm']}`}
                   >
-                    Предложить заказ
+                    {text('Offer an order')}
                   </button>
                 </div>
               </div>
-              {/* Карточка исполнителя 3 */}
+              {/* Contractor card 3 */}
               <div className={styles['provider-card']}>
                 <div className={styles['provider-header']}>
                   <div className={styles['provider-info']}>
                     <div
                       className={styles['provider-avatar']}
                       role="img"
-                      aria-label="Аватар ДизайнПро"
+                      aria-label={text('Avatar DesignPro')}
                     ></div>
                     <div>
-                      <h3 className={styles['provider-name']}>ДизайнПро</h3>
+                      <h3 className={styles['provider-name']}>
+                        {text('DesignPro')}
+                      </h3>
                       <div
                         className={styles['provider-rating']}
-                        aria-label="Рейтинг: 5 из 5"
+                        aria-label={text('Rating: 5 of 5')}
                       >
                         <img
                           src={starIcon || '/placeholder.svg'}
@@ -749,23 +757,24 @@ function HomeV2() {
                     </div>
                   </div>
                   <div className={styles['provider-tags']}>
-                    <span className={styles.tag}>Дизайн</span>
-                    <span className={styles.tag}>Брендинг</span>
-                    <span className={styles.tag}>Логотипы</span>
+                    <span className={styles.tag}>{text('Design')}</span>
+                    <span className={styles.tag}>{text('Branding')}</span>
+                    <span className={styles.tag}>{text('Logotypes')}</span>
                   </div>
                 </div>
                 <div className={styles['provider-content']}>
                   <p className={styles['provider-description']}>
-                    Креативная студия дизайна. Разработка фирменного стиля,
-                    логотипов, макетов для рекламных материалов.
+                    {text('Creative design studio. We develop brand identity, logos, and advertising layouts.')}
                   </p>
                 </div>
                 <div className={styles['provider-footer']}>
-                  <span className={styles['provider-location']}>Удаленно</span>
+                  <span className={styles['provider-location']}>
+                    {text('Remote')}
+                  </span>
                   <button
                     className={`${styles.button} ${styles['button-outline']} ${styles['button-sm']}`}
                   >
-                    Предложить заказ
+                    {text('Offer an order')}
                   </button>
                 </div>
               </div>
@@ -774,7 +783,7 @@ function HomeV2() {
               <button
                 className={`${styles.button} ${styles['button-primary']}`}
               >
-                Перейти в каталог исполнителей
+                {text('Browse contractor catalog')}
                 <img
                   src={arrowRightIcon || '/placeholder.svg'}
                   alt=""
@@ -790,14 +799,14 @@ function HomeV2() {
           <div className={styles.container}>
             <div className={styles['section-header']}>
               <h2 className={styles['section-title']}>
-                Преимущества платформы
+                {text('Platform advantages')}
               </h2>
               <p className={styles['section-description']}>
-                Почему заказчики и исполнители выбирают нашу платформу
+                {text('Why clients and contractors choose our platform')}
               </p>
             </div>
             <div className={styles['benefits-grid']}>
-              {/* Преимущество 1 */}
+              {/* Benefit 1 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -807,13 +816,13 @@ function HomeV2() {
                   />
                 </div>
                 <h3 className={styles['benefit-title']}>
-                  Проверенные исполнители
+                  {text('Verified contractors')}
                 </h3>
                 <p className={styles['benefit-description']}>
-                  Все исполнители проходят проверку и имеют рейтинг от клиентов
+                  {text('Every contractor is vetted and has client ratings')}
                 </p>
               </div>
-              {/* Преимущество 2 */}
+              {/* Benefit 2 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -822,12 +831,14 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['benefit-title']}>Безопасные платежи</h3>
+                <h3 className={styles['benefit-title']}>
+                  {text('Secure payments')}
+                </h3>
                 <p className={styles['benefit-description']}>
-                  Оплата через платформу с защитой от мошенничества
+                  {text('Pay through the platform with fraud protection')}
                 </p>
               </div>
-              {/* Преимущество 3 */}
+              {/* Benefit 3 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -836,12 +847,14 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['benefit-title']}>Экономия времени</h3>
+                <h3 className={styles['benefit-title']}>
+                  {text('Time savings')}
+                </h3>
                 <p className={styles['benefit-description']}>
-                  Быстрый поиск исполнителей и получение предложений
+                  {text('Quickly find contractors and receive proposals')}
                 </p>
               </div>
-              {/* Преимущество 4 */}
+              {/* Benefit 4 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -850,12 +863,14 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['benefit-title']}>Гарантия качества</h3>
+                <h3 className={styles['benefit-title']}>
+                  {text('Quality assurance')}
+                </h3>
                 <p className={styles['benefit-description']}>
-                  Контроль качества выполнения заказа и разрешение споров
+                  {text('Quality control and dispute resolution support')}
                 </p>
               </div>
-              {/* Преимущество 5 */}
+              {/* Benefit 5 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -865,13 +880,13 @@ function HomeV2() {
                   />
                 </div>
                 <h3 className={styles['benefit-title']}>
-                  Большой выбор исполнителей
+                  {text('Wide contractor selection')}
                 </h3>
                 <p className={styles['benefit-description']}>
-                  Тысячи исполнителей со всей России для любых рекламных задач
+                  {text('Thousands of contractors across Russia for any advertising task')}
                 </p>
               </div>
-              {/* Преимущество 6 */}
+              {/* Benefit 6 */}
               <div className={styles.benefit}>
                 <div className={styles['benefit-icon']}>
                   <img
@@ -880,9 +895,11 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['benefit-title']}>Удобный интерфейс</h3>
+                <h3 className={styles['benefit-title']}>
+                  {text('User-friendly interface')}
+                </h3>
                 <p className={styles['benefit-description']}>
-                  Простой процесс размещения заказа и выбора исполнителя
+                  {text('Easy order placement and contractor selection process')}
                 </p>
               </div>
             </div>
@@ -892,18 +909,20 @@ function HomeV2() {
         <section className={styles['testimonials-section']}>
           <div className={styles.container}>
             <div className={styles['section-header']}>
-              <h2 className={styles['section-title']}>Отзывы клиентов</h2>
+              <h2 className={styles['section-title']}>
+                {text('Client testimonials')}
+              </h2>
               <p className={styles['section-description']}>
-                Что говорят о нас заказчики и исполнители
+                {text('What clients and contractors say about us')}
               </p>
             </div>
             <div className={styles['testimonials-grid']}>
-              {/* Отзыв 1 */}
+              {/* Testimonial 1 */}
               <div className={styles['testimonial-card']}>
                 <div className={styles['testimonial-header']}>
                   <div
                     className={styles['testimonial-rating']}
-                    aria-label="Рейтинг: 5 из 5"
+                    aria-label={text('Rating: 5 of 5')}
                   >
                     <img
                       src={starIcon || '/placeholder.svg'}
@@ -939,9 +958,7 @@ function HomeV2() {
                 </div>
                 <div className={styles['testimonial-content']}>
                   <p className={styles['testimonial-text']}>
-                    "Отличная платформа! Быстро нашел исполнителя для
-                    изготовления вывески для своего магазина. Качество работы
-                    превзошло ожидания."
+                    {text('Testimonial highlight signage order')}
                   </p>
                 </div>
                 <div className={styles['testimonial-footer']}>
@@ -949,83 +966,87 @@ function HomeV2() {
                     <div
                       className={styles['author-avatar']}
                       role="img"
-                      aria-label="Аватар Алексей Петров"
+                      aria-label={text('Avatar Alexey Petrov')}
                     ></div>
                     <div>
-                      <p className={styles['author-name']}>Алексей Петров</p>
-                      <p className={styles['author-role']}>Владелец магазина</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              {/* Отзыв 2 */}
-              <div className={styles['testimonial-card']}>
-                <div className={styles['testimonial-header']}>
-                  <div
-                    className={styles['testimonial-rating']}
-                    aria-label="Рейтинг: 5 из 5"
-                  >
-                    <img
-                      src={starIcon || '/placeholder.svg'}
-                      alt=""
-                      className={styles['star-icon']}
-                      aria-hidden="true"
-                    />
-                    <img
-                      src={starIcon || '/placeholder.svg'}
-                      alt=""
-                      className={styles['star-icon']}
-                      aria-hidden="true"
-                    />
-                    <img
-                      src={starIcon || '/placeholder.svg'}
-                      alt=""
-                      className={styles['star-icon']}
-                      aria-hidden="true"
-                    />
-                    <img
-                      src={starIcon || '/placeholder.svg'}
-                      alt=""
-                      className={styles['star-icon']}
-                      aria-hidden="true"
-                    />
-                    <img
-                      src={starIcon || '/placeholder.svg'}
-                      alt=""
-                      className={styles['star-icon']}
-                      aria-hidden="true"
-                    />
-                  </div>
-                </div>
-                <div className={styles['testimonial-content']}>
-                  <p className={styles['testimonial-text']}>
-                    "Как исполнитель, я очень доволен платформой. Регулярно
-                    получаю заказы на полиграфию, удобный интерфейс и быстрые
-                    выплаты."
-                  </p>
-                </div>
-                <div className={styles['testimonial-footer']}>
-                  <div className={styles['testimonial-author']}>
-                    <div
-                      className={styles['author-avatar']}
-                      role="img"
-                      aria-label="Аватар Мария Иванова"
-                    ></div>
-                    <div>
-                      <p className={styles['author-name']}>Мария Иванова</p>
+                      <p className={styles['author-name']}>
+                        {text('Alexey Petrov')}
+                      </p>
                       <p className={styles['author-role']}>
-                        Типография "ПринтМастер"
+                        {text('Store owner')}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Отзыв 3 */}
+              {/* Testimonial 2 */}
               <div className={styles['testimonial-card']}>
                 <div className={styles['testimonial-header']}>
                   <div
                     className={styles['testimonial-rating']}
-                    aria-label="Рейтинг: 4 из 5"
+                    aria-label={text('Rating: 5 of 5')}
+                  >
+                    <img
+                      src={starIcon || '/placeholder.svg'}
+                      alt=""
+                      className={styles['star-icon']}
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={starIcon || '/placeholder.svg'}
+                      alt=""
+                      className={styles['star-icon']}
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={starIcon || '/placeholder.svg'}
+                      alt=""
+                      className={styles['star-icon']}
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={starIcon || '/placeholder.svg'}
+                      alt=""
+                      className={styles['star-icon']}
+                      aria-hidden="true"
+                    />
+                    <img
+                      src={starIcon || '/placeholder.svg'}
+                      alt=""
+                      className={styles['star-icon']}
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                <div className={styles['testimonial-content']}>
+                  <p className={styles['testimonial-text']}>
+                    {text('Testimonial happy contractor printing')}
+                  </p>
+                </div>
+                <div className={styles['testimonial-footer']}>
+                  <div className={styles['testimonial-author']}>
+                    <div
+                      className={styles['author-avatar']}
+                      role="img"
+                      aria-label={text('Avatar Maria Ivanova')}
+                    ></div>
+                    <div>
+                      <p className={styles['author-name']}>
+                        {text('Maria Ivanova')}
+                      </p>
+                      <p className={styles['author-role']}>
+                        {text('PrintMaster typography representative')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Testimonial 3 */}
+              <div className={styles['testimonial-card']}>
+                <div className={styles['testimonial-header']}>
+                  <div
+                    className={styles['testimonial-rating']}
+                    aria-label={text('Rating: 4 of 5')}
                   >
                     <img
                       src={starIcon || '/placeholder.svg'}
@@ -1057,14 +1078,12 @@ function HomeV2() {
                       className={styles['star-icon']}
                       aria-hidden="true"
                     />{' '}
-                    {/* Пустая звезда */}
+                    {/* Empty star */}
                   </div>
                 </div>
                 <div className={styles['testimonial-content']}>
                   <p className={styles['testimonial-text']}>
-                    "Заказывали рекламные буклеты для выставки. Получили
-                    несколько предложений и выбрали оптимальное по цене и
-                    качеству. Рекомендую!"
+                    {text('Testimonial exhibition brochures success')}
                   </p>
                 </div>
                 <div className={styles['testimonial-footer']}>
@@ -1072,12 +1091,14 @@ function HomeV2() {
                     <div
                       className={styles['author-avatar']}
                       role="img"
-                      aria-label="Аватар Сергей Николаев"
+                      aria-label={text('Avatar Sergey Nikolaev')}
                     ></div>
                     <div>
-                      <p className={styles['author-name']}>Сергей Николаев</p>
+                      <p className={styles['author-name']}>
+                        {text('Sergey Nikolaev')}
+                      </p>
                       <p className={styles['author-role']}>
-                        Маркетолог, ООО "ТехноПром"
+                        {text('Marketing specialist, TechnoProm LLC')}
                       </p>
                     </div>
                   </div>
@@ -1091,17 +1112,16 @@ function HomeV2() {
           <div className={styles.container}>
             <div className={styles['cta-content']}>
               <h2 className={styles['cta-title']}>
-                Готовы начать работу с лучшими исполнителями?
+                {text('Ready to start working with top contractors?')}
               </h2>
               <p className={styles['cta-description']}>
-                Разместите заказ прямо сейчас и получите предложения от
-                проверенных исполнителей
+                {text('Post an order right now and receive offers from vetted contractors')}
               </p>
               <div className={styles['cta-buttons']}>
                 <button
                   className={`${styles.button} ${styles['button-primary']} ${styles['button-lg']}`}
                 >
-                  Разместить заказ
+                  {text('Post an order')}
                   <img
                     src={chevronRightIcon || '/placeholder.svg'}
                     alt=""
@@ -1112,7 +1132,7 @@ function HomeV2() {
                 <button
                   className={`${styles.button} ${styles['button-outline']} ${styles['button-lg']}`}
                 >
-                  Найти исполнителя
+                  {text('Find a contractor')}
                   <img
                     src={chevronRightIcon || '/placeholder.svg'}
                     alt=""
@@ -1128,18 +1148,17 @@ function HomeV2() {
 
       <footer className={styles.footer}>
         <div className={styles.container}>
-          <div className={styles['footer-grid']}>
-            <div className={styles['footer-company']}>
-              <h3 className={styles['footer-logo']}>РекламаПро</h3>
-              <p className={styles['footer-description']}>
-                Платформа, объединяющая заказчиков и исполнителей
-                рекламно-производственных услуг по всей России.
-              </p>
+            <div className={styles['footer-grid']}>
+              <div className={styles['footer-company']}>
+                <h3 className={styles['footer-logo']}>{text('ReklamaPro')}</h3>
+                <p className={styles['footer-description']}>
+                  {text('A platform connecting clients and providers of advertising production services across Russia.')}
+                </p>
               <div className={styles['social-links']}>
                 <a href="#" className={styles['social-link']}>
                   <img
                     src={facebookIcon || '/placeholder.svg'}
-                    alt="Facebook" // alt должен быть осмысленным
+                    alt="Facebook" // alt must remain meaningful
                   />
                   <span className={styles['sr-only']}>Facebook</span>
                 </a>
@@ -1157,67 +1176,73 @@ function HomeV2() {
               </div>
             </div>
             <div className={styles['footer-links']}>
-              <h3 className={styles['footer-title']}>Для заказчиков</h3>
+              <h3 className={styles['footer-title']}>
+                {text('For customers')}
+              </h3>
               <ul className={styles['footer-menu']}>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Как разместить заказ
+                    {text('How to post an order')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Как выбрать исполнителя
+                    {text('How to choose a contractor')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Безопасная сделка
+                    {text('Safe deal')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Отзывы и рейтинги
+                    {text('Reviews and ratings')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Часто задаваемые вопросы
+                    {text('Frequently asked questions')}
                   </a>
                 </li>
               </ul>
             </div>
             <div className={styles['footer-links']}>
-              <h3 className={styles['footer-title']}>Для исполнителей</h3>
+              <h3 className={styles['footer-title']}>
+                {text('For performers')}
+              </h3>
               <ul className={styles['footer-menu']}>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Как стать исполнителем
+                    {text('How to become a contractor')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Комиссия платформы
+                    {text('Platform commission')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Правила работы
+                    {text('Work rules')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Продвижение услуг
+                    {text('Promoting services')}
                   </a>
                 </li>
                 <li>
                   <a href="#" className={styles['footer-link']}>
-                    Выплаты
+                    {text('Payouts')}
                   </a>
                 </li>
               </ul>
             </div>
             <div className={styles['footer-contact']}>
-              <h3 className={styles['footer-title']}>Контакты</h3>
+              <h3 className={styles['footer-title']}>
+                {text('Contacts')}
+              </h3>
               <ul className={styles['contact-list']}>
                 <li className={styles['contact-item']}>
                   <img
@@ -1226,7 +1251,7 @@ function HomeV2() {
                     className={styles['contact-icon']}
                     aria-hidden="true"
                   />
-                  <span>8 (800) 123-45-67</span>
+                  <span>{text('Phone placeholder 1')}</span>
                 </li>
                 <li className={styles['contact-item']}>
                   <img
@@ -1235,7 +1260,7 @@ function HomeV2() {
                     className={styles['contact-icon']}
                     aria-hidden="true"
                   />
-                  <span>info@reklamapro.ru</span>
+                  <span>{text('Email placeholder 1')}</span>
                 </li>
                 <li className={styles['contact-item']}>
                   <img
@@ -1244,39 +1269,39 @@ function HomeV2() {
                     className={styles['contact-icon']}
                     aria-hidden="true"
                   />
-                  <span>г. Москва, ул. Примерная, д. 123</span>
+                  <span>{text('Address placeholder 1')}</span>
                 </li>
               </ul>
               <div className={styles.newsletter}>
                 <h4 className={styles['newsletter-title']}>
-                  Подпишитесь на новости
+                  {text('Subscribe to updates')}
                 </h4>
                 <form
                   className={styles['newsletter-form']}
                   onSubmit={(e) => e.preventDefault()}
                 >
                   {' '}
-                  {/* Добавлен onSubmit */}
+                  {/* Added onSubmit */}
                   <input
                     type="email"
-                    placeholder="Ваш email"
+                    placeholder={text('Your email')}
                     className={styles['newsletter-input']}
-                    aria-label="Email для подписки на новости" // Добавлено для доступности
+                    aria-label={text('Email for newsletter subscription')} // Added for accessibility
                   />
                   <button
                     type="submit"
                     className={`${styles.button} ${styles['button-primary']}`}
                   >
-                    Подписаться
+                    {text('Subscribe')}
                   </button>{' '}
-                  {/* Добавлен type="submit" */}
+                  {/* Added type="submit" */}
                 </form>
               </div>
             </div>
           </div>
           <div className={styles['footer-bottom']}>
             <p className={styles.copyright}>
-              © 2023 РекламаПро. Все права защищены.
+              {text('© 2023 ReklamaPro. All rights reserved.')}
             </p>
           </div>
         </div>
