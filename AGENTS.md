@@ -76,27 +76,22 @@
 
 ### Plan Progress (live)
 - [x] PR1 — Enforce npm; remove `yarn.lock`; build green. Status: PR created, awaiting frontend review.
-- [x] PR2 — Enable `<React.StrictMode>`; add DOMPurify-backed `sanitizeHtml` helper; replace unsafe HTML in components (e.g., Article); add unit tests (`src/shared/lib/sanitizeHtml.test.ts`) and setup (`src/setupTests.ts`). Status: tests green locally; awaiting frontend review.
-- [x] PR3 — Baseline lint/format + size budgets; document legacy webpack config; add Article sanitized render test. Status: merged/ready. Note: PR template intentionally skipped (manual descriptions used consistently).
+- [x] PR2 — Enable `<React.StrictMode>`; add DOMPurify-backed `sanitizeHtml` helper; replace unsafe HTML (Article); add unit tests (`src/shared/lib/sanitizeHtml.test.ts`) and setup (`src/setupTests.ts`).
+- [x] PR3 — Baseline lint/format + size budgets; document legacy webpack config; add Article sanitized render test. (`npm run lint`, `typecheck`, `test -- --watchAll=false`, `build`, `analyze`, `size` пройдены.)
+- [x] PR4 — Fix typecheck error: convert `src/components/profileNumberClient/ProfileSlider.jsx` to TSX; add prop typing; update imports.
+- [x] PR5 — Header profile dropdown UX: open on click, close on outside, remove hover logic (Toolbar/DropdownSetout).
+- [x] PR6 — i18n: локализация HomeV2, Kirill, мастеров; словари обновлены; тесты/типчек зелёные.
+- [x] PR7 — i18n: локализованы Reviews, Articles, ChoiceOfReplenishment, словарь en заполнен; `typecheck`, `test` зелёные.
+- [x] PR8 — Меню/каталог услуг: все текстовые строки переведены через `useLanguage`, en словарь заполнен.
 
-- [x] PR4 — Fix typecheck error: convert `src/components/profileNumberClient/ProfileSlider.jsx` to TSX and add prop types; update imports. Status: completed.
-- [x] PR5 — Header profile dropdown UX: open on click, close on outside, remove `:hover` logic (Toolbar/DropdownSetout). Status: completed.
+### Day 2 — Visible Wins (актуальный остаток)
+- Lazy-load тяжёлых страниц/блоков (`React.lazy` + `Suspense`) — **TODO**
+- Ввести `shared/ui/Modal` на RSuite и заменить ≥2 `reactjs-popup` — **TODO**
+- `shared/api` клиент + миграция одного ключевого запроса — **TODO**
+- Оптимизация `useEffect`, вынос сложной логики в хуки/субкомпоненты — **IN PROGRESS**
+- Унификация поведения меню (desktop/mobile/Menu) и вынос общей логики — **IN PROGRESS**
+- React Query миграция и дальнейший i18n — **ON HOLD** (ждём обновление фронта)
 
-PR3 scope and checks:
-- Scope:
-  - Add baseline `.eslintrc.js` and `.prettierrc`.
-  - Update `package.json` scripts: `lint`, `format`, `typecheck`, `ci:check`, `analyze`, `size`.
-  - Configure `size-limit` and `source-map-explorer`.
-  - PR template: skipped by choice (keep rich manual descriptions in PRs).
-  - Document or remove `webpack.config.js` (CRA ignores it) in `docs/legacy.md`.
-  - Add an integration test for `Article` rendering sanitized HTML: `src/components/Article/Article.test.jsx`.
-- Manual checks:
-  - `npm run lint`, `npm run typecheck`, `npm test -- --watchAll=false`, `npm run build` pass locally.
-  - `npm run analyze` shows bundle contents; `npm run size` within provisional budget.
-  - Article page renders sanitized content without console errors.
-
-PR3 suggested title:
-- `chore(lint): add ESLint/Prettier; perf: add size budgets; test: Article sanitized render`
-
-Notes for Day 2 kickoff
-- PR4 and PR5 are completed. Proceed with Day 2 tasks (lazy-loading, shared/api, modal swap, React Query, and minor effects cleanups).
+### Дополнительные заметки
+- API данные (категории/услуги) приходят на русском; без бэкенд-поддержки перевести нельзя.
+- Следующий шаг: заняться lazy-loading и унификацией меню, параллельно чистить `useEffect`.
