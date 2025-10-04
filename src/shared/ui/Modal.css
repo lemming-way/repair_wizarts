@@ -1,0 +1,22 @@
+/* Force white background for modal content */
+.custom-modal-dialog .rs-modal-content {
+  background: #fff !important;
+  border-radius: 10px !important;
+  padding: 40px !important;
+}
+
+.custom-modal-dialog .rs-modal-header {
+  background: #fff !important;
+  border-bottom: none !important;
+  padding: 0 !important;
+  padding-top: 10px !important;
+}
+
+.custom-modal-dialog .rs-modal-body {
+  background: #fff !important;
+  padding: 0 !important;
+}
+
+.custom-modal-dialog .rs-modal-title {
+  color: #2e2e2e !important;
+}

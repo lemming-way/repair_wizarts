@@ -35,39 +35,47 @@ function Login() {
     const [recoveryPhone, setRecoveryPhone] = useState("+7(9")
     const [recoveryCode, setRecoveryCode] = useState("")
 
-    const handleChange = (event) => {
+    const resolveLoginPayload = () => {
+        const trimmed = phone.trim()
+        const isEmail = trimmed.includes('@')
 
-        // нельзя вводить не числа и больше 11 символов
-        const inputValue = event.target.value.slice(1);
-        if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
+        return {
+            value: trimmed,
+            type: isEmail ? 'email' : 'phone'
+        }
+    }
+
+    const handleChange = (event) => {
+        const rawValue = event.target.value;
+
+        if (!/^[+0-9()-]*$/.test(rawValue)) {
+            setError('');
+            setPhone(rawValue);
+            return;
+        }
+
+        const inputValue = rawValue.slice(1);
+        if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
             setError(text('Invalid character entered. Please enter only digits.'));
-        } 
-        // else if (inputValue.length > 16) {
-        //     setError('Обратите внимание на длину номера!');
-        // }
-        else {
+        } else {
             setError('');
         }
 
-        const n = correctPhoneNumder(event)
-        setPhone(n)
-        // setPhone(event.target.value);
+        const formattedValue = correctPhoneNumder(rawValue, phone, '+7(9');
+        setPhone(formattedValue);
     };
 
-    function correctPhoneNumder (e) {
-        var text = e.target.value
-        var new_text
+    function correctPhoneNumder (text, previousValue = '', fallbackPrefix = '') {
+        let new_text;
 
-        // стирание
-        if (text.length < phone.length) {
-            new_text = text
-            if (new_text.length < 4) {
-                new_text = "+7(9"
+        if (text.length < previousValue.length) {
+            new_text = text;
+            if (fallbackPrefix && new_text.length < fallbackPrefix.length) {
+                new_text = fallbackPrefix;
             }
         }
-        // +7(988)-842-44-44
         else if (text.length === 6) {
-            new_text = text + ")-"
+            new_text = text + ")-";
         }
         else if (text.length === 7) {
             new_text = text.slice(0, -1) + ')-' + text.slice(-1);
@@ -76,24 +84,24 @@ function Login() {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 11) {
-            new_text = text + "-" 
+            new_text = text + "-";
         }
         else if (text.length === 12) {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 14) {
-            new_text = text + "-"
+            new_text = text + "-";
         }
         else if (text.length === 15) {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            new_text = text.slice(0,17)
+            new_text = text.slice(0,17);
         }
         else {
-            new_text = text
+            new_text = text;
         }
-        return new_text
+        return new_text;
     }
 
     const setRecoveryPhoneHandler = (event) => {
@@ -111,8 +119,8 @@ function Login() {
         }
 
         // setRecoveryPhone(event.target.value);
-        const n = correctPhoneNumder(event)
-        setRecoveryPhone(n)
+        const n = correctPhoneNumder(event.target.value, recoveryPhone, '+7(9');
+        setRecoveryPhone(n);
     };
 
     const onSendPhone = (e) => {
@@ -162,8 +170,10 @@ function Login() {
     const onSubmit = async (e) => {
         e.preventDefault()
 
+        const { value, type } = resolveLoginPayload()
+
         try {
-            await login(phone, password)
+            await login(value, password, type)
 
             if (keep) {
                 keepUserAuthorized(true)

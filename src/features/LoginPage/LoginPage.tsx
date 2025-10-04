@@ -41,6 +41,16 @@ const LoginPage = () => {
   const [recoveryPhone, setRecoveryPhone] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
 
+  const resolveLoginPayload = () => {
+    const trimmed = phone.trim();
+    const isEmail = trimmed.includes('@');
+
+    return {
+      value: trimmed,
+      type: isEmail ? 'email' : 'phone',
+    } as const;
+  };
+
   useEffect(() => {
     document.title = text("Login");
   }, [text]);
@@ -89,8 +99,10 @@ const LoginPage = () => {
   const onSubmit = async (e) => {
     e.preventDefault()
 
+    const { value, type } = resolveLoginPayload();
+
     try {
-      await login(phone, password)
+      await login(value, password, type)
 
       if (keep) {
         keepUserAuthorized(true)

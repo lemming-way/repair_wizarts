@@ -21,15 +21,21 @@ function Register() {
   const onSubmit = (e) => {
     e.preventDefault();
 
+    const normalizedPhone = phone.replace(/\D/g, '');
+
     if (!accept) {
       return setError(
         'Чтобы продолжить необходимо принять политику конфиденциальности.',
       );
     }
 
+    if (normalizedPhone.length < 11) {
+      return setError('Номер телефона введен не полностью.');
+    }
+
     return registerAsClient({
       u_name: name + ' ' + lastname,
-      u_phone: phone,
+      u_phone: normalizedPhone,
       u_email: email,
       u_password: password,
     })

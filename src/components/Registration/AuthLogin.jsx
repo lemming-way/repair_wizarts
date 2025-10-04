@@ -4,9 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { fetchUser } from '../../slices/user.slice';
 import { login } from '../../services/auth.service';
+import { useLanguage } from '../../state/language';
 
 import './login.css';
-import Popup from 'reactjs-popup';
+import { Modal } from '../../shared/ui';
+import modalStyles from '../../features/LoginPage/PasswordRecoveryModal.module.scss';
 
 import { setToken } from '../../services/token.service';
 import {
@@ -24,6 +26,7 @@ const RecoveryState = {
 };
 
 function AuthLogin() {
+  const text = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -39,38 +42,47 @@ function AuthLogin() {
   const [recoveryPhone, setRecoveryPhone] = useState('');
   const [recoveryCode, setRecoveryCode] = useState('');
 
+  const resolveLoginPayload = () => {
+    const trimmed = phone.trim();
+    const isEmail = trimmed.includes('@');
+
+    return {
+      value: trimmed,
+      type: isEmail ? 'email' : 'phone',
+    };
+  };
+
   const handleChange = (event) => {
-    // нельзя вводить не числа и больше 11 символов
-    const inputValue = event.target.value.slice(1);
-    if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
+    const rawValue = event.target.value;
+
+    if (!/^[+0-9()-]*$/.test(rawValue)) {
+      setError('');
+      setPhone(rawValue);
+      return;
+    }
+
+    const inputValue = rawValue.slice(1);
+    if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
       setError(
         'Вы ввели недопустимый символ. Пожалуйста, введите только цифры.',
       );
-    }
-    // else if (inputValue.length > 16) {
-    //     setError('Обратите внимание на длину номера!');
-    // }
-    else {
+    } else {
       setError('');
     }
 
-    const n = correctPhoneNumder(event);
+    const n = correctPhoneNumder(rawValue, phone);
     setPhone(n);
-    // setPhone(event.target.value);
   };
 
-  function correctPhoneNumder(e) {
-    var text = e.target.value;
-    let new_text = text;
-    // стирание
-    if (text.length < phone.length) {
+  function correctPhoneNumder(text, previousValue = '', fallbackPrefix = '') {
+    let new_text;
+
+    if (text.length < previousValue.length) {
       new_text = text;
-      if (new_text.length < 4) {
-        new_text = '';
+      if (fallbackPrefix && new_text.length < fallbackPrefix.length) {
+        new_text = fallbackPrefix;
       }
-    }
-    // +7(988)-842-44-44
-    else if (text.length === 6) {
+    } else if (text.length === 6) {
       new_text = text + ')-';
     } else if (text.length === 7) {
       new_text = text.slice(0, -1) + ')-' + text.slice(-1);
@@ -108,7 +120,7 @@ function AuthLogin() {
     }
 
     // setRecoveryPhone(event.target.value);
-    const n = correctPhoneNumder(event);
+    const n = correctPhoneNumder(event.target.value, recoveryPhone);
     setRecoveryPhone(n);
   };
 
@@ -161,8 +173,10 @@ function AuthLogin() {
   const onSubmit = async (e) => {
     e.preventDefault();
 
+    const { value, type } = resolveLoginPayload();
+
     try {
-      const response = await login(phone, password);
+      const response = await login(value, password, type);
       const userProfile = await appFetch('user/authorized/car', {
         body: {
           u_hash: response.data.u_hash,
@@ -256,84 +270,71 @@ function AuthLogin() {
         >
           Забыли пароль?
         </span>
-        <Popup
-          className="password-recovery__modal"
+        <Modal
           open={recoveryState !== RecoveryState.IDLE}
           onClose={() => setRecoveryState(RecoveryState.IDLE)}
+          size="sm"
+          className={modalStyles.modal}
+          closeButton={true}
         >
-          <button
-            className="password-recovery__close"
-            onClick={() => setRecoveryState(RecoveryState.IDLE)}
-          >
-            ×
-          </button>
-          <h2 className="password-recovery__title">Восстановление пароля</h2>
-          <p className="password-recovery__info">
-            Введите номер телефона, после чего на почту, привязанную к вашему
-            аккаунту придёт письмо подтверждения.
+          <h2 className={modalStyles.title}>{text("Password recovery")}</h2>
+          <p className={modalStyles.info}>
+            {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
           </p>
           {recoveryState === RecoveryState.CODE ? (
             <form
-              className="password-recovery-form password-recovery-form--extended"
+              className={modalStyles.form}
               onSubmit={onSendCode}
             >
               {recoveryError && (
-                <div className="password-recovery-form__error">
+                <div className={modalStyles.error}>
                   {recoveryError}
                 </div>
               )}
               <input
-                className="password-recovery-form__input password-recovery-form__input--extended"
-                placeholder="Введите код с почты"
+                className={modalStyles.input}
+                placeholder={text("Enter the code from email")}
                 onChange={(e) => setRecoveryCode(e.target.value)}
                 value={recoveryCode}
               />
               <input
-                className="password-recovery-form__input password-recovery-form__input--extended"
-                placeholder="Новый пароль"
+                className={modalStyles.input}
+                placeholder={text("New password")}
                 onChange={(e) => setRecoveryPassword(e.target.value)}
                 value={recoveryPassword}
               />
-              <button className="password-recovery-form__button">
-                Отправить
+              <button className={modalStyles.button} type="submit">
+                {text("Send")}
               </button>
             </form>
           ) : (
-            <form className="password-recovery-form" onSubmit={onSendPhone}>
+            <form className={modalStyles.form} onSubmit={onSendPhone}>
               {recoveryError && (
-                <div className="password-recovery-form__error">
+                <div className={modalStyles.error}>
                   {recoveryError}
                 </div>
               )}
 
               <div className="input_phone_wrap_recovery">
                 <input
-                  // className="heheinput"
-                  className={`password-recovery-form__input ${
+                  className={`${modalStyles.input} ${
                     recoveryPhone.length > 4
                       ? 'phone_input_accent'
                       : 'phone_input_lite'
                   }`}
                   type="text"
                   name="phone"
-                  // placeholder="Телефон"
                   value={recoveryPhone}
                   onChange={(e) => setRecoveryPhoneHandler(e)}
                   required
                 />
               </div>
-              {/* <input
-                                className="password-recovery-form__input"
-                                placeholder="Номер телефона"
-                                onChange={(e) => setRecoveryPhoneHandler(e)}
-                                value={recoveryPhone}
-                            /> */}
-              <button className="password-recovery-form__button">
-                Отправить
+              <button className={modalStyles.button} type="submit">
+                {text("Send")}
               </button>
             </form>
           )}
-        </Popup>
+        </Modal>
       </form>
     </section>
   );

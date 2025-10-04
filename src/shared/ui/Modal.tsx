@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal as RsuiteModal } from 'rsuite';
 import 'rsuite/Modal/styles/index.css';
+import './Modal.css';
 
 interface ModalProps {
   open: boolean;
@@ -27,6 +28,11 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   closeButton = true,
 }) => {
+  // Use the modal container if it exists
+  const container = typeof document !== 'undefined' 
+    ? document.getElementById('modal') || document.body 
+    : undefined;
+
   return (
     <RsuiteModal
       open={open}
@@ -35,6 +41,9 @@ export const Modal: React.FC<ModalProps> = ({
       backdrop={backdrop}
       keyboard={true}
       className={className}
+      style={{ backgroundColor: 'transparent' }}
+      dialogClassName="custom-modal-dialog"
+      container={container}
     >
       {(title || closeButton) && (
         <RsuiteModal.Header closeButton={closeButton}>

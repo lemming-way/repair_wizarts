@@ -1,12 +1,33 @@
 import appFetch from '../utilities/appFetch';
 
-const login = async (username, password) => {
+const normalizeLogin = (username, type) => {
+  if (type === 'email') {
+    return username.trim();
+  }
+
+  const trimmed = username.trim();
+  const digits = trimmed.replace(/\D/g, '');
+
+  if (!digits) {
+    return '';
+  }
+
+  if (trimmed.startsWith('+')) {
+    return `+${digits}`;
+  }
+
+  return digits;
+};
+
+const login = async (username, password, type = 'phone') => {
+  const normalizedLogin = normalizeLogin(username, type);
+
   const { auth_hash } = await appFetch('/auth/', {
     body: {
-      login: username,
+      login: normalizedLogin,
       password,
       st: true,
-      type: 'phone',
+      type,
     },
   });
   return appFetch('/token/', { body: { auth_hash } });
