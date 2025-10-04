@@ -15,9 +15,11 @@ import { useService } from "../../hooks/useService";
 import { getMasterRepairs } from "../../services/service.service";
 import { getMasterByUsername } from "../../services/user.service";
 import YMap from '../Map'
+import { useLanguage } from "../../state/language";
 
 
 function App() {
+    const text = useLanguage();
     const [params] = useSearchParams()
     const [master, setMaster] = useState({ })
     const repairs = useService(getMasterRepairs, [])
@@ -26,20 +28,20 @@ function App() {
     const [picture, setPicture] = useState("")
     // const images = [
     //     '/img/sentence_img/iphone-x.png',
-    //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
+    //     '/img/sentence_img/iphone-x.png', // Additional example images could be listed here
     //     '/img/sentence_img/iphone-x.png',
     // ];
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Функция для открытия модального окна
+    // Open the gallery modal
     const openModal = (imageSrc) => {
-        //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
-        setIsModalOpen(true); // Открываем модальное окно
+        //~ setModalImage(imageSrc); // Set path to the selected image if preview is needed
+        setIsModalOpen(true); // Show modal
     };
 
-    // Функция для закрытия модального окна
+    // Close the gallery modal
     const closeModal = () => {
-        setIsModalOpen(false); // Закрываем модальное окно
+        setIsModalOpen(false); // Hide modal
     };
 
     const masterId = params.get('id')
@@ -75,58 +77,58 @@ function App() {
             getMasterByUsername(masterId).then(setMaster)
         }
 
-        document.title = 'Контакты';
-    }, [masterId])
+        document.title = text('Contacts');
+    }, [masterId, text])
 
-    // тестовые данные - услуги
+    // demo price data
     const test_price = [
         {
             "price": 500,
             "model": "iphone 15 pro max",
-            "delivery": "от 30 мин",
-            "name": "Замена стекла"
+            "delivery": "from 30 minutes",
+            "name": "Glass replacement"
         },
         {
             "price": 300,
             "model": "iphone 14",
-            "delivery": "от 30 мин",
-            "name": "Замена аккумулятора"
+            "delivery": "from 30 minutes",
+            "name": "Battery replacement"
         },
         {
             "price": 450,
             "model": "samsung s23",
-            "delivery": "от 1 часа",
-            "name": "Ремонт дисплея"
+            "delivery": "from 1 hour",
+            "name": "Display repair"
         },
         {
             "price": 350,
             "model": "xiaomi 13",
-            "delivery": "от 2 часов",
-            "name": "Чистка устройства"
+            "delivery": "from 2 hours",
+            "name": "Device cleaning"
         },
         {
             "price": 700,
             "model": "google pixel 7",
-            "delivery": "от 1 часа",
-            "name": "Замена задней крышки"
+            "delivery": "from 1 hour",
+            "name": "Back cover replacement"
         },
         {
             "price": 550,
             "model": "oneplus 10",
-            "delivery": "от 3 часов",
-            "name": "Ремонт камеры"
+            "delivery": "from 3 hours",
+            "name": "Camera repair"
         },
         {
             "price": 400,
             "model": "sony xperia 1 iv",
-            "delivery": "от 2 часов",
-            "name": "Обновление программного обеспечения"
+            "delivery": "from 2 hours",
+            "name": "Software update"
         },
         {
             "price": 600,
             "model": "samsung s22 ultra",
-            "delivery": "от 1 часа",
-            "name": "Замена зарядного порта"
+            "delivery": "from 1 hour",
+            "name": "Charging port replacement"
         }
     ]
 
@@ -141,28 +143,27 @@ function App() {
                 <div className="container">
                     <div className="slider__content">
                         <h2>
-                            Для любой поломки есть мастер техники
-                            Apple
+                            There is a technician for any Apple device issue
                         </h2>
-                        <h4>Оригинальные запчасти</h4>
-                        <h4>Разумные цены</h4>
-                        <h4>Выезд</h4>
+                        <h4>Original spare parts</h4>
+                        <h4>Fair prices</h4>
+                        <h4>Call-out service</h4>
                         <div className="home-counters">
                             <div className="home-counters__top">
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Количество участников на сайте: {counters.data.masters}
+                                    Masters registered on the platform: {counters.data.masters}
                                 </div>
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Выполнено заказов на сайте: {counters.data.submissions}
+                                    Orders completed on the platform: {counters.data.submissions}
                                 </div>
                             </div>
                             <Link
                                 to="/register"
                                 className="home-counters__button"
                             >
-                                    Стать участником
+                                    Become a member
                             </Link>
                         </div>
                     </div>
@@ -187,22 +188,22 @@ function App() {
 
             <HeroSection />
             <section className="master__map">
-                <h1 className="master__map__title">Карта наших мастеров </h1>
+                <h1 className="master__map__title">{text('Map of our masters')}</h1>
                 <YMap
                     masters={masters}
                     selectedMaster={master}
                     selectMaster={onMasterSelect}
                 />
             </section>
-            <h2 className="master__h2">Информация о сервере</h2>
+            <h2 className="master__h2">{text('Server information')}</h2>
             <div className="section__blocks-row">
 
             <div className="info_master">
                 <div className="info_master__row1">
                     <img src="/img/profile__image.png" alt="" />
                     <div className="info_master__about">
-                        <p>Алексей Михеев</p>
-                        <p>Частный мастер</p>
+                        <p>{text('Sample master name')}</p>
+                        <p>{text('Private master')}</p>
                         <div className="info_master__stars">
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
@@ -211,20 +212,41 @@ function App() {
                             <img src="/img/star.png" alt="" />
                         </div>
                         <div className="info_master__row-links">
-                            <Link to="/client/feedback/1">23 отзыва</Link>
-                            <button className="info_master__row-link" href="#" onClick={()=> setVisibleInfo(true)}>Подробнее</button>
+                            <Link to="/client/feedback/1">23 {text('reviews')}</Link>
+                            <button className="info_master__row-link" href="#" onClick={()=> setVisibleInfo(true)}>
+                                {text('More details')}
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <p className="info_master__info">Санкт-Петербург, Каховского 7</p>
-                <p className="info_master__info">Открыт: с 9 до 21</p>
-                <p className="info_master__text-about"><span className="info_master__text-about-light">На сайте</span>с 2022 года</p>
-                <p className="info_master__text-about"><span className="info_master__text-about-light">Статус</span>онлайн</p>
-                <p className="info_master__text-about--accent"><span className="info_master__text-about-light">Оценка</span>5.0</p>
-                <p className="info_master__text-about--accent"><span className="info_master__text-about-light">заказов выполнено</span>40</p>
-                <p className="info_master__text-about--accent"><span className="info_master__text-about-light">Заказов успешно сдано</span>100%</p>
-                <p className="info_master__text-about--accent"><span className="info_master__text-about-light">2 повторных заказов</span>54%</p>
+                <p className="info_master__info">{text('Saint Petersburg address')}</p>
+                <p className="info_master__info">{text('Open from 9 to 21')}</p>
+                <p className="info_master__text-about">
+                    <span className="info_master__text-about-light">{text('On the platform')}</span>
+                    {' '}
+                    {text('since 2022')}
+                </p>
+                <p className="info_master__text-about">
+                    <span className="info_master__text-about-light">{text('Status')}</span>
+                    {text('Online')}
+                </p>
+                <p className="info_master__text-about--accent">
+                    <span className="info_master__text-about-light">{text('Rating')}</span>
+                    5.0
+                </p>
+                <p className="info_master__text-about--accent">
+                    <span className="info_master__text-about-light">{text('Orders completed')}</span>
+                    40
+                </p>
+                <p className="info_master__text-about--accent">
+                    <span className="info_master__text-about-light">{text('Orders delivered successfully')}</span>
+                    100%
+                </p>
+                <p className="info_master__text-about--accent">
+                    <span className="info_master__text-about-light">{text('Two repeat orders')}</span>
+                    54%
+                </p>
 
             </div>
 
@@ -263,7 +285,7 @@ function App() {
 
                 {master.username && (
                     <React.Fragment>
-                        <h1 className="info__service">Информация о мастере</h1>
+                        <h1 className="info__service">{text('Master information')}</h1>
                         <div className="content__info">
                             <div className="oeeqwhfpihaepPUihf">
                                 <section className="page_qrwewq9DXP79fg1">
@@ -302,7 +324,7 @@ function App() {
                                                     </div>
                                                     <div className="card_iphone-text_3">
                                                         <Link to={"/client/feedback/" + master.username}>
-                                                            {master.number_of_feedbacks} отзывов
+                                                            {master.number_of_feedbacks} {text('reviews')}
                                                         </Link>
                                                     </div>
                                                 </div>
@@ -318,14 +340,14 @@ function App() {
                                                 <div className="big_infoo df">
                                                     <div className="information_text df">
                                                         <div className="infoo_text">
-                                                            <h2>На сайте:</h2>
-                                                            <h2>Статус:</h2>
-                                                            <h2>Оценка:</h2>
+                                                            <h2>{text('On the platform')}:</h2>
+                                                            <h2>{text('Status')}:</h2>
+                                                            <h2>{text('Rating')}:</h2>
                                                         </div>
 
                                                         <div className="infoo_text-2">
-                                                            <h2>с 2023 года</h2>
-                                                            <h3>Оффлайн</h3>
+                                                            <h2>{text('since 2023')}</h2>
+                                                            <h3>{text('Offline')}</h3>
                                                             <h3>{master.rating}</h3>
                                                         </div>
                                                     </div>
@@ -369,7 +391,7 @@ function App() {
                                                     className="contact-master__open-button"
                                                     onClick={() => setPicture(SERVER_PATH + v)}
                                                 >
-                                                    Открыть картинку
+                                                    {text('Open image')}
                                                 </button>
                                             </SwiperSlide>
                                         ))}
@@ -387,7 +409,7 @@ function App() {
                     </React.Fragment>
                 )}
             </div>
-            {/* Модальное окно с слайдером */}
+            {/* Modal gallery slider */}
             {isModalOpen && (
                 <div className="modal" onClick={closeModal}>
                     <div className="modalContent" onClick={(e) => e.stopPropagation()}>
@@ -409,7 +431,7 @@ function App() {
                 </div>
             )}
 
-            {/* Добавим стили для модального окна */}
+            {/* Inline styles for modal presentation */}
             <style jsx>{`
 .info_master_big__slide-block {
     width: 80%;
