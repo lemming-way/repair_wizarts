@@ -8,8 +8,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import OrderRowOffer from './OrderRowOffer';
 import style from './Orders.module.css';
 import appFetch from '../../utilities/appFetch';
+import { useLanguage } from '../../state/language';
 
 function Offer() {
+  const text = useLanguage();
   const { id } = useParams();
   const [currentOrder, setCurrentOrder] = useState({});
   useEffect(() => {
@@ -72,7 +74,7 @@ function Offer() {
     <>
       <div className={style.order_row}>
         <div className={style.title_row}>
-          <h1>Предложить услугу</h1>
+          <h1>{text('Offer a service')}</h1>
 
           {/* <div className="huge-fasfdsoiXC df" style={{paddingBottom: 0}}>
                             <div className="two-input">
@@ -93,7 +95,7 @@ function Offer() {
             className={style.button_back_v2}
             onClick={() => navigator('/master/requests')}
           >
-            Назад
+            {text('Back')}
           </button>
         </div>
         {/* <NavigationOrders /> */}

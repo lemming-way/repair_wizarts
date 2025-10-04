@@ -6,6 +6,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import ModalOfferGo from './ModalOfferGo';
 import style from './OrderRow.module.css';
 import appFetch from '../../utilities/appFetch';
+import { useLanguage } from '../../state/language';
 
 // Компонент для отображения dropbox-фото через POST-запрос
 const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
@@ -62,7 +63,7 @@ const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
           justifyContent: 'center',
         }}
       >
-        Ошибка загрузки фото
+        Photo upload error
       </div>
     );
   if (!imgUrl)
@@ -77,7 +78,7 @@ const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
           justifyContent: 'center',
         }}
       >
-        Загрузка...
+        Loading...
       </div>
     );
   return <img src={imgUrl} alt={alt} style={imgStyle || { width: '100%' }} />;
@@ -96,6 +97,7 @@ export default function OrderRowOffer({
   images,
   profileImage = '/img/profil_img/1.png',
 }) {
+  const text = useLanguage();
   const user = JSON.parse(localStorage.getItem('userdata')).user;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
@@ -115,7 +117,7 @@ export default function OrderRowOffer({
   const handleSubmit = async () => {
     try {
       if (!comment || !price || !time) {
-        alert('Пожалуйста, заполните все поля');
+        alert(text('Please fill in all fields'));
         return;
       }
 
@@ -126,7 +128,7 @@ export default function OrderRowOffer({
       };
       let isHasBind;
       if (isHasBind) {
-        alert('Вы уже отправили заявку');
+        alert(text('You have already submitted an application'));
       } else {
         console.log(user);
         isHasBind = await appFetch(`/drive/get/${b_id}`, {
@@ -157,8 +159,8 @@ export default function OrderRowOffer({
       console.log('Успешно отправлено предложение!');
       setVisibleModalGo(true);
     } catch (error) {
-      console.error('Ошибка при отправке:', error);
-      alert(error.message || 'Ошибка при отправке предложения');
+      console.error(text('Error sending:'), error);
+      alert(error.message || text('Error sending offer'));
     }
   };
 
@@ -172,25 +174,25 @@ export default function OrderRowOffer({
             {/* <img src={profileImage} alt="Профиль" /> */}
             <div className={style.profile__col}>
               <p className={style.name}>{userName}</p>
-              <p>Размещено проектов на бирже {projectsPosted}</p>
-              <p>Нанято {hiredPercent}%</p>
+              <p>{text('Projects posted on the exchange')} {projectsPosted}</p>
+              <p>{text('Hired')} {hiredPercent}%</p>
             </div>
           </div>
           <div style={{ flex: 1 }}></div>
           <p className={style.description}>{deviceName}</p>
           <p className={style.description}>{problemDescription}</p>
           <p className={style.small_text}>
-            <span>осталось {timeLeft}</span>
+            <span>{text('remaining')} {timeLeft}</span>
             <span className={style.flex}>
-              <img src="/img/icons/eye.png" alt="Просмотры" />
-              {views} просмотрено
+              <img src="/img/icons/eye.png" alt="Views" />
+              {views} {text('viewed')}
             </span>
           </p>
         </div>
 
         <div className={style.right}>
           <p>
-            Желаемый бюджет <span className={style.price}>{budget} ₽</span>
+            {text('Desired budget')} <span className={style.price}>{budget} ₽</span>
           </p>
           <Swiper
             slidesPerView={4}
@@ -231,14 +233,14 @@ export default function OrderRowOffer({
             className={style.button}
             onClick={() => setVisibleBlock(true)}
           >
-            Предложить услугу
+            {text('Offer a service')}
           </button>
         </div>
       </div>
 
       {visibleBlock && (
         <>
-          <p className={style.heading}>Предложить услугу</p>
+          <p className={style.heading}>{text('Offer a service')}</p>
           <form
             className={style.comment_wrap2}
             onSubmit={(e) => {
@@ -258,7 +260,7 @@ export default function OrderRowOffer({
                 style={{ marginBottom: '30px' }}
                 className={style.comment__input}
                 rows={4}
-                placeholder="Напишите как вы почините устройства клиента.."
+                placeholder={text('Write how you will fix the client\'s device..')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -267,11 +269,11 @@ export default function OrderRowOffer({
                 <img className={style.dollar_img} src="/img/baks.png" alt="" />
                 <div className={style.price_block}>
                   <label className={style.label_price} htmlFor="price">
-                    Стоимость
+                    {text('Cost')}
                   </label>
                   <input
                     className={style.input_price}
-                    placeholder="укажите стоимость"
+                    placeholder={text('specify the cost')}
                     type="text"
                     id="price"
                     value={price}
@@ -287,24 +289,24 @@ export default function OrderRowOffer({
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                   >
-                    <option value="">Выберите</option>
-                    <option value="ready">Готов выехать</option>
-                    <option value="1">1 час</option>
-                    <option value="2">2 часа</option>
-                    <option value="3">3 часа</option>
-                    <option value="4">4 часа</option>
-                    <option value="6">6 часов</option>
-                    <option value="8">8 часов</option>
-                    <option value="24">24 часа</option>
-                    <option value="72">3 дня</option>
-                    <option value="168">7 дней</option>
+                    <option value="">{text('Select')}</option>
+                    <option value="ready">{text('Ready to go')}</option>
+                    <option value="1">{text('1 hour')}</option>
+                    <option value="2">{text('2 hours')}</option>
+                    <option value="3">{text('3 hours')}</option>
+                    <option value="4">{text('4 hours')}</option>
+                    <option value="6">{text('6 hours')}</option>
+                    <option value="8">{text('8 hours')}</option>
+                    <option value="24">{text('24 hours')}</option>
+                    <option value="72">{text('3 days')}</option>
+                    <option value="168">{text('7 days')}</option>
                   </select>
                 </div>
               </div>
 
               <div className={style.flex_row}>
                 <button type="submit" className={style.button_go}>
-                  Продолжить
+                  {text('Continue')}
                 </button>
               </div>
             </div>

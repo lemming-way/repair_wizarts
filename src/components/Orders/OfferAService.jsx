@@ -14,8 +14,10 @@ import { useService } from "../../hooks/useService";
 import { sendOfferCreate } from "../../services/notification.service";
 import { createOffer } from "../../services/offer.service";
 import { getRequestById } from '../../services/request.service'
+import { useLanguage } from '../../state/language';
 
 function App() {
+    const text = useLanguage();
     const navigate = useNavigate()
 
     const { id } = useParams()
@@ -39,7 +41,7 @@ function App() {
             return setError(err.message)
         }
 
-        return setError("Невозможно выполнить запрос")
+        return setError(text("Unable to complete request"))
     })
 
     return (
@@ -48,9 +50,9 @@ function App() {
             <form onSubmit={(e) => e.preventDefault()}>
                 <div>
                     <div className="two-content df">
-                        <h1 className="roboto">Предложить услугу</h1>
+                        <h1 className="roboto">{text('Offer a service')}</h1>
                         <div>
-                            <Link to="/master/requests"><button className="abel">Назад</button></Link>
+                            <Link to="/master/requests"><button className="abel">{text('Back')}</button></Link>
                         </div>
                     </div>
                 </div>
@@ -74,16 +76,16 @@ function App() {
                             <h5>{request.data.description}</h5>
                             <div className="small-into-small df">
                                 <p className="offer-small-text">
-                                    Осталось {new Date(Date.parse(request.data.expires_at) - Date.parse(new Date())).getUTCHours()} ч. {new Date(Date.parse(request.data.expires_at) - new Date()).getUTCMinutes()} мин.
+                                    {text('remaining')} {new Date(Date.parse(request.data.expires_at) - Date.parse(new Date())).getUTCHours()} {text('h.')} {new Date(Date.parse(request.data.expires_at) - new Date()).getUTCMinutes()} {text('min.')}
                                 </p>
-                                <p className="offer-small-text">Предложений: {request.data.number_of_offers}</p>
+                                <p className="offer-small-text">{text('Offers')}: {request.data.number_of_offers}</p>
                             </div>
                         </div>
                     </div>
                     <div className="slider-user">
                         <div className="slider-content df">
                             <div className="desired-price">
-                                Желаемый бюджет:
+                                {text('Desired budget')}:
                                 <span className="desired-price__highlight">
                                     {request.data.client_price}₽
                                 </span>
@@ -118,7 +120,7 @@ function App() {
                 </div>
 
                 <div className="area-content">
-                    <h1>Предложить услугу</h1>
+                    <h1>{text('Offer a service')}</h1>
                     {error && (
                         <div className="auth-err">
                             {error}
@@ -127,7 +129,7 @@ function App() {
                     <div className="area df">
                         <img src="/img/img-chat.png" alt="massage" />&nbsp; &nbsp;
                         <textarea required className="offersertextares" name="text"
-                            placeholder="Напишите как вы почините устройства клиента"
+                            placeholder={text('Write how you will fix the client device')}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}></textarea>
                     </div>
@@ -137,7 +139,7 @@ function App() {
 
                     <div className="first-option df">
                         <img src="/img/img-dollar.png" alt="Dollar" />
-                        <h2>Стоимость</h2>
+                        <h2>{text('Cost')}</h2>
                     </div>
 
                     <div className="second-option">
@@ -151,17 +153,17 @@ function App() {
                     <div className="third-option">
                         <img src="/img/img-cloack.png" alt="" />
                         <select required id="time" value={time} onChange={(e) => setTime(e.target.value)}>
-                            <option value="" className="color" disabled>Выберите</option>
-                            <option value="0">Готов выехать</option>
-                            <option value="1">1 часa</option>
-                            <option value="2">2 часa</option>
-                            <option value="3">3 часa</option>
-                            <option value="4">4 часa</option>
+                            <option value="" className="color" disabled>{text('Select')}</option>
+                            <option value="0">{text('Ready to go')}</option>
+                            <option value="1">{text('1 hour')}</option>
+                            <option value="2">{text('2 hours')}</option>
+                            <option value="3">{text('3 hours')}</option>
+                            <option value="4">{text('4 hours')}</option>
                         </select>
                     </div>
                 </div>
                 <div className="offer-continue__wrapper">
-                    <button className="offer-continue" onClick={onSubmit}>Продолжить</button>
+                    <button className="offer-continue" onClick={onSubmit}>{text('Continue')}</button>
                 </div>
             </form>
         </>

@@ -6,6 +6,7 @@ import ModalDelete from './ModalDelete';
 import style from './OrderRow.module.css';
 // --- 1. Импортируем нашу API-функцию ---
 import { cancelMasterResponse } from '../../services/order.service';
+import { useLanguage } from '../../state/language';
 
 export default function OrderRow({
   userProfile,
@@ -16,6 +17,7 @@ export default function OrderRow({
   b_id, // --- 2. Принимаем b_id как пропс ---
   onResponseCancelled, // --- 3. Принимаем колбэк для обновления ---
 }) {
+  const text = useLanguage();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
   const [visibleDeleteModal, setVisibleDeleteModal] = useState(false); // Этот стейт можно удалить, если ModalDelete не используется
@@ -34,26 +36,26 @@ export default function OrderRow({
 
   // --- 4. Создаем обработчик для удаления отклика ---
   const handleCancelResponse = async () => {
-    if (!window.confirm('Вы уверены, что хотите удалить свое предложение?')) {
+    if (!window.confirm(text('Are you sure you want to delete your offer?'))) {
       return;
     }
 
     if (!b_id) {
-      console.error('ID заказа не передан в компонент OrderRow.');
-      alert('Произошла ошибка: не найден ID заказа.');
+      console.error(text('Order ID not passed to OrderRow component.'));
+      alert(text('An error occurred: order ID not found.'));
       return;
     }
 
     try {
       await cancelMasterResponse(b_id);
-      alert('Ваше предложение успешно удалено.');
+      alert(text('Your offer has been successfully deleted.'));
       // Вызываем колбэк, переданный из родителя, для обновления списка
       if (onResponseCancelled) {
         onResponseCancelled();
       }
     } catch (error) {
-      console.error('Ошибка при удалении предложения:', error);
-      alert('Не удалось удалить предложение. Пожалуйста, попробуйте снова.');
+      console.error(text('Error deleting offer:'), error);
+      alert(text('Failed to delete offer. Please try again.'));
     }
   };
 
@@ -77,28 +79,28 @@ export default function OrderRow({
               className={style.avatar}
             />
             <div className={style.profile__col}>
-              <p className={style.name}>{userProfile?.name || 'Имя Фамилия'}</p>
+              <p className={style.name}>{userProfile?.name || text('First Last')}</p>
               <p>
-                Размещено проектов на бирже {userProfile?.projectsCount || 0}
+                {text('Projects posted on the exchange')} {userProfile?.projectsCount || 0}
               </p>
-              <p>Нанято {userProfile?.hireRate || 0}%</p>
+              <p>{text('Hired')} {userProfile?.hireRate || 0}%</p>
             </div>
           </div>
 
           <div style={{ flex: 1 }}></div>
 
           <p className={style.description}>
-            {orderInfo?.device || 'Название устройства'}
+            {orderInfo?.device || text('Device name')}
           </p>
           <p className={style.description}>
-            {orderInfo?.problem || 'Описание проблемы'}
+            {orderInfo?.problem || text('Problem description')}
           </p>
         </div>
 
         <div className={style.right}>
           {/* ... остальная часть правой колонки ... */}
           <p>
-            Желаемый бюджет{' '}
+            {text('Desired budget')}{' '}
             <span className={style.price}>{orderInfo?.budget || '0'} ₽</span>
           </p>
 
@@ -125,7 +127,7 @@ export default function OrderRow({
             className={style.button}
             onClick={() => setIsOpenCommentWrap((prev) => !prev)}
           >
-            Моё предложение
+            {text('My offer')}
           </button>
         </div>
       </div>
@@ -139,9 +141,9 @@ export default function OrderRow({
             />
             <div className={style.profile__col}>
               <p className={style.name}>
-                {commentData?.author?.name || 'Имя Пользователя'}
+                {commentData?.author?.name || text('User Name')}
               </p>
-              <p>{commentData?.author?.ordersCount || 0} заказов</p>
+              <p>{commentData?.author?.ordersCount || 0} {text('orders')}</p>
             </div>
           </div>
 
@@ -162,9 +164,9 @@ export default function OrderRow({
             <table className={style.table}>
               <thead>
                 <tr>
-                  <th>Что входит в предложение</th>
-                  <th>Срок</th>
-                  <th>Стоимость</th>
+                  <th>{text('What is included in the offer')}</th>
+                  <th>{text('Term')}</th>
+                  <th>{text('Cost')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -190,7 +192,7 @@ export default function OrderRow({
               onClick={handleCancelResponse} // Привязываем наш обработчик
             >
               <img src="/img/icons/delete.png" alt="delete icon" />
-              <p>удалить</p>
+              <p>{text('delete')}</p>
             </div>
           </div>
         </div>
