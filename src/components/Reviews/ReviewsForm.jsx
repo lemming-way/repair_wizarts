@@ -6,8 +6,10 @@ import { Popup } from 'reactjs-popup'
 import styles from './Reviews.module.css'
 import { createReview } from '../../services/reviews.service'
 import { selectUser } from '../../slices/user.slice'
+import { useLanguage } from '../../state/language'
 
 const ReviewsForm = (props) => {
+    const text = useLanguage()
     const user = useSelector(selectUser)
 
     const [modalOpen, setModalOpen] = useState(false)
@@ -33,16 +35,16 @@ const ReviewsForm = (props) => {
         <form className={styles.form} onSubmit={onSubmit}>
             <Popup open={modalOpen} onClose={closeModal}>
                 <div className={styles.formModal}>
-                    <h3 className={styles.formModalTitle}>Ваш отзыв отправлен на модерацию</h3>
+                    <h3 className={styles.formModalTitle}>{text('Your review has been sent for moderation')}</h3>
                     <button
                         className={styles.formModalButton}
                         onClick={closeModal}
                     >
-                        Закрыть
+                        {text('Close')}
                     </button>
                 </div>
             </Popup>
-            <h3 className={styles.formTitle}>Оценка и комментарий</h3>
+            <h3 className={styles.formTitle}>{text('Rating and comments')}</h3>
             <Rating
                 onClick={onRatingChange}
                 initialValue={rating}
@@ -52,14 +54,14 @@ const ReviewsForm = (props) => {
                 className={styles.formInput}
                 value={message}
                 onChange={onMessageChange}
-                placeholder="Введите отзыв без оскорблений и нецензурной лексики"
+                placeholder={text('Enter a review without insults or profanity')}
             />
             <button
                 className={styles.formSubmit}
                 onClick={()=>setModalOpen(true)}
                 type="submit"
             >
-                Отправить
+                {text('Submit')}
             </button>
         </form>
     )

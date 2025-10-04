@@ -14,9 +14,11 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { getArticles } from '../../services/article.service';
 import formatDate from "../../utilities/formatDate";
+import { useLanguage } from "../../state/language";
 
 
 function Articles(){
+    const text = useLanguage();
     const articles = useService(getArticles, [])
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
@@ -27,7 +29,7 @@ function Articles(){
     return (
         <section className="blog">
             <div className="container ircontainer">
-                <h1>Статьи</h1>
+                <h1>{text('Articles')}</h1>
                 <div className="blog__card__list">
                     <Swiper
                         slidesPerView={4}

@@ -3,11 +3,13 @@ import { Link } from "react-router-dom"
 
 import styles from './Article.module.css'
 import { getArticles } from "../../services/article.service"
+import { useLanguage } from "../../state/language"
 // import backgroundImg from '../../img/article.png'
 
 
 const Articles = () => {
     // тестовые данные
+    const text = useLanguage()
     const [articles, setArticles] = useState([])
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
@@ -44,13 +46,13 @@ const Articles = () => {
                 { isOpenAsideMenu && (
                     // красный блок-меню
                     <ul className={styles.aside_menu_v3}>
-                        <li>Электроника</li>
+                        <li>{text('Electronics')}</li>
                         <div className={styles.aside__line}></div>
-                        <li>Ремонт телефонов</li>
+                        <li>{text('Phone repair')}</li>
                         <div className={styles.aside__line}></div>
                         <li className={styles.aside__active_item}>
                             <img src="/img/arrowleft-white.png" alt="" />
-                            Ремонт Iphone
+                            {text('iPhone repair')}
                         </li>
                     </ul>
                 )}
@@ -60,13 +62,13 @@ const Articles = () => {
 
             {/* красный меню блок  справа */}
             <ul className={styles.aside_menu_v2}>
-                <li>Электроника</li>
+                <li>{text('Electronics')}</li>
                 <div className={styles.aside__line}></div>
-                <li>Ремонт телефонов</li>
+                <li>{text('Phone repair')}</li>
                 <div className={styles.aside__line}></div>
                 <li className={styles.aside__active_item}>
                     <img src="/img/arrowleft-white.png" alt="" />
-                    Ремонт Iphone
+                    {text('iPhone repair')}
                 </li>
             </ul>
 

@@ -3,8 +3,10 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import { selectUser } from '../../slices/user.slice';
+import { useLanguage } from '../../state/language';
 
 function ChoiceOfReplenishmentMethodHistoryClient() {
+  const text = useLanguage();
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const [history, setHistory] = useState([]);
@@ -17,7 +19,7 @@ function ChoiceOfReplenishmentMethodHistoryClient() {
       <div className="block df">
         <div className="df poplocho">
           <img src="/img/img-qivi-2.png" alt="" />
-          <h2>{item.type} </h2>
+          <h2>{text(item.title ?? item.type ?? 'Top up balance')} </h2>
         </div>
         <p>
           <span className="abel">+{item.cost}</span>₽
@@ -31,11 +33,11 @@ function ChoiceOfReplenishmentMethodHistoryClient() {
         to="/client/settings/wallet_history"
         style={{ textDecoration: 'none' }}
       >
-        <h1>История операций </h1>
+        <h1>{text('Transaction history')} </h1>
       </Link>
 
       <div className="blocks">
-        {historyOfPaymentsItems.length ? historyOfPaymentsItems : 'Пока пусто'}
+        {historyOfPaymentsItems.length ? historyOfPaymentsItems : text('No entries yet')}
         {/* <div className="block df">
           <div className="df poplocho">
             <img src="/img/img-qivi-2.png" alt="" />
