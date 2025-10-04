@@ -115,7 +115,26 @@ const lang = {
   "Give task": "Дать задание",
   "Top up balance": "Пополнить баланс",
   "Invalid character entered. Please enter only digits.": "Вы ввели недопустимый символ. Пожалуйста, введите только цифры.",
-  "Sign up": "Зарегистрируйтесь"
+  "Sign up": "Зарегистрируйтесь",
+  "Applications": "Заявки",
+  "You have no applications yet": "У вас пока нет заявок",
+  "Submitted applications will appear on this page!": "Оформленные заявки отобразятся на этой странице!",
+  "Cost": "Стоимость",
+  "Message...": "Сообщение...",
+  "Agree": "Согласиться",
+  "Decline": "Отказаться",
+  "Set time": "Выставить время",
+  "Select": "Выберите",
+  "Ready to go": "Готов выехать",
+  "1 hour": "1 час",
+  "2 hours": "2 часа",
+  "3 hours": "3 часа",
+  "4 hours": "4 часа",
+  "6 hours": "6 часов",
+  "8 hours": "8 часов",
+  "24 hours": "24 часа",
+  "3 days": "3 дня",
+  "7 days": "7 дней"
 };
 
 export default lang;

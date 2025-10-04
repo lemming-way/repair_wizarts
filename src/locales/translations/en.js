@@ -16,7 +16,26 @@ const lang = {
   "Send": "Send",
   "Unable to process the request": "Unable to process the request",
   "Incorrect data": "Incorrect data",
-  "Invalid character entered. Please enter only digits.": "Invalid character entered. Please enter only digits."
+  "Invalid character entered. Please enter only digits.": "Invalid character entered. Please enter only digits.",
+  "Applications": "Applications",
+  "You have no applications yet": "You have no applications yet",
+  "Submitted applications will appear on this page!": "Submitted applications will appear on this page!",
+  "Cost": "Cost",
+  "Message...": "Message...",
+  "Agree": "Agree",
+  "Decline": "Decline",
+  "Set time": "Set time",
+  "Select": "Select",
+  "Ready to go": "Ready to go",
+  "1 hour": "1 hour",
+  "2 hours": "2 hours",
+  "3 hours": "3 hours",
+  "4 hours": "4 hours",
+  "6 hours": "6 hours",
+  "8 hours": "8 hours",
+  "24 hours": "24 hours",
+  "3 days": "3 days",
+  "7 days": "7 days"
 };
 
 export default lang;

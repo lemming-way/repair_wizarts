@@ -3,6 +3,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import '../../scss/applications.css';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../state/language';
 
 import style from './applications.module.css';
 import NavApplication from './NavApplication';
@@ -23,6 +24,7 @@ const StylesStatusEnum = {
   Пауза: 'status_stop',
 };
 function MyApplications() {
+  const text = useLanguage();
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const navigator = useNavigate();
@@ -94,8 +96,8 @@ function MyApplications() {
   //   ];
 
   useEffect(() => {
-    document.title = 'Заявки';
-  }, []);
+    document.title = text('Applications');
+  }, [text]);
 
   const [inputChat, setInputChat] = useState('');
   const [isVisibleEmoji, setVisibleEmoji] = useState(false);
@@ -106,14 +108,14 @@ function MyApplications() {
   return (
     <>
       <div className="mini-text">
-        <h1>Заявки</h1>
+        <h1>{text('Applications')}</h1>
       </div>
       <NavApplication />
       {filteredRequests.length === 0 && (
         <div className={style.empty_orders}>
           <img src="/img/robot.png" alt="" />
-          <p className={style.heading}>У вас пока нет заявок</p>
-          <p>Оформленные заявки отобразятся на этой странице! </p>
+          <p className={style.heading}>{text('You have no applications yet')}</p>
+          <p>{text('Submitted applications will appear on this page!')} </p>
         </div>
       )}
 
@@ -129,7 +131,7 @@ function MyApplications() {
                 <div className={style.summary_row}>
                   <p>{item.b_options.title}</p>
                   <p>
-                    Стоимость:{' '}
+                    {text('Cost')}:{' '}
                     <span className={style.price}>
                       {item.b_options.client_price}₽
                     </span>
@@ -176,7 +178,7 @@ function MyApplications() {
                     className={style.input_chat}
                     value={inputChat}
                     onChange={(event) => setInputChat(event.target.value)}
-                    placeholder="Сообщение..."
+                    placeholder={text('Message...')}
                     type="text"
                   />
                   <img
@@ -197,27 +199,27 @@ function MyApplications() {
                       className={style.button}
                       onClick={() => navigator('/master/chat/168789461')}
                     >
-                      Согласиться
+                      {text('Agree')}
                     </button>
-                    <button className={style.button_back}>Отказаться</button>
+                    <button className={style.button_back}>{text('Decline')}</button>
                   </div>
                   {/* <div style={{flex:1}}></div> */}
                   <div className={style.timing_row}>
-                    <p>Выставить время</p>
+                    <p>{text('Set time')}</p>
                     <select className={style.select} name="" id="">
                       <option value="" disabled>
-                        Выберите
+                        {text('Select')}
                       </option>
-                      <option value="">Готов выехать</option>
-                      <option value="">1 час</option>
-                      <option value="">2 часа</option>
-                      <option value="">3 часа</option>
-                      <option value="">4 часа</option>
-                      <option value="">6 часов</option>
-                      <option value="">8 часов</option>
-                      <option value="">24 часа</option>
-                      <option value="">3 дня</option>
-                      <option value="">7 дней</option>
+                      <option value="">{text('Ready to go')}</option>
+                      <option value="">{text('1 hour')}</option>
+                      <option value="">{text('2 hours')}</option>
+                      <option value="">{text('3 hours')}</option>
+                      <option value="">{text('4 hours')}</option>
+                      <option value="">{text('6 hours')}</option>
+                      <option value="">{text('8 hours')}</option>
+                      <option value="">{text('24 hours')}</option>
+                      <option value="">{text('3 days')}</option>
+                      <option value="">{text('7 days')}</option>
                     </select>
                   </div>
                 </div>
