@@ -18,68 +18,73 @@ import { selectUI } from '../../slices/ui.slice';
 import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import YMap from '../Map';
+import { useLanguage } from '../../state/language';
 
 const EMPTY_ARRAY = []
 
 function ServiceDetail() {
-  const test_price = [
-    {
-      price: 500,
-      model: 'iphone 15 pro max',
-      delivery: 'от 30 мин',
-      name: 'Замена стекла',
-      img: 'https://cdn-icons-png.flaticon.com/512/10473/10473245.png',
-    },
-    {
-      price: 300,
-      model: 'iphone 14',
-      delivery: 'от 30 мин',
-      name: 'Замена аккумулятора',
-      img: 'https://cdn-icons-png.flaticon.com/512/310/310273.png',
-    },
-    {
-      price: 450,
-      model: 'samsung s23',
-      delivery: 'от 1 часа',
-      name: 'Ремонт дисплея',
-      img: 'https://cdn-icons-png.flaticon.com/512/3050/3050525.png',
-    },
-    {
-      price: 350,
-      model: 'xiaomi 13',
-      delivery: 'от 2 часов',
-      name: 'Чистка устройства',
-      img: 'https://cdn-icons-png.flaticon.com/512/10342/10342978.png',
-    },
-    {
-      price: 700,
-      model: 'google pixel 7',
-      delivery: 'от 1 часа',
-      name: 'Замена задней крышки',
-      img: 'https://cdn-icons-png.flaticon.com/512/10473/10473240.png',
-    },
-    {
-      price: 550,
-      model: 'oneplus 10',
-      delivery: 'от 3 часов',
-      name: 'Ремонт камеры',
-      img: 'https://cdn-icons-png.flaticon.com/512/2830/2830340.png',
-    },
-    {
-      price: 400,
-      model: 'sony xperia 1 iv',
-      delivery: 'от 2 часов',
-      name: 'Обновление программного обеспечения',
-      img: 'https://cdn-icons-png.flaticon.com/512/3281/3281309.png',
-    },
-    {
-      price: 600,
-      model: 'samsung s22 ultra',
-      delivery: 'от 1 часа',
-      name: 'Замена зарядного порта',
-      img: 'https://cdn-icons-png.flaticon.com/512/310/310272.png',
-    },
-  ];
+  const text = useLanguage();
+  const test_price = useMemo(
+    () => [
+      {
+        price: 500,
+        model: 'iphone 15 pro max',
+        delivery: text('From 30 minutes'),
+        name: text('Glass replacement'),
+        img: 'https://cdn-icons-png.flaticon.com/512/10473/10473245.png',
+      },
+      {
+        price: 300,
+        model: 'iphone 14',
+        delivery: text('From 30 minutes'),
+        name: text('Battery replacement'),
+        img: 'https://cdn-icons-png.flaticon.com/512/310/310273.png',
+      },
+      {
+        price: 450,
+        model: 'samsung s23',
+        delivery: text('From 1 hour'),
+        name: text('Display repair'),
+        img: 'https://cdn-icons-png.flaticon.com/512/3050/3050525.png',
+      },
+      {
+        price: 350,
+        model: 'xiaomi 13',
+        delivery: text('From 2 hours'),
+        name: text('Device cleaning'),
+        img: 'https://cdn-icons-png.flaticon.com/512/10342/10342978.png',
+      },
+      {
+        price: 700,
+        model: 'google pixel 7',
+        delivery: text('From 1 hour'),
+        name: text('Back cover replacement'),
+        img: 'https://cdn-icons-png.flaticon.com/512/10473/10473240.png',
+      },
+      {
+        price: 550,
+        model: 'oneplus 10',
+        delivery: text('From 3 hours'),
+        name: text('Camera repair'),
+        img: 'https://cdn-icons-png.flaticon.com/512/2830/2830340.png',
+      },
+      {
+        price: 400,
+        model: 'sony xperia 1 iv',
+        delivery: text('From 2 hours'),
+        name: text('Software update'),
+        img: 'https://cdn-icons-png.flaticon.com/512/3281/3281309.png',
+      },
+      {
+        price: 600,
+        model: 'samsung s22 ultra',
+        delivery: text('From 1 hour'),
+        name: text('Charging port replacement'),
+        img: 'https://cdn-icons-png.flaticon.com/512/310/310272.png',
+      },
+    ],
+    [text],
+  );
   const [selectedService, setSelectedService] = useState([]);
 
   const [visibleListSelectedServices, setVisibleListSelectedServices] =
@@ -121,7 +126,7 @@ function ServiceDetail() {
   const [mastersList, setMastersList] = useState([]);
   const [masterCarData, setMasterCarData] = useState(null);
 
-  // todo: вынести загрузку пользователя в глобальное состояние
+  // todo: move user loading logic into global state
   useEffect(() => {
     appFetch('user', { body: { lc: 99999999999 } }, true)
       .then((response) => {
@@ -138,34 +143,34 @@ function ServiceDetail() {
                 name: `${user.u_name || ''} ${user.u_family || ''}`.trim(),
                 latitude: 59.9343 + (Math.random() - 0.5) * 0.1,
                 longitude: 30.3351 + (Math.random() - 0.5) * 0.2,
-                info: details.business_model || 'Частный мастер',
+                info: details.business_model || text('Independent technician'),
                 rating: details.rating || 5,
                 reviews: details.reviews || 0,
-                address: details.address || 'Адрес не указан',
-                orgName: details.organization_name || 'Частная практика',
-                experience: `${details.experience || 1} год/лет`,
+                address: details.address || text('Address not specified'),
+                orgName: details.organization_name || text('Private practice'),
+                experience: `${details.experience || 1} ${text('Years unit')}`,
                 onSiteSince: user.u_created
                   ? new Date(user.u_created * 1000).getFullYear()
                   : '2023',
-                status: user.u_active ? 'онлайн' : 'офлайн',
+                status: user.u_active ? text('Online') : text('Offline'),
                 ordersCompleted: details.ordersCompleted || 0,
                 successRate: `${details.successRate || 100}%`,
                 repeatOrders: `${details.repeatOrders || 0}%`,
                 categoryView:
                   details.section?.map((item) => item.label).join(', ') ||
-                  'Электроника',
+                  text('Electronics'),
                 categories:
                   details.subsection?.map((item) => item.label).join(', ') ||
-                  'Ремонт телефонов',
+                  text('Phone repair'),
                 brands:
                   details.services?.map((item) => item.label).join(', ') ||
-                  'Все бренды',
-                activity: details.specialty || 'Ремонт техники',
-                mainFocus: details.main_business || 'Общий ремонт',
-                businessType: details.business_model || 'Сервис',
+                  text('All brands'),
+                activity: details.specialty || text('Equipment repair'),
+                mainFocus: details.main_business || text('General repair'),
+                businessType: details.business_model || text('Service center'),
                 aboutOrg:
                   details.about_organization ||
-                  'Информация об организации отсутствует.',
+                  text('Organization information is not available.'),
               };
             });
 
@@ -173,7 +178,7 @@ function ServiceDetail() {
         }
       })
       .catch((error) => {
-        console.error('Ошибка при загрузке пользователей:', error);
+        console.error('Error while loading users:', error);
       });
   }, []);
 
@@ -189,7 +194,7 @@ function ServiceDetail() {
     setMasterCarData(null);
 
     try {
-      console.log(`Загрузка данных о машине для мастера ID: ${masterData.id}`);
+      console.log(`Loading vehicle data for master ID ${masterData.id}`);
       const carResponse = await appFetch(
         'user/authorized/car',
         {
@@ -204,19 +209,19 @@ function ServiceDetail() {
         const cars = Object.values(carResponse.data.car);
         if (cars.length > 0) {
           setMasterCarData(cars[0]);
-          console.log('Данные о машине успешно загружены:', cars[0]);
+          console.log('Master vehicle data loaded successfully:', cars[0]);
         } else {
           console.warn(
-            `У мастера ID: ${masterData.id} нет зарегистрированных машин.`,
+            `Master ID ${masterData.id} has no registered vehicles on file.`,
           );
         }
       }
     } catch (error) {
       console.error(
-        `Ошибка при загрузке данных о машине для мастера ID: ${masterData.id}`,
+        `Error while loading vehicle data for master ID ${masterData.id}`,
         error,
       );
-      setFormError('Не удалось загрузить данные о машине мастера.');
+      setFormError(text('Failed to load master car data.'));
     }
   };
 
@@ -235,7 +240,7 @@ function ServiceDetail() {
 
   const masters = useMemo(() => mastersList, [mastersList]);
 
-  //~ // непонятный код, основанный на побочных эффектах. привести в понятный вид
+  //~ // unclear code based on side effects. refactor when possible
   //~ const repairFiltered = useMemo(
     //~ () => repairMasters,
     //~ [selectedMaster.username],
@@ -265,21 +270,17 @@ function ServiceDetail() {
   const [search, setSearch] = useState('');
 
   /**
-   * Асинхронная функция для назначения мастера на заказ в качестве КАНДИДАТА.
-   * @param {string} orderId - ID только что созданного заказа.
-   * @param {object} master - Объект выбранного мастера.
+   * Async helper that assigns the selected master to the order as a candidate.
+   * @param {string} orderId - Identifier of the freshly created order.
+   * @param {object} master - Selected master object.
    */
   const assignMasterToOrder = async (orderId, master) => {
     if (!orderId || !master.id) {
-      console.error(
-        'ID заказа или ID мастера отсутствуют. Назначение невозможно.',
-      );
-      throw new Error('ID заказа или мастера не определены.');
+      console.error('Order ID or master ID is missing. Assignment aborted.');
+      throw new Error(text('Order or master ID is undefined.'));
     }
     if (!masterCarData) {
-      console.error(
-        'Данные о машине мастера не загружены. Назначение невозможно.',
-      );
+      console.error('Master vehicle data is not loaded. Assignment aborted.');
     }
     const assignmentPayload = {
       c_id: masterCarData?.c_id || '1',
@@ -289,7 +290,7 @@ function ServiceDetail() {
           ...master,
         },
         bind_amount: getSumPrice(),
-        comment: 'Выполню',
+        comment: text('I will handle it'),
         time: 30,
       },
     };
@@ -304,11 +305,11 @@ function ServiceDetail() {
     try {
       const url = `drive/get/${orderId}`;
       console.log(
-        `Попытка назначения мастера ${master.id} КАНДИДАТОМ на заказ ${orderId}. URL: ${url}`,
+        `Attempting to assign master ${master.id} as a candidate to order ${orderId}. URL: ${url}`,
       );
-      console.log('Тело запроса:', requestBody);
+      console.log('Request payload:', requestBody);
 
-      // Отправляем запрос с новым телом
+      // send request with the new payload
       await appFetch(
         url,
         {
@@ -318,13 +319,10 @@ function ServiceDetail() {
       ).then((v) => console.log('trueble', v));
 
       console.log(
-        `Мастер ${master.name} (ID: ${master.id}) успешно добавлен в поездку (ID: ${orderId}) как кандидат.`,
+        `Master ${master.name} (ID: ${master.id}) successfully added to trip ID ${orderId} as a candidate.`,
       );
     } catch (error) {
-      console.error(
-        `Ошибка при назначении мастера на заказ ${orderId}:`,
-        error,
-      );
+      console.error(`Error assigning master to order ${orderId}:`, error);
       throw error;
     }
   };
@@ -332,11 +330,11 @@ function ServiceDetail() {
   const onSubmit = async (e) => {
     e.preventDefault();
     if (selectedService.length === 0) {
-      setFormError('Выберите услуги');
+      setFormError(text('Select services'));
       return;
     }
     if (!selectedMaster.id) {
-      setFormError('Сначала выберите мастера на карте');
+      setFormError(text('Select a master on the map first'));
       return;
     }
 
@@ -353,25 +351,22 @@ function ServiceDetail() {
     };
 
     try {
-      console.log('Создание заказа...');
+      console.log('Creating order...');
       const creationResponse = await createRequest({ data: orderData });
       const newOrderId = creationResponse?.data?.b_id;
 
       if (!newOrderId) {
-        throw new Error('Не удалось получить ID созданного заказа.');
+        throw new Error(text('Failed to retrieve the created order ID.'));
       }
-      console.log(`Заказ успешно создан. ID: ${newOrderId}`);
+      console.log(`Order created successfully. ID: ${newOrderId}`);
 
       await assignMasterToOrder(newOrderId, selectedMaster);
 
       setShow(false);
       setVisibleBlockPayment(true);
     } catch (err) {
-      console.error(
-        'Произошла ошибка в процессе создания/назначения заказа:',
-        err,
-      );
-      setFormError(err.message || 'Произошла неизвестная ошибка.');
+      console.error('Error during order creation or assignment:', err);
+      setFormError(err.message || text('An unknown error occurred.'));
     }
   };
 
@@ -422,7 +417,7 @@ function ServiceDetail() {
     }
     setSelectedService(list);
   }
-  // todo: проверить, совпадают ли типы categ.id, sectionId, subsec.id, subsectionId и можно ли использовать строгое сравнение
+  // todo: confirm categ.id, sectionId, subsec.id, subsectionId share comparable types to allow strict equality
   const prices = categories.flatMap((categ) => {
     return categ.id == sectionId
       ? categ.subsections.flatMap((subsec) => {
@@ -430,7 +425,7 @@ function ServiceDetail() {
             ? subsec.services.map((service) => ({
                 price: 100,
                 model: subsec.name,
-                delivery: `от 30 мин`,
+                delivery: text('From 30 minutes'),
                 name: service.name,
                 img: 'https://cdn-icons-png.flaticon.com/512/10473/10473245.png',
               }))
@@ -440,22 +435,22 @@ function ServiceDetail() {
   });
   return (
     <ServiceDetailContext.Provider value={selectedValue}>
-      {/* блок с оплатой */}
+      {/* payment block */}
       {visibleBlockPayment ? (
         <div className={style.blockPayment_wrap}>
           {errorBalance ? (
             <div className={style.error}>
-              Пополните, пожалуйста, баланс на 500р
+              {text('Please top up your balance by 500 rubles')}
             </div>
           ) : null}
 
           {errorCash ? (
-            <div className={style.error}>Оплатите мастеру при встрече</div>
+            <div className={style.error}>{text('Pay the master in person')}</div>
           ) : null}
 
           {errorSumm ? (
             <div className={style.error}>
-              С вашего баланса спишется 500 рублей{' '}
+              {text('500 rubles will be deducted from your balance')}{' '}
             </div>
           ) : null}
 
@@ -467,10 +462,10 @@ function ServiceDetail() {
               <img src="/img/close.svg" alt="" />
             </div>
 
-            <h2>Оплата</h2>
+            <h2>{text('Payment')}</h2>
             <div className={style.row}>
               <div className={style.block_v2}>
-                <p>Оплата через сайт</p>
+                <p>{text('Pay through the website')}</p>
                 <div className={style.radio}>
                   <input
                     type="radio"
@@ -479,12 +474,13 @@ function ServiceDetail() {
                     checked={selectedIdx === 0}
                     onChange={() => setSelectedIdx(0)}
                   />
-                  <label htmlFor="inputSite">Баланс: 0р</label>
+                  <label htmlFor="inputSite">{text('Balance: 0₽')}</label>
                 </div>
-                <p>Обычная цена сделки без риска</p>
+                <p>{text('Standard risk-free deal price')}</p>
                 <p className={style.mini_text}>
-                  + 9% при пополнение кошелька баланса. Цена в отклике
-                  исполнителя уже включает в себя комиссию
+                  {text(
+                    'A 9% fee applies when topping up your wallet. The price in the performer response already includes the commission.',
+                  )}
                 </p>
               </div>
 
@@ -492,7 +488,7 @@ function ServiceDetail() {
                 className={style.block}
                 style={{ position: 'relative', top: '35px' }}
               >
-                {/* <p>Оплата наличными</p> */}
+                {/* <p>Cash payment</p> */}
                 <div className={style.radio}>
                   <input
                     type="radio"
@@ -501,12 +497,11 @@ function ServiceDetail() {
                     checked={selectedIdx === 1}
                     onChange={() => setSelectedIdx(1)}
                   />
-                  <label htmlFor="inputCash">Оплата наличными</label>
+                  <label htmlFor="inputCash">{text('Cash payment')}</label>
                 </div>
                 <p className={style.mini_text}>
-                  Оплата напрямую исполнителю <br /> Без гарантий и компенсаций
-                  RepairWizarts: вы напрямую договариваетесь с исполнителем
-                  об условиях и способе оплаты.
+                  {text('Pay the performer directly')} <br />
+                  {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
                 </p>
               </div>
             </div>
@@ -518,12 +513,12 @@ function ServiceDetail() {
                 setVisibleConfirm(true);
               }}
             >
-              Перейти
+              {text('Continue')}
             </div>
           </div>
         </div>
       ) : null}
-      {/* Вы подтвердили производителя работ  */}
+      {/* confirmation block */}
       {visibleConfirm ? (
         <div className={style.blockConfirm_wrap}>
           <div
@@ -537,16 +532,18 @@ function ServiceDetail() {
               <img src="/img/close.svg" alt="" />
             </div>
 
-            <h2>Вы подтвердили производителя работ</h2>
+            <h2>{text('You have confirmed the contractor')}</h2>
             <div className={style.row}>
-              <p>Подтверждая исполнителя вы открываете с ним диалог в чате</p>
+              <p>
+                {text('By confirming the performer you open a chat dialog with them')}
+              </p>
             </div>
 
             <Link
               to="/client/requests/my_orders/#order"
               className={style.button_confirm}
             >
-              Перейти
+              {text('Continue')}
             </Link>
           </div>
         </div>
@@ -558,20 +555,21 @@ function ServiceDetail() {
         >
           <div className="main__info__content">
             <h1>
-              Стоимость услуг по ремонту <strong>{device.name}</strong>
+              {text('Repair service cost for')}{' '}
+              <strong>{device.name}</strong>
             </h1>
             <div className="df align-center">
               <img src="/img/search.png" className="paugfheotw" alt="" />
               <input
                 type="text"
-                placeholder="Поиск..."
+                placeholder={text('Search...')}
                 className="searchaproblemEnter"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
-            {/* блок с iphone */}
+            {/* iphone block */}
             <div className={`main__info__image ${style.iphone_mobile}`}>
               <img
                 // src={SERVER_PATH + device.picture}
@@ -580,23 +578,20 @@ function ServiceDetail() {
                 alt=""
               />
               <p>
-                Запчасти для ремонта уже включены в стоимость работы. Это
-                окончательная цена
+                {text('Spare parts for the repair are already included in the service cost. This is the final price')}
               </p>
             </div>
-            {/* блок, если не выбраны услуги */}
+            {/* guidance block when no services are selected */}
             {prices.length === 0 && (
               <div className="order__no-cards">
                 <img src="/img/many_people.png" alt="" />
                 <p>
-                  Пожалуйста, выберите на карте ниже организацию которая ближе к
-                  вашему дому и оформите заказ выбрав те услуги которые вам
-                  необходимы!
+                  {text('Please select the organization closest to your home on the map below and place an order by choosing the services you need.')}
                 </p>
               </div>
             )}
 
-            {/* список услуг */}
+            {/* services list */}
             <div className={`order__cards__to__scrolls ${style.orders_list}`}>
               {prices.length > 0 &&
                 prices.map((obj, index) => (
@@ -607,7 +602,7 @@ function ServiceDetail() {
                     >
                       <div className="main__info__content__card">
                         <div className="main__card__first">
-                          <h4>Услуга</h4>
+                          <h4>{text('Service')}</h4>
                           <p>
                             {obj['name']} {obj['model']}
                           </p>
@@ -626,8 +621,8 @@ function ServiceDetail() {
                             onClick={() => addRemoveService(index)}
                           >
                             {selectedService.includes(index)
-                              ? 'Убрать'
-                              : 'Выбрать'}
+                              ? text('Remove')
+                              : text('Select')}
                           </button>
                         </div>
                         <div
@@ -644,7 +639,7 @@ function ServiceDetail() {
                 ))}
             </div>
 
-            {/* Условный рендеринг кнопки "Оформить заказ" */}
+            {/* conditional rendering of the place order button */}
             {selectedMaster.id && (
               <div className={style.button_wrap}>
                 <button
@@ -653,8 +648,7 @@ function ServiceDetail() {
                     setShow(true);
                   }}
                 >
-                  {' '}
-                  Оформить заказ
+                  {text('Place an order')}
                 </button>
               </div>
             )}
@@ -683,16 +677,16 @@ function ServiceDetail() {
                     className="detailpopuptitle"
                     style={{ paddingBottom: '10px' }}
                   >
-                    Оформить заказ
+                    {text('Place an order')}
                   </h1>
-                  <p style={{ marginBottom: '10px' }}>Официальные цены</p>
+                  <p style={{ marginBottom: '10px' }}>{text('Official prices')}</p>
 
                   {!ui.isAuthorized ? (
                     <div
                       className="modfdfsdafasal-error"
                       style={{ marginBottom: '10px' }}
                     >
-                      Пожалуйста, зарегистрируйтесь или войдите
+                      {text('Please sign up or log in')}
                     </div>
                   ) : null}
 
@@ -706,7 +700,7 @@ function ServiceDetail() {
                     <div className={`df ${style.modal_from_row}`}>
                       <input
                         type="text"
-                        placeholder="Ваше имя"
+                        placeholder={text('Your name')}
                         defaultValue={user.u_name}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -715,7 +709,7 @@ function ServiceDetail() {
                       <input
                         className="ismrf"
                         type="text"
-                        placeholder="Номер телефона"
+                        placeholder={text('Phone number')}
                         defaultValue={user.u_phone}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
@@ -723,12 +717,12 @@ function ServiceDetail() {
                       />
                     </div>
 
-                    {/* список выбранных услуг */}
+                    {/* selected services list */}
                     <div className="selected_service">
-                      <div className="selected_service__heading">
-                        <p>Выплывающий список проблемы</p>
-                        <div style={{ flex: 1 }}></div>
-                        <p className="selected_service__text-light">Всего</p>
+                        <div className="selected_service__heading">
+                        <p>{text('Problem dropdown list')}</p>
+                          <div style={{ flex: 1 }}></div>
+                        <p className="selected_service__text-light">{text('Total')}</p>
                         <p className="selected_service__text-price">
                           {getSumPrice()} ₽
                         </p>
@@ -746,8 +740,8 @@ function ServiceDetail() {
                           <img src="/img/sliderright.png" alt="" />
                         </div>
                       </div>
-                      {visibleListSelectedServices ? (
-                        <div className="selected_service__services">
+                          {visibleListSelectedServices ? (
+                            <div className="selected_service__services">
                           {selectedService.map((index, i) => (
                             <div
                               key={i}
@@ -778,7 +772,7 @@ function ServiceDetail() {
                           ))}
                           <div className="selected_service__final">
                             <p className="selected_service__text-light">
-                              Всего
+                              {text('Total')}
                             </p>
                             <p className="selected_service__text-price">
                               {getSumPrice()} ₽
@@ -792,12 +786,12 @@ function ServiceDetail() {
                       className="descdetail"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Описание проблемы"
+                      placeholder={text('Problem description')}
                       cols="30"
                       rows="10"
                     />
                     <button className={`done ${style.fix_btn}`} type="submit">
-                      Отправить
+                      {text('Submit')}
                     </button>
                   </form>
                 </div>
@@ -816,13 +810,12 @@ function ServiceDetail() {
               }}
             />
             <p>
-              Запчасти для ремонта уже включены в стоимость работы. Это
-              окончательная цена
+              {text('Spare parts for the repair are already included in the service cost. This is the final price')}
             </p>
           </div>
         </section>
 
-        {/* цены */}
+        {/* prices */}
         <section className="detail__price">
           <div className="container detail-price-container">
             <Swiper
@@ -871,7 +864,7 @@ function ServiceDetail() {
         </section>
       </div>
 
-      {/* Условный рендеринг модальных окон */}
+      {/* conditional rendering of modals */}
       {selectedMaster.id && (
         <div style={{ display: 'flex', position: 'absolute' }}>
           <div
@@ -911,54 +904,60 @@ function ServiceDetail() {
                     </div>
                     <div className="info_master__row-links">
                       <Link to={`/client/feedback/${selectedMaster.id}`}>
-                        {selectedMaster.reviews} отзыва
+                        {selectedMaster.reviews} {text('reviews received')}
                       </Link>
-                      <a href="#">Подробнее</a>
+                      <a href="#">{text('Learn more')}</a>
                     </div>
                   </div>
                 </div>
 
                 <p className="info_master__info">{selectedMaster.address}</p>
-                <p className="info_master__info">Открыт: с 9 до 21</p>
+                <p className="info_master__info">{text('Open: from 9 to 21')}</p>
                 <p className="info_master__text-about">
                   <span className="info_master__text-about-light">
-                    Имя организации
+                    {text('Organization name')}
                   </span>
                   {selectedMaster.orgName}
                 </p>
                 <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">Опыт</span>
+                  <span className="info_master__text-about-light">
+                    {text('Experience')}
+                  </span>
                   {selectedMaster.experience}
                 </p>
                 <p className="info_master__text-about">
                   <span className="info_master__text-about-light">
-                    На сайте
+                    {text('On the platform since')}
                   </span>
-                  с {selectedMaster.onSiteSince}
+                  {text('Since')} {selectedMaster.onSiteSince}
                 </p>
                 <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">Статус</span>
+                  <span className="info_master__text-about-light">
+                    {text('Status')}
+                  </span>
                   {selectedMaster.status}
                 </p>
                 <p className="info_master__text-about--accent">
-                  <span className="info_master__text-about-light">Оценка</span>
+                  <span className="info_master__text-about-light">
+                    {text('Rating')}
+                  </span>
                   {selectedMaster.rating}
                 </p>
                 <p className="info_master__text-about--accent">
                   <span className="info_master__text-about-light">
-                    заказов выполнено
+                    {text('Orders completed')}
                   </span>
                   {selectedMaster.ordersCompleted}
                 </p>
                 <p className="info_master__text-about--accent">
                   <span className="info_master__text-about-light">
-                    Заказов успешно сдано
+                    {text('Orders delivered successfully')}
                   </span>
                   {selectedMaster.successRate}
                 </p>
                 <p className="info_master__text-about--accent">
                   <span className="info_master__text-about-light">
-                    2 повторных заказов
+                    {text('Repeat orders')}
                   </span>
                   {selectedMaster.repeatOrders}
                 </p>
@@ -977,44 +976,44 @@ function ServiceDetail() {
 
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Вид категории
+                      {text('Category type')}
                     </span>
                     {selectedMaster.categoryView}
                   </p>
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Категория
+                      {text('Category')}
                     </span>
                     {selectedMaster.categories}
                   </p>
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Бренды
+                      {text('Brands')}
                     </span>
                     {selectedMaster.brands}
                   </p>
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Ваша деятельность
+                      {text('Your activity')}
                     </span>
                     {selectedMaster.activity}
                   </p>
 
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Основное направление
+                      {text('Main focus')}
                     </span>
                     {selectedMaster.mainFocus}
                   </p>
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Основной бизнес
+                      {text('Main business')}
                     </span>
                     {selectedMaster.businessType}
                   </p>
                   <p className="info_master_big__text-about">
                     <span className="info_master_big__text-about-light">
-                      Об организации:{' '}
+                      {text('About the organization:')}{' '}
                     </span>
                   </p>
                   <p className="info_master_big__text">
@@ -1066,7 +1065,7 @@ function ServiceDetail() {
         </div>
       )}
 
-      {/* Модальное окно с слайдером */}
+      {/* modal with slider */}
       {isModalOpen && (
         <div className="modal" onClick={closeModal}>
           <div className="modalContent" onClick={(e) => e.stopPropagation()}>
@@ -1074,7 +1073,7 @@ function ServiceDetail() {
               ×
             </button>
 
-            {/* Слайдер внутри модального окна */}
+            {/* slider inside modal */}
             <Swiper
               navigation={true}
               modules={[Navigation]}
@@ -1092,7 +1091,7 @@ function ServiceDetail() {
         </div>
       )}
 
-      {/* Добавим стили для модального окна */}
+      {/* inline styles for modal */}
       <style jsx>{`
         .modal {
           position: fixed;

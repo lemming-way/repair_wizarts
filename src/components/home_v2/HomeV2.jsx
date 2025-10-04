@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import styles from './HomeV2.module.css';
 
-// Импорт SVG-иконок
+// Import SVG icons
 import arrowRightIcon from './icons/arrow-right.svg';
 import checkCircleIcon from './icons/check-circle.svg';
 import chevronRightIcon from './icons/chevron-right.svg';
@@ -25,11 +25,13 @@ import thumbsUpIcon from './icons/thumbs-up.svg';
 import twitterIcon from './icons/twitter.svg';
 import userCheckIcon from './icons/user-check.svg';
 import usersIcon from './icons/users.svg';
+import { useLanguage } from '../../state/language';
 
-// @deleteme: временно выключил предупреждения, надо убрать
+// @deleteme: temporarily disabled warnings, remove later
 /* eslint-disable jsx-a11y/anchor-is-valid */
 
 function HomeV2() {
+  const text = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -41,50 +43,50 @@ function HomeV2() {
               className={styles['menu-button']}
               onClick={() => setMobileMenuOpen(true)}
             >
-              {/* Убедитесь, что переменная menuIcon определена/импортирована */}
-              <img src={menuIcon || '/placeholder.svg'} alt="Меню" />
-              <span className={styles['sr-only']}>Открыть меню</span>
+              {/* Ensure the menuIcon variable is defined/imported */}
+              <img src={menuIcon || '/placeholder.svg'} alt={text('Menu')} />
+              <span className={styles['sr-only']}>{text('Open menu')}</span>
             </button>
             <a href="/" className={styles.logo}>
-              РекламаПро
+              {text('ReklamaPro')}
             </a>
           </div>
           <nav className={styles['desktop-nav']}>
             <a href="#" className={styles['nav-link']}>
-              Как это работает
+              {text('How it works')}
             </a>
             <a href="#" className={styles['nav-link']}>
-              Категории
+              {text('Categories')}
             </a>
             <a href="#" className={styles['nav-link']}>
-              Каталог исполнителей
+              {text('Contractor catalog')}
             </a>
             <a href="#" className={styles['nav-link']}>
-              Для исполнителей
+              {text('For performers')}
             </a>
             <a href="#" className={styles['nav-link']}>
-              Для заказчиков
+              {text('For customers')}
             </a>
             <a href="#" className={styles['nav-link']}>
-              О нас
+              {text('About us')}
             </a>
           </nav>
           <div className={styles['header-right']}>
             <button className={styles['search-button']}>
-              {/* Убедитесь, что переменная searchIcon определена/импортирована */}
-              <img src={searchIcon || '/placeholder.svg'} alt="Поиск" />
-              <span className={styles['sr-only']}>Поиск</span>
+              {/* Ensure the searchIcon variable is defined/imported */}
+              <img src={searchIcon || '/placeholder.svg'} alt={text('Search')} />
+              <span className={styles['sr-only']}>{text('Search')}</span>
             </button>
             <div className={styles['auth-buttons']}>
               <button
                 className={`${styles.button} ${styles['button-outline']}`}
               >
-                Войти
+                {text('Sign in')}
               </button>
               <button
                 className={`${styles.button} ${styles['button-primary']}`}
               >
-                Регистрация
+                {text('Sign up')}
               </button>
             </div>
           </div>
@@ -96,48 +98,48 @@ function HomeV2() {
           <div className={styles['mobile-menu-container']}>
             <div className={styles['mobile-menu-header']}>
               <a href="/" className={styles.logo}>
-                РекламаПро
+                {text('ReklamaPro')}
               </a>
               <button
                 className={styles['close-button']}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {/* Убедитесь, что переменная closeIcon определена/импортирована */}
-                <img src={closeIcon || '/placeholder.svg'} alt="Закрыть" />
-                <span className={styles['sr-only']}>Закрыть меню</span>{' '}
-                {/* Добавлено для доступности */}
+                {/* Ensure the closeIcon variable is defined/imported */}
+                <img src={closeIcon || '/placeholder.svg'} alt={text('Close')} />
+                <span className={styles['sr-only']}>{text('Close menu')}</span>{' '}
+                {/* Added for accessibility */}
               </button>
             </div>
             <nav className={styles['mobile-nav']}>
               <a href="#" className={styles['mobile-nav-link']}>
-                Как это работает
+                {text('How it works')}
               </a>
               <a href="#" className={styles['mobile-nav-link']}>
-                Категории
+                {text('Categories')}
               </a>
               <a href="#" className={styles['mobile-nav-link']}>
-                Каталог исполнителей
+                {text('Contractor catalog')}
               </a>
               <a href="#" className={styles['mobile-nav-link']}>
-                Для исполнителей
+                {text('For performers')}
               </a>
               <a href="#" className={styles['mobile-nav-link']}>
-                Для заказчиков
+                {text('For customers')}
               </a>
               <a href="#" className={styles['mobile-nav-link']}>
-                О нас
+                {text('About us')}
               </a>
             </nav>
             <div className={styles['mobile-auth-buttons']}>
               <button
                 className={`${styles.button} ${styles['button-outline']} ${styles['full-width']}`}
               >
-                Войти
+                {text('Sign in')}
               </button>
               <button
                 className={`${styles.button} ${styles['button-primary']} ${styles['full-width']}`}
               >
-                Регистрация
+                {text('Sign up')}
               </button>
             </div>
           </div>
@@ -150,64 +152,62 @@ function HomeV2() {
             <div className={styles['hero-grid']}>
               <div className={styles['hero-content']}>
                 <h1 className={styles['hero-title']}>
-                  Объединяем заказчиков и исполнителей рекламных услуг
+                  {text('Connecting clients with advertising service providers')}
                 </h1>
                 <p className={styles['hero-description']}>
-                  Создайте заказ на производство вывески, рекламных буклетов или
-                  других рекламных материалов и получите предложения от
-                  проверенных исполнителей.
+                  {text('Create an order for signage, brochures, or other advertising materials and receive offers from vetted contractors.')}
                 </p>
                 <div className={styles['hero-buttons']}>
                   <button
                     className={`${styles.button} ${styles['button-primary']}`}
                   >
-                    Разместить заказ
-                    {/* Убедитесь, что переменная chevronRightIcon определена/импортирована */}
+                    {text('Post an order')}
+                    {/* Ensure the chevronRightIcon variable is defined/imported */}
                     <img
                       src={chevronRightIcon || '/placeholder.svg'}
                       alt=""
                       className={styles['icon-right']}
-                      aria-hidden="true" // Добавлено для доступности
+                      aria-hidden="true" // Added for accessibility
                     />
                   </button>
                   <button
                     className={`${styles.button} ${styles['button-outline']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                   </button>
                 </div>
               </div>
               <div className={styles['hero-form-container']}>
-                {/* Для форм лучше использовать тег <form> */}
+                {/* Prefer using the <form> tag for forms */}
                 <form
                   className={styles['hero-form']}
                   onSubmit={(e) => e.preventDefault()}
                 >
                   {' '}
-                  {/* Добавлен onSubmit */}
+                  {/* Added onSubmit */}
                   <h3 className={styles['form-title']}>
-                    Быстрый поиск исполнителя
+                    {text('Quick contractor search')}
                   </h3>
                   <div className={styles['form-group']}>
                     <label htmlFor="category" className={styles['form-label']}>
-                      Категория услуги
+                      {text('Service category')}
                     </label>
                     <select id="category" className={styles['form-select']}>
-                      <option value="">Выберите категорию</option>
-                      <option value="signage">Наружная реклама</option>
-                      <option value="print">Полиграфия</option>
-                      <option value="digital">Цифровая реклама</option>
-                      <option value="design">Дизайн</option>
+                      <option value="">{text('Select a category')}</option>
+                      <option value="signage">{text('Outdoor advertising')}</option>
+                      <option value="print">{text('Printing')}</option>
+                      <option value="digital">{text('Digital advertising')}</option>
+                      <option value="design">{text('Design')}</option>
                     </select>
                   </div>
                   <div className={styles['form-group']}>
                     <label htmlFor="location" className={styles['form-label']}>
-                      Город
+                      {text('City')}
                     </label>
                     <input
                       id="location"
                       className={styles['form-input']}
-                      placeholder="Введите город"
+                      placeholder={text('Enter city')}
                     />
                   </div>
                   <div className={styles['form-group']}>
@@ -215,12 +215,12 @@ function HomeV2() {
                       htmlFor="description"
                       className={styles['form-label']}
                     >
-                      Описание заказа
+                      {text('Order description')}
                     </label>
                     <textarea
                       id="description"
                       className={styles['form-textarea']}
-                      placeholder="Опишите ваш заказ..."
+                      placeholder={text('Describe your order...')}
                     ></textarea>
                   </div>
                   <button
@@ -228,8 +228,8 @@ function HomeV2() {
                     className={`${styles.button} ${styles['button-primary']} ${styles['full-width']}`}
                   >
                     {' '}
-                    {/* Добавлен type="submit" */}
-                    Найти исполнителей
+                    {/* Added type="submit" */}
+                    {text('Find contractors')}
                   </button>
                 </form>
               </div>
@@ -240,9 +240,9 @@ function HomeV2() {
         <section className={styles['how-it-works-section']}>
           <div className={styles.container}>
             <div className={styles['section-header']}>
-              <h2 className={styles['section-title']}>Как это работает</h2>
+              <h2 className={styles['section-title']}>{text('How it works')}</h2>
               <p className={styles['section-description']}>
-                Простой процесс для заказчиков и исполнителей рекламных услуг
+                {text('A simple process for clients and advertising contractors')}
               </p>
             </div>
             <div className={styles['steps-grid']}>
@@ -255,9 +255,11 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['step-title']}>1. Создайте заказ</h3>
+                <h3 className={styles['step-title']}>
+                  {text('1. Create an order')}
+                </h3>
                 <p className={styles['step-description']}>
-                  Опишите ваш проект, укажите требования и бюджет
+                  {text('Describe your project, specify requirements and budget')}
                 </p>
               </div>
               {/* Шаг 2 */}
@@ -270,10 +272,10 @@ function HomeV2() {
                   />
                 </div>
                 <h3 className={styles['step-title']}>
-                  2. Получите предложения
+                  {text('2. Receive proposals')}
                 </h3>
                 <p className={styles['step-description']}>
-                  Исполнители откликаются и предлагают свои услуги и цены
+                  {text('Contractors respond with their services and pricing')}
                 </p>
               </div>
               {/* Шаг 3 */}
@@ -286,10 +288,10 @@ function HomeV2() {
                   />
                 </div>
                 <h3 className={styles['step-title']}>
-                  3. Выберите исполнителя
+                  {text('3. Choose a contractor')}
                 </h3>
                 <p className={styles['step-description']}>
-                  Сравните предложения или выберите из каталога
+                  {text('Compare offers or pick directly from the catalog')}
                 </p>
               </div>
               {/* Шаг 4 */}
@@ -301,9 +303,11 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['step-title']}>4. Обсудите детали</h3>
+                <h3 className={styles['step-title']}>
+                  {text('4. Discuss the details')}
+                </h3>
                 <p className={styles['step-description']}>
-                  Согласуйте все детали проекта с исполнителем
+                  {text('Agree on all project details with the contractor')}
                 </p>
               </div>
               {/* Шаг 5 */}
@@ -315,9 +319,11 @@ function HomeV2() {
                     aria-hidden="true"
                   />
                 </div>
-                <h3 className={styles['step-title']}>5. Завершите сделку</h3>
+                <h3 className={styles['step-title']}>
+                  {text('5. Finalize the deal')}
+                </h3>
                 <p className={styles['step-description']}>
-                  Заключите сделку через платформу с гарантией качества
+                  {text('Close the deal through the platform with quality assurance')}
                 </p>
               </div>
             </div>
@@ -327,18 +333,22 @@ function HomeV2() {
         <section className={styles['categories-section']}>
           <div className={styles.container}>
             <div className={styles['section-header']}>
-              <h2 className={styles['section-title']}>Категории услуг</h2>
+              <h2 className={styles['section-title']}>
+                {text('Service categories')}
+              </h2>
               <p className={styles['section-description']}>
-                Найдите исполнителей для любых рекламных задач
+                {text('Find contractors for any advertising task')}
               </p>
             </div>
             <div className={styles['categories-grid']}>
               {/* Карточка категории 1 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
-                  <h3 className={styles['category-title']}>Наружная реклама</h3>
+                  <h3 className={styles['category-title']}>
+                    {text('Outdoor advertising')}
+                  </h3>
                   <p className={styles['category-subtitle']}>
-                    Вывески, баннеры, световые короба
+                    {text('Signage, banners, light boxes')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -352,7 +362,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -365,9 +375,11 @@ function HomeV2() {
               {/* Карточка категории 2 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
-                  <h3 className={styles['category-title']}>Полиграфия</h3>
+                  <h3 className={styles['category-title']}>
+                    {text('Printing')}
+                  </h3>
                   <p className={styles['category-subtitle']}>
-                    Буклеты, визитки, каталоги
+                    {text('Brochures, business cards, catalogs')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -381,7 +393,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -395,10 +407,10 @@ function HomeV2() {
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
-                    Сувенирная продукция
+                    {text('Promotional merchandise')}
                   </h3>
                   <p className={styles['category-subtitle']}>
-                    Брендированные товары и подарки
+                    {text('Branded items and gifts')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -412,7 +424,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -425,9 +437,11 @@ function HomeV2() {
               {/* Карточка категории 4 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
-                  <h3 className={styles['category-title']}>Дизайн</h3>
+                  <h3 className={styles['category-title']}>
+                    {text('Design')}
+                  </h3>
                   <p className={styles['category-subtitle']}>
-                    Разработка макетов и фирменного стиля
+                    {text('Design of layouts and brand identity')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -441,7 +455,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -455,10 +469,10 @@ function HomeV2() {
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
                   <h3 className={styles['category-title']}>
-                    Широкоформатная печать
+                    {text('Large-format printing')}
                   </h3>
                   <p className={styles['category-subtitle']}>
-                    Плакаты, постеры, фотообои
+                    {text('Posters, prints, wall murals')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -472,7 +486,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -485,9 +499,11 @@ function HomeV2() {
               {/* Карточка категории 6 */}
               <div className={styles['category-card']}>
                 <div className={styles['category-header']}>
-                  <h3 className={styles['category-title']}>Цифровая реклама</h3>
+                  <h3 className={styles['category-title']}>
+                    {text('Digital advertising')}
+                  </h3>
                   <p className={styles['category-subtitle']}>
-                    Баннеры, анимация, видеоролики
+                    {text('Banners, animations, video ads')}
                   </p>
                 </div>
                 <div className={styles['category-content']}>
@@ -501,7 +517,7 @@ function HomeV2() {
                   <button
                     className={`${styles.button} ${styles['button-text']}`}
                   >
-                    Найти исполнителя
+                    {text('Find a contractor')}
                     <img
                       src={arrowRightIcon || '/placeholder.svg'}
                       alt=""
@@ -516,7 +532,7 @@ function HomeV2() {
               <button
                 className={`${styles.button} ${styles['button-outline']}`}
               >
-                Показать все категории
+                {text('Show all categories')}
                 <img
                   src={arrowRightIcon || '/placeholder.svg'}
                   alt=""
