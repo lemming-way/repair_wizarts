@@ -19,10 +19,12 @@ import { deleteUser } from '../../services/user.service';
 import { selectUI, setAuthorization } from '../../slices/ui.slice';
 import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
+import { useLanguage } from '../../state/language';
 
 const EMPTY_OBJECT = {}
 
 export default function SettingsMaster() {
+  const text = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const inputRef = useRef(null);
@@ -30,7 +32,7 @@ export default function SettingsMaster() {
   const [deleteAccount, setDeleteAccount] = useState(false);
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
-  const [error, setError] = useState('данные сохранились');
+  const [error, setError] = useState('data saved');
   const user =
     Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
   const ui = useSelector(selectUI);
@@ -135,7 +137,7 @@ export default function SettingsMaster() {
       inputRef.current.value = '';
     } catch (err) {
       setSuceeded(false);
-      setError(err.message || 'Произошла ошибка при загрузке');
+      setError(err.message || text('An error occurred while uploading'));
     }
   };
   const convertToBase64 = (file) => {
@@ -202,7 +204,7 @@ export default function SettingsMaster() {
                   details: { ...prev.details, login: e.target.value },
                 }))
               }
-              placeholder="Логин"
+              placeholder={text('Login')}
             />
             <div className="height">
               <VerificationInput
@@ -222,17 +224,17 @@ export default function SettingsMaster() {
               {...getFormAttrs('email')}
             />
             <div className="height">
-              <input type="text" placeholder="Новый пароль" />
+              <input type="text" placeholder={text('New password')} />
               {/* <img src="/img/img-eye.png" alt="" className="eye img"/> */}
             </div>
             <div className="height">
-              <input type="text" placeholder="Подтверждение пароля" />
+              <input type="text" placeholder={text('Password confirmation')} />
               {/* <img src="/img/img-almost-eye.png" alt="" className="almost-eye img" /> */}
             </div>
             <input
               type="time"
               style={{ paddingRight: '10px' }}
-              placeholder="Со скольки времени Вы на связи"
+              placeholder={text('What time are you available from')}
               value={form.details.availability_from}
               onChange={(e) =>
                 setForm((prev) => ({
@@ -247,7 +249,7 @@ export default function SettingsMaster() {
             <input
               type="time"
               style={{ paddingRight: '10px' }}
-              placeholder="До скольки времени Вы на связи"
+              placeholder={text('What time are you available to')}
               value={form.details.availability_to}
               onChange={(e) =>
                 setForm((prev) => ({
@@ -258,7 +260,7 @@ export default function SettingsMaster() {
             />
             <input
               type="text"
-              placeholder="Статус не более 40 символов"
+              placeholder={text('Status no more than 40 characters')}
               value={form.details.status}
               onChange={(e) => {
                 setForm((prev) => ({
@@ -279,7 +281,7 @@ export default function SettingsMaster() {
                   }))
                 }
               />
-              Email-рассылка
+              {text('Email newsletter')}
             </label>
             <label className="checkbox">
               <input
@@ -292,11 +294,11 @@ export default function SettingsMaster() {
                   }))
                 }
               />
-              Получать заказы
+              {text('Receive orders')}
             </label>
             <div className={style.buttons_row}>
               <button type="submit" className="goooSaveButton">
-                Сохранить
+                {text('Save')}
               </button>
               <button
                 type="button"

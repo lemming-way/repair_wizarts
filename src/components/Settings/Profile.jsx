@@ -9,6 +9,7 @@ import 'swiper/css/navigation';
 import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
+import { useLanguage } from '../../state/language';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -30,14 +31,15 @@ import style from './Profile.module.css';
 // }
 const EMPTY_OBJECT = {}
 const experienceOptions = [
-{ value: 1, label: '1 год' },
-{ value: 2, label: '2 года' },
-{ value: 3, label: '3 года' },
-{ value: 5, label: '5 лет' },
-{ value: 6, label: 'Более 5 лет' },
+{ value: 1, label: '1 year' },
+{ value: 2, label: '2 years' },
+{ value: 3, label: '3 years' },
+{ value: 5, label: '5 years' },
+{ value: 6, label: 'More than 5 years' },
 ];
 
 function Profile() {
+  const text = useLanguage();
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(
     [],
   );
@@ -78,7 +80,7 @@ function Profile() {
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
   //~ const [gender, setGender] = useState('Мужской');
-  const [business_model, setBusiness] = useState('Частный мастер');
+  const [business_model, setBusiness] = useState('Private master');
   //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
     //~ try {
       //~ switch (type) {
@@ -356,11 +358,11 @@ function Profile() {
   }, [ui.isAuthorized, categories, user]);
 
   useEffect(() => {
-    document.title = 'Настройки';
+    document.title = text('Settings');
     setSections(
       categories.map((item) => ({ label: item.name, value: item.id })),
     );
-  }, [categories]);
+  }, [categories, text]);
   //   useEffect(() => {
   //     ymaps.ready(() => {
   //       const suggestView = new ymaps.SuggestView('suggest-input');
@@ -377,14 +379,14 @@ function Profile() {
       <div className={`mini-main-2 df ${style.wrap_flex}`}>
         <form className="input-wrap-2" onSubmit={onSubmit}>
           {suceeded && (
-            <div className="succeed-v">Данные успешно обновлены</div>
+            <div className="succeed-v">{text('Data updated successfully')}</div>
           )}
           {error && <div className="auth-err">{error}</div>}
 
           <div className={`custom_nvakasd ${style.wrap_custom_field}`}>
             <MultiSelect
               key="category_id"
-              placeholder="Вид категории"
+              placeholder={text('Type of category')}
               options={Array.isArray(Sections) ? Sections : []}
               isMulti={true}
               isSelectAll={true}
@@ -412,7 +414,7 @@ function Profile() {
 
             <MultiSelect
               key="subsection_id"
-              placeholder="Подкатегории"
+              placeholder={text('Subcategories')}
               isMulti={true}
               isSelectAll={true}
               options={Array.isArray(Subsections) ? Subsections : []}
@@ -448,7 +450,7 @@ function Profile() {
               key="services"
               isSelectAll={true}
               isMulti={true}
-              placeholder="Услуги"
+              placeholder={text('Services')}
               options={Array.isArray(Services) ? Services : []}
               onChange={(selected) =>
                 setSelectedServices(
@@ -463,30 +465,30 @@ function Profile() {
               menuPlacement="bottom"
             />
           </div>
-          <input type="text" placeholder="Имя" {...getFormAttrs('name')} />
+          <input type="text" placeholder={text('Name')} {...getFormAttrs('name')} />
 
           <input
             type="text"
-            placeholder="Фамилия"
+            placeholder={text('Lastname')}
             {...getFormAttrs('lastname')}
           />
 
           <input
             type="text"
-            placeholder="Адрес"
+            placeholder={text('Address')}
             id="suggest-input"
             {...getFormAttrs('details.address')}
           />
           <input
             type="text"
-            placeholder="Город"
+            placeholder={text('City')}
             id="suggest-input"
             {...getFormAttrs('details.city')}
           />
 
           <input
             type="text"
-            placeholder="Название организации"
+            placeholder={text('Organization name')}
             {...getFormAttrs('details.organization_name')}
           />
 
@@ -494,7 +496,7 @@ function Profile() {
             <MultiSelect
               style={{ width: '100%' }}
               key="experience"
-              placeholder="Опыт работы"
+              placeholder={text('Work experience')}
               options={experienceOptions}
               onChange={(selected) => {
                 setExperience([selected]);
@@ -511,26 +513,26 @@ function Profile() {
 
           <input
             type="text"
-            placeholder="Основной бизнес"
+            placeholder={text('Main business')}
             {...getFormAttrs('details.main_business')}
           />
 
           <input
             type="text"
-            placeholder="Вид деятельности"
+            placeholder={text('Type of activity')}
             {...getFormAttrs('details.specialty')}
           />
 
           <textarea
             placeholder={
-              business_model === 'Частный мастер' ? 'О себе' : 'Об организации'
+              business_model === 'Private master' ? text('About me') : text('About organization')
             }
             {...getFormAttrs('u_description')}
           />
 
           <div>
             <button type="submit" className="goooSaveButton">
-              Сохранить
+              {text('Save')}
             </button>
           </div>
         </form>

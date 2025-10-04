@@ -192,7 +192,25 @@ const lang = {
   "hours": "",
   "Total": "",
   "Select master": "",
-  "Reviews about the master": ""
+  "Reviews about the master": "",
+  "Data updated successfully": "",
+  "Subcategories": "",
+  "Name": "",
+  "Lastname": "",
+  "Organization name": "",
+  "Work experience": "",
+  "Main business": "",
+  "Type of activity": "",
+  "About me": "",
+  "About organization": "",
+  "An error occurred while uploading": "",
+  "New password": "",
+  "Password confirmation": "",
+  "What time are you available from": "",
+  "What time are you available to": "",
+  "Status no more than 40 characters": "",
+  "Email newsletter": "",
+  "Receive orders": ""
 };
 
 export default lang;

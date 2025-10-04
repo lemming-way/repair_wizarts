@@ -291,7 +291,25 @@ const lang = {
   "hours": "часа",
   "Total": "Итого",
   "Select master": "Выбрать мастера",
-  "Reviews about the master": "Отзывы о мастере"
+  "Reviews about the master": "Отзывы о мастере",
+  "Data updated successfully": "Данные успешно обновлены",
+  "Subcategories": "Подкатегории",
+  "Name": "Имя",
+  "Lastname": "Фамилия",
+  "Organization name": "Название организации",
+  "Work experience": "Опыт работы",
+  "Main business": "Основной бизнес",
+  "Type of activity": "Вид деятельности",
+  "About me": "О себе",
+  "About organization": "Об организации",
+  "An error occurred while uploading": "Произошла ошибка при загрузке",
+  "New password": "Новый пароль",
+  "Password confirmation": "Подтверждение пароля",
+  "What time are you available from": "Со скольки времени Вы на связи",
+  "What time are you available to": "До скольки времени Вы на связи",
+  "Status no more than 40 characters": "Статус не более 40 символов",
+  "Email newsletter": "Email-рассылка",
+  "Receive orders": "Получать заказы"
 };
 
 export default lang;
