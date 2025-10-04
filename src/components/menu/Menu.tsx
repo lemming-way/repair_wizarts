@@ -1,7 +1,9 @@
 import '../../scss/style.css'
+import { useLanguage } from '../../state/language'
 
 
 const Menu = ({ active, setActive }) => {
+    const text = useLanguage()
     return (
         <div className={active ? 'menu active' : 'menu'} onClick={() => setActive(false)}>
             <div className="menu__content" onClick={e => e.stopPropagation()}>
@@ -15,19 +17,19 @@ const Menu = ({ active, setActive }) => {
                 </div> */}
                 <ul>
                     <li onClick={() => setActive(false)}>
-                        <a href="#footer">Услуги</a>
+                        <a href="#footer">{text('Services')}</a>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <button>Город</button>
+                        <button>{text('City')}</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <button>Статьи</button>
+                        <button>{text('Articles')}</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <button>Отзывы</button>
+                        <button>{text('Reviews')}</button>
                     </li>
                     <li onClick={() => setActive(false)}>
-                        <button>Контакты</button>
+                        <button>{text('Contacts')}</button>
                     </li>
                 </ul>
             </div>

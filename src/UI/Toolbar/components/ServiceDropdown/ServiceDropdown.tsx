@@ -109,10 +109,12 @@ import styles from './ServiceDropdown.module.scss';
 import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
 import { useLanguage } from '../../../../state/language';
 import type { RootState } from '../../../../store';
+import { useLanguage } from '../../../../state/language';
 
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const text = useLanguage();
 
   const { categories } = useSelector((state: RootState) => state.categories);
   return (
