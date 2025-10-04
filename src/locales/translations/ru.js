@@ -177,7 +177,26 @@ const lang = {
   "Chat": "Чат",
   "My applications": "Мои заявки",
   "My reviews": "Мои отзывы",
-  "Order exchange": "Биржа заказов"
+  "Order exchange": "Биржа заказов",
+  "Rating and comments": "Оценка и комментарии",
+  "Please top up your balance by 500 rubles": "Пожалуйста пополните баланс на 500 рублей",
+  "The text should not contain insults or profanity.": "В тексте не должно быть оскорблений и мата.",
+  "Add photos": "Добавить фотографии",
+  "This is optional, but with them the review will become more visual. Screenshots of correspondence will not pass verification.": "Это необязательно, но с ними отзыв станет более наглядным. Скриншоты переписки не пройдут проверку.",
+  "Congratulations, you are completing your order, please leave a review": "Поздравляем вы завершаете заказ, пожалуйста оставьте отзыв",
+  "Error sending feedback": "Ошибка при отправке отзыва",
+  "A network error has occurred": "Произошла ошибка сети",
+  "Loading...": "Загрузка...",
+  "Propose an order": "Предложить заказ",
+  "Title": "Заголовок",
+  "2000 characters, min 100": "2000 символов, мин 100",
+  "Write what needs to be done": "Напишите, что требуется выполнить",
+  "Budget": "Бюджет",
+  "Balance": "Баланс",
+  "Ready to wait": "Готов ждать",
+  "Opening a dispute": "Открытие спора",
+  "Describe your problem, your order will be moved to technical support": "Опишите вашу проблему, ваш заказ переместится в техническую поддержку",
+  "Error canceling order:": "Ошибка при отмене заказа:"
 };
 
 export default lang;

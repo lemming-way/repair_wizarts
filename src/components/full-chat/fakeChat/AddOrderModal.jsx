@@ -7,6 +7,7 @@ import style from './AddOrderModal.module.css';
 import { updateRequest } from '../../../services/request.service';
 import { getToken } from '../../../services/token.service';
 import { selectUser } from '../../../slices/user.slice';
+import { useLanguage } from '../../../state/language';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -45,6 +46,7 @@ export default function AddOrderModal({
   setVisibleOkModal,
   currentOrder,
 }) {
+  const text = useLanguage();
   const user = Object.values(useSelector(selectUser)?.data?.user || {})[0];
   const { id } = useParams();
   const [title, setTitle] = useState('');
@@ -95,28 +97,28 @@ export default function AddOrderModal({
         <div className={style.close} onClick={() => setVisibleAddOrder(false)}>
           <img src="/img/close.svg" alt="" />
         </div>
-        <h2 className={style.heading}>Предложить заказ</h2>
+        <h2 className={style.heading}>{text('Propose an order')}</h2>
         {(user?.u_details?.balance || 0) < 500 && (
           <p className={style.error}>
-            Пожалуйста пополните баланс на 500 рублей
+            {text('Please top up your balance by 500 rubles')}
           </p>
         )}
         <div>
           <input
             className={style.input_heading}
             type="text"
-            placeholder="Заголовок"
+            placeholder={text('Title')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
         </div>
 
         <div style={{ position: 'relative' }}>
-          <p className={style.textarea_description}>2000 символов, мин 100</p>
+          <p className={style.textarea_description}>{text('2000 characters, min 100')}</p>
           <textarea
             className={style.textarea}
             rows={8}
-            placeholder="Напишите, что требуется выполнить"
+            placeholder={text('Write what needs to be done')}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           ></textarea>
@@ -124,9 +126,9 @@ export default function AddOrderModal({
 
         <div className={style.row1}>
           <div>
-            <p className={style.mini_heading}>Бюджет</p>
+            <p className={style.mini_heading}>{text('Budget')}</p>
             <p className={style.balance}>
-              Баланс {user?.u_details?.balance || 0} ₽
+              {text('Balance')} {user?.u_details?.balance || 0} ₽
             </p>
             <div className={style.icon}>
               <input
@@ -140,31 +142,31 @@ export default function AddOrderModal({
           </div>
           <div style={{ position: 'relative' }}>
             <img className={style.icon2} src="/img/icons/clock.png" alt="" />
-            <p className={style.mini_heading}>Срок</p>
+            <p className={style.mini_heading}>{text('Term')}</p>
             <select
               className={style.select}
               value={deadline}
               onChange={(e) => setDeadline(e.target.value)}
             >
               <option value="" disabled>
-                Выберите
+                {text('Select')}
               </option>
-              <option value="ready">Готов ждать</option>
-              <option value="1">1 час</option>
-              <option value="2">2 часа</option>
-              <option value="3">3 часа</option>
-              <option value="4">4 часа</option>
-              <option value="6">6 часов</option>
-              <option value="8">8 часов</option>
-              <option value="24">24 часа</option>
-              <option value="72">3 дня</option>
-              <option value="168">7 дней</option>
+              <option value="ready">{text('Ready to wait')}</option>
+              <option value="1">{text('1 hour')}</option>
+              <option value="2">{text('2 hours')}</option>
+              <option value="3">{text('3 hours')}</option>
+              <option value="4">{text('4 hours')}</option>
+              <option value="6">{text('6 hours')}</option>
+              <option value="8">{text('8 hours')}</option>
+              <option value="24">{text('24 hours')}</option>
+              <option value="72">{text('3 days')}</option>
+              <option value="168">{text('7 days')}</option>
             </select>
           </div>
         </div>
 
         <div className={style.block_photo}>
-          <p className={style.heading_h3}>Добавить фотографии</p>
+          <p className={style.heading_h3}>{text('Add photos')}</p>
           <div
             className={style.add_photo}
             onClick={() => inputRef.current && inputRef.current.click()}
@@ -227,13 +229,13 @@ export default function AddOrderModal({
             className={style.button}
             onClick={isUploading ? undefined : handleSubmit}
           >
-            {isUploading ? 'Загрузка...' : 'Отправить'}
+            {isUploading ? text('Loading...') : text('Send')}
           </div>
           <div
             className={style.button_back}
             onClick={() => setVisibleAddOrder(false)}
           >
-            Назад
+            {text('Back')}
           </div>
         </div>
       </div>

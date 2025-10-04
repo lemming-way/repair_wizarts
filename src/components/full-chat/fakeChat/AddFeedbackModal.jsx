@@ -3,6 +3,7 @@ import { useState } from 'react';
 import style from './AddFeedbackModal.module.css';
 import { createRequest } from '../../../services/request.service';
 import appFetch from '../../../utilities/appFetch';
+import { useLanguage } from '../../../state/language';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -43,6 +44,7 @@ export default function AddFeedbackModal({
   setVisibleFinalOrder,
   id, // <-- идентификатор заказа/поездки
 }) {
+  const text = useLanguage();
   const [countStar, setCountStar] = useState(0);
   const [comment, setComment] = useState('');
   const [photos, setPhotos] = useState([]);
@@ -78,11 +80,11 @@ export default function AddFeedbackModal({
         setVisibleAddFeedback(false);
         setVisibleFinalOrder(true);
       } else {
-        alert('Ошибка при отправке отзыва');
+        alert(text('Error sending feedback'));
       }
     } catch (error) {
       console.error(error);
-      alert('Произошла ошибка сети');
+      alert(text('A network error has occurred'));
     } finally {
       setIsUploading(false);
     }
@@ -99,7 +101,7 @@ export default function AddFeedbackModal({
         </div>
 
         <h2 className={style.heading}>
-          Поздравляем вы завершаете заказ, пожалуйста оставьте отзыв
+          {text('Congratulations, you are completing your order, please leave a review')}
         </h2>
 
         <div className={style.stars}>
@@ -118,14 +120,14 @@ export default function AddFeedbackModal({
           <textarea
             className={style.textarea}
             rows={8}
-            placeholder="В тексте не должно быть оскорблений и мата."
+            placeholder={text("The text should not contain insults or profanity.")}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
         </div>
 
         <div className={style.block_photo}>
-          <p className={style.heading_h3}>Добавить фотографии</p>
+          <p className={style.heading_h3}>{text("Add photos")}</p>
           <div className={style.add_photo}>
             <label>
               <img src="/img/icons/camera.png" alt="" />
@@ -188,13 +190,13 @@ export default function AddFeedbackModal({
             className={style.button}
             onClick={isUploading ? undefined : handleSubmit}
           >
-            {isUploading ? 'Загрузка...' : 'Отправить'}
+            {isUploading ? text('Loading...') : text('Send')}
           </div>
           <div
             className={style.button_back}
             onClick={() => setVisibleAddFeedback(false)}
           >
-            Назад
+            {text('Back')}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import style from './Dispute.module.css';
 import { updateRequest } from '../../../services/request.service';
+import { useLanguage } from '../../../state/language';
 
 export default function DisputeModal_v2({
   setVisibleDispute,
@@ -9,6 +10,7 @@ export default function DisputeModal_v2({
   id,
   refetchRequests,
 }) {
+  const text = useLanguage();
   const [value, setValue] = useState('');
   return (
     <>
@@ -17,7 +19,7 @@ export default function DisputeModal_v2({
           <div className={style.close} onClick={() => setVisibleDispute(false)}>
             <img src="/img/close.svg" alt="" />
           </div>
-          <h2 className={style.heading}>Открытие спора </h2>
+          <h2 className={style.heading}>{text('Opening a dispute')} </h2>
 
           <div className={style.textarea_wrap}>
             <textarea
@@ -25,7 +27,7 @@ export default function DisputeModal_v2({
               className={style.textarea}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="Опишите вашу проблему, ваш заказ переместится в техническую поддержку"
+              placeholder={text('Describe your problem, your order will be moved to technical support')}
             ></textarea>
           </div>
 
@@ -40,14 +42,14 @@ export default function DisputeModal_v2({
                   });
                   refetchRequests();
                 } catch (error) {
-                  console.error('Ошибка при отмене заказа:', error);
+                  console.error(text('Error canceling order:'), error);
                 } finally {
                   setVisibleDispute(false);
                   setVisibleDisputeFinal(true);
                 }
               }}
             >
-              Отправить
+              {text('Send')}
             </div>
             <div className={style.add_photo}>
               <img src="/img/icons/camera.png" alt="" />

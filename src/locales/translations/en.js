@@ -78,7 +78,26 @@ const lang = {
   "Chat": "",
   "My applications": "",
   "My reviews": "",
-  "Order exchange": ""
+  "Order exchange": "",
+  "Rating and comments": "",
+  "Please top up your balance by 500 rubles": "",
+  "The text should not contain insults or profanity.": "",
+  "Add photos": "",
+  "This is optional, but with them the review will become more visual. Screenshots of correspondence will not pass verification.": "",
+  "Congratulations, you are completing your order, please leave a review": "",
+  "Error sending feedback": "",
+  "A network error has occurred": "",
+  "Loading...": "",
+  "Propose an order": "",
+  "Title": "",
+  "2000 characters, min 100": "",
+  "Write what needs to be done": "",
+  "Budget": "",
+  "Balance": "",
+  "Ready to wait": "",
+  "Opening a dispute": "",
+  "Describe your problem, your order will be moved to technical support": "",
+  "Error canceling order:": ""
 };
 
 export default lang;
