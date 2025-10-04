@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { fetchUser } from '../../slices/user.slice'
 import { login } from '../../services/auth.service'
+import { useLanguage } from '../../state/language'
 
 import './login.css'
 import { Modal } from '../../shared/ui'
@@ -18,6 +19,7 @@ const RecoveryState = {
 }
 
 function Login() {
+    const text = useLanguage()
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
@@ -38,7 +40,7 @@ function Login() {
         // нельзя вводить не числа и больше 11 символов
         const inputValue = event.target.value.slice(1);
         if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
-            setError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
+            setError(text('Invalid character entered. Please enter only digits.'));
         } 
         // else if (inputValue.length > 16) {
         //     setError('Обратите внимание на длину номера!');
@@ -99,7 +101,7 @@ function Login() {
         // нельзя вводить не числа и больше 11 символов
         const inputValue = event.target.value.slice(1);
         if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
-            setRecoveryError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
+            setRecoveryError(text('Invalid character entered. Please enter only digits.'));
         } 
         // else if (inputValue.length > 9) {
         //     setRecoveryError('Обратите внимание на длину номера!');
@@ -149,13 +151,13 @@ function Login() {
                     return setRecoveryError(err.message)
                 }
 
-                setRecoveryError("Невозможно выполнить запрос")
+                setRecoveryError(text("Unable to process the request"))
             })
     }
 
     useEffect(() => {
-        document.title = 'Войти';
-    }, []);
+        document.title = text('Login');
+    }, [text]);
 
     const onSubmit = async (e) => {
         e.preventDefault()
@@ -172,13 +174,13 @@ function Login() {
             dispatch(fetchUser())
             navigate("/")
         } catch (err) {
-            setError("Некорректные данные")
+            setError(text("Incorrect data"))
         }
     }
 
     return (
         <section className="login">
-            <h1>Войти</h1>
+            <h1>{text('Login')}</h1>
             <form onSubmit={onSubmit}>
                 {error && (
                     <div className="auth-err">
@@ -206,7 +208,7 @@ function Login() {
                 /> */}
                 <input
                     type="password"
-                    placeholder="Пароль"
+                    placeholder={text("Password")}
                     className="input_login_password__fix"
                     onChange={(e) => setPassword(e.target.value)}
                     value={password}
@@ -219,14 +221,14 @@ function Login() {
                         className="login-keep__input"
                         onChange={(e) => setKeep(e.target.checked)}
                     />
-                    Оставаться в системе
+                    {text("Stay logged in")}
                 </label>
 
-                <button className="log__btn">Войти</button>
+                <button className="log__btn">{text('Login')}</button>
 
                 <div>
-                    <span>Нет аккаунта? </span>
-                    <Link to="/register" style={{ fontSize: "16px" }}>Зарегистрируйтесь</Link>
+                    <span>{text("No account?")} </span>
+                    <Link to="/register" style={{ fontSize: "16px" }}>{text("Sign up")}</Link>
                 </div>
                 <span
                     style={{
@@ -236,7 +238,7 @@ function Login() {
                     }}
                     onClick={() => setRecoveryState(RecoveryState.PHONE)}
                 >
-                    Забыли пароль?
+                    {text("Forgot password?")}
                 </span>
                 <Modal
                     open={recoveryState !== RecoveryState.IDLE}
@@ -246,10 +248,10 @@ function Login() {
                     closeButton={true}
                 >
                     <h2 className={modalStyles.title}>
-                        Восстановление пароля
+                        {text("Password recovery")}
                     </h2>
                     <p className={modalStyles.info}>
-                        Введите номер телефона, после чего на почту, привязанную к вашему аккаунту придёт письмо подтверждения.
+                        {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
                     </p>
                     {recoveryState === RecoveryState.CODE ? (
                         <form
@@ -263,18 +265,18 @@ function Login() {
                             )}
                             <input
                                 className={modalStyles.input}
-                                placeholder="Введите код с почты"
+                                placeholder={text("Enter the code from email")}
                                 onChange={(e) => setRecoveryCode(e.target.value)}
                                 value={recoveryCode}
                             />
                             <input
                                 className={modalStyles.input}
-                                placeholder="Новый пароль"
+                                placeholder={text("New password")}
                                 onChange={(e) => setRecoveryPassword(e.target.value)}
                                 value={recoveryPassword}
                             />
                             <button className={modalStyles.button} type="submit">
-                                Отправить
+                                {text("Send")}
                             </button>
                         </form>
                     ) : (
@@ -299,7 +301,7 @@ function Login() {
                                 />
                             </div>
                             <button className={modalStyles.button} type="submit">
-                                Отправить
+                                {text("Send")}
                             </button>
                         </form>
                     )}

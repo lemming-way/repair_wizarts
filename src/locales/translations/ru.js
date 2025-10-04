@@ -113,7 +113,9 @@ const lang = {
   "Open daily 10:00 - 20:00,": "Работаем ежедневно 10:00 - 20:00,",
   "without breaks and days off": "без перерывов и выходных",
   "Give task": "Дать задание",
-  "Top up balance": "Пополнить баланс"
+  "Top up balance": "Пополнить баланс",
+  "Invalid character entered. Please enter only digits.": "Вы ввели недопустимый символ. Пожалуйста, введите только цифры.",
+  "Sign up": "Зарегистрируйтесь"
 };
 
 export default lang;
