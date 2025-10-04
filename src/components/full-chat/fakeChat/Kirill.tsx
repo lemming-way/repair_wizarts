@@ -38,6 +38,7 @@ import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
+import { useLanguage } from '../../../state/language';
 
 const LazySwiper = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
@@ -156,6 +157,7 @@ const DropboxImage: FC<{
   alt?: string;
   style?: React.CSSProperties;
 }> = ({ url, alt = '', style }) => {
+  const text = useLanguage();
   const [imgUrl, setImgUrl] = useState<string | null>(
     url && url.startsWith('blob:') ? url : null,
   );
@@ -208,7 +210,7 @@ const DropboxImage: FC<{
           justifyContent: 'center',
         }}
       >
-        Ошибка загрузки фото
+        {text('Photo upload error')}
       </div>
     );
   if (!imgUrl)
@@ -223,7 +225,7 @@ const DropboxImage: FC<{
           justifyContent: 'center',
         }}
       >
-        Загрузка...
+        {text('Loading...')}
       </div>
     );
   return <img src={imgUrl} alt={alt} style={style || { width: '100%' }} />;
@@ -239,6 +241,7 @@ const DropboxFilePreview: FC<{
   url: string;
   style?: React.CSSProperties;
 }> = ({ url, style }) => {
+  const text = useLanguage();
   const [state, setState] = useState<{
     objectUrl: string | null;
     mime: string;
@@ -335,7 +338,7 @@ const DropboxFilePreview: FC<{
           borderRadius: 8,
         }}
       >
-        Ошибка загрузки файла
+        {text('File loading error')}
       </div>
     );
 
@@ -352,7 +355,7 @@ const DropboxFilePreview: FC<{
           borderRadius: 8,
         }}
       >
-        Загрузка файла...
+        {text('File loading...')}
       </div>
     );
 
@@ -397,7 +400,7 @@ const DropboxFilePreview: FC<{
           >
             <img
               src={state.objectUrl}
-              alt={state.filename || 'file'}
+              alt={state.filename || text('File')}
               style={{
                 maxWidth: '95vw',
                 maxHeight: '95vh',
@@ -409,7 +412,7 @@ const DropboxFilePreview: FC<{
             {/* Кнопка закрытия (опционально) */}
             <button
               onClick={() => setIsOpen(false)}
-              aria-label="Закрыть"
+              aria-label={text('Close')}
               style={{
                 position: 'fixed',
                 top: 16,
@@ -423,7 +426,7 @@ const DropboxFilePreview: FC<{
                 cursor: 'pointer',
               }}
             >
-              Закрыть
+              {text('Close')}
             </button>
           </div>
         )}
@@ -461,7 +464,7 @@ const DropboxFilePreview: FC<{
     return (
       <iframe
         src={state.objectUrl}
-        title={state.filename || 'document'}
+        title={state.filename || text('Document')}
         style={{
           width: '100%',
           height: 300,
@@ -508,14 +511,14 @@ const DropboxFilePreview: FC<{
             overflow: 'hidden',
             maxWidth: 180,
           }}
-          title={state.filename || 'Вложение'}
+          title={state.filename || text('Attachment')}
         >
-          {state.filename || 'Вложение'}
+          {state.filename || text('Attachment')}
         </div>
       </div>
       <a
         href={state.objectUrl}
-        download={state.filename || 'file'}
+        download={state.filename || text('File')}
         className={styles.file_link}
         style={{
           padding: '8px 12px',
@@ -524,7 +527,7 @@ const DropboxFilePreview: FC<{
           border: '1px solid #ddd',
         }}
       >
-        Скачать
+        {text('Download')}
       </a>
     </div>
   );
@@ -565,9 +568,11 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   setBalanceErrorNum,
   viewerIsMaster, // НОВОЕ
 }) => {
+  const text = useLanguage();
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
     ({} as any);
+  const isRequestType = order?.b_options?.orderType === 'request';
 
   // ===== ЧАТ: история для этого заказа =====
   const chatHistory: ChatMessage[] = useMemo(() => {
@@ -885,7 +890,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                     <h3>13:44</h3>
                   </div>
                   <div className="letter_text-1">
-                    <h2>Вы</h2>
+                    <h2>{text('You')}</h2>
                   </div>
                   <img
                     src={currentUser.u_photo || '/img/img-camera.png'}
@@ -895,9 +900,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                 </div>
                 <div className={styles.block_bid}>
                   <p>
-                    {order.b_options.orderType === 'request'
-                      ? 'Выбранная модель устройства'
-                      : 'Размещен на биржи заказ'}{' '}
+                    {isRequestType
+                      ? text('Selected device model')
+                      : text('Order published on the exchange')}{' '}
                     <Link
                       to={'/master/requests'}
                       className={styles.block_bid__link}
@@ -905,22 +910,24 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       {order?.b_options?.title}
                     </Link>
                   </p>
-                  {order.b_options.orderType === 'request' && (
+                  {isRequestType && (
                     <p>
-                      Перечень работ:
+                      {text('Scope of work:')}
                       <span>{order?.b_options?.title}</span>
                     </p>
                   )}
-                  <p>Описание клиента {order?.b_options?.description}</p>
                   <p>
-                    Мастер откликнулся на этот заказ, сделав предложение на
-                    сумму {masterReqData?.bind_amount} рублей.
+                    {text('Client description:')} {order?.b_options?.description}
                   </p>
                   <p>
-                    Слова мастера из{' '}
-                    {order.b_options.orderType === 'request'
-                      ? 'заявки'
-                      : 'заказа на бирже!'}{' '}
+                    {text('Master responded with an offer of')}{' '}
+                    {masterReqData?.bind_amount} {text('rubles')}.
+                  </p>
+                  <p>
+                    {text('Master message from')}{' '}
+                    {isRequestType
+                      ? text('the request')
+                      : text('the marketplace order!')}{' '}
                   </p>
                 </div>
               </div>
@@ -943,7 +950,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                 <LazySwiperSlide key={idx}>
                   <DropboxImage
                     url={typeof url === 'string' ? url : (url as any).url}
-                    alt={`Фото ${idx + 1}`}
+                    alt={`${text('Photo')} ${idx + 1}`}
                     style={{
                       width: '100%',
                       height: 120,
@@ -1019,7 +1026,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                               rel="noreferrer"
                               className={styles.file_link}
                             >
-                              Вложение {i + 1}
+                              {`${text('Attachment')} ${i + 1}`}
                             </a>
                           );
                         })}
@@ -1029,10 +1036,10 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
                   // показываем "Вы" только на своих сообщениях
                   const authorName = isMine
-                    ? 'Вы'
+                    ? text('You')
                     : viewerIsMaster
-                    ? currentUser?.u_name || 'Клиент'
-                    : masterUser?.u_name || 'Исполнитель';
+                    ? currentUser?.u_name || text('Client')
+                    : masterUser?.u_name || text('Master');
 
                   // аватар показываем у собеседника (слева), у своих можно не показывать
                   const avatarSrc = viewerIsMaster
@@ -1130,10 +1137,10 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       >
                         {sys(
                           `${
-                            order.b_options.orderType === 'request'
-                              ? 'Заявка'
-                              : 'Заказ'
-                          } создан (№${order.b_id})`,
+                            isRequestType
+                              ? text('Request created')
+                              : text('Order created')
+                          } (№${order.b_id})`,
                           '/img/icons/box.png',
                         )}
                       </div>
@@ -1145,11 +1152,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Клиент предложил отмену ${
-                            order.b_options.orderType === 'request'
-                              ? 'заявки'
-                              : 'заказа'
-                          }`,
+                          isRequestType
+                            ? text('Client requested cancellation of the request')
+                            : text('Client requested cancellation of the order'),
                           '/img/cansel_message.png',
                         )}
                       </div>
@@ -1161,11 +1166,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Исполнитель принял отмену ${
-                            order.b_options.orderType === 'request'
-                              ? 'заявки'
-                              : 'заказа'
-                          }`,
+                          isRequestType
+                            ? text('Master accepted cancellation of the request')
+                            : text('Master accepted cancellation of the order'),
                           '/img/message_green.png',
                         )}
                       </div>
@@ -1177,11 +1180,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Исполнитель отказался от отмены ${
-                            order.b_options.orderType === 'request'
-                              ? 'заявки'
-                              : 'заказа'
-                          }`,
+                          isRequestType
+                            ? text('Master declined cancellation of the request')
+                            : text('Master declined cancellation of the order'),
                           '/img/message_cancel.png',
                         )}
                       </div>
@@ -1193,11 +1194,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Открылся спор по ${
-                            order.b_options.orderType === 'request'
-                              ? 'данной заявке'
-                              : 'данному заказу'
-                          }`,
+                          isRequestType
+                            ? text('Dispute opened for this request')
+                            : text('Dispute opened for this order'),
                           '/img/message_cancel.png',
                         )}
                       </div>
@@ -1209,11 +1208,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Исполнитель согласился по спору (${
-                            order.b_options.orderType === 'request'
-                              ? 'заявка'
-                              : 'заказ'
-                          })`,
+                          isRequestType
+                            ? text('Master accepted the dispute for the request')
+                            : text('Master accepted the dispute for the order'),
                           '/img/message_green.png',
                         )}
                       </div>
@@ -1225,11 +1222,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `Исполнитель не согласен по спору (${
-                            order.b_options.orderType === 'request'
-                              ? 'заявка'
-                              : 'заказ'
-                          })`,
+                          isRequestType
+                            ? text('Master rejected the dispute for the request')
+                            : text('Master rejected the dispute for the order'),
                           '/img/message_cancel.png',
                         )}
                       </div>
@@ -1241,11 +1236,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         className="chat_technical_message"
                       >
                         {sys(
-                          `${
-                            order.b_options.orderType === 'request'
-                              ? 'Заявка'
-                              : 'Заказ'
-                          } успешно подтвержден`,
+                          isRequestType
+                            ? text('Request confirmed successfully')
+                            : text('Order confirmed successfully'),
                           '/img/message_green.png',
                         )}
                       </div>
@@ -1267,6 +1260,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const user =
     (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
     ({} as any);
+  const text = useLanguage();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1347,9 +1341,9 @@ function ChoiceOfReplenishmentMethodCard() {
   }, [currentChat]);
 
   useEffect(() => {
-    document.title = 'Чат';
+    document.title = text('Chat');
     document.body.style.overflow = 'hidden';
-  }, []);
+  }, [text]);
 
   const [answer, Isanswer] = useState(false);
   const [edit, Isedit] = useState(false);
@@ -1511,7 +1505,7 @@ function ChoiceOfReplenishmentMethodCard() {
             setPreviewFiles((prev) => [...prev, { file, url }]);
           } catch (e) {
             console.error('audio save error', e);
-            alert('Не удалось сохранить аудио.');
+            alert(text('Failed to save audio.'));
           } finally {
             setRecState('idle');
             stream.getTracks().forEach((t) => t.stop());
@@ -1521,7 +1515,7 @@ function ChoiceOfReplenishmentMethodCard() {
         setRecState('recording');
       } catch (e) {
         console.error('mic error', e);
-        alert('Нет доступа к микрофону.');
+        alert(text('Microphone access is denied.'));
       }
     } else if (recState === 'recording') {
       mediaRecorderRef.current?.stop();
@@ -1532,11 +1526,11 @@ function ChoiceOfReplenishmentMethodCard() {
   async function sendChatMessage(
     order: any,
     who: 'client' | 'master',
-    text: string,
+    messageText: string,
     files?: string[],
   ) {
     const author: ChatAuthor = who === 'client' ? 'client' : 'admin';
-    const msg = makeMsg(author, text, files);
+    const msg = makeMsg(author, messageText, files);
 
     try {
       const prev: ChatMessage[] = Array.isArray(order?.b_options?.chat_history)
@@ -1558,14 +1552,14 @@ function ChoiceOfReplenishmentMethodCard() {
       }
     } catch (e) {
       console.error('sendChatMessage error', e);
-      alert('Не удалось отправить сообщение.');
+      alert(text('Failed to send the message.'));
     }
   }
 
   const handleSend = async () => {
-    const text = message.trim();
+    const messageValue = message.trim();
     const hasFiles = previewFiles.length > 0;
-    if (!text && !hasFiles) return;
+    if (!messageValue && !hasFiles) return;
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
@@ -1588,7 +1582,7 @@ function ChoiceOfReplenishmentMethodCard() {
     await sendChatMessage(
       order,
       role,
-      text,
+      messageValue,
       uploadedUrls.length ? uploadedUrls : undefined,
     );
 
@@ -1641,7 +1635,7 @@ function ChoiceOfReplenishmentMethodCard() {
       (now.getTime() - lastOnline.getTime()) / (1000 * 60),
     );
 
-    if (diffInMinutes < 1) return 'только что';
+    if (diffInMinutes < 1) return text('just now');
     if (diffInMinutes < 60)
       return `${diffInMinutes} ${getMinutesWord(diffInMinutes)}`;
 
@@ -1656,33 +1650,33 @@ function ChoiceOfReplenishmentMethodCard() {
     const lastDigit = minutes % 10;
     const lastTwo = minutes % 100;
     if (lastTwo < 11 || lastTwo > 14) {
-      if (lastDigit === 1) return 'минуту';
-      if (lastDigit >= 2 && lastDigit <= 4) return 'минуты';
+      if (lastDigit === 1) return text('minute (accusative)');
+      if (lastDigit >= 2 && lastDigit <= 4) return text('minutes (few)');
     }
-    return 'минут';
+    return text('minutes');
   };
 
   const getHoursWord = (hours: number) => {
     const lastDigit = hours % 10;
     const lastTwo = hours % 100;
     if (lastTwo < 11 || lastTwo > 14) {
-      if (lastDigit === 1) return 'час';
-      if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
+      if (lastDigit === 1) return text('hour (singular)');
+      if (lastDigit >= 2 && lastDigit <= 4) return text('hours (few)');
     }
-    return 'часов';
+    return text('hours');
   };
 
   const getDaysWord = (days: number) => {
     const lastDigit = days % 10;
     const lastTwo = days % 100;
     if (lastTwo < 11 || lastTwo > 14) {
-      if (lastDigit === 1) return 'день';
-      if (lastDigit >= 2 && lastDigit <= 4) return 'дня';
+      if (lastDigit === 1) return text('day (singular)');
+      if (lastDigit >= 2 && lastDigit <= 4) return text('days (few)');
     }
-    return 'дней';
+    return text('days');
   };
 
-  if ((!currentUser || !masterUser) && id) return <>Загрузка...</>;
+  if ((!currentUser || !masterUser) && id) return <>{text('Loading...')}</>;
 
   return (
     <>
@@ -1798,8 +1792,8 @@ function ChoiceOfReplenishmentMethodCard() {
                       <div className="kiril_info">
                         <h3>
                           {masterUser?.u_details?.isOnline
-                            ? 'Онлайн'
-                            : `Офлайн ${getTimeSinceLastOnline(
+                            ? text('Online')
+                            : `${text('Offline')} ${getTimeSinceLastOnline(
                                 masterUser?.u_details?.lastTimeBeenOnline ||
                                   new Date().toISOString(),
                               )}`}
@@ -1832,13 +1826,13 @@ function ChoiceOfReplenishmentMethodCard() {
                       onClick={() => setVisibleAddOrder(true)}
                     >
                       <img src="/img/icons/review.png" alt="" />
-                      Заказать ещё
+                      {text('Order again')}
                     </Dropdown.Item>
                   )}
                   {window.location.pathname.includes('/master/chat') ? null : (
                     <Dropdown.Item className={styles.item}>
                       <img src="/img/icons/review.png" alt="" />
-                      Оставить отзыв
+                      {text('Leave a review')}
                     </Dropdown.Item>
                   )}
 
@@ -1849,21 +1843,21 @@ function ChoiceOfReplenishmentMethodCard() {
                     }}
                   >
                     <img src="/img/icons/block.png" alt="" />
-                    Заблокировать
+                    {text('Block user')}
                   </Dropdown.Item>
                   <Dropdown.Item
                     className={styles.item}
                     onClick={() => setVisibleBlackList(true)}
                   >
                     <img src="/img/icons/ban.png" alt="" />
-                    Чёрный список
+                    {text('Blacklist')}
                   </Dropdown.Item>
                   <Dropdown.Item
                     className={styles.item}
                     onClick={() => setIsDeleteChat(true)}
                   >
                     <img src="/img/icons/trash.png" alt="" />
-                    Удалить чат
+                    {text('Delete chat')}
                   </Dropdown.Item>
                 </div>
               </Dropdown>
@@ -1873,7 +1867,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   className={`ordermore inter ${styles.button_more}`}
                   onClick={() => setVisibleAddOrder(true)}
                 >
-                  Заказать еще
+                  {text('Order again')}
                 </button>
               )}
             </div>
@@ -1907,19 +1901,21 @@ function ChoiceOfReplenishmentMethodCard() {
                 {isBalanceError ? (
                   <div className={styles.balance_error}>
                     <p>
-                      Пожалуйста пополните баланс на {BalanceErrorNum} рублей
+                      {text('Please top up your balance by')} {BalanceErrorNum}{' '}
+                      {text('rubles')}
                     </p>
                   </div>
                 ) : null}
                 {answer ? (
                   <p className="answer_to_message">
-                    Ответить <span>Смогу приехать через час</span>
+                    {text('Reply')}{' '}
+                    <span>{text('I can arrive in an hour')}</span>
                     <button onClick={() => Isanswer(false)}>X</button>
                   </p>
                 ) : null}
                 {edit ? (
                   <p className="answer_to_message">
-                    Редактирование{' '}
+                    {text('Editing')}{' '}
                     <button onClick={() => Isedit(false)}>X</button>
                   </p>
                 ) : null}
@@ -1930,8 +1926,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   <div className={styles.chat_block_wrap}>
                     <img src="/img/icons/chat_block.png" alt="" />
                     <p>
-                      Возможности для связи с пользователем нет, поскольку он
-                      заблокировал диалог с вами{' '}
+                      {text('You cannot contact this user because they blocked the conversation with you')}{' '}
                     </p>
                   </div>
                 ) : (
@@ -1963,7 +1958,7 @@ function ChoiceOfReplenishmentMethodCard() {
                               <button
                                 type="button"
                                 onClick={() => removePreview(p.url)}
-                                title="Убрать"
+                                title={text('Remove')}
                                 style={{
                                   position: 'absolute',
                                   right: 6,
@@ -2047,7 +2042,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         <input
                           className="inp"
                           type="text"
-                          placeholder="Введите сообщение..."
+                          placeholder={text('Enter a message...')}
                           value={message}
                           onChange={handleInputChat}
                           onKeyDown={handleInputKeyDown}
@@ -2069,12 +2064,12 @@ function ChoiceOfReplenishmentMethodCard() {
                                     type="file"
                                     accept="image/*,video/*"
                                     className="im_attach_input"
-                                    title="Фото/Видео"
+                                    title={text('Photo/Video')}
                                     style={{ display: 'none' }}
                                     onChange={handlePickFiles}
                                   />
                                   <p className="block_file_attach__text">
-                                    Фото или видео
+                                    {text('Photo or video')}
                                   </p>
                                 </div>
                               </label>
@@ -2091,12 +2086,12 @@ function ChoiceOfReplenishmentMethodCard() {
                                     type="file"
                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z,.csv,application/*,text/*"
                                     className="im_attach_input"
-                                    title="Документ"
+                                    title={text('Document')}
                                     style={{ display: 'none' }}
                                     onChange={handlePickFiles}
                                   />
                                   <p className="block_file_attach__text">
-                                    Документ
+                                    {text('Document')}
                                   </p>
                                 </div>
                               </label>
@@ -2123,10 +2118,10 @@ function ChoiceOfReplenishmentMethodCard() {
                           disabled={!canRecordAudio || recState === 'saving'}
                           title={
                             !canRecordAudio
-                              ? 'Микрофон недоступен в этом браузере'
+                              ? text('Microphone is unavailable in this browser')
                               : recState === 'recording'
-                              ? 'Нажмите, чтобы остановить запись'
-                              : 'Записать голосовое сообщение'
+                              ? text('Click to stop recording')
+                              : text('Record a voice message')
                           }
                           style={{
                             background: 'transparent',
@@ -2177,7 +2172,7 @@ function ChoiceOfReplenishmentMethodCard() {
                           className="plane"
                           onClick={handleSend}
                           role="button"
-                          aria-label="Отправить сообщение"
+                          aria-label={text('Send message')}
                         ></div>
                       </div>
                     </div>
@@ -2190,7 +2185,7 @@ function ChoiceOfReplenishmentMethodCard() {
         ) : (
           <div className={styles.empty_chat}>
             <img src="/img/empty_chat.png" alt="" />
-            <p>Пожалуйста, выберите диалог чтобы видеть сообщение!</p>
+            <p>{text('Please select a conversation to view messages!')}</p>
           </div>
         )}
       </section>
