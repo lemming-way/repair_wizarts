@@ -3,8 +3,10 @@ import { Rating } from 'react-simple-star-rating'
 import styles from './Reviews.module.css'
 import SERVER_PATH from '../../constants/SERVER_PATH'
 import formatDate from '../../utilities/formatDate'
+import { useLanguage } from '../../state/language'
 
 const ReviewsReview = (props) => {
+    const text = useLanguage()
     const {
         sender,
         rating,
@@ -36,7 +38,7 @@ const ReviewsReview = (props) => {
                 <span className={styles.reviewStarsCount}>{rating}</span>
             </div>
             <div className={styles.reviewMessage}>
-                <span className={styles.reviewMessageLabel}>Комментарий</span>
+                <span className={styles.reviewMessageLabel}>{text('Comment')}</span>
                 <p>{message}</p>
             </div>
         </div>

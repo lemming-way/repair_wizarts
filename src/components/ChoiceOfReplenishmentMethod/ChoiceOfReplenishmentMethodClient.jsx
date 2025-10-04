@@ -10,8 +10,10 @@ import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMet
 import style from './style.module.css';
 import { updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
+import { useLanguage } from '../../state/language';
 
 function ChoiceOfReplenishmentMethodClient() {
+  const text = useLanguage();
   const user =
     Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
   const navigator = useNavigate();
@@ -34,8 +36,8 @@ function ChoiceOfReplenishmentMethodClient() {
   // }
 
   useEffect(() => {
-    document.title = 'Кошелек';
-  }, []);
+    document.title = text('Wallet');
+  }, [text]);
 
   const [inputPrice, setInputPrice] = useState('');
   const [inputRadio, setInputRadio] = useState('');
@@ -46,24 +48,24 @@ function ChoiceOfReplenishmentMethodClient() {
     <div className={style.main_block}>
       {stage === 0 ? (
         <div className="middle-block-1">
-          <h1>Кошелек</h1>
+          <h1>{text('Wallet')}</h1>
 
-          <h3>Пополнение счета</h3>
+          <h3>{text('Top up balance')}</h3>
 
-          <p>Сумма:</p>
+          <p>{text('Amount:')}</p>
 
           <div className={style.price_row}>
             <input
               value={inputPrice}
               onChange={(e) => setInputPrice(e.target.value)}
               type="text"
-              placeholder="1500₽"
+              placeholder={text('Top-up amount placeholder')}
             />
             <p className={style.percentage_text}>
-              С учетом комиссии {(inputPrice * 0.9).toFixed(1)}
+              {text('Including commission')} {(inputPrice * 0.9).toFixed(1)}
             </p>
           </div>
-          <h6>Минимум 10₽ максимум 150 000 с учетом комиссии</h6>
+          <h6>{text('Top-up limits notice')}</h6>
           <ChoiceOfReplenishmentMethodCard />
 
           <div className={style.buttons}>
@@ -72,7 +74,7 @@ function ChoiceOfReplenishmentMethodClient() {
               href="/refill"
               onClick={() => setStage(1)}
             >
-              Далее{' '}
+              {text('Next')}{' '}
             </button>
             {/* <a className={style.button}  href="/master/settings/balance">Вывести средства </a> */}
           </div>
@@ -81,9 +83,9 @@ function ChoiceOfReplenishmentMethodClient() {
 
       {stage === 1 ? (
         <div className="middle-block-1">
-          <h1>Кошелек</h1>
+          <h1>{text('Wallet')}</h1>
 
-          <h3>Пополнение счета</h3>
+          <h3>{text('Top up balance')}</h3>
 
           <div>
             {user?.u_details?.wallets ? (
@@ -111,7 +113,7 @@ function ChoiceOfReplenishmentMethodClient() {
                     checked={inputRadio === 1}
                   />
                   <img src="/img/empty_block.png" alt="" />
-                  <p>Новая карта</p>
+                  <p>{text('New card')}</p>
                 </div>
               </>
             ) : (
@@ -124,46 +126,46 @@ function ChoiceOfReplenishmentMethodClient() {
                   checked={inputRadio === 1}
                 />
                 <img src="/img/empty_block.png" alt="" />
-                <p>Новая карта</p>
+                <p>{text('New card')}</p>
               </div>
             )}
           </div>
 
           {inputRadio === 1 ? (
             <div className={style.add_card}>
-              <label htmlFor="number_card">Номер карты:</label>
+              <label htmlFor="number_card">{text('Card number:')}</label>
               <div className={style.row2}>
-                <input type="text" id="number_card" placeholder="номер карты" />
+                <input type="text" id="number_card" placeholder={text('Card number placeholder')} />
                 <img src="/img/Daco_471065 1.png" alt="" />
               </div>
 
               <div className={style.add_card__row}>
                 <div className={style.add_card__col}>
-                  <label htmlFor="m_card">ММ:</label>
+                  <label htmlFor="m_card">{text('MM:')}</label>
                   <input type="text" id="m_card" />
                 </div>
                 <div className={style.razdel}>
                   <p>/</p>
                 </div>
                 <div className={style.add_card__col}>
-                  <label htmlFor="y_card">ГГ:</label>
+                  <label htmlFor="y_card">{text('YY:')}</label>
                   <input type="text" id="y_card" />
                 </div>
                 <div style={{ flex: 1 }}></div>
                 <div className={style.add_card__col}>
-                  <label htmlFor="cvc_card">CVC:</label>
+                  <label htmlFor="cvc_card">{text('CVC:')}</label>
                   <input type="text" id="cvc_card" />
                 </div>
               </div>
 
               <div className={style.row3}>
                 <p className={style.text}>
-                  <span>К списанию с карты:</span>
+                  <span>{text('Amount to be debited from the card:')}</span>
                   <br />
                   1500₽
                 </p>
                 <p className={style.text}>
-                  <span>Зачислится на карту:</span>
+                  <span>{text('Amount to be credited to the card:')}</span>
                   <br />
                   1500₽
                 </p>
@@ -173,10 +175,10 @@ function ChoiceOfReplenishmentMethodClient() {
 
           <div className={style.buttons}>
             <button className={style.button_back} onClick={() => setStage(0)}>
-              Назад{' '}
+              {text('Back')}{' '}
             </button>
             <button className={style.button} onClick={() => setStage(2)}>
-              Оплатить{' '}
+              {text('Pay')}{' '}
             </button>
           </div>
         </div>
@@ -184,11 +186,13 @@ function ChoiceOfReplenishmentMethodClient() {
 
       {stage === 2 ? (
         <div className="middle-block-1">
-          <h1>Кошелек</h1>
-          <h3>Осталось средств: 5000 ₽</h3>
+          <h1>{text('Wallet')}</h1>
+          <h3>
+            {text('Funds remaining:')} 5000 ₽
+          </h3>
 
           <label htmlFor="sum_stage3" className={style.label_stage3}>
-            Сумма
+            {text('Amount')}
           </label>
           <input
             type="text"
@@ -197,7 +201,7 @@ function ChoiceOfReplenishmentMethodClient() {
             value={cost}
             onChange={(e) => setCost(e.target.value)}
             className={style.input_stage3}
-            placeholder="укажите сумму"
+            placeholder={text('Enter amount placeholder')}
           />
           <div className={style.buttons}>
             <button
@@ -208,10 +212,10 @@ function ChoiceOfReplenishmentMethodClient() {
                   : [];
                 const newPayment = {
                   cost: Number(cost),
-                  type: 'зачисление',
+                  type: 'Credit',
                   date: new Date().toISOString(),
-                  status: 'Активно',
-                  title: 'Зачисление',
+                  status: 'Active',
+                  title: 'Credit',
                 };
                 updateUser({
                   details: {
@@ -226,13 +230,13 @@ function ChoiceOfReplenishmentMethodClient() {
                 setStage(0);
               }}
             >
-              Пополнить
+              {text('Top up')}
             </button>
             <button
               className={style.button}
               onClick={() => navigator('/client/settings/balance')}
             >
-              Вывести средства{' '}
+              {text('Withdraw funds')}{' '}
             </button>
           </div>
         </div>
