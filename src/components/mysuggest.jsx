@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 
 import { getOffers } from '../services/offer.service';
 import styles from './mysuggest.module.css';
+import { useLanguage } from '../state/language';
 
 import '../scss/mysuggest.css';
 import { Link, useParams } from 'react-router-dom';
@@ -18,6 +19,7 @@ import { getClientRequests } from '../services/request.service';
 import { selectUser } from '../slices/user.slice';
 
 function MySuggest() {
+  const text = useLanguage();
   const { id } = useParams();
   const requests = useService(getClientRequests, []);
   const offers = useService(getOffers.bind(null, id), []);
@@ -36,19 +38,19 @@ function MySuggest() {
   };
 
   useEffect(() => {
-    document.title = 'Мои предложения';
-  }, [id]);
+    document.title = text('My suggestions');
+  }, [id, text]);
 
   return (
     <section className={`page_6 ${styles.main_block}`}>
       <div className="sentence font_inter mobile-sentence">
         <div className="sentence_text align">
           <div className="sentence_text-1 mobile-sentence_text-1">
-            <h2 className={styles.heading}>Мои предложения</h2>
+            <h2 className={styles.heading}>{text('My suggestions')}</h2>
           </div>
           <div className="sentence_but">
             <Link to="/client/requests">
-              <button>Назад</button>
+              <button>{text('Back')}</button>
             </Link>
           </div>
         </div>
@@ -67,26 +69,26 @@ function MySuggest() {
               alt=""
             />
             <div className={styles.block_info}>
-              <h2>Имя и фамилия с заявки инфа</h2>
-              <h3>Размещено 10 проектов</h3>
-              <h3>Нанято 100 %</h3>
+              <h2>{text('Name and surname from the application info')}</h2>
+              <h3>{text('10 projects posted')}</h3>
+              <h3>{text('100% hired')}</h3>
             </div>
           </div>
           <div className={styles.description}>
-            <p>Название устройства инфа со страници н1</p>
-            <p>клиент описывает свою проблему, страница н1</p>
+            <p>{text('Device name info from page n1')}</p>
+            <p>{text('Client describes their problem, page n1')}</p>
           </div>
           <div className={styles.left_row_bottom}>
-            <p>Осталось 70 часа 45 минут </p>
+            <p>{text('70 hours 45 minutes left')} </p>
             <p className={styles.view}>
               <img src="/img/icons/eye.png" alt="" />
-              20 просмотрено
+              {text('20 viewed')}
             </p>
           </div>
         </div>
         <div className={styles.right}>
           <p>
-            Желаемый бюджет <span className={styles.price}>1000 ₽</span>
+            {text('Desired budget')} <span className={styles.price}>1000 ₽</span>
           </p>
 
           <div className={styles.swiper}>
@@ -119,7 +121,7 @@ function MySuggest() {
           </div>
 
           {/* <Swiper pagination={true} navigation={{
-                                nextEl: ".image-swiper-button-next",
+                                next El: ".image-swiper-button-next",
                                 prevEl: ".image-swiper-button-prev",
                             }} modules={[Navigation, Pagination]} 
                             slidesPerView="auto" 
@@ -137,7 +139,7 @@ function MySuggest() {
                                 ))}
                             </Swiper> */}
           <div className={styles.order_row}>
-            <div className={styles.order_button}>Сбор предложений</div>
+            <div className={styles.order_button}>{text('Collecting proposals')}</div>
             <div>
               <img src="/img/pause.png" alt="" />
             </div>
@@ -217,18 +219,18 @@ function MySuggest() {
 
         <div className="day font_robo df align">
           <div className="day_text-1 mobile-day_text-1">
-            <h2>Осталось {getDate(req?.expires_at)}</h2>
+            <h2>{text('Remaining')} {getDate(req?.expires_at)}</h2>
           </div>
 
           <div className="day_text-2 df align-center">
             <p style={{ marginLeft: '10px' }}>
-              Предложений: {req?.number_of_offers}
+              {text('Offers')}: {req?.number_of_offers}
             </p>
           </div>
 
           <div style={{ flex: 1 }}></div>
           <div className={styles.order_row}>
-            <div className={styles.order_button}>Сбор предложений</div>
+            <div className={styles.order_button}>{text('Collecting proposals')}</div>
             <div>
               <img src="/img/pause.png" alt="" />
             </div>
@@ -243,7 +245,7 @@ function MySuggest() {
       </div>
       <div className="sentence-2 font_abel">
         <div className="sentaince_text mobile-sentaince_text">
-          {offers.data.length > 0 && <h2>Предложения мастеров</h2>}
+          {offers.data.length > 0 && <h2>{text('Master proposals')}</h2>}
         </div>
       </div>
       {offers.data.map((v) => (

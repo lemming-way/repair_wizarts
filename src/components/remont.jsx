@@ -3,10 +3,12 @@ import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 
 import style from './remont.module.css';
+import { useLanguage } from '../state/language';
 
 import '../scss/remont.css';
 
 function Remont() {
+  const text = useLanguage();
   const { sectionId, subsectionId } = useParams();
   const [currentServices, setCurrentServices] = useState([]);
   console.log(sectionId, subsectionId);
@@ -32,9 +34,9 @@ function Remont() {
       }
     };
 
-    document.title = 'Ремонт iPhone';
+    document.title = text('iPhone repair');
     getData();
-  }, [sectionId]);
+  }, [sectionId, text]);
   useEffect(() => {
     const searchParam = new URLSearchParams(window.location.search).get(
       'search',
@@ -52,18 +54,18 @@ function Remont() {
       className={`container remont remont-container ${style.devices_block}`}
     >
       <h1>{searchParam ? searchParam : selectedService?.name}</h1>
-      <p>Выберите модель iPhone, чтобы узнать стоимость ремонта.</p>
+      <p>{text('Select an iPhone model to find out the cost of repair.')}</p>
       <Link
         to={'/client/requests/create/title'}
         className="header__button"
         style={{ padding: '15px 40px' }}
       >
-        Заказать на бирже
+        {text('Order on exchange')}
       </Link>
 
       <div className="remont__card__list" style={{ marginTop: 100 }}>
         {currentServices.length === 0
-          ? 'Ничего не найдено'
+          ? text('Nothing found')
           : currentServices.map((dev) => (
               <div className="remont__card" key={dev.id}>
                 <Link

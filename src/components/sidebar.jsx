@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
+import { useLanguage } from '../state/language';
 
 import { selectUser } from '../slices/user.slice';
 import AlertMessage from './AlertMessage/AlertMessage';
 import { useUserRating } from '../hooks/useUserRating';
 function Sidebar() {
+  const text = useLanguage();
   const location = useLocation();
 
   // Получаем основные данные пользователя
@@ -27,7 +29,7 @@ function Sidebar() {
   // Формируем имя и аватар
   const userAvatar = user?.u_photo || '/img/profil_img/1.png';
   const userName =
-    `${user?.u_name || ''} ${user?.u_family || ''}`.trim() || 'Имя Фамилия';
+    `${user?.u_name || ''} ${user?.u_family || ''}`.trim() || text('First Last');
 
   return (
     <div>
@@ -41,7 +43,7 @@ function Sidebar() {
             <div className="stars">
               {/* 3. Отображаем динамические данные рейтинга */}
               {isLoading ? (
-                <p>Загрузка рейтинга...</p>
+                <p>{text('Loading rating...')}</p>
               ) : (
                 <p>
                   {averageRating.toFixed(1)} {/* Показываем средний рейтинг */}
@@ -63,7 +65,7 @@ function Sidebar() {
               }
             >
               <img src="/img/img-exit.png" alt="" />
-              <Link to="/master/wallet"> Кошелек</Link>
+              <Link to="/master/wallet"> {text('Wallet')}</Link>
             </li>
             <li
               className={
@@ -71,7 +73,7 @@ function Sidebar() {
               }
             >
               <img src="/img/img-contact.png" alt="" />
-              <Link to="/master/settings"> Настройки</Link>
+              <Link to="/master/settings"> {text('Settings')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
@@ -84,7 +86,7 @@ function Sidebar() {
             >
               <img src="/img/img-massage.png" alt="" />
               <AlertMessage />
-              <Link to="/master/chat">Чат</Link>
+              <Link to="/master/chat">{text('Chat')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
@@ -94,7 +96,7 @@ function Sidebar() {
             >
               <img src="/img/img-list.png" alt="" />
               <AlertMessage />
-              <Link to="/master/orders"> Мои заявки</Link>
+              <Link to="/master/orders"> {text('My applications')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
@@ -104,7 +106,7 @@ function Sidebar() {
             >
               <img src="/img/img-white-star.png" alt="" />
               <AlertMessage />
-              <Link to="/master/feedback"> Мои отзывы</Link>
+              <Link to="/master/feedback"> {text('My reviews')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
@@ -113,14 +115,14 @@ function Sidebar() {
               }
             >
               <img src="/img/img-list-2.png " alt="" />
-              <Link to="/master/requests"> Биржа заказов</Link>
+              <Link to="/master/requests"> {text('Order exchange')}</Link>
             </li>
           </ul>
 
           <Link to="/login" className="sidebar__link_exit">
             <div className="sidebar__link_exit__row">
               <img src="/img/img-exit-2.png" alt="" />
-              <span>Выйти</span>
+              <span>{text('Logout')}</span>
             </div>
           </Link>
         </div>

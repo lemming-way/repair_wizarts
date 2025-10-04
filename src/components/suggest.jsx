@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { Rating } from "react-simple-star-rating";
+import { useLanguage } from "../state/language";
 
 import SERVER_PATH from "../constants/SERVER_PATH";
 import { createDialog } from "../services/dialog.service";
@@ -12,6 +13,7 @@ import { getMasterByUsername } from "../services/user.service";
 import { selectUser } from "../slices/user.slice";
 
 const Suggest = (props) => {
+    const text = useLanguage();
     const {
         id: offerId,
         request_id,
@@ -49,10 +51,10 @@ const Suggest = (props) => {
             })
         }).catch((err) => {
             if (err.status === 402) {
-                return setError("У мастера недостаточно средств")
+                return setError(text("Master has insufficient funds"))
             }
 
-            setError("Данный мастер недоступен")
+            setError(text("This master is unavailable"))
         })
     }
 
@@ -92,8 +94,8 @@ const Suggest = (props) => {
                             <div className="alecsandr_info-text">
                                 <div className="info_cards df align">
                                     <div className="info_cards-text_1">
-                                        <h2>Адрес:</h2>
-                                        <h2>Оценка:</h2>
+                                        <h2>{text("Address:")}:</h2>
+                                        <h2>{text("Rating:")}:</h2>
                                     </div>
 
                                     <div className="info_cards-text_2">
@@ -114,11 +116,11 @@ const Suggest = (props) => {
                             </div>
 
                             <div className="nav_bottom-text">
-                                <h2><span>{master.number_of_feedbacks}</span>отзывов получено</h2>
+                                <h2><span>{master.number_of_feedbacks}</span>{text("reviews received")}</h2>
                             </div>
                             
                             <div className="nav_bottom-text">
-                                <h2><span>{master.number_of_submissions}</span>количество заказов</h2>
+                                <h2><span>{master.number_of_submissions}</span>{text("number of orders")}</h2>
                             </div>
                         </div>
                     </div>
@@ -131,50 +133,50 @@ const Suggest = (props) => {
                         <table>
                             <tbody>
                                 <tr>
-                                    <td><span>Имя организации:</span></td>
+                                    <td><span>{text("Organization name:")}:</span></td>
                                     <td>
                                         <p>{master.organization_name}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Список производителей:</span></td>
+                                    <td><span>{text("List of manufacturers:")}:</span></td>
                                     <td>
                                         <p>{services.service_types?.slice(0, 3).map((v) => v.name).join(', ')}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Выбор устройств:</span></td>
+                                    <td><span>{text("Device selection:")}:</span></td>
                                     <td>
                                         <p>{services.devices?.slice(0, 3).map((v) => v.name).join(', ')}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Вид ремонта: </span>
+                                    <td><span>{text("Type of repair:")} </span>
                                     </td>
                                     <td>
                                         <p>{services.repair_types?.slice(0, 3).map((v) => v.name).join(', ')}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Ваша деятельность:</span></td>
+                                    <td><span>{text("Your activity:")}:</span></td>
                                     <td>
                                         <p>{master.specialty}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Основное направление:</span></td>
+                                    <td><span>{text("Main direction:")}:</span></td>
                                     <td>
                                         <p>{master.main_business}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Основной бизнес:</span></td>
+                                    <td><span>{text("Main business:")}:</span></td>
                                     <td>
                                         <p>{master.business_model}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>Статус:</span></td>
+                                    <td><span>{text("Status:")}:</span></td>
                                     <td>
                                         <p>{master.status}</p>
                                     </td>
@@ -196,16 +198,16 @@ const Suggest = (props) => {
             <div className="service mobile-service">
                 <div className="servis df align mobile-servis">
                     <div className="service_text mobile-service_text">
-                        <h2>Что входит в предложение</h2>
+                        <h2>{text("What is included in the offer")}</h2>
                     </div>
                     <div className="servic df mobile-servic">
                         <div className="service_text-2 mobile-service_text-2">
-                            <h2>Срок <br />
+                            <h2>{text("Term")} <br />
                                 {time}</h2>
                         </div>
 
                         <div className="service_text-2 mobile-service_text-2">
-                            <h2>Стоимость</h2>
+                            <h2>{text("Cost")}</h2>
 
                             <div className="t-2 df align mobile-t-2">
                                 <h2>
@@ -222,7 +224,7 @@ const Suggest = (props) => {
             <div className="servis_line"></div>
             <div className="servis-2 df align mobile-servis-2">
                 <div className="service_text-3 mobile-service_text-3">
-                    <h2>Итого:</h2>
+                    <h2>{text("Total:")}:</h2>
                 </div>
 
                 <div className="service_text-3 df align mobile-service_text-3">
@@ -247,9 +249,9 @@ const Suggest = (props) => {
                     </div>
                 )}
                 <div className="customer_message-but">
-                    <button onClick={onSubmit} className="btn">Выбрать мастера</button>
+                    <button onClick={onSubmit} className="btn">{text("Choose a master")}</button>
                     <Link to={"/client/feedback/" + master_username}>
-                        <button className="btnn">Отзывы о мастере</button>
+                        <button className="btnn">{text("Reviews about the master")}</button>
                     </Link>
                 </div>
             </div>
