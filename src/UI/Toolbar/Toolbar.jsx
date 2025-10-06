@@ -53,8 +53,8 @@ const Toolbar = () => {
   }, []);
   console.log(ui.isAuthorized);
   return (
-    <header>
-      <div className={`${styles.toolbar} appContainer test`}>
+    <header className={styles['toolbar-header']}>
+      <div className={`${styles.toolbar} appContainer`}>
         {/*Заменила лого по требованию ТЗ*/}
         <Link to="/" className={styles.toolbar_logo}>
           <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />

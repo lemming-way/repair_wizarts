@@ -15,14 +15,11 @@ import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMas
 // Order imports
 
 import SettingsAll from './Settings/Settings-all';
-import Profile from './Settings/Profile';
-import Services from './Settings/services';
 import Reviews from './Reviews';
 
 import Offer from './Orders/Offer';
 
 // after login
-import ProfileFH from './full-height/ProfileFH';
 import WalletFH from './full-height/WalletFH';
 
 // after login end
@@ -51,20 +48,16 @@ import { getToken } from '../services/token.service';
 import { getUserMode, updateUser } from '../services/user.service';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
-import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
-import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
 
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
-import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
 import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
 import Register from './Registration/register';
 import Remont from './remont';
-import BalanceClient from './Settings/BalanceClient';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
@@ -83,6 +76,19 @@ const Applications = lazy(() => import('./Applications/applications'));
 const MyOrdersMaster = lazy(() => import('./Orders/MyOrdersMaster'));
 const Mysuggest = lazy(() => import('./mysuggest'));
 const MyOrder = lazy(() => import('./Orders/MyOrder'));
+
+// Lazy-load components for Settings/Profile package
+const Profile = lazy(() => import('./Settings/Profile'));
+const SettingsMaster = lazy(() => import('./Settings/SettingsMaster'));
+const Services = lazy(() => import('./Settings/services'));
+const ProfileFH = lazy(() => import('./full-height/ProfileFH'));
+const BalanceClient = lazy(() => import('./Settings/BalanceClient'));
+const ChoiceOfReplenishmentMethod = lazy(
+  () => import('./ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod'),
+);
+const ChoiceOfReplenishmentMethodClient = lazy(
+  () => import('./ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient'),
+);
 
 function App() {
   const user =
@@ -260,14 +266,32 @@ function App() {
           />
           <Route path="client" element={<ClientRoute />}>
             <Route path="settings" element={<ClientSettingsWrap />}>
-              <Route index element={<ProfileFH />} />
+              <Route
+                index
+                element={
+                  <Suspense fallback={SuspenseFallback}>
+                    <ProfileFH />
+                  </Suspense>
+                }
+              />
               <Route path="picture" element={<WalletFH />} />
               <Route
                 path="wallet"
-                element={<ChoiceOfReplenishmentMethodClient />}
+                element={
+                  <Suspense fallback={SuspenseFallback}>
+                    <ChoiceOfReplenishmentMethodClient />
+                  </Suspense>
+                }
               />
               <Route path="finance" element={<FinanceClient />} />
-              <Route path="balance" element={<BalanceClient />} />
+              <Route
+                path="balance"
+                element={
+                  <Suspense fallback={SuspenseFallback}>
+                    <BalanceClient />
+                  </Suspense>
+                }
+              />
             </Route>
 
             <Route path="requests">
@@ -358,14 +382,39 @@ function App() {
             <Route element={<MasterSettingsWrap />}>
               <Route
                 path="wallet"
-                element={<ChoiceOfReplenishmentMethod />}
+                element={
+                  <Suspense fallback={SuspenseFallback}>
+                    <ChoiceOfReplenishmentMethod />
+                  </Suspense>
+                }
               />
               <Route path="wallet_history" element={<WalletHistory />} />
               <Route path="wallet/:id" element={<WalletConfirm />} />
               <Route path="settings" element={<SettingsAll />}>
-                <Route index element={<SettingsMaster />} />
-                <Route path="profile" element={<Profile />} />
-                <Route path="services" element={<Services />} />
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <SettingsMaster />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="profile"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <Profile />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="services"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <Services />
+                    </Suspense>
+                  }
+                />
                 <Route path="finance" element={<Finance />} />
                 <Route path="balance" element={<Balance />} />
                 <Route path="photo" element={<WalletFH />} />

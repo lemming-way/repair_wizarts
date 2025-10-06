@@ -6,9 +6,12 @@ import { Provider } from 'react-redux';
 import { BrowserRouter } from "react-router-dom";
 import {CustomProvider} from 'rsuite';
 
-import App from './components/App';
+// Global CSS frameworks should be imported here to ensure availability regardless of route lazy-loading
+import 'bootstrap/dist/css/bootstrap.min.css';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
+
+import App from './components/App';
 import reportWebVitals from './reportWebVitals';
 import store from './store'
 
