@@ -25,10 +25,11 @@ import WalletFH from './full-height/WalletFH';
 // after login end
 
 import ProfileNumber from './Chat/profileNumber';
-import AddDevices from './addDevices/AddDevices';
+// import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
-import TitleService from './addDevices/TitleService';
-// import AuthLogin from './Registration/AuthLogin';
+// import TitleService from './addDevices/TitleService';
+// import Remont from './remont';
+import AuthLogin from './Registration/AuthLogin';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
@@ -54,10 +55,9 @@ import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
 import MasterChatWrap from './pages/MasterChatWrap';
-// import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
+import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
-// import Register from './Registration/register';
-import Remont from './remont';
+import Register from './Registration/register';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
@@ -98,11 +98,16 @@ const RegistrationMasterPage = lazy(
       '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage'
     ),
 );
-const Register = lazy(() => import('./Registration/register'));
-const ProfileFeedbackMaster = lazy(
+const RegisterLazy = lazy(() => import('./Registration/register'));
+const ProfileFeedbackMasterLazy = lazy(
   () => import('./profileNumberClient/ProfileFeedbackMaster'),
 );
-const AuthLogin = lazy(() => import('./Registration/AuthLogin'));
+const AuthLoginLazy = lazy(() => import('./Registration/AuthLogin'));
+
+// Lazy-load Catalog & Services package
+const AddDevices = lazy(() => import('./addDevices/AddDevices'));
+const TitleService = lazy(() => import('./addDevices/TitleService'));
+const Remont = lazy(() => import('./remont'));
 
 function App() {
   const user =
@@ -257,7 +262,11 @@ function App() {
                 <Route index element={<Home />} />
                 <Route
                   path="devices/:sectionId/:subsectionId"
-                  element={<Remont />}
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <Remont />
+                    </Suspense>
+                  }
                 />
                 <Route
                   path="services/:sectionId/:subsectionId/:serviceId"
@@ -278,14 +287,7 @@ function App() {
                     </Suspense>
                   }
                 />
-                <Route
-                  path="login"
-                  element={
-                    <Suspense fallback={SuspenseFallback}>
-                      <AuthLogin />
-                    </Suspense>
-                  }
-                />
+                <Route path="login" element={<AuthLogin />} />
                 <Route path="register">
                   <Route index element={<PickLog />} />
                   <Route
@@ -300,7 +302,7 @@ function App() {
                     path="client"
                     element={
                       <Suspense fallback={SuspenseFallback}>
-                        <Register />
+                        <RegisterLazy />
                       </Suspense>
                     }
                   />
@@ -360,8 +362,22 @@ function App() {
                     }
                   />
                   <Route path="create">
-                    <Route path="title" element={<TitleService />} />
-                    <Route path="data" element={<AddDevices />} />
+                    <Route
+                      path="title"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <TitleService />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="data"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <AddDevices />
+                        </Suspense>
+                      }
+                    />
                   </Route>
                 </Route>
                 <Route
@@ -377,7 +393,7 @@ function App() {
                   path="feedback/:id"
                   element={
                     <Suspense fallback={SuspenseFallback}>
-                      <ProfileFeedbackMaster />
+                      <ProfileFeedbackMasterLazy />
                     </Suspense>
                   }
                 />
