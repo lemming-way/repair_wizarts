@@ -13,14 +13,12 @@ import MasterSettingsWrap from './pages/MasterSettingsWrap';
 import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
 
 // Order imports
-import AllOrders from './Orders/Allorders';
 
 import SettingsAll from './Settings/Settings-all';
 import Profile from './Settings/Profile';
 import Services from './Settings/services';
 import Reviews from './Reviews';
 
-import Orders from './Orders/Orders';
 import Offer from './Orders/Offer';
 
 // after login
@@ -30,11 +28,9 @@ import WalletFH from './full-height/WalletFH';
 // after login end
 
 import ProfileNumber from './Chat/profileNumber';
-import OfferAService from './Orders/OfferAService';
 import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
-import Applications from './Applications/applications';
 import AuthLogin from './Registration/AuthLogin';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
@@ -57,7 +53,6 @@ import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
 import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
 import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import MyOrdersMaster from './Orders/MyOrdersMaster';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
 
@@ -65,8 +60,6 @@ import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
 import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
-import Mysuggest from './mysuggest';
-import MyOrder from './Orders/MyOrder';
 import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
 import Register from './Registration/register';
@@ -82,6 +75,15 @@ const HomeV2 = lazy(() => import('./home_v2/HomeV2'));
 const MapMaster = lazy(() => import('./Pick-master/masters'));
 const FChatKirill = lazy(() => import('./full-chat/fakeChat/Kirill'));
 const ServiceDetail = lazy(() => import('./Service/ServiceDetail'));
+
+// Lazy route-level components for Orders/Offers package
+const AllOrders = lazy(() => import('./Orders/Allorders'));
+const Orders = lazy(() => import('./Orders/Orders'));
+const OfferAService = lazy(() => import('./Orders/OfferAService'));
+const Applications = lazy(() => import('./Applications/applications'));
+const MyOrdersMaster = lazy(() => import('./Orders/MyOrdersMaster'));
+const Mysuggest = lazy(() => import('./mysuggest'));
+const MyOrder = lazy(() => import('./Orders/MyOrder'));
 
 function App() {
   const user =
@@ -283,14 +285,35 @@ function App() {
                 <Route path="requests">
                   <Route index element={<AddedDevices />} />
                   {/* <Route path="archived" element={<Archive />} /> */}
-                  <Route path="my_orders" element={<MyOrdersMaster />} />
-                  <Route path="my_order/:id" element={<MyOrder />} />
+                  <Route
+                    path="my_orders"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <MyOrdersMaster />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="my_order/:id"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <MyOrder />
+                      </Suspense>
+                    }
+                  />
                   <Route path="create">
                     <Route path="title" element={<TitleService />} />
                     <Route path="data" element={<AddDevices />} />
                   </Route>
                 </Route>
-                <Route path="offers/:id" element={<Mysuggest />} />
+                <Route
+                  path="offers/:id"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <Mysuggest />
+                    </Suspense>
+                  }
+                />
                 {/* клиент на странице мастера может оставить отзыв */}
                 <Route
                   path="feedback/:id"
@@ -360,22 +383,71 @@ function App() {
                     <Route path="photo" element={<WalletFH />} />
                   </Route>
                   <Route path="orders">
-                    <Route index element={<Applications />} />
-                    <Route path="completed" element={<Applications />} />
-                    <Route path="canceled" element={<Applications />} />
-                    <Route path="all" element={<Applications />} />
+                    <Route
+                      index
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <Applications />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="completed"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <Applications />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="canceled"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <Applications />
+                        </Suspense>
+                      }
+                    />
+                    <Route
+                      path="all"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <Applications />
+                        </Suspense>
+                      }
+                    />
                   </Route>
 
                   <Route path="feedback" element={<ProfileNumber />} />
 
                   <Route path="requests">
-                    <Route index element={<AllOrders />} />
+                    <Route
+                      index
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <AllOrders />
+                        </Suspense>
+                      }
+                    />
                     <Route path="offer/:id" element={<Offer />} />
-                    <Route path="orders" element={<Orders />} />
+                    <Route
+                      path="orders"
+                      element={
+                        <Suspense fallback={SuspenseFallback}>
+                          <Orders />
+                        </Suspense>
+                      }
+                    />
                     <Route path="personal" element={<PersonalRequests />} />
                     {/* <Route path=":id" element={<MyOrders />} /> */}
                   </Route>
-                  <Route path="offers/create/:id" element={<OfferAService />} />
+                  <Route
+                    path="offers/create/:id"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <OfferAService />
+                      </Suspense>
+                    }
+                  />
                 </Route>
               </Route>
             </Routes>
