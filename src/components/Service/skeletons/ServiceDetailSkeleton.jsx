@@ -1,5 +1,5 @@
 import style from '../serviceDetail.module.scss';
-import '../../scss/detail.scss';
+import '../../../scss/detail.scss';
 
 const skeletonLine = (width = '100%', height = 16) => (
   <div style={{ background: '#eee', borderRadius: 8, height, width }} />

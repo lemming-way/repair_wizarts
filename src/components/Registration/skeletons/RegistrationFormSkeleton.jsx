@@ -1,4 +1,4 @@
-import '../../scss/register.css';
+import '../../../scss/register.css';
 
 const skeletonLine = (width = '100%', height = 44) => (
   <div style={{ background: '#eee', borderRadius: 8, height, width }} />
