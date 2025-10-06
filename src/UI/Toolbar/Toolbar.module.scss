@@ -6,6 +6,13 @@
   align-items: center;
   position: relative;
 
+  // Explicit header background to avoid dependency on page background
+  &-header {
+    background-color: #131313;
+    color: white;
+    width: 100%;
+  }
+
   &_logo {
     padding: 10px 0;
 
