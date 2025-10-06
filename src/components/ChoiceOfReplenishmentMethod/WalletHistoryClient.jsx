@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import style from "./style.module.css";
 import styles from "./WalletHistoryClient.module.css";
 import NavigationWallet from "../Settings/NavigationWallet";
+import WalletHistorySkeleton from './skeletons/WalletHistorySkeleton';
 
 function WalletHistoryClient() {
   // const [error, setError] = useState("")
@@ -28,6 +29,11 @@ function WalletHistoryClient() {
   useEffect(() => {
     document.title = "Кошелек";
   }, []);
+
+  const isLoading = false; // placeholder for async load state
+  if (isLoading) {
+    return <WalletHistorySkeleton />
+  }
 
   return (
     <div className={styles.main_block_history}>

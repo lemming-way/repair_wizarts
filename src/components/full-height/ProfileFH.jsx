@@ -5,6 +5,7 @@ import { updatePassword, updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
+import ProfileFHSkeleton from './ProfileFHSkeleton';
 
 const EMPTY_OBJECT = {}
 
@@ -115,6 +116,11 @@ function ProfileFH() {
     }
 
     setMask_value(new_text);
+  }
+
+  const isLoading = false; // placeholder for async
+  if (isLoading) {
+    return <ProfileFHSkeleton />
   }
 
   return (

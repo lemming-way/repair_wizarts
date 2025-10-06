@@ -63,6 +63,8 @@ import OrdersListSkeleton from './Orders/skeletons/OrdersListSkeleton';
 import RegistrationFormSkeleton from './Registration/skeletons/RegistrationFormSkeleton';
 import ServiceDetailSkeleton from './Service/skeletons/ServiceDetailSkeleton';
 import SettingsFormSkeleton from './Settings/skeletons/SettingsFormSkeleton';
+import WalletFormSkeleton from './ChoiceOfReplenishmentMethod/skeletons/WalletFormSkeleton';
+import WalletHistorySkeleton from './ChoiceOfReplenishmentMethod/skeletons/WalletHistorySkeleton';
 
 const MapMaster = lazy(() => import('./Pick-master/masters'));
 const FChatKirill = lazy(() => import('./full-chat/fakeChat/Kirill'));
@@ -99,6 +101,15 @@ const FALLBACKS = {
   orders: <OrdersListSkeleton />,
   registration: <RegistrationFormSkeleton />,
   settings: <SettingsFormSkeleton />,
+  wallet: <WalletFormSkeleton />,
+  walletHistory: <WalletHistorySkeleton />,
+  balance: <div style={{padding: 24}} />,
+  balanceClient: <div style={{padding: 24}} />,
+  finance: <div style={{padding: 24}} />,
+  financeClient: <div style={{padding: 24}} />,
+  profile: <div style={{padding: 24}} />,
+  profileFull: <div style={{padding: 24}} />,
+  feedback: <div style={{padding: 24}} />,
 };
 
 // Lazy-load components for Settings/Profile package
@@ -321,14 +332,18 @@ function App() {
           </Route>
           <Route
             path="client/settings/wallet_history"
-            element={<WalletHistoryClient />}
+            element={
+              <Suspense fallback={FALLBACKS.walletHistory}>
+                <WalletHistoryClient />
+              </Suspense>
+            }
           />
           <Route path="client" element={<ClientRoute />}>
             <Route path="settings" element={<ClientSettingsWrap />}>
               <Route
                 index
                 element={
-                  <Suspense fallback={FALLBACKS.settings}>
+                  <Suspense fallback={FALLBACKS.profileFull}>
                     <ProfileFH />
                   </Suspense>
                 }
@@ -337,16 +352,23 @@ function App() {
               <Route
                 path="wallet"
                 element={
-                  <Suspense fallback={FALLBACKS.settings}>
+                  <Suspense fallback={FALLBACKS.wallet}>
                     <ChoiceOfReplenishmentMethodClient />
                   </Suspense>
                 }
               />
-              <Route path="finance" element={<FinanceClient />} />
+              <Route
+                path="finance"
+                element={
+                  <Suspense fallback={FALLBACKS.financeClient ?? FALLBACKS.settings}>
+                    <FinanceClient />
+                  </Suspense>
+                }
+              />
               <Route
                 path="balance"
                 element={
-                  <Suspense fallback={FALLBACKS.settings}>
+                  <Suspense fallback={FALLBACKS.balanceClient ?? FALLBACKS.settings}>
                     <BalanceClient />
                   </Suspense>
                 }
@@ -403,7 +425,7 @@ function App() {
             <Route
               path="feedback/:id"
               element={
-                <Suspense fallback={FALLBACKS.settings}>
+                <Suspense fallback={FALLBACKS.feedback}>
                   <ProfileFeedbackMasterLazy />
                 </Suspense>
               }
@@ -465,7 +487,14 @@ function App() {
                   </Suspense>
                 }
               />
-              <Route path="wallet_history" element={<WalletHistory />} />
+              <Route
+                path="wallet_history"
+                element={
+                  <Suspense fallback={FALLBACKS.walletHistory}>
+                    <WalletHistory />
+                  </Suspense>
+                }
+              />
               <Route path="wallet/:id" element={<WalletConfirm />} />
               <Route path="settings" element={<SettingsAll />}>
                 <Route
