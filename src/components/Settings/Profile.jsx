@@ -10,7 +10,6 @@ import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
-import ProfileSkeleton from './ProfileSkeleton';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -375,11 +374,6 @@ function Profile() {
   //       });
   //     });
   //   }, [ymaps]);
-  const isLoading = false; // placeholder for async state
-  if (isLoading) {
-    return <ProfileSkeleton />;
-  }
-
   return (
     <>
       <div className={`mini-main-2 df ${style.wrap_flex}`}>

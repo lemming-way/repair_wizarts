@@ -16,7 +16,6 @@ import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-import OrdersTableSkeleton from './skeletons/OrdersTableSkeleton';
 
 
 // Переименовал App в AllOrders для большей ясности
@@ -287,7 +286,7 @@ function App() {
           </div>
 
           {isLoading ? (
-            <OrdersTableSkeleton variant="allorders" />
+            <p>{text('Loading orders...')}</p>
           ) : fetchError ? (
             <p>{text('Loading error')}: {fetchError}</p>
           ) : filteredOrders.length === 0 ? (

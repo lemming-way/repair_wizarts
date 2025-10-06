@@ -3,7 +3,6 @@ import { useState } from "react"
 import style from "./Balance.module.css"
 import PaginationPages from "./PaginationPages"
 import ModalVivod from "../ChoiceOfReplenishmentMethod/ModalVivod"
-import BalanceSkeleton from './BalanceSkeleton'
 
 
 const Balance = (props) => {
@@ -61,11 +60,6 @@ const Balance = (props) => {
 
     // const [isVisibleConfirm, setVisibleConfirm] = useState(false)
     // const [isVisibleSuccess, setVisibleSuccess] = useState(false)
-
-    const isLoading = false; // placeholder for async state
-    if (isLoading) {
-        return <BalanceSkeleton />
-    }
 
     return (
         <>

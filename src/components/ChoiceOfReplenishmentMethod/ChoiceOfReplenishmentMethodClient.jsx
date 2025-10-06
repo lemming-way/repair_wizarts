@@ -11,7 +11,6 @@ import style from './style.module.css';
 import { updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
 import { useLanguage } from '../../state/language';
-import WalletFormSkeleton from './skeletons/WalletFormSkeleton';
 
 function ChoiceOfReplenishmentMethodClient() {
   const text = useLanguage();
@@ -44,11 +43,6 @@ function ChoiceOfReplenishmentMethodClient() {
   const [inputRadio, setInputRadio] = useState('');
   const [cost, setCost] = useState('');
   const [stage, setStage] = useState(0);
-
-  const isLoading = false; // TODO: hook up to async state if/when fetching
-  if (isLoading) {
-    return <WalletFormSkeleton />;
-  }
 
   return (
     <div className={style.main_block}>

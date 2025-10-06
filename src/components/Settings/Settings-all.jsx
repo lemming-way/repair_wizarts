@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import '../../scss/settings-all.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -7,7 +7,6 @@ import { Outlet } from 'react-router-dom';
 
 import style from './settings_all.module.css';
 import MasterProfileNavigator from '../full-height/MasterProfileNavigator';
-import SettingsFormSkeleton from './skeletons/SettingsFormSkeleton';
 // import { useNavigate } from "react-router-dom";
 
 const listLinks = [
@@ -89,11 +88,7 @@ function App() {
         numberElementMenu={numberElementMenu}
         offsetMenu={offsetMenu}
       />
-
-      {/* prevent layout flicker: only wrap Outlet */}
-      <Suspense fallback={<SettingsFormSkeleton />}>
-        <Outlet />
-      </Suspense>
+      <Outlet />
     </>
   );
 }

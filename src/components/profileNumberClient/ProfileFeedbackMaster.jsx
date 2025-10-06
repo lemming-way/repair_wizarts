@@ -5,18 +5,12 @@ import style from "./ProfileFeedbackMaster.module.css"
 import ProfileSlider  from "./ProfileSlider";
 import ModalAddComment from "../Chat/ModalAddComment";
 import ModalDelete from "../Chat/ModalDelete";
-import ProfileFeedbackMasterSkeleton from './ProfileFeedbackMasterSkeleton';
 
 export default function ProfileFeedbackMaster() {
 
     const navigate = useNavigate();
     const [visibleModalDelete, setVisibleModalDelete] = useState(false)
     const [visibleModalAddComment, setVisibleModalAddComment] = useState(false)
-
-    const isLoading = false; // placeholder for async state
-    if (isLoading) {
-        return <ProfileFeedbackMasterSkeleton />
-    }
 
     return (
         <>

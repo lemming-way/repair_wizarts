@@ -36,7 +36,6 @@ import appFetch from '../../../utilities/appFetch';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
-import ChatSkeleton from './ChatSkeleton';
 import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
 import { useLanguage } from '../../../state/language';
@@ -940,7 +939,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       {/* Фото заказа (если есть массив ссылок в заказе) */}
       {photoUrls.length > 0 && (
         <div style={{ margin: '10px 0' }}>
-          <Suspense fallback={<ChatSkeleton />}>
+          <Suspense fallback={<div className="swiper-loading" />}>
             <LazySwiper
               slidesPerView={3}
               spaceBetween={10}

@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 
 import style from './style.module.css'
 import NavigationWallet from '../Settings/NavigationWallet';
-import WalletHistorySkeleton from './skeletons/WalletHistorySkeleton';
 
 function WalletHistory() {
 
@@ -33,10 +32,10 @@ function WalletHistory() {
         document.title = 'Кошелек';
     }, []);
 
-    const isLoading = false; // placeholder for async load state
-    if (isLoading) {
-        return <WalletHistorySkeleton />
-    }
+
+
+
+
 
     return (
                 <div className="main-block df">

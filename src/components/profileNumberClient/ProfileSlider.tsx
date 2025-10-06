@@ -2,38 +2,8 @@ import React, { useState, Suspense } from 'react';
 
 import 'swiper/swiper-bundle.min.css';
 
-const LazySwiper = React.lazy(() =>
-  import('../../shared/ui/SwiperWrapper').then((m) => ({ default: m.SwiperWithModules })),
-);
-const LazySwiperSlide = React.lazy(() =>
-  import('../../shared/ui/SwiperWrapper').then((m) => ({ default: m.SwiperSlide })),
-);
-
-type SwiperSkeletonProps = {
-  height?: number;
-};
-
-const SwiperSkeleton: React.FC<SwiperSkeletonProps> = ({ height = 260 }) => (
-  <div
-    style={{
-      height,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 16,
-    }}
-    className="swiper-loading"
-  >
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        borderRadius: 16,
-        background: 'linear-gradient(90deg, #f0f0f0 0%, #e6e6e6 50%, #f0f0f0 100%)',
-      }}
-    />
-  </div>
-);
+const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
+const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 interface ProfileSliderProps {
   images?: string[];
@@ -63,7 +33,7 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
       <div className="swiper">
         <div className="swiper-wrapper">
           <div className="swiper">
-            <Suspense fallback={<SwiperSkeleton height={300} />}>
+            <Suspense fallback={<div className="swiper-loading" />}>
               <LazySwiper
                 pagination={true}
                 navigation={{

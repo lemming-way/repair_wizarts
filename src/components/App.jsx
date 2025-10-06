@@ -1,4 +1,4 @@
-import { useEffect, lazy, Suspense } from 'react';
+import { useEffect } from 'react';
 
 import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
 
@@ -10,25 +10,32 @@ import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClie
 import ClientSettingsWrap from './pages/ClientSettingsWrap';
 import MasterSettingsWrap from './pages/MasterSettingsWrap';
 
-// import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
+import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
 
 // Order imports
+import AllOrders from './Orders/Allorders';
 
 import SettingsAll from './Settings/Settings-all';
+import Profile from './Settings/Profile';
+import Services from './Settings/services';
 import Reviews from './Reviews';
 
+import Orders from './Orders/Orders';
 import Offer from './Orders/Offer';
 
 // after login
+import ProfileFH from './full-height/ProfileFH';
 import WalletFH from './full-height/WalletFH';
 
 // after login end
 
+import MapMaster from './Pick-master/masters';
 import ProfileNumber from './Chat/profileNumber';
-// import AddDevices from './addDevices/AddDevices';
+import OfferAService from './Orders/OfferAService';
+import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
-// import TitleService from './addDevices/TitleService';
-// import Remont from './remont';
+import TitleService from './addDevices/TitleService';
+import Applications from './Applications/applications';
 import AuthLogin from './Registration/AuthLogin';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
@@ -49,98 +56,28 @@ import { getToken } from '../services/token.service';
 import { getUserMode, updateUser } from '../services/user.service';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
+import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
+import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
+import MyOrdersMaster from './Orders/MyOrdersMaster';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
 
+import FChatKirill from './full-chat/fakeChat/Kirill';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
+import SettingsMaster from './Settings/SettingsMaster';
 import MasterChatWrap from './pages/MasterChatWrap';
+import Mysuggest from './mysuggest';
+import MyOrder from './Orders/MyOrder';
+import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
+import Register from './Registration/register';
+import Remont from './remont';
+import { ServiceDetail } from './Service';
+import BalanceClient from './Settings/BalanceClient';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
-import OrdersListSkeleton from './Orders/skeletons/OrdersListSkeleton';
-import RegistrationFormSkeleton from './Registration/skeletons/RegistrationFormSkeleton';
-import ServiceDetailSkeleton from './Service/skeletons/ServiceDetailSkeleton';
-import SettingsFormSkeleton from './Settings/skeletons/SettingsFormSkeleton';
-import WalletFormSkeleton from './ChoiceOfReplenishmentMethod/skeletons/WalletFormSkeleton';
-import WalletHistorySkeleton from './ChoiceOfReplenishmentMethod/skeletons/WalletHistorySkeleton';
-
-const MapMaster = lazy(() => import('./Pick-master/masters'));
-const FChatKirill = lazy(() => import('./full-chat/fakeChat/Kirill'));
-const ServiceDetail = lazy(() => import('./Service/ServiceDetail'));
-
-// Lazy route-level components for Orders/Offers package
-const AllOrders = lazy(() => import('./Orders/Allorders'));
-const Orders = lazy(() => import('./Orders/Orders'));
-const OfferAService = lazy(() => import('./Orders/OfferAService'));
-const Applications = lazy(() => import('./Applications/applications'));
-const MyOrdersMaster = lazy(() => import('./Orders/MyOrdersMaster'));
-const Mysuggest = lazy(() => import('./mysuggest'));
-const MyOrder = lazy(() => import('./Orders/MyOrder'));
-
-const FALLBACKS = {
-  default: (
-    <div
-      style={{
-        padding: '24px',
-        display: 'grid',
-        gap: 16,
-        background: '#f7f7f7',
-        borderRadius: 12,
-        minHeight: 160,
-      }}
-    >
-      <div style={{ background: '#e5e5e5', height: 28, borderRadius: 8, width: '40%' }} />
-      <div style={{ background: '#e5e5e5', height: 16, borderRadius: 8, width: '60%' }} />
-      <div style={{ background: '#e5e5e5', height: 16, borderRadius: 8, width: '55%' }} />
-      <div style={{ background: '#e5e5e5', height: 120, borderRadius: 12 }} />
-    </div>
-  ),
-  service: <ServiceDetailSkeleton />,
-  orders: <OrdersListSkeleton />,
-  registration: <RegistrationFormSkeleton />,
-  settings: <SettingsFormSkeleton />,
-  wallet: <WalletFormSkeleton />,
-  walletHistory: <WalletHistorySkeleton />,
-  balance: <div style={{padding: 24}} />,
-  balanceClient: <div style={{padding: 24}} />,
-  finance: <div style={{padding: 24}} />,
-  financeClient: <div style={{padding: 24}} />,
-  profile: <div style={{padding: 24}} />,
-  profileFull: <div style={{padding: 24}} />,
-  feedback: <div style={{padding: 24}} />,
-};
-
-// Lazy-load components for Settings/Profile package
-const Profile = lazy(() => import('./Settings/Profile'));
-const SettingsMaster = lazy(() => import('./Settings/SettingsMaster'));
-const Services = lazy(() => import('./Settings/services'));
-const ProfileFH = lazy(() => import('./full-height/ProfileFH'));
-const BalanceClient = lazy(() => import('./Settings/BalanceClient'));
-const ChoiceOfReplenishmentMethod = lazy(
-  () => import('./ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod'),
-);
-const ChoiceOfReplenishmentMethodClient = lazy(
-  () => import('./ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient'),
-);
-
-// Lazy-load Registration & Review package
-const RegistrationMasterPage = lazy(
-  () =>
-    import(
-      '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage'
-    ),
-);
-const RegisterLazy = lazy(() => import('./Registration/register'));
-const ProfileFeedbackMasterLazy = lazy(
-  () => import('./profileNumberClient/ProfileFeedbackMaster'),
-);
-
-// Lazy-load Catalog & Services package
-const AddDevices = lazy(() => import('./addDevices/AddDevices'));
-const TitleService = lazy(() => import('./addDevices/TitleService'));
-const Remont = lazy(() => import('./remont'));
 
 function App() {
   const user =
@@ -284,172 +221,61 @@ function App() {
             <Route index element={<Home />} />
             <Route
               path="devices/:sectionId/:subsectionId"
-              element={
-                <Suspense fallback={FALLBACKS.service}>
-                  <Remont />
-                </Suspense>
-              }
+              element={<Remont />}
             />
             <Route
               path="services/:sectionId/:subsectionId/:serviceId"
-              element={
-                <Suspense fallback={FALLBACKS.service}>
-                  <ServiceDetail />
-                </Suspense>
-              }
+              element={<ServiceDetail />}
             />
             <Route path="articles/:id" element={<Article />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
-            <Route
-              path="contact"
-              element={
-                <Suspense fallback={FALLBACKS.default}>
-                  <MapMaster />
-                </Suspense>
-              }
-            />
+            <Route path="contact" element={<MapMaster />} />
             <Route path="login" element={<AuthLogin />} />
             <Route path="register">
               <Route index element={<PickLog />} />
-              <Route
-                path="master"
-                element={
-                  <Suspense fallback={FALLBACKS.registration}>
-                    <RegistrationMasterPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="client"
-                element={
-                  <Suspense fallback={FALLBACKS.registration}>
-                    <RegisterLazy />
-                  </Suspense>
-                }
-              />
+              <Route path="master" element={<RegistrationMasterPage />} />
+              <Route path="client" element={<Register />} />
             </Route>
           </Route>
           <Route
             path="client/settings/wallet_history"
-            element={
-              <Suspense fallback={FALLBACKS.walletHistory}>
-                <WalletHistoryClient />
-              </Suspense>
-            }
+            element={<WalletHistoryClient />}
           />
           <Route path="client" element={<ClientRoute />}>
             <Route path="settings" element={<ClientSettingsWrap />}>
-              <Route
-                index
-                element={
-                  <Suspense fallback={FALLBACKS.profileFull}>
-                    <ProfileFH />
-                  </Suspense>
-                }
-              />
+              <Route index element={<ProfileFH />} />
               <Route path="picture" element={<WalletFH />} />
               <Route
                 path="wallet"
-                element={
-                  <Suspense fallback={FALLBACKS.wallet}>
-                    <ChoiceOfReplenishmentMethodClient />
-                  </Suspense>
-                }
+                element={<ChoiceOfReplenishmentMethodClient />}
               />
-              <Route
-                path="finance"
-                element={
-                  <Suspense fallback={FALLBACKS.financeClient ?? FALLBACKS.settings}>
-                    <FinanceClient />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="balance"
-                element={
-                  <Suspense fallback={FALLBACKS.balanceClient ?? FALLBACKS.settings}>
-                    <BalanceClient />
-                  </Suspense>
-                }
-              />
+              <Route path="finance" element={<FinanceClient />} />
+              <Route path="balance" element={<BalanceClient />} />
             </Route>
 
             <Route path="requests">
               <Route index element={<AddedDevices />} />
               {/* <Route path="archived" element={<Archive />} /> */}
-              <Route
-                path="my_orders"
-                element={
-                  <Suspense fallback={FALLBACKS.orders}>
-                    <MyOrdersMaster />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="my_order/:id"
-                element={
-                  <Suspense fallback={FALLBACKS.orders}>
-                    <MyOrder />
-                  </Suspense>
-                }
-              />
+              <Route path="my_orders" element={<MyOrdersMaster />} />
+              <Route path="my_order/:id" element={<MyOrder />} />
               <Route path="create">
-                <Route
-                  path="title"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <TitleService />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="data"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <AddDevices />
-                    </Suspense>
-                  }
-                />
+                <Route path="title" element={<TitleService />} />
+                <Route path="data" element={<AddDevices />} />
               </Route>
             </Route>
-            <Route
-              path="offers/:id"
-              element={
-                <Suspense fallback={FALLBACKS.orders}>
-                  <Mysuggest />
-                </Suspense>
-              }
-            />
+            <Route path="offers/:id" element={<Mysuggest />} />
             {/* клиент на странице мастера может оставить отзыв */}
             <Route
               path="feedback/:id"
-              element={
-                <Suspense fallback={FALLBACKS.feedback}>
-                  <ProfileFeedbackMasterLazy />
-                </Suspense>
-              }
+              element={<ProfileFeedbackMaster />}
             />
             {/* чат связан с бэком */}
             {/* <Route path="chat" element={<FChat />} /> */}
             {/* <Route path="chat/:id" element={<FChat />} /> */}
             {/* Чат без связи с бэком, только заготовка */}
-            <Route
-              path="chat"
-              element={
-                <Suspense fallback={FALLBACKS.default}>
-                  <FChatKirill />
-                </Suspense>
-              }
-            />
-            <Route
-              path="chat/:id"
-              element={
-                <Suspense fallback={FALLBACKS.default}>
-                  <FChatKirill />
-                </Suspense>
-              }
-            />
+            <Route path="chat" element={<FChatKirill />} />
+            <Route path="chat/:id" element={<FChatKirill />} />
 
             {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
             {/* <Route path="feedback/:username" element={<ReviewsMaster />} /> */}
@@ -458,22 +284,8 @@ function App() {
           <Route basename="master" path="master" element={<MasterRoute />}>
             {/* Чат без связи с бэком, только заготовка */}
             <Route element={<MasterChatWrap />}>
-              <Route
-                path="chat"
-                element={
-                  <Suspense fallback={FALLBACKS.default}>
-                    <FChatKirill />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="chat/:id"
-                element={
-                  <Suspense fallback={FALLBACKS.default}>
-                    <FChatKirill />
-                  </Suspense>
-                }
-              />
+              <Route path="chat" element={<FChatKirill />} />
+              <Route path="chat/:id" element={<FChatKirill />} />
               {/* прежний чат, был связана с бэком */}
               {/* <Route path="chat/" element={<FChat baseRoute="/master/chat/" showSidebar />} />
                         <Route path="chat/:id" element={<FChat baseRoute="/master/chat/" showSidebar />} /> */}
@@ -481,122 +293,42 @@ function App() {
             <Route element={<MasterSettingsWrap />}>
               <Route
                 path="wallet"
-                element={
-                  <Suspense fallback={FALLBACKS.settings}>
-                    <ChoiceOfReplenishmentMethod />
-                  </Suspense>
-                }
+                element={<ChoiceOfReplenishmentMethod />}
               />
-              <Route
-                path="wallet_history"
-                element={
-                  <Suspense fallback={FALLBACKS.walletHistory}>
-                    <WalletHistory />
-                  </Suspense>
-                }
-              />
+              <Route path="wallet_history" element={<WalletHistory />} />
               <Route path="wallet/:id" element={<WalletConfirm />} />
               <Route path="settings" element={<SettingsAll />}>
-                <Route
-                  index
-                  element={
-                    <Suspense fallback={FALLBACKS.settings}>
-                      <SettingsMaster />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="profile"
-                  element={
-                    <Suspense fallback={FALLBACKS.settings}>
-                      <Profile />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="services"
-                  element={
-                    <Suspense fallback={FALLBACKS.settings}>
-                      <Services />
-                    </Suspense>
-                  }
-                />
+                <Route index element={<SettingsMaster />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="services" element={<Services />} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="balance" element={<Balance />} />
                 <Route path="photo" element={<WalletFH />} />
               </Route>
               <Route path="orders">
-                <Route
-                  index
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <Applications />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="completed"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <Applications />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="canceled"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <Applications />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="all"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <Applications />
-                    </Suspense>
-                  }
-                />
+                <Route index element={<Applications />} />
+                <Route path="completed" element={<Applications />} />
+                <Route path="canceled" element={<Applications />} />
+                <Route path="all" element={<Applications />} />
               </Route>
 
               <Route path="feedback" element={<ProfileNumber />} />
 
               <Route path="requests">
-                <Route
-                  index
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <AllOrders />
-                    </Suspense>
-                  }
-                />
+                <Route index element={<AllOrders />} />
                 <Route path="offer/:id" element={<Offer />} />
-                <Route
-                  path="orders"
-                  element={
-                    <Suspense fallback={FALLBACKS.orders}>
-                      <Orders />
-                    </Suspense>
-                  }
-                />
+                <Route path="orders" element={<Orders />} />
                 <Route path="personal" element={<PersonalRequests />} />
                 {/* <Route path=":id" element={<MyOrders />} /> */}
               </Route>
-              <Route
-                path="offers/create/:id"
-                element={
-                  <Suspense fallback={FALLBACKS.orders}>
-                    <OfferAService />
-                  </Suspense>
-                }
-              />
+              <Route path="offers/create/:id" element={<OfferAService />} />
             </Route>
           </Route>
         </Routes>
       </main>
       {__location__.pathname.includes('/chat') || <Footer />}
     </>
+  );
 }
 
 export default App;
