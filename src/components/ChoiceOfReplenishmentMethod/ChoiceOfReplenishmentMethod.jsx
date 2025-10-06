@@ -10,6 +10,7 @@ import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistory from "./ChoiceOfReplenishmentMethodHistory";
 import style from './style.module.css'
 import { useLanguage } from '../../state/language'
+import WalletFormSkeleton from './skeletons/WalletFormSkeleton'
 
 function ChoiceOfReplenishmentMethod() {
 
@@ -42,6 +43,12 @@ function ChoiceOfReplenishmentMethod() {
     const [inputPrice, setInputPrice] = useState("");
     const [inputRadio, setInputRadio] = useState("");
     const [stage, setStage] = useState(0)
+
+    const isLoading = false; // TODO: replace when integrating real async requests
+
+    if (isLoading) {
+        return <WalletFormSkeleton />
+    }
 
     return (
 

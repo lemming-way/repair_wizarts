@@ -4,6 +4,7 @@ import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
+import FinanceSkeleton from './FinanceSkeleton';
 
 const Finance = (props) => {
   //~ const user = useSelector(selectUser);
@@ -49,6 +50,11 @@ const Finance = (props) => {
   const [isVisibleConfirm, setVisibleConfirm] = useState(false);
   const [isVisibleSuccess, setVisibleSuccess] = useState(false);
   const [isVisibleDelete, setVisibleDelete] = useState(false);
+
+  const isLoading = false; // placeholder for async
+  if (isLoading) {
+    return <FinanceSkeleton />
+  }
 
   return (
     <>

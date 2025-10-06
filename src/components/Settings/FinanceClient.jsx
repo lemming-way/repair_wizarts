@@ -7,6 +7,7 @@ import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
+import FinanceClientSkeleton from './FinanceClientSkeleton';
 
 const FinanceClient = () => {
   const user =
@@ -52,6 +53,11 @@ const FinanceClient = () => {
       alert('Ошибка при сохранении кошельков');
     }
   };
+
+  const isLoading = false; // placeholder for async
+  if (isLoading) {
+    return <FinanceClientSkeleton />
+  }
 
   return (
     <>

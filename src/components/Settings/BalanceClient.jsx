@@ -9,6 +9,7 @@ import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
 import { selectUser } from '../../slices/user.slice';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
+import BalanceClientSkeleton from './BalanceClientSkeleton';
 
 const BalanceClient = () => {
   const user =
@@ -91,6 +92,11 @@ const BalanceClient = () => {
       </div>
     );
   });
+
+  const isLoading = false; // placeholder for async
+  if (isLoading) {
+    return <BalanceClientSkeleton />;
+  }
 
   return (
     <>
