@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 
 import EmptyOrder from './EmptyOrder';
 import OrderRow from './OrderRow';
+import OrdersListSkeleton from './skeletons/OrdersListSkeleton';
 import style from './Orders.module.css';
 import appFetch from '../../utilities/appFetch';
 import NavigationOrders from '../Settings/NavigationOrders';
@@ -118,7 +119,7 @@ function Orders() {
       </div>
 
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: '20px' }}>{text('Loading...')}</div>
+        <OrdersListSkeleton />
       ) : orders.length === 0 ? (
         <EmptyOrder />
       ) : (

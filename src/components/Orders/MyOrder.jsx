@@ -16,6 +16,7 @@ import appFetch from '../../utilities/appFetch';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import style from '../Service/serviceDetail.module.scss';
 import { useLanguage } from '../../state/language';
+import OrderDetailSkeleton from './skeletons/OrderDetailSkeleton';
 
 
 
@@ -210,6 +211,9 @@ function MyOrder() {
   //~ const setRequestStatus = (status) => {
     //~ return updateRequest(id, { status: status }).then((v) => {});
   //~ };
+  if (!currentOrder || !currentOrder.b_id) {
+    return <OrderDetailSkeleton />;
+  }
   return (
     <>
       {visibleModalConfirmMaster ? (

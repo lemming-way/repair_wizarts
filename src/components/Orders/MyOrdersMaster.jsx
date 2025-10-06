@@ -14,6 +14,7 @@ import {
 } from '../../services/request.service';
 import NavigationOrdersClient from '../Settings/NavigationOrdersClient';
 import PaginationPages from '../Settings/PaginationPages';
+import OrdersTableSkeleton from './skeletons/OrdersTableSkeleton';
 const statusEnum = {
   '#order': 'Активно',
   '#all': 'Активно',
@@ -86,90 +87,96 @@ function MyOrdersMaster() {
         <div className={style.content_wrap}>
           <NavigationOrdersClient />
           <div className={style.table_wrap}>
-            <table className={style.table}>
-              <thead>
-                <tr>
-                  <th>Название</th>
-                  <th>Продавец</th>
-                  <th>Заказан</th>
-                  <th>Стоимость</th>
-                  <th>Статус</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRequests
-                  .slice(
-                    (currentPage - 1) * contendCount,
-                    currentPage * contendCount,
-                  )
-                  .map((item, index) => {
-                    const StyleEnum = {
-                      'В работе': 'status_working',
-                      Отменено: 'status_cancel',
-                      Активно: 'status_ok',
-                    };
-                    const currentStatusStyleClass =
-                      StyleEnum[item.b_options.status];
-                    return (
-                      <tr key={item.b_id}>
-                        {' '}
-                        <td>{item.b_options.title}</td>
-                        {/* Добавляем ключ для каждого элемента списка */}
-                        <td>
-                          <img
-                            src={
-                              item.drivers?.c_options.author?.photo ||
-                              '/img/img-camera.png'
-                            }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              cursor: 'pointer',
-                              width: 70,
-                              borderRadius: 20,
-                              height: 70,
-                            }}
-                            onClick={() => setVisibleModalEdit(true)}
-                          />
-                          <Link
-                            to={
-                              window.location.pathname.includes('/master')
-                                ? '/master/requests/my_order/' + item.b_id
-                                : '/client/requests/my_order/' + item.b_id
-                            }
-                          >
-                            {item.drivers?.c_options?.author.u_name || 'Anton'}
-                          </Link>
-                        </td>
-                        <td>
-                          <img
-                            src={
-                              item.b_options?.author?.photo ||
-                              '/img/img-camera.png'
-                            }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              width: '70px',
-                              borderRadius: '50%',
-                              height: '70px',
-                              objectFit: 'cover',
-                            }}
-                          />
-                          {item.b_options?.author?.name}
-                        </td>
-                        <td>{item.b_options?.client_price}</td>
-                        {/* <td>{item.b_options?.client_price}</td> */}
-                        <td>
-                          <p className={style[currentStatusStyleClass]}>
-                            {item.b_options.status}
-                          </p>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+            {userRequests.error || !userRequests.data ? (
+              <p>Ошибка загрузки</p>
+            ) : userRequests.data && !userRequests.data.data ? (
+              <OrdersTableSkeleton variant="myordersmaster" />
+            ) : (
+              <table className={style.table}>
+                <thead>
+                  <tr>
+                    <th>Название</th>
+                    <th>Продавец</th>
+                    <th>Заказан</th>
+                    <th>Стоимость</th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRequests
+                    .slice(
+                      (currentPage - 1) * contendCount,
+                      currentPage * contendCount,
+                    )
+                    .map((item, index) => {
+                      const StyleEnum = {
+                        'В работе': 'status_working',
+                        Отменено: 'status_cancel',
+                        Активно: 'status_ok',
+                      };
+                      const currentStatusStyleClass =
+                        StyleEnum[item.b_options.status];
+                      return (
+                        <tr key={item.b_id}>
+                          {' '}
+                          <td>{item.b_options.title}</td>
+                          {/* Добавляем ключ для каждого элемента списка */}
+                          <td>
+                            <img
+                              src={
+                                item.drivers?.c_options.author?.photo ||
+                                '/img/img-camera.png'
+                              }
+                              alt=""
+                              style={{
+                                marginRight: '10px',
+                                cursor: 'pointer',
+                                width: 70,
+                                borderRadius: 20,
+                                height: 70,
+                              }}
+                              onClick={() => setVisibleModalEdit(true)}
+                            />
+                            <Link
+                              to={
+                                window.location.pathname.includes('/master')
+                                  ? '/master/requests/my_order/' + item.b_id
+                                  : '/client/requests/my_order/' + item.b_id
+                              }
+                            >
+                              {item.drivers?.c_options?.author.u_name || 'Anton'}
+                            </Link>
+                          </td>
+                          <td>
+                            <img
+                              src={
+                                item.b_options?.author?.photo ||
+                                '/img/img-camera.png'
+                              }
+                              alt=""
+                              style={{
+                                marginRight: '10px',
+                                width: '70px',
+                                borderRadius: '50%',
+                                height: '70px',
+                                objectFit: 'cover',
+                              }}
+                            />
+                            {item.b_options?.author?.name}
+                          </td>
+                          <td>{item.b_options?.client_price}</td>
+                          {/* <td>{item.b_options?.client_price}</td> */}
+                          <td>
+                            <p className={style[currentStatusStyleClass]}>
+                              {item.b_options.status}
+                            </p>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* для мобильной */}
