@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
@@ -7,7 +7,7 @@ import style from './ClientSettingsWrap.module.css';
 import { selectUser } from '../../slices/user.slice';
 import { useLanguage } from '../../state/language';
 import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
-
+import SettingsFormSkeleton from '../Settings/skeletons/SettingsFormSkeleton';
 
 const listLinks = [
   '/client/settings',
@@ -129,7 +129,9 @@ function ClientSettingsWrap() {
           offsetMenu={offsetMenu}
         />
 
-        <Outlet />
+        <Suspense fallback={<SettingsFormSkeleton />}> {/* prevent layout flicker */}
+          <Outlet />
+        </Suspense>
       </div>
     </div>
   );
