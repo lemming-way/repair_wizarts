@@ -10,7 +10,7 @@ import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClie
 import ClientSettingsWrap from './pages/ClientSettingsWrap';
 import MasterSettingsWrap from './pages/MasterSettingsWrap';
 
-import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
+// import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
 
 // Order imports
 
@@ -28,7 +28,7 @@ import ProfileNumber from './Chat/profileNumber';
 import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
-import AuthLogin from './Registration/AuthLogin';
+// import AuthLogin from './Registration/AuthLogin';
 import ClientRoute from './ClientRoute';
 import MasterRoute from './MasterRoute';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
@@ -54,9 +54,9 @@ import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
 import MasterChatWrap from './pages/MasterChatWrap';
-import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
+// import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
-import Register from './Registration/register';
+// import Register from './Registration/register';
 import Remont from './remont';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
@@ -90,6 +90,19 @@ const ChoiceOfReplenishmentMethod = lazy(
 const ChoiceOfReplenishmentMethodClient = lazy(
   () => import('./ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient'),
 );
+
+// Lazy-load Registration & Review package
+const RegistrationMasterPage = lazy(
+  () =>
+    import(
+      '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage'
+    ),
+);
+const Register = lazy(() => import('./Registration/register'));
+const ProfileFeedbackMaster = lazy(
+  () => import('./profileNumberClient/ProfileFeedbackMaster'),
+);
+const AuthLogin = lazy(() => import('./Registration/AuthLogin'));
 
 function App() {
   const user =
@@ -265,11 +278,32 @@ function App() {
                     </Suspense>
                   }
                 />
-                <Route path="login" element={<AuthLogin />} />
+                <Route
+                  path="login"
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <AuthLogin />
+                    </Suspense>
+                  }
+                />
                 <Route path="register">
                   <Route index element={<PickLog />} />
-                  <Route path="master" element={<RegistrationMasterPage />} />
-                  <Route path="client" element={<Register />} />
+                  <Route
+                    path="master"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <RegistrationMasterPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="client"
+                    element={
+                      <Suspense fallback={SuspenseFallback}>
+                        <Register />
+                      </Suspense>
+                    }
+                  />
                 </Route>
               </Route>
               <Route
@@ -341,7 +375,11 @@ function App() {
                 {/* клиент на странице мастера может оставить отзыв */}
                 <Route
                   path="feedback/:id"
-                  element={<ProfileFeedbackMaster />}
+                  element={
+                    <Suspense fallback={SuspenseFallback}>
+                      <ProfileFeedbackMaster />
+                    </Suspense>
+                  }
                 />
                 {/* чат связан с бэком */}
                 {/* <Route path="chat" element={<FChat />} /> */}
