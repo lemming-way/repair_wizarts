@@ -41,7 +41,7 @@ export default function OrderRow({
     }
 
     if (!b_id) {
-      console.error(text('Order ID not passed to OrderRow component.'));
+      console.error('ID заказа не передан в компонент OrderRow.');
       alert(text('An error occurred: order ID not found.'));
       return;
     }
@@ -54,7 +54,7 @@ export default function OrderRow({
         onResponseCancelled();
       }
     } catch (error) {
-      console.error(text('Error deleting offer:'), error);
+      console.error('Ошибка при удалении предложения:', error);
       alert(text('Failed to delete offer. Please try again.'));
     }
   };
@@ -75,7 +75,7 @@ export default function OrderRow({
           <div className={style.profile}>
             <img
               src={'/img/profil_img/1.png' || userProfile?.avatar}
-              alt="Аватар"
+              alt={text('Avatar')}
               className={style.avatar}
             />
             <div className={style.profile__col}>
@@ -136,7 +136,7 @@ export default function OrderRow({
           <div className={style.profile}>
             <img
               src={'/img/profil_img/1.png' || commentData?.author?.avatar}
-              alt="Аватар"
+              alt={text('Avatar')}
               className={style.avatar}
             />
             <div className={style.profile__col}>
@@ -156,7 +156,7 @@ export default function OrderRow({
             <textarea
               className={style.comment__input}
               rows={4}
-              placeholder="сообщение.."
+              placeholder={text('Message...')}
               value={commentData?.message || ''}
               readOnly
             />
@@ -214,7 +214,7 @@ export default function OrderRow({
               {images.map((image, index) => (
                 <SwiperSlide key={index}>
                   <div className="modal-content-info">
-                    <img src={image} alt={`Slide ${index + 1}`} />
+                    <img src={image} alt={`${text('Slide')} ${index + 1}`} />
                   </div>
                 </SwiperSlide>
               ))}

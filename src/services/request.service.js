@@ -12,7 +12,7 @@ const createRequest = (payload, asAdmin) => {
       body: {
         u_a_role: 1,
         data: JSON.stringify({
-          b_start_address: 'адрес',
+          b_start_address: 'address',
           b_start_datetime: formattedDate,
           b_max_waiting: 604800,
           b_payment_way: '2',
@@ -24,7 +24,7 @@ const createRequest = (payload, asAdmin) => {
               phone: token.user?.u_phone,
               photo: token.user?.u_photo,
             },
-            status: 'Активно',
+            status: 'Active',
             type: 'order',
           },
         }),

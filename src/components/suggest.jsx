@@ -94,8 +94,8 @@ const Suggest = (props) => {
                             <div className="alecsandr_info-text">
                                 <div className="info_cards df align">
                                     <div className="info_cards-text_1">
-                                        <h2>{text("Address:")}:</h2>
-                                        <h2>{text("Rating:")}:</h2>
+                                        <h2>{text("Address")}:</h2>
+                                        <h2>{text("Rating")}:</h2>
                                     </div>
 
                                     <div className="info_cards-text_2">
@@ -133,7 +133,7 @@ const Suggest = (props) => {
                         <table>
                             <tbody>
                                 <tr>
-                                    <td><span>{text("Organization name:")}:</span></td>
+                                    <td><span>{text("Organization name")}:</span></td>
                                     <td>
                                         <p>{master.organization_name}</p>
                                     </td>
@@ -158,19 +158,19 @@ const Suggest = (props) => {
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>{text("Your activity:")}:</span></td>
+                                    <td><span>{text("Your activity")}:</span></td>
                                     <td>
                                         <p>{master.specialty}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>{text("Main direction:")}:</span></td>
+                                    <td><span>{text("Main direction")}:</span></td>
                                     <td>
                                         <p>{master.main_business}</p>
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><span>{text("Main business:")}:</span></td>
+                                    <td><span>{text("Main business")}:</span></td>
                                     <td>
                                         <p>{master.business_model}</p>
                                     </td>

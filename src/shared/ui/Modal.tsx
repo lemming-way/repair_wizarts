@@ -29,8 +29,8 @@ export const Modal: React.FC<ModalProps> = ({
   closeButton = true,
 }) => {
   // Use the modal container if it exists
-  const container = typeof document !== 'undefined' 
-    ? document.getElementById('modal') || document.body 
+  const container = typeof document !== 'undefined'
+    ? document.getElementById('modal') || document.body
     : undefined;
 
   return (
@@ -50,11 +50,11 @@ export const Modal: React.FC<ModalProps> = ({
           {title && <RsuiteModal.Title>{title}</RsuiteModal.Title>}
         </RsuiteModal.Header>
       )}
-      
+
       <RsuiteModal.Body className={contentClassName}>
         {children}
       </RsuiteModal.Body>
-      
+
       {footer && (
         <RsuiteModal.Footer>
           {footer}

@@ -34,7 +34,7 @@ function MySuggest() {
 
   const getDate = (exp) => {
     const d = new Date(Date.parse(exp) - Date.now());
-    return `${d.getUTCHours()} ч., ${d.getUTCMinutes()} мин.`;
+    return `${d.getUTCHours()} ${text('h.')}, ${d.getUTCMinutes()} ${text('min.')}`;
   };
 
   useEffect(() => {
@@ -69,14 +69,14 @@ function MySuggest() {
               alt=""
             />
             <div className={styles.block_info}>
-              <h2>{text('Name and surname from the application info')}</h2>
+              <h2>Имя и фамилия с заявки инфа</h2>
               <h3>{text('10 projects posted')}</h3>
               <h3>{text('100% hired')}</h3>
             </div>
           </div>
           <div className={styles.description}>
-            <p>{text('Device name info from page n1')}</p>
-            <p>{text('Client describes their problem, page n1')}</p>
+            <p>Название устройства инфа со страници н1</p>
+            <p>клиент описывает свою проблему, страница н1</p>
           </div>
           <div className={styles.left_row_bottom}>
             <p>{text('70 hours 45 minutes left')} </p>
@@ -121,7 +121,7 @@ function MySuggest() {
           </div>
 
           {/* <Swiper pagination={true} navigation={{
-                                next El: ".image-swiper-button-next",
+                                nextEl: ".image-swiper-button-next",
                                 prevEl: ".image-swiper-button-prev",
                             }} modules={[Navigation, Pagination]} 
                             slidesPerView="auto" 

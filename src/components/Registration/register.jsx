@@ -5,8 +5,40 @@ import { registerAsClient } from '../../services/auth.service';
 import '../../scss/register.css';
 import SERVER_PATH from '../../constants/SERVER_PATH';
 import { setToken } from '../../services/token.service';
+import { useLanguage } from '../../state/language';
+
+function correctPhoneNumber(value, previousValue = '') {
+  let new_text;
+
+  if (value.length < previousValue.length) {
+    new_text = value;
+    if (new_text.length < 4) {
+      new_text = '';
+    }
+  } else if (value.length === 6) {
+    new_text = value + ')-';
+  } else if (value.length === 7) {
+    new_text = value.slice(0, -1) + ')-' + value.slice(-1);
+  } else if (value.length === 8) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length === 11) {
+    new_text = value + '-';
+  } else if (value.length === 12) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length === 14) {
+    new_text = value + '-';
+  } else if (value.length === 15) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length > 17) {
+    new_text = value.slice(0, 17);
+  } else {
+    new_text = value;
+  }
+  return new_text;
+}
 
 function Register() {
+  const text = useLanguage();
   const navigate = useNavigate();
 
   const [error, setError] = useState();
@@ -24,13 +56,11 @@ function Register() {
     const normalizedPhone = phone.replace(/\D/g, '');
 
     if (!accept) {
-      return setError(
-        'Чтобы продолжить необходимо принять политику конфиденциальности.',
-      );
+      return setError( 'To continue, you must accept the privacy policy.' );
     }
 
     if (normalizedPhone.length < 11) {
-      return setError('Номер телефона введен не полностью.');
+      return setError( 'The phone number is not fully entered.' );
     }
 
     return registerAsClient({
@@ -58,67 +88,29 @@ function Register() {
   };
 
   useEffect(() => {
-    document.title = 'Регистрация';
-  }, []);
+    document.title = text('Registration');
+  }, [text]);
 
   const setPhoneHandler = (event) => {
-    const inputValue = event.target.value.slice(1);
-
     // нельзя вводить не числа и больше 11 символов
+    const rawValue = event.target.value;
+    const inputValue = rawValue.slice(1);
     if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
-      setError('В номере, пожалуйста, введите только цифры.');
+      setError('Please enter only digits in the phone number.');
     }
-    // else if (inputValue.length > 9) {
-    //     setError('Обратите внимание на длину номера!');
-    // }
     else {
       setError('');
     }
 
-    // нельзя стирать маску
-
-    // setPhone(event.target.value);
-    const n = correctPhoneNumder(event);
+    const n = correctPhoneNumber(rawValue, phone);
     setPhone(n);
   };
 
-  function correctPhoneNumder(e) {
-    var text = e.target.value;
-    var new_text = '';
-    // стирание
-    if (text.length < phone.length) {
-      new_text = text;
-      if (new_text.length < 4) {
-        new_text = '+7(9';
-      }
-    }
-    // +7(988)-842-44-44
-    else if (text.length === 6) {
-      new_text = text + ')-';
-    } else if (text.length === 7) {
-      new_text = text.slice(0, -1) + ')-' + text.slice(-1);
-    } else if (text.length === 8) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length === 11) {
-      new_text = text + '-';
-    } else if (text.length === 12) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length === 14) {
-      new_text = text + '-';
-    } else if (text.length === 15) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length > 17) {
-      new_text = text.slice(0, 17);
-    } else {
-      new_text = text;
-    }
-    return new_text;
-  }
   return (
     <section className="register">
-      <h1>Регистрация</h1>
+      <h1>{text('Registration')}</h1>
       <form onSubmit={onSubmit}>
-        {error && <div className="auth-err">{error}</div>}
+        {error && <div className="auth-err">{text(error)}</div>}
 
         <input
           required
@@ -126,7 +118,7 @@ function Register() {
           onChange={(e) => setName(e.target.value)}
           value={name}
           className="heheinput"
-          placeholder="Имя"
+          placeholder={text("First Name")}
         />
         <input
           required
@@ -134,7 +126,7 @@ function Register() {
           value={lastname}
           onChange={(e) => setLastname(e.target.value)}
           className="heheinput"
-          placeholder="Фамилия"
+          placeholder={text("Last Name")}
         />
         <input
           required
@@ -142,7 +134,7 @@ function Register() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="heheinput"
-          placeholder="Email"
+          placeholder={text("Email")}
         />
         <div className="input_phone_wrap">
           <input
@@ -151,7 +143,7 @@ function Register() {
             }`}
             type="text"
             name="phone"
-            placeholder="Телефон"
+            placeholder={text("Phone")}
             value={phone}
             onChange={(e) => setPhoneHandler(e)}
             required
@@ -163,7 +155,7 @@ function Register() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="heheinput"
-          placeholder="Пароль"
+          placeholder={text("Password")}
         />
         <input
           required
@@ -171,7 +163,7 @@ function Register() {
           value={passwordVerification}
           onChange={(e) => setPasswordVerification(e.target.value)}
           className="heheinput"
-          placeholder="Подтвердите пароль"
+          placeholder={text("Confirm Password")}
         />
         <div className="rel">
           <input
@@ -181,7 +173,7 @@ function Register() {
             onChange={(e) => setAccept(e.target.checked)}
           />
           <label htmlFor="really">
-            Ознакомлен и согласен с условиями
+            {text('I have read and agree to the terms of the')}
             <a
               style={{
                 textDecoration: 'underline',
@@ -192,11 +184,11 @@ function Register() {
               rel="noopener noreferrer"
               href={SERVER_PATH + 'files/privacy-policy.pdf'}
             >
-              Политики конфиденциальности
+              {text('privacy_policy')}
             </a>
           </label>
         </div>
-        <button>Регистрация</button>
+        <button>{text('Register')}</button>
       </form>
     </section>
   );

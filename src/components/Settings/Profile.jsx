@@ -80,7 +80,7 @@ function Profile() {
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
   //~ const [gender, setGender] = useState('Мужской');
-  const [business_model, setBusiness] = useState('Private master');
+  const [business_model, setBusiness] = useState('Independent technician');
   //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
     //~ try {
       //~ switch (type) {
@@ -346,7 +346,7 @@ function Profile() {
         },
       });
 
-      setBusiness(master.u_details?.business_model || 'Частный мастер');
+      setBusiness(master.u_details?.business_model || 'Independent technician');
     };
     if (
       master.u_details?.section &&
@@ -525,7 +525,7 @@ function Profile() {
 
           <textarea
             placeholder={
-              business_model === 'Private master' ? text('About me') : text('About organization')
+              business_model === 'Independent technician' ? text('About me') : text('About organization')
             }
             {...getFormAttrs('u_description')}
           />
@@ -564,17 +564,17 @@ function Profile() {
                         </div> */}
 
           <div className="second-check">
-            <h4>Бизнес модель:</h4>
+            <h4>{text('Business model')}:</h4>
             <div className="first_check df" style={{ gap: '0' }}>
               <input
                 type="radio"
                 name="select__service"
                 id="yesornow"
-                onChange={() => setBusiness('Частный мастер')}
-                checked={business_model === 'Частный мастер'}
+                onChange={() => setBusiness('Independent technician')}
+                checked={business_model === 'Independent technician'}
               />
               <label htmlFor="yesornow">
-                <p>Частный мастер</p>
+                <p>{text('Independent technician')}</p>
               </label>
             </div>
 
@@ -583,11 +583,11 @@ function Profile() {
                 type="radio"
                 name="select__service"
                 id="inputradioservicebtn"
-                onChange={() => setBusiness('Сервис')}
-                checked={business_model === 'Сервис'}
+                onChange={() => setBusiness('Service center')}
+                checked={business_model === 'Service center'}
               />
               <label htmlFor="inputradioservicebtn">
-                <p>Сервис</p>
+                <p>{text('Service center')}</p>
               </label>
             </div>
           </div>

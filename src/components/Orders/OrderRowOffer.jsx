@@ -10,6 +10,7 @@ import { useLanguage } from '../../state/language';
 
 // Компонент для отображения dropbox-фото через POST-запрос
 const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
+  const text = useLanguage();
   const [imgUrl, setImgUrl] = useState(
     url && url.startsWith('blob:') ? url : null,
   );
@@ -63,7 +64,7 @@ const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
           justifyContent: 'center',
         }}
       >
-        Photo upload error
+        {text('Photo upload error')}
       </div>
     );
   if (!imgUrl)
@@ -78,7 +79,7 @@ const DropboxImage = ({ url, alt = '', style: imgStyle }) => {
           justifyContent: 'center',
         }}
       >
-        Loading...
+        {text('Loading...')}
       </div>
     );
   return <img src={imgUrl} alt={alt} style={imgStyle || { width: '100%' }} />;
@@ -159,7 +160,7 @@ export default function OrderRowOffer({
       console.log('Успешно отправлено предложение!');
       setVisibleModalGo(true);
     } catch (error) {
-      console.error(text('Error sending:'), error);
+      console.error('Ошибка при отправке:', error);
       alert(error.message || text('Error sending offer'));
     }
   };
@@ -184,7 +185,7 @@ export default function OrderRowOffer({
           <p className={style.small_text}>
             <span>{text('remaining')} {timeLeft}</span>
             <span className={style.flex}>
-              <img src="/img/icons/eye.png" alt="Views" />
+              <img src="/img/icons/eye.png" alt={text('Views')} />
               {views} {text('viewed')}
             </span>
           </p>
@@ -260,7 +261,7 @@ export default function OrderRowOffer({
                 style={{ marginBottom: '30px' }}
                 className={style.comment__input}
                 rows={4}
-                placeholder={text('Write how you will fix the client\'s device..')}
+                placeholder={text("Write how you will fix the client's device..")}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -331,7 +332,7 @@ export default function OrderRowOffer({
                   <div className="modal-content-info">
                     <DropboxImage
                       url={image}
-                      alt={`Slide ${index + 1}`}
+                      alt={`${text('Slide')} ${index + 1}`}
                       imgStyle={{ maxHeight: '80vh', maxWidth: '100%' }}
                     />
                   </div>

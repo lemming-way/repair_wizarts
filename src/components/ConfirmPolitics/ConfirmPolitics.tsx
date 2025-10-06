@@ -3,8 +3,10 @@ import React from 'react';
 import styles from './ConfirmPolitics.module.scss';
 import {useConfirmPolitics} from "./ConfirmPoliticsContext";
 import SERVER_PATH from "../../constants/SERVER_PATH";
+import { useLanguage } from '../../state/language';
 
 const ConfirmPolitics = () => {
+  const text = useLanguage();
   const { accept, setAccept } = useConfirmPolitics();
 
   return (
@@ -18,7 +20,7 @@ const ConfirmPolitics = () => {
       />
 
       <label htmlFor="confirm">
-        Ознакомлен и согласен с условиями
+        {text('I have read and agree to the terms of the')}
         <a
           style={{
             textDecoration: "underline",
@@ -29,7 +31,7 @@ const ConfirmPolitics = () => {
           rel="noopener noreferrer"
           href={SERVER_PATH + "files/privacy-policy.pdf"}
         >
-          Политики конфиденциальности
+          {text('privacy_policy')}
         </a>
       </label>
     </div>

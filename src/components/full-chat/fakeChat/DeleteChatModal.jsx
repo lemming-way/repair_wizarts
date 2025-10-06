@@ -10,7 +10,7 @@ export default function DeleteChatModal({ setVisibleBlackList }) {
                         <img src="/img/close.svg" alt=""/>
                     </div>
                     <p className={style.message}>
-                        Вы дейстивтельно хотите удалить чат?
+                        Вы действительно хотите удалить чат?
                     </p>
 
                     <div className={style.buttons}>

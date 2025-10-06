@@ -10,7 +10,7 @@ export default function BlockUser({ setVisibleBlackList }) {
                         <img src="/img/close.svg" alt=""/>
                     </div>
                     <p className={style.message}>
-                        Вы дейстивтельно хотите заблокировать пользователя?
+                        Вы действительно хотите заблокировать пользователя?
                     </p>
 
                     <div className={style.buttons}>

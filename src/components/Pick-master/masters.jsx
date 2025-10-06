@@ -28,20 +28,20 @@ function App() {
     const [picture, setPicture] = useState("")
     // const images = [
     //     '/img/sentence_img/iphone-x.png',
-    //     '/img/sentence_img/iphone-x.png', // Additional example images could be listed here
+    //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
     //     '/img/sentence_img/iphone-x.png',
     // ];
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Open the gallery modal
+    // Функция для открытия модального окна
     const openModal = (imageSrc) => {
-        //~ setModalImage(imageSrc); // Set path to the selected image if preview is needed
-        setIsModalOpen(true); // Show modal
+        //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
+        setIsModalOpen(true); // Открываем модальное окно
     };
 
-    // Close the gallery modal
+    // Функция для закрытия модального окна
     const closeModal = () => {
-        setIsModalOpen(false); // Hide modal
+        setIsModalOpen(false); // Закрываем модальное окно
     };
 
     const masterId = params.get('id')
@@ -80,7 +80,7 @@ function App() {
         document.title = text('Contacts');
     }, [masterId, text])
 
-    // demo price data
+    // тестовые данные - услуги
     const test_price = [
         {
             "price": 500,
@@ -143,27 +143,28 @@ function App() {
                 <div className="container">
                     <div className="slider__content">
                         <h2>
-                            There is a technician for any Apple device issue
+                            Для любой поломки есть мастер техники
+                            Apple
                         </h2>
-                        <h4>Original spare parts</h4>
-                        <h4>Fair prices</h4>
-                        <h4>Call-out service</h4>
+                        <h4>Оригинальные запчасти</h4>
+                        <h4>Разумные цены</h4>
+                        <h4>Выезд</h4>
                         <div className="home-counters">
                             <div className="home-counters__top">
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Masters registered on the platform: {counters.data.masters}
+                                    Количество участников на сайте: {counters.data.masters}
                                 </div>
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Orders completed on the platform: {counters.data.submissions}
+                                    Выполнено заказов на сайте: {counters.data.submissions}
                                 </div>
                             </div>
                             <Link
                                 to="/register"
                                 className="home-counters__button"
                             >
-                                    Become a member
+                                    Стать участником
                             </Link>
                         </div>
                     </div>
@@ -202,8 +203,8 @@ function App() {
                 <div className="info_master__row1">
                     <img src="/img/profile__image.png" alt="" />
                     <div className="info_master__about">
-                        <p>{text('Sample master name')}</p>
-                        <p>{text('Private master')}</p>
+                        <p>Алексей Михеев</p>
+                        <p>{text('Independent technician')}</p>
                         <div className="info_master__stars">
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
@@ -220,7 +221,7 @@ function App() {
                     </div>
                 </div>
 
-                <p className="info_master__info">{text('Saint Petersburg address')}</p>
+                <p className="info_master__info">Санкт-Петербург, Каховского 7</p>
                 <p className="info_master__info">{text('Open from 9 to 21')}</p>
                 <p className="info_master__text-about">
                     <span className="info_master__text-about-light">{text('On the platform')}</span>
@@ -409,7 +410,7 @@ function App() {
                     </React.Fragment>
                 )}
             </div>
-            {/* Modal gallery slider */}
+            {/* Модальное окно с слайдером */}
             {isModalOpen && (
                 <div className="modal" onClick={closeModal}>
                     <div className="modalContent" onClick={(e) => e.stopPropagation()}>
@@ -431,7 +432,8 @@ function App() {
                 </div>
             )}
 
-            {/* Inline styles for modal presentation */}
+            {/* Добавим стили для модального окна */}
+            {/* todo: перенести стили в css/scss */}
             <style jsx>{`
 .info_master_big__slide-block {
     width: 80%;

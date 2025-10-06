@@ -18,11 +18,13 @@ import {
     getArticles
 } from '../../services/article.service'
 import { selectUI } from '../../slices/ui.slice'
+import { useLanguage } from '../../state/language'
 
 const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 const Article = (props) => {
+    const text = useLanguage()
     const { id } = useParams()
     const [articles, setArticles] = useState([])
     // врмеенно для тестов
@@ -115,11 +117,11 @@ const Article = (props) => {
             <div className={styles.buttons_row}>
                 {offsetContent ? 
                     <div className={styles.bodyActions}>
-                        <span className={styles.bodyButton} onClick={()=> setOffsetContent(false)}>Читать полностью</span>
+                        <span className={styles.bodyButton} onClick={()=> setOffsetContent(false)}>{text('Read more')}</span>
                     </div>
                 : null}
                 <div className={styles.bodyActions}>
-                    <Link to={ui.isAuthorized ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
+                    <Link to={ui.isAuthorized ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>{text('Make repairs')}</Link>
                 </div>
             </div>
             <ArticleComments

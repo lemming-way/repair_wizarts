@@ -17,6 +17,7 @@ describe('sanitizeHtml', () => {
     const clean = sanitizeHtml(dirty);
 
     expect(clean).not.toContain('onerror');
+    /* eslint-disable-next-line no-script-url */
     expect(clean).not.toContain('javascript:');
     expect(clean).not.toContain('style="background:url(');
   });

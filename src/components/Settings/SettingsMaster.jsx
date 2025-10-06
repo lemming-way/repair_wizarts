@@ -124,7 +124,7 @@ export default function SettingsMaster() {
     const file = inputRef.current?.files[0];
 
     if (!file) {
-      setError('Файл не выбран');
+      setError('No file selected');
       return;
     }
     try {
@@ -184,17 +184,17 @@ export default function SettingsMaster() {
     }
   }, [ui, user]);
   useEffect(() => {
-    document.title = 'Настройки';
-  }, []);
+    document.title = text('Settings');
+  }, [text]);
   return (
     <>
       <div className={`mini-main df ${style.form_wrap_flex}`}>
         <form onSubmit={onSubmit}>
           <div className={`input-wrap ${style.form}`}>
             {suceeded && (
-              <div className="succeed-v">Данные успешно обновлены</div>
+              <div className="succeed-v">{text('Data updated successfully')}</div>
             )}
-            {error && <div className={`auth-err ${style.error}`}>{error}</div>}
+            {error && <div className={`auth-err ${style.error}`}>{text(error)}</div>}
 
             <input
               value={form.details.login}
@@ -306,7 +306,7 @@ export default function SettingsMaster() {
                 className="goooSaveButton"
                 onClick={() => setDeleteAccount(true)}
               >
-                Удалить аккаунт
+                {text('Delete account')}
               </button>
               <Popup
                 open={deleteAccount}
@@ -314,9 +314,9 @@ export default function SettingsMaster() {
                 className="delete-modal"
               >
                 <h3 className="delete-modal__title">
-                  Подтвердите удаление аккаунта
+                  {text('Confirm account deletion')}
                 </h3>
-                <p className="delete-modal__info">Ваши данные будут стерты</p>
+                <p className="delete-modal__info">{text('All your data will be lost')}</p>
                 <div className="delete-modal__actions">
                   <button
                     className="delete-modal__button"
@@ -327,10 +327,10 @@ export default function SettingsMaster() {
                     }}
                     onClick={() => setDeleteAccount(false)}
                   >
-                    Отмена
+                    {text('Cancel')}
                   </button>
                   <button className="delete-modal__button" onClick={onDelete}>
-                    подтвердить удаление
+                    {text('Confirm deletion')}
                   </button>
                 </div>
               </Popup>
@@ -357,7 +357,7 @@ export default function SettingsMaster() {
               ref={inputRef}
             />
             <div className="links">
-              <button className="link-4">Изменить</button>
+              <button className="link-4">{text('Edit')}</button>
             </div>
           </form>
         </div>

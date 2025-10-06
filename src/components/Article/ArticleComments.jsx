@@ -11,6 +11,7 @@ import {
     likeArticle,
     dislikeArticle
 } from "../../services/article.service"
+import { useLanguage } from '../../state/language'
 
 const ArticleComments = (props) => {
     const {
@@ -18,6 +19,7 @@ const ArticleComments = (props) => {
         likes
     } = props
 
+    const text = useLanguage()
     const navigate = useNavigate()
 
     // для тестов
@@ -82,14 +84,14 @@ const ArticleComments = (props) => {
                 <textarea
                     className={styles.commentsText}
                     value={comment}
-                    placeholder="Написать комментарий к статье"
+                    placeholder={text('Comment the article')}
                     onChange={(e) => setComment(e.target.value)}
                 />
                 <button
                     className={styles.commentsSubmit}
                     type="submit"
                 >
-                    Отправить
+                    {text('Submit')}
                 </button>
             </form>
             <ul className={styles.commentsList}>

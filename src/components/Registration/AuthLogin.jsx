@@ -25,6 +25,36 @@ const RecoveryState = {
   CODE: 2,
 };
 
+function correctPhoneNumber(value, previousValue = '') {
+  let new_text;
+
+  if (value.length < previousValue.length) {
+    new_text = value;
+    if (new_text.length < 4) {
+      new_text = '';
+    }
+  } else if (value.length === 6) {
+    new_text = value + ')-';
+  } else if (value.length === 7) {
+    new_text = value.slice(0, -1) + ')-' + value.slice(-1);
+  } else if (value.length === 8) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length === 11) {
+    new_text = value + '-';
+  } else if (value.length === 12) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length === 14) {
+    new_text = value + '-';
+  } else if (value.length === 15) {
+    new_text = value.slice(0, -1) + '-' + value.slice(-1);
+  } else if (value.length > 17) {
+    new_text = value.slice(0, 17);
+  } else {
+    new_text = value;
+  }
+  return new_text;
+}
+
 function AuthLogin() {
   const text = useLanguage();
   const dispatch = useDispatch();
@@ -54,73 +84,29 @@ function AuthLogin() {
 
   const handleChange = (event) => {
     const rawValue = event.target.value;
-
-    if (!/^[+0-9()-]*$/.test(rawValue)) {
-      setError('');
-      setPhone(rawValue);
-      return;
-    }
-
     const inputValue = rawValue.slice(1);
     if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
-      setError(
-        'Вы ввели недопустимый символ. Пожалуйста, введите только цифры.',
-      );
+      setError( 'Invalid character entered. Please enter only digits.' );
     } else {
       setError('');
     }
 
-    const n = correctPhoneNumder(rawValue, phone);
+    const n = correctPhoneNumber(rawValue, phone);
     setPhone(n);
   };
 
-  function correctPhoneNumder(text, previousValue = '', fallbackPrefix = '') {
-    let new_text;
-
-    if (text.length < previousValue.length) {
-      new_text = text;
-      if (fallbackPrefix && new_text.length < fallbackPrefix.length) {
-        new_text = fallbackPrefix;
-      }
-    } else if (text.length === 6) {
-      new_text = text + ')-';
-    } else if (text.length === 7) {
-      new_text = text.slice(0, -1) + ')-' + text.slice(-1);
-    } else if (text.length === 8) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length === 11) {
-      new_text = text + '-';
-    } else if (text.length === 12) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length === 14) {
-      new_text = text + '-';
-    } else if (text.length === 15) {
-      new_text = text.slice(0, -1) + '-' + text.slice(-1);
-    } else if (text.length > 17) {
-      new_text = text.slice(0, 17);
-    } else {
-      new_text = text;
-    }
-    return new_text;
-  }
-
   const setRecoveryPhoneHandler = (event) => {
     // нельзя вводить не числа и больше 11 символов
-    const inputValue = event.target.value.slice(1);
-    if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
-      setRecoveryError(
-        'Вы ввели недопустимый символ. Пожалуйста, введите только цифры.',
-      );
+    const rawValue = event.target.value;
+    const inputValue = rawValue.slice(1);
+    if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
+      setRecoveryError( 'Invalid character entered. Please enter only digits.' );
     }
-    // else if (inputValue.length > 9) {
-    //     setRecoveryError('Обратите внимание на длину номера!');
-    // }
     else {
       setRecoveryError('');
     }
 
-    // setRecoveryPhone(event.target.value);
-    const n = correctPhoneNumder(event.target.value, recoveryPhone);
+    const n = correctPhoneNumber(rawValue, recoveryPhone);
     setRecoveryPhone(n);
   };
 
@@ -162,13 +148,13 @@ function AuthLogin() {
           return setRecoveryError(err.message);
         }
 
-        setRecoveryError('Невозможно выполнить запрос');
+        setRecoveryError('Unable to process the request');
       });
   };
 
   useEffect(() => {
-    document.title = 'Войти';
-  }, []);
+    document.title = text('Sign in');
+  }, [text]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -185,7 +171,7 @@ function AuthLogin() {
       });
       console.log(response);
       if (response.code === '404')
-        return setError('Не правильный номер телефона или пароль');
+        return setError('Incorrect phone number or password');
       if (keep) {
         keepUserAuthorized(true);
       } else {
@@ -204,7 +190,7 @@ function AuthLogin() {
       navigate('/');
     } catch (err) {
       console.log(err);
-      setError('Некорректные данные');
+      setError('Incorrect data');
     }
   };
 
@@ -212,7 +198,7 @@ function AuthLogin() {
     <section className="login">
       <h1>Войти</h1>
       <form onSubmit={onSubmit}>
-        {error && <div className="auth-err">{error}</div>}
+        {error && <div className="auth-err">{text(error)}</div>}
         <div className="input_phone_wrap">
           <input
             // className="heheinput"
@@ -221,7 +207,7 @@ function AuthLogin() {
               phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
             }
             name="phone"
-            // placeholder="Телефон"
+            // placeholder={text("Phone")}
             value={phone}
             onChange={handleChange}
             required
@@ -231,12 +217,12 @@ function AuthLogin() {
                     type="text"
                     value={phone}
                     onChange={handleChange}
-                    placeholder="Телефон"
+                    placeholder={text("Phone")}
                     required
                 /> */}
         <input
           type="password"
-          placeholder="Пароль"
+          placeholder={text("Password")}
           className="input_login_password__fix"
           onChange={(e) => setPassword(e.target.value)}
           value={password}
@@ -249,15 +235,15 @@ function AuthLogin() {
             className="login-keep__input"
             onChange={(e) => setKeep(e.target.checked)}
           />
-          Оставаться в системе
+          {text('Stay logged in')}
         </label>
 
-        <button className="log__btn">Войти</button>
+        <button className="log__btn">{text('Sign in')}</button>
 
         <div>
-          <span>Нет аккаунта? </span>
+          <span>{text('No accaunt?')} </span>
           <Link to="/register" style={{ fontSize: '16px' }}>
-            Зарегистрируйтесь
+            {text('Sign up')}
           </Link>
         </div>
         <span
@@ -268,7 +254,7 @@ function AuthLogin() {
           }}
           onClick={() => setRecoveryState(RecoveryState.PHONE)}
         >
-          Забыли пароль?
+          {text('Forgot password?')}
         </span>
         <Modal
           open={recoveryState !== RecoveryState.IDLE}
@@ -288,7 +274,7 @@ function AuthLogin() {
             >
               {recoveryError && (
                 <div className={modalStyles.error}>
-                  {recoveryError}
+                  {text(recoveryError)}
                 </div>
               )}
               <input
@@ -311,7 +297,7 @@ function AuthLogin() {
             <form className={modalStyles.form} onSubmit={onSendPhone}>
               {recoveryError && (
                 <div className={modalStyles.error}>
-                  {recoveryError}
+                  {text(recoveryError)}
                 </div>
               )}
 

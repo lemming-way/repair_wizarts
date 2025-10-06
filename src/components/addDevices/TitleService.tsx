@@ -9,7 +9,7 @@ function TitleService() {
 
     useEffect(() => {
         document.title = text('Service title');
-    }, []);
+    }, [text]);
     return (
         <>
             <section className="page-7" style={{paddingBottom: "50px"}}>

@@ -259,7 +259,7 @@ function App() {
                   id="dropdown-basic"
                   className={style.heading__select}
                 >
-                  {selectValue}
+                  {text(selectValue)}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
                   <Dropdown.Item

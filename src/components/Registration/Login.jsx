@@ -4,11 +4,9 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { fetchUser } from '../../slices/user.slice'
 import { login } from '../../services/auth.service'
-import { useLanguage } from '../../state/language'
 
 import './login.css'
-import { Modal } from '../../shared/ui'
-import modalStyles from '../../features/LoginPage/PasswordRecoveryModal.module.scss'
+import Popup from 'reactjs-popup'
 
 import { keepUserAuthorized, recoverPassword, recoverPasswordSend, recoverPasswordVerify } from '../../services/user.service'
 
@@ -19,7 +17,6 @@ const RecoveryState = {
 }
 
 function Login() {
-    const text = useLanguage()
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
@@ -35,47 +32,39 @@ function Login() {
     const [recoveryPhone, setRecoveryPhone] = useState("+7(9")
     const [recoveryCode, setRecoveryCode] = useState("")
 
-    const resolveLoginPayload = () => {
-        const trimmed = phone.trim()
-        const isEmail = trimmed.includes('@')
-
-        return {
-            value: trimmed,
-            type: isEmail ? 'email' : 'phone'
-        }
-    }
-
     const handleChange = (event) => {
-        const rawValue = event.target.value;
 
-        if (!/^[+0-9()-]*$/.test(rawValue)) {
-            setError('');
-            setPhone(rawValue);
-            return;
+        // нельзя вводить не числа и больше 11 символов
+        const inputValue = event.target.value.slice(1);
+        if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
+            setError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
         }
-
-        const inputValue = rawValue.slice(1);
-        if (/[^0-9()-]/.test(inputValue) && inputValue !== '') {
-            setError(text('Invalid character entered. Please enter only digits.'));
-        } else {
+        // else if (inputValue.length > 16) {
+        //     setError('Обратите внимание на длину номера!');
+        // }
+        else {
             setError('');
         }
 
-        const formattedValue = correctPhoneNumder(rawValue, phone, '+7(9');
-        setPhone(formattedValue);
+        const n = correctPhoneNumder(event)
+        setPhone(n)
+        // setPhone(event.target.value);
     };
 
-    function correctPhoneNumder (text, previousValue = '', fallbackPrefix = '') {
-        let new_text;
+    function correctPhoneNumder (e) {
+        var text = e.target.value
+        var new_text
 
-        if (text.length < previousValue.length) {
-            new_text = text;
-            if (fallbackPrefix && new_text.length < fallbackPrefix.length) {
-                new_text = fallbackPrefix;
+        // стирание
+        if (text.length < phone.length) {
+            new_text = text
+            if (new_text.length < 4) {
+                new_text = "+7(9"
             }
         }
+        // +7(988)-842-44-44
         else if (text.length === 6) {
-            new_text = text + ")-";
+            new_text = text + ")-"
         }
         else if (text.length === 7) {
             new_text = text.slice(0, -1) + ')-' + text.slice(-1);
@@ -84,24 +73,24 @@ function Login() {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 11) {
-            new_text = text + "-";
+            new_text = text + "-"
         }
         else if (text.length === 12) {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 14) {
-            new_text = text + "-";
+            new_text = text + "-"
         }
         else if (text.length === 15) {
             new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            new_text = text.slice(0,17);
+            new_text = text.slice(0,17)
         }
         else {
-            new_text = text;
+            new_text = text
         }
-        return new_text;
+        return new_text
     }
 
     const setRecoveryPhoneHandler = (event) => {
@@ -109,8 +98,8 @@ function Login() {
         // нельзя вводить не числа и больше 11 символов
         const inputValue = event.target.value.slice(1);
         if (/[^0-9()]/.test(inputValue) && inputValue !== '') {
-            setRecoveryError(text('Invalid character entered. Please enter only digits.'));
-        } 
+            setRecoveryError('Вы ввели недопустимый символ. Пожалуйста, введите только цифры.');
+        }
         // else if (inputValue.length > 9) {
         //     setRecoveryError('Обратите внимание на длину номера!');
         // }
@@ -119,8 +108,8 @@ function Login() {
         }
 
         // setRecoveryPhone(event.target.value);
-        const n = correctPhoneNumder(event.target.value, recoveryPhone, '+7(9');
-        setRecoveryPhone(n);
+        const n = correctPhoneNumder(event)
+        setRecoveryPhone(n)
     };
 
     const onSendPhone = (e) => {
@@ -159,21 +148,19 @@ function Login() {
                     return setRecoveryError(err.message)
                 }
 
-                setRecoveryError(text("Unable to process the request"))
+                setRecoveryError("Невозможно выполнить запрос")
             })
     }
 
     useEffect(() => {
-        document.title = text('Login');
-    }, [text]);
+        document.title = 'Войти';
+    }, []);
 
     const onSubmit = async (e) => {
         e.preventDefault()
 
-        const { value, type } = resolveLoginPayload()
-
         try {
-            await login(value, password, type)
+            await login(phone, password)
 
             if (keep) {
                 keepUserAuthorized(true)
@@ -184,13 +171,13 @@ function Login() {
             dispatch(fetchUser())
             navigate("/")
         } catch (err) {
-            setError(text("Incorrect data"))
+            setError("Некорректные данные")
         }
     }
 
     return (
         <section className="login">
-            <h1>{text('Login')}</h1>
+            <h1>Войти</h1>
             <form onSubmit={onSubmit}>
                 {error && (
                     <div className="auth-err">
@@ -218,7 +205,7 @@ function Login() {
                 /> */}
                 <input
                     type="password"
-                    placeholder={text("Password")}
+                    placeholder="Пароль"
                     className="input_login_password__fix"
                     onChange={(e) => setPassword(e.target.value)}
                     value={password}
@@ -231,14 +218,14 @@ function Login() {
                         className="login-keep__input"
                         onChange={(e) => setKeep(e.target.checked)}
                     />
-                    {text("Stay logged in")}
+                    Оставаться в системе
                 </label>
 
-                <button className="log__btn">{text('Login')}</button>
+                <button className="log__btn">Войти</button>
 
                 <div>
-                    <span>{text("No account?")} </span>
-                    <Link to="/register" style={{ fontSize: "16px" }}>{text("Sign up")}</Link>
+                    <span>Нет аккаунта? </span>
+                    <Link to="/register" style={{ fontSize: "16px" }}>Зарегистрируйтесь</Link>
                 </div>
                 <span
                     style={{
@@ -248,74 +235,88 @@ function Login() {
                     }}
                     onClick={() => setRecoveryState(RecoveryState.PHONE)}
                 >
-                    {text("Forgot password?")}
+                    Забыли пароль?
                 </span>
-                <Modal
+                <Popup
+                    className="password-recovery__modal"
                     open={recoveryState !== RecoveryState.IDLE}
                     onClose={() => setRecoveryState(RecoveryState.IDLE)}
-                    size="sm"
-                    className={modalStyles.modal}
-                    closeButton={true}
                 >
-                    <h2 className={modalStyles.title}>
-                        {text("Password recovery")}
+                    <button
+                        className="password-recovery__close"
+                        onClick={() => setRecoveryState(RecoveryState.IDLE)}
+                    >
+                        ×
+                    </button>
+                    <h2 className="password-recovery__title">
+                        Восстановление пароля
                     </h2>
-                    <p className={modalStyles.info}>
-                        {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
+                    <p className="password-recovery__info">
+                        Введите номер телефона, после чего на почту, привязанную к вашему аккаунту придёт письмо подтверждения.
                     </p>
                     {recoveryState === RecoveryState.CODE ? (
                         <form
-                            className={modalStyles.form}
+                            className="password-recovery-form password-recovery-form--extended"
                             onSubmit={onSendCode}
                         >
                             {recoveryError && (
-                                <div className={modalStyles.error}>
+                                <div className="password-recovery-form__error">
                                     {recoveryError}
                                 </div>
                             )}
                             <input
-                                className={modalStyles.input}
-                                placeholder={text("Enter the code from email")}
+                                className="password-recovery-form__input password-recovery-form__input--extended"
+                                placeholder="Введите код с почты"
                                 onChange={(e) => setRecoveryCode(e.target.value)}
                                 value={recoveryCode}
                             />
                             <input
-                                className={modalStyles.input}
-                                placeholder={text("New password")}
+                                className="password-recovery-form__input password-recovery-form__input--extended"
+                                placeholder="Новый пароль"
                                 onChange={(e) => setRecoveryPassword(e.target.value)}
                                 value={recoveryPassword}
                             />
-                            <button className={modalStyles.button} type="submit">
-                                {text("Send")}
+                            <button className="password-recovery-form__button">
+                                Отправить
                             </button>
+
                         </form>
                     ) : (
                         <form
-                            className={modalStyles.form}
+                            className="password-recovery-form"
                             onSubmit={onSendPhone}
                         >
                             {recoveryError && (
-                                <div className={modalStyles.error}>
+                                <div className="password-recovery-form__error">
                                     {recoveryError}
                                 </div>
                             )}
 
                             <div className="input_phone_wrap_recovery">
                                 <input
-                                className={`${modalStyles.input} ${recoveryPhone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'}`}
+                                // className="heheinput"
+                                className={`password-recovery-form__input ${recoveryPhone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'}`}
                                 type="text"
                                 name="phone"
+                                // placeholder="Телефон"
                                 value={recoveryPhone}
                                 onChange={(e)=>setRecoveryPhoneHandler(e)}
                                 required
                                 />
                             </div>
-                            <button className={modalStyles.button} type="submit">
-                                {text("Send")}
+                            {/* <input
+                                className="password-recovery-form__input"
+                                placeholder="Номер телефона"
+                                onChange={(e) => setRecoveryPhoneHandler(e)}
+                                value={recoveryPhone}
+                            /> */}
+                            <button className="password-recovery-form__button">
+                                Отправить
                             </button>
+
                         </form>
                     )}
-                </Modal>
+                </Popup>
             </form>
         </section>
     )

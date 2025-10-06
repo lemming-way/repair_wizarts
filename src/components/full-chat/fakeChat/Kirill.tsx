@@ -1557,9 +1557,9 @@ function ChoiceOfReplenishmentMethodCard() {
   }
 
   const handleSend = async () => {
-    const messageValue = message.trim();
+    const messageText = message.trim();
     const hasFiles = previewFiles.length > 0;
-    if (!messageValue && !hasFiles) return;
+    if (!messageText && !hasFiles) return;
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
@@ -1582,7 +1582,7 @@ function ChoiceOfReplenishmentMethodCard() {
     await sendChatMessage(
       order,
       role,
-      messageValue,
+      messageText,
       uploadedUrls.length ? uploadedUrls : undefined,
     );
 
@@ -1646,6 +1646,7 @@ function ChoiceOfReplenishmentMethodCard() {
     return `${diffInDays} ${getDaysWord(diffInDays)}`;
   };
 
+  // todo: Плюрализацию слов следует перенести в language
   const getMinutesWord = (minutes: number) => {
     const lastDigit = minutes % 10;
     const lastTwo = minutes % 100;

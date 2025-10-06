@@ -5,18 +5,20 @@ import {
     likeArticleComment,
     dislikeArticleComment
 } from "../../services/article.service"
+import { useLanguage } from '../../state/language'
 import formatDate from "../../utilities/formatDate"
 
 const ArticleComment = (props) => {
     const {
         id,
         sender,
-        text,
+        text: commentText,
         likes,
         created_at,
         isAnswer
     } = props
 
+    const text = useLanguage()
     const onLike = () => likeArticleComment(id)
     const onDislike = () => dislikeArticleComment(id)
 
@@ -42,10 +44,10 @@ const ArticleComment = (props) => {
                 </div>
             </div>
             <div className={styles.commentContent}>
-                {text}
+                {commentText}
             </div>
             <div className={styles.commentLikes}>
-                <span className={styles.answer}>Ответить</span>
+                <span className={styles.answer}>{text('Reply')}</span>
                 <button
                     className={styles.commentThumb}
                     onClick={onLike}

@@ -172,7 +172,7 @@ function MyOrder() {
       updateRequest(orderId, {
         winnerMaster: winnerId,
         selectedBudget,
-        status: 'В работе',
+        status: 'in progress',
       });
       // const answer = await appFetch(`/drive/get/${orderId}`, {
       //   body: {
@@ -245,10 +245,10 @@ function MyOrder() {
               <img src="/img/close.svg" alt="" />
             </div>
 
-            <h2>Оплата</h2>
+            <h2>{text('Payment')}</h2>
             <div className={style.row}>
               <div className={style.block}>
-                <p>Оплата через сайт</p>
+                <p>{text('Pay through the website')}</p>
                 <div className={style.radio}>
                   <input
                     type="radio"
@@ -258,13 +258,12 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    Баланс: {user?.u_details?.balance || 0}р
+                    {text('Balance')}: {user?.u_details?.balance || 0}р
                   </label>
                 </div>
-                <p>Обычная цена сделки без риска</p>
+                <p>{text('Standard risk-free deal price')}</p>
                 <p className={style.mini_text}>
-                  + 9% при пополнение кошелька баланса. Цена в отклике
-                  исполнителя уже включает в себя комиссию
+                  {text('A 9% fee applies when topping up your wallet. The price in the performer response already includes the commission.')}
                 </p>
               </div>
 
@@ -281,12 +280,11 @@ function MyOrder() {
                     checked={selectedIdx === 1}
                     onChange={() => setSelectedIdx(1)}
                   />
-                  <label htmlFor="inputCash">Оплата наличными</label>
+                  <label htmlFor="inputCash">{text('Cash payment')}</label>
                 </div>
                 <p className={style.mini_text}>
-                  Оплата напрямую исполнителю <br /> Без гарантий и компенсаций
-                  RepairWizarts: вы напрямую договариваетесь с исполнителем
-                  об условиях и способе оплаты.
+                  {text('Pay the performer directly')} <br />
+                  {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
                 </p>
               </div>
             </div>
@@ -360,7 +358,7 @@ function MyOrder() {
               <p>{text('5 days left')} </p>
               <p className={styles.view}>
                 <img src="/img/icons/eye.png" alt="" />
-                {currentOrder?.drivers?.length || 0} {text('Viewed')}
+                {currentOrder?.drivers?.length || 0} {text('viewed')}
               </p>
             </div>
           </div>
@@ -467,7 +465,7 @@ function MyOrder() {
 
                         <div className={style.top_block}>
                           <h1 style={{ textAlign: 'center' }}>
-                            Редактирование проекта
+                            {text('Editing the project')}
                           </h1>
                           <div
                             className="modal-content__row_swiper"
@@ -527,7 +525,7 @@ function MyOrder() {
                           style={{ display: 'flex', flexDirection: 'column' }}
                         >
                           <p className="form__light-text">
-                            Заголовок
+                            {text('Title')}
                             <img
                               className="modal_edit__icon"
                               src="/img/blank.png"
@@ -536,13 +534,13 @@ function MyOrder() {
                           </p>
                           <input
                             type="text"
-                            placeholder="Заголовок"
+                            placeholder={text('Title')}
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                           />
 
                           <p className="form__light-text">
-                            Описание заказа
+                            {text('Order description')}
                             <img
                               className="modal_edit__icon"
                               src="/img/pencil_modal.svg"
@@ -551,14 +549,14 @@ function MyOrder() {
                           </p>
                           <textarea
                             className="descdetail"
-                            placeholder="Описание заказа"
+                            placeholder={text('Order description')}
                             style={{ resize: 'none' }}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                           ></textarea>
 
                           <p className="form__light-text">
-                            Категория услуг
+                            {text('Service category')}
                             <img
                               className="modal_edit__icon"
                               src="/img/multi_box.png"
@@ -584,7 +582,7 @@ function MyOrder() {
                           </div>
 
                           <p className="form__light-text">
-                            Бюджет
+                            {text('Budget')}
                             <img
                               className="modal_edit__icon"
                               src="/img/price_icon.png"
@@ -594,7 +592,7 @@ function MyOrder() {
                           <input
                             type="text"
                             style={{ width: '200px', marginBottom: '20px' }}
-                            placeholder="Цена"
+                            placeholder={text('Price')}
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                           />
@@ -604,7 +602,7 @@ function MyOrder() {
                             className="done button__edit"
                             type="submit"
                           >
-                            Сохранить
+                            {text('Save')}
                           </button>
                         </form>
                       </div>
@@ -643,8 +641,7 @@ function MyOrder() {
                             item.c_options.author.u_family}
                         </p>
                         <p>
-                          {item.c_options.author.u_details?.business_model ||
-                            'не указан'}
+                          {text(item.c_options.author.u_details?.business_model || 'not specified')}
                         </p>
                         <p className={styles.star_block}>
                           <img src="/img/img-star.png" alt="" />
@@ -659,27 +656,27 @@ function MyOrder() {
 
                     <div>
                       <p className={styles.about__description}>
-                        <span>Город:</span>
+                        <span>{text('City')}:</span>
                         {item.c_options.author.u_details?.address}
                       </p>
                       <p className={styles.about__description}>
-                        <span>Адрес:</span>
+                        <span>{text('Address')}:</span>
                         {item.c_options.author.u_details?.address}
                       </p>
                     </div>
 
                     <div>
                       <p className={styles.about__description}>
-                        <span>На сайте:</span>с 2021 года
+                        <span>{text('On the platform')}:</span> {text('since 2022')}
                       </p>
                       <p className={styles.about__description}>
-                        <span>Статус:</span>
+                        <span>{text('Status')}:</span>
                         <span className={styles.accent_color}>
                           {item.c_options.author.u_details?.status}
                         </span>
                       </p>
                       <p className={styles.about__description}>
-                        <span>Оценка:</span>
+                        <span>{text('Rating')}:</span>
                         <span className={styles.accent_color}>5.00</span>
                       </p>
                     </div>
@@ -699,24 +696,16 @@ function MyOrder() {
                       Продавец Новичок
                     </p>
                     <p>
-                      <span className={styles.accent_color}>40 </span>заказов
-                      выполнено
+                      <span className={styles.accent_color}>40 </span>{text('Orders completed')}
                     </p>
                     <p>
-                      <span className={styles.accent_color}>40 </span>отзывов
-                      получено
+                      <span className={styles.accent_color}>40 </span>{text('reviews received')}
                     </p>
                     <p>
-                      <span className={styles.accent_color}>100% </span>заказов
-                      успешно сдано
+                      <span className={styles.accent_color}>100% </span>{text('Orders delivered successfully')}
                     </p>
                     <p>
-                      <span className={styles.accent_color}>40 </span>отзывов
-                      получено
-                    </p>
-                    <p>
-                      <span className={styles.accent_color}>54% </span>повторных
-                      заказов
+                      <span className={styles.accent_color}>54% </span>{text('repeat orders')}
                     </p>
                   </div>
                 </div>
@@ -724,54 +713,54 @@ function MyOrder() {
                 <div className={styles.about_block2}>
                   <table>
                     <tr>
-                      <td className={styles.light_text}>Опыт:</td>
+                      <td className={styles.light_text}>{text('Experience')}:</td>
                       <td>
                         {item.c_options.author.u_details?.experience
-                          ? item.c_options.author.u_details?.experience + ' лет'
-                          : 'Не указано'}
+                          ? item.c_options.author.u_details?.experience + ' ' + text('Years unit')
+                          : text('not specified')}
                       </td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Имя организации:</td>
+                      <td className={styles.light_text}>{text('Organization name')}:</td>
                       <td>
                         {item.c_options.author.u_details?.organization_name}
                       </td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Вид категории:</td>
+                      <td className={styles.light_text}>{text('Type of category')}:</td>
                       <td>Электроника</td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Категория:</td>
+                      <td className={styles.light_text}>{text('Category')}:</td>
                       <td>Ремонт телефонов, ремонт планшетов</td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Бренды:</td>
+                      <td className={styles.light_text}>{text('Brands')}:</td>
                       <td>Iphone, ipad (Из списка)</td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Ваша деятельность: </td>
+                      <td className={styles.light_text}>{text('Your activity')}: </td>
                       <td>{item.c_options.author?.u_details?.main_business}</td>
                     </tr>
                     <tr>
                       <td className={styles.light_text}>
-                        Основное направление:{' '}
+                        {text('Main focus')}:{' '}
                       </td>
                       <td>не указано </td>
                     </tr>
                     <tr>
-                      <td className={styles.light_text}>Основной бизнес: </td>
+                      <td className={styles.light_text}>{text('Main business')}: </td>
                       <td>{item.c_options.author.u_details?.main_business}</td>
                     </tr>
                   </table>
                   <div className={styles.col}>
-                    <p className={styles.text_light}>О себе</p>
-                    <p>{item.c_options.u_description || 'Не указано'}</p>
+                    <p className={styles.text_light}>{text('About me')}</p>
+                    <p>{item.c_options.u_description || text('not specified')}</p>
                   </div>
                 </div>
 
                 <div className={styles.text_block}>
-                  <p>{item.c_options.u_description || 'Не указано'}</p>
+                  <p>{item.c_options.u_description || text('not specified')}</p>
                 </div>
               </section>
               <section className={styles.order_block}>
@@ -836,7 +825,7 @@ function MyOrder() {
               {images.map((image, index) => (
                 <SwiperSlide key={index}>
                   <div className="modal-content-info">
-                    <img src={image} alt={`Slide ${index + 1}`} />
+                    <img src={image} alt={`${text('Slide')} ${index + 1}`} />
                   </div>
                 </SwiperSlide>
               ))}

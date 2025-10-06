@@ -93,7 +93,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="master"
           >
-            {text("Private master")}
+            {text("Independent technician")}
           </label>
           <input
             className={styles.registrationMasterMoreInfoPage_form_radio_input}
@@ -105,7 +105,7 @@ const RegistrationMasterMoreInfoPage = () => {
             className={styles.registrationMasterMoreInfoPage_form_radio_label}
             htmlFor="service"
           >
-            {text("Service")}
+            {text("Service center")}
           </label>
         </div>
 

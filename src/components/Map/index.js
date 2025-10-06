@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 
 import { selectUI } from '../../slices/ui.slice';
+import { useLanguage } from '../../state/language';
 
 // --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 function queryYMaps() {
@@ -39,6 +40,7 @@ function Map(props) {
     // selectedMaster, // Больше не нужен внутри этого компонента
     selectMaster, // Функция из родителя для выбора мастера
   } = props;
+  const text = useLanguage();
   const YMaps = useQuery( { queryKey: [ 'YMaps' ], queryFn: queryYMaps, placeholderData: null } ).data;
   const ui = useSelector(selectUI);
 
@@ -60,7 +62,7 @@ function Map(props) {
           coordinates={mapDefaultLocation.center}
           iconName='fallback'
           size='normal'
-          title='Вы здесь'
+          title={text('You are here')}
           color='red'
         />
       {/* Перебираем мастеров и создаем для каждого метку */}
@@ -77,7 +79,7 @@ function Map(props) {
       ))}
       </YMaps.YMap>
       :
-      'Яндекс карты не загрузились'
+      text('Yandex maps not loaded')
     }
     </div>
   );

@@ -37,7 +37,7 @@ function Sidebar() {
         <div className="left-content" style={{ left: menuActive ? '0' : null }}>
           <div className="dffds">
             <div className="img-content">
-              <img src={userAvatar} alt="Аватар пользователя" />
+              <img src={userAvatar} alt={text("User's avatar")} />
               <h3>{userName}</h3>
             </div>
             <div className="stars">

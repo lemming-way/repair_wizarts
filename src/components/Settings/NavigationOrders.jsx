@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 
+import { useLanguage } from '../../state/language';
 import style from './NavigationOrders.module.css';
 
 export default function NavigationOrders({ setStatusOrder }) {
+  const text = useLanguage();
   return (
     <>
       <div className={style.links_block}>
@@ -13,27 +15,27 @@ export default function NavigationOrders({ setStatusOrder }) {
               : null
           }`}
           to="/master/requests/orders#active"
-          onClick={() => setStatusOrder('Активно')}
+          onClick={() => setStatusOrder('Active')}
         >
-          Активные
+          {text('Active Orders')}
         </Link>
         <Link
           className={`${style.link} ${
             window.location.hash === '#success' ? 'active2' : null
           }`}
           to="/master/requests/orders#success"
-          onClick={() => setStatusOrder('Выполнено')}
+          onClick={() => setStatusOrder('Completed')}
         >
-          Выполненные
+          {text('Completed Orders')}
         </Link>
         <Link
           className={`${style.link} ${
             window.location.hash === '#cancel' ? 'active2' : null
           }`}
           to="/master/requests/orders#cancel"
-          onClick={() => setStatusOrder('Отменено')}
+          onClick={() => setStatusOrder('Canceled')}
         >
-          Отмененные
+          {text('Canceled Orders')}
         </Link>
       </div>
     </>

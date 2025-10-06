@@ -66,6 +66,7 @@ const StatusEnum = {
 
 // Компонент для отображения dropbox-фото через POST-запрос
 const DropboxImage = ({ url, alt = '' }) => {
+  const text = useLanguage();
   const [imgUrl, setImgUrl] = useState(url.startsWith('blob:') ? url : null);
   const urlRef = useRef(null);
   useEffect(() => {
@@ -104,7 +105,7 @@ const DropboxImage = ({ url, alt = '' }) => {
   if (!imgUrl)
     return (
       <div style={{ width: '100%', height: 120, background: '#eee' }}>
-        Loading...
+        {text('Loading...')}
       </div>
     );
   return <img src={imgUrl} alt={alt} style={{ width: '100%' }} />;

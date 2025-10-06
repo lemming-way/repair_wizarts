@@ -5,6 +5,7 @@ import { Outlet } from 'react-router-dom';
 
 import style from './ClientSettingsWrap.module.css';
 import { selectUser } from '../../slices/user.slice';
+import { useLanguage } from '../../state/language';
 import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
 
 
@@ -17,6 +18,7 @@ const listLinks = [
 ];
 
 function ClientSettingsWrap() {
+  const text = useLanguage();
   const user = useSelector(selectUser);
   const navigate = useNavigate();
 
@@ -56,8 +58,8 @@ function ClientSettingsWrap() {
     }
   }, [user, form]);
   useEffect(() => {
-    document.title = 'Настройки';
-  }, []);
+    document.title = text('Settings');
+  }, [text]);
 
   const [numberElementMenu, setNumberElementMenu] = useState(1);
   const [offsetMenu, setOffsetMenu] = useState(1);
@@ -99,7 +101,7 @@ function ClientSettingsWrap() {
       <div className={style.block_settings_client}>
         <div className={style.block_heading}>
           <div>
-            <h1>Настройки</h1>
+            <h1>{text('Settings')}</h1>
           </div>
           <div className={style.arrows_block}>
             <img

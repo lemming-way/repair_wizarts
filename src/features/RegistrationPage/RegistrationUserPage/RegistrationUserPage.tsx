@@ -13,7 +13,7 @@ const RegistrationUserPage = () => {
 
   useEffect(() => {
     document.title =  text('Registration');
-  }, []);
+  }, [text]);
 
   const navigate = useNavigate();
 

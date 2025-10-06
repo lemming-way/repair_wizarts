@@ -107,9 +107,11 @@ import { Link } from 'react-router-dom';
 
 import styles from './ServiceDropdown.module.scss';
 import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
+import { useLanguage } from '../../../../state/language';
 import type { RootState } from '../../../../store';
 
 const ServiceDropdown = () => {
+  const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
 
   const { categories } = useSelector((state: RootState) => state.categories);
@@ -117,7 +119,7 @@ const ServiceDropdown = () => {
     <Dropdown
       title={
         <>
-          <span>Услуги</span>
+          <span>{text('Services')}</span>
           <img
             src={arrowDown}
             alt=""

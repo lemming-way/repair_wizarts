@@ -7,15 +7,17 @@ import Articles from "./Home/Articles";
 import Order from "./Home/Order";
 import HeroSection from '../features/HomePage/HeroSection/HeroSection';
 import WhyChooseUsBlock from "../features/HomePage/WhyChooseUsBlock/WhyChooseUsBlock"
+import { useLanguage } from '../state/language'
 
 
 function App() {
     // const counters = useService(getCounters, {})
     // const covers = useService(getCovers, []) ###
 
+    const text = useLanguage()
     useEffect(() => {
-        document.title = 'Главная';
-    }, []);
+        document.title = text('Home');
+    }, [text]);
 
     return (
         <main>
