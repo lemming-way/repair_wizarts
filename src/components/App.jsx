@@ -55,14 +55,14 @@ import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
 import MasterChatWrap from './pages/MasterChatWrap';
-import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
 import PickLog from './Registration/pick-log';
-import Register from './Registration/register';
 import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
-
-const SuspenseFallback = <div>Loading...</div>;
+import OrdersListSkeleton from './Orders/skeletons/OrdersListSkeleton';
+import RegistrationFormSkeleton from './Registration/skeletons/RegistrationFormSkeleton';
+import ServiceDetailSkeleton from './Service/skeletons/ServiceDetailSkeleton';
+import SettingsFormSkeleton from './Settings/skeletons/SettingsFormSkeleton';
 
 const HomeV2 = lazy(() => import('./home_v2/HomeV2'));
 const MapMaster = lazy(() => import('./Pick-master/masters'));
@@ -77,6 +77,30 @@ const Applications = lazy(() => import('./Applications/applications'));
 const MyOrdersMaster = lazy(() => import('./Orders/MyOrdersMaster'));
 const Mysuggest = lazy(() => import('./mysuggest'));
 const MyOrder = lazy(() => import('./Orders/MyOrder'));
+
+const FALLBACKS = {
+  default: (
+    <div
+      style={{
+        padding: '24px',
+        display: 'grid',
+        gap: 16,
+        background: '#f7f7f7',
+        borderRadius: 12,
+        minHeight: 160,
+      }}
+    >
+      <div style={{ background: '#e5e5e5', height: 28, borderRadius: 8, width: '40%' }} />
+      <div style={{ background: '#e5e5e5', height: 16, borderRadius: 8, width: '60%' }} />
+      <div style={{ background: '#e5e5e5', height: 16, borderRadius: 8, width: '55%' }} />
+      <div style={{ background: '#e5e5e5', height: 120, borderRadius: 12 }} />
+    </div>
+  ),
+  service: <ServiceDetailSkeleton />,
+  orders: <OrdersListSkeleton />,
+  registration: <RegistrationFormSkeleton />,
+  settings: <SettingsFormSkeleton />,
+};
 
 // Lazy-load components for Settings/Profile package
 const Profile = lazy(() => import('./Settings/Profile'));
@@ -102,7 +126,6 @@ const RegisterLazy = lazy(() => import('./Registration/register'));
 const ProfileFeedbackMasterLazy = lazy(
   () => import('./profileNumberClient/ProfileFeedbackMaster'),
 );
-const AuthLoginLazy = lazy(() => import('./Registration/AuthLogin'));
 
 // Lazy-load Catalog & Services package
 const AddDevices = lazy(() => import('./addDevices/AddDevices'));
@@ -249,7 +272,7 @@ function App() {
   return (
     <>
       {currentHome === 'new' ? (
-        <Suspense fallback={SuspenseFallback}>
+        <Suspense fallback={FALLBACKS.default}>
           <HomeV2 />
         </Suspense>
       ) : (
@@ -263,7 +286,7 @@ function App() {
                 <Route
                   path="devices/:sectionId/:subsectionId"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.service}>
                       <Remont />
                     </Suspense>
                   }
@@ -271,7 +294,7 @@ function App() {
                 <Route
                   path="services/:sectionId/:subsectionId/:serviceId"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.service}>
                       <ServiceDetail />
                     </Suspense>
                   }
@@ -282,7 +305,7 @@ function App() {
                 <Route
                   path="contact"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.default}>
                       <MapMaster />
                     </Suspense>
                   }
@@ -293,7 +316,7 @@ function App() {
                   <Route
                     path="master"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.registration}>
                         <RegistrationMasterPage />
                       </Suspense>
                     }
@@ -301,7 +324,7 @@ function App() {
                   <Route
                     path="client"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.registration}>
                         <RegisterLazy />
                       </Suspense>
                     }
@@ -317,7 +340,7 @@ function App() {
                   <Route
                     index
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.settings}>
                         <ProfileFH />
                       </Suspense>
                     }
@@ -326,7 +349,7 @@ function App() {
                   <Route
                     path="wallet"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.settings}>
                         <ChoiceOfReplenishmentMethodClient />
                       </Suspense>
                     }
@@ -335,7 +358,7 @@ function App() {
                   <Route
                     path="balance"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.settings}>
                         <BalanceClient />
                       </Suspense>
                     }
@@ -348,7 +371,7 @@ function App() {
                   <Route
                     path="my_orders"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.orders}>
                         <MyOrdersMaster />
                       </Suspense>
                     }
@@ -356,7 +379,7 @@ function App() {
                   <Route
                     path="my_order/:id"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.orders}>
                         <MyOrder />
                       </Suspense>
                     }
@@ -365,7 +388,7 @@ function App() {
                     <Route
                       path="title"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <TitleService />
                         </Suspense>
                       }
@@ -373,7 +396,7 @@ function App() {
                     <Route
                       path="data"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <AddDevices />
                         </Suspense>
                       }
@@ -383,7 +406,7 @@ function App() {
                 <Route
                   path="offers/:id"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.orders}>
                       <Mysuggest />
                     </Suspense>
                   }
@@ -392,7 +415,7 @@ function App() {
                 <Route
                   path="feedback/:id"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.settings}>
                       <ProfileFeedbackMasterLazy />
                     </Suspense>
                   }
@@ -404,7 +427,7 @@ function App() {
                 <Route
                   path="chat"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.default}>
                       <FChatKirill />
                     </Suspense>
                   }
@@ -412,7 +435,7 @@ function App() {
                 <Route
                   path="chat/:id"
                   element={
-                    <Suspense fallback={SuspenseFallback}>
+                    <Suspense fallback={FALLBACKS.default}>
                       <FChatKirill />
                     </Suspense>
                   }
@@ -428,7 +451,7 @@ function App() {
                   <Route
                     path="chat"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.default}>
                         <FChatKirill />
                       </Suspense>
                     }
@@ -436,7 +459,7 @@ function App() {
                   <Route
                     path="chat/:id"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.default}>
                         <FChatKirill />
                       </Suspense>
                     }
@@ -449,7 +472,7 @@ function App() {
                   <Route
                     path="wallet"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.settings}>
                         <ChoiceOfReplenishmentMethod />
                       </Suspense>
                     }
@@ -460,7 +483,7 @@ function App() {
                     <Route
                       index
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.settings}>
                           <SettingsMaster />
                         </Suspense>
                       }
@@ -468,7 +491,7 @@ function App() {
                     <Route
                       path="profile"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.settings}>
                           <Profile />
                         </Suspense>
                       }
@@ -476,7 +499,7 @@ function App() {
                     <Route
                       path="services"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.settings}>
                           <Services />
                         </Suspense>
                       }
@@ -489,7 +512,7 @@ function App() {
                     <Route
                       index
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <Applications />
                         </Suspense>
                       }
@@ -497,7 +520,7 @@ function App() {
                     <Route
                       path="completed"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <Applications />
                         </Suspense>
                       }
@@ -505,7 +528,7 @@ function App() {
                     <Route
                       path="canceled"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <Applications />
                         </Suspense>
                       }
@@ -513,7 +536,7 @@ function App() {
                     <Route
                       path="all"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <Applications />
                         </Suspense>
                       }
@@ -526,7 +549,7 @@ function App() {
                     <Route
                       index
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <AllOrders />
                         </Suspense>
                       }
@@ -535,7 +558,7 @@ function App() {
                     <Route
                       path="orders"
                       element={
-                        <Suspense fallback={SuspenseFallback}>
+                        <Suspense fallback={FALLBACKS.orders}>
                           <Orders />
                         </Suspense>
                       }
@@ -546,7 +569,7 @@ function App() {
                   <Route
                     path="offers/create/:id"
                     element={
-                      <Suspense fallback={SuspenseFallback}>
+                      <Suspense fallback={FALLBACKS.orders}>
                         <OfferAService />
                       </Suspense>
                     }
