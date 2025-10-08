@@ -8,6 +8,7 @@ import '../scss/remont.css';
 
 function Remont() {
   const { sectionId, subsectionId } = useParams();
+  const normalizedSectionId = sectionId ? String(sectionId) : '';
   const [currentServices, setCurrentServices] = useState([]);
   console.log(sectionId, subsectionId);
   const { categories } = useSelector((state) => state.categories);
@@ -45,7 +46,9 @@ function Remont() {
       );
     }
   }, [currentServices]);
-  const selectedService = categories.find((item) => item.id == sectionId);
+  const selectedService = categories.find(
+    (item) => String(item.id) === normalizedSectionId,
+  );
   const searchParam = new URLSearchParams(window.location.search).get('search');
   return (
     <section

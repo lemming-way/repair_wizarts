@@ -25,29 +25,27 @@ const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper')
 const Article = (props) => {
     const { id } = useParams()
     const [articles, setArticles] = useState([])
-    // врмеенно для тестов
-    // const [data, setData] = useState({ })
-    const data = {
+    const [data, setData] = useState({
         title: "Заголовок статьи", // Заголовок статьи
         views: 123,                // Количество просмотров
         created_at: "2023-10-05T00:00:00Z", // Дата создания статьи (в формате ISO)
         text: "<p>Содержимое статьи в формате HTML.</p>" // Содержимое статьи в HTML
-    };
-    
+    });
+
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
     const ui = useSelector(selectUI)
 
 
 
     useEffect(() => {
-        getArticle(id).then((data) => {
-            if (data.cover_image) {
-                const path = SERVER_PATH + data.cover_image
+        getArticle(id).then((articleData) => {
+            if (articleData.cover_image) {
+                const path = SERVER_PATH + articleData.cover_image
                 setHeaderStyle({ background: `center / cover no-repeat url("${path}")` })
-                // setData(data)
+                setData(articleData)
                 return
             }
-            // setData(data)
+            setData(articleData)
             setHeaderStyle({ background: `url("${backgroundImg}")` })
         })
         getArticles().then(setArticles)
@@ -96,6 +94,7 @@ const Article = (props) => {
 
             <div className={styles.body}>
                 <div
+                    data-testid="article-body"
                     className={`${styles.bodyContent} ${offsetContent? styles.offset_content : ""}`}
                     dangerouslySetInnerHTML={{
                         __html: DOMPurify.sanitize(

@@ -274,12 +274,12 @@ function Profile() {
         setServices(
           categories.flatMap((item) => {
             const isSelectedSectionId = master.u_details.section.find(
-              (selec) => selec.value == item.id,
+              (selec) => String(selec.value) === String(item.id),
             );
             return isSelectedSectionId
               ? item.subsections.flatMap((item) => {
                   const isSelectedSubsection = master.u_details.subsection.find(
-                    (subSelec) => subSelec.value == item.id,
+                    (subSelec) => String(subSelec.value) === String(item.id),
                   );
                   return isSelectedSubsection
                     ? item.services.map((item) => ({

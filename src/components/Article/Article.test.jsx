@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 
 import Article from './Article';
 import * as articleService from '../../services/article.service';
@@ -16,15 +16,43 @@ jest.mock('swiper', () => ({
   Navigation: {},
 }));
 
+jest.mock('../../shared/ui/SwiperWrapper', () => ({
+  SwiperWithModules: ({ children }) => <div data-testid="swiper">{children}</div>,
+  SwiperSlide: ({ children }) => <div data-testid="swiper-slide">{children}</div>,
+}));
+
 jest.mock('./ArticleComments', () => {
   return function ArticleComments() {
     return <div data-testid="article-comments">Comments</div>;
   };
 });
 
+// Suppress React Router future flag warnings
+const originalWarn = console.warn;
+beforeAll(() => {
+  console.warn = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('React Router Future Flag Warning')
+    ) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.warn = originalWarn;
+});
+
 const mockStore = configureStore({
   reducer: {
     ui: uiReducer,
+  },
+  preloadedState: {
+    ui: {
+      isAuthorized: false,
+    },
   },
 });
 
@@ -33,15 +61,27 @@ const mockArticleData = {
   title: 'Test Article',
   views: 100,
   created_at: '2023-10-05T00:00:00Z',
-  text: '<p>Safe content</p><script>alert("XSS")</script><img src="x" onerror="alert(\'XSS\')" />',
+  text: '<p>Содержимое статьи в формате HTML.</p><script>alert("XSS")</script><img src="x" onerror="alert(\'XSS\')" />',
   likes: 5,
 };
+
+const renderWithRouter = (component, initialEntries = ['/articles/1']) => {
+  return render(
+    <Provider store={mockStore}>
+      <MemoryRouter initialEntries={initialEntries}>
+        {component}
+      </MemoryRouter>
+    </Provider>
+  );
+};
+
+const renderArticle = () => renderWithRouter(<Article />);
 
 describe('Article Component - HTML Sanitization', () => {
   beforeEach(() => {
     articleService.getArticle.mockResolvedValue(mockArticleData);
     articleService.getArticles.mockResolvedValue([]);
-    articleService.getArticleComments = jest.fn().mockResolvedValue([]);
+    articleService.getArticleComments.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -49,71 +89,57 @@ describe('Article Component - HTML Sanitization', () => {
   });
 
   it('renders sanitized HTML content', async () => {
-    const { container } = render(
-      <Provider store={mockStore}>
-        <BrowserRouter>
-          <Article />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderArticle();
 
-    await waitFor(() => {
-      const bodyContent = container.querySelector('[class*="bodyContent"]');
-      expect(bodyContent).toBeInTheDocument();
-      expect(bodyContent?.innerHTML).toContain('Содержимое статьи в формате HTML');
-    });
+    const bodyContent = await screen.findByTestId('article-body');
+    expect(bodyContent).toHaveTextContent('Содержимое статьи в формате HTML.');
   });
 
-  it('removes script tags from rendered content', async () => {
-    const { container } = render(
-      <Provider store={mockStore}>
-        <BrowserRouter>
-          <Article />
-        </BrowserRouter>
-      </Provider>
-    );
+  it('removes unsafe markup from rendered content', async () => {
+    renderArticle();
 
-    await waitFor(() => {
-      const scripts = container.querySelectorAll('script');
-      expect(scripts.length).toBe(0);
-    });
-  });
+    const bodyContent = await screen.findByTestId('article-body');
+    const scripts = within(bodyContent).queryByText((_, element) => element.tagName.toLowerCase() === 'script');
+    const inlineImages = within(bodyContent).getAllByRole('img');
 
-  it('removes dangerous inline event handlers from rendered content', async () => {
-    const { container } = render(
-      <Provider store={mockStore}>
-        <BrowserRouter>
-          <Article />
-        </BrowserRouter>
-      </Provider>
-    );
-
-    await waitFor(() => {
-      const bodyContent = container.querySelector('[class*="bodyContent"]');
-      const elementsWithOnError = bodyContent?.querySelectorAll('[onerror]');
-      const elementsWithOnClick = bodyContent?.querySelectorAll('[onclick]');
-      const elementsWithOnLoad = bodyContent?.querySelectorAll('[onload]');
-
-      expect(elementsWithOnError?.length || 0).toBe(0);
-      expect(elementsWithOnClick?.length || 0).toBe(0);
-      expect(elementsWithOnLoad?.length || 0).toBe(0);
+    expect(scripts).not.toBeInTheDocument();
+    inlineImages.forEach((img) => {
+      expect(img).not.toHaveAttribute('onerror');
     });
   });
 
   it('preserves safe HTML elements', async () => {
-    const { container } = render(
-      <Provider store={mockStore}>
-        <BrowserRouter>
-          <Article />
-        </BrowserRouter>
-      </Provider>
-    );
+    renderArticle();
 
-    await waitFor(() => {
-      const bodyContent = container.querySelector('[class*="bodyContent"]');
-      const paragraphs = bodyContent?.querySelectorAll('p');
+    const paragraphs = await screen.findAllByText('Содержимое статьи в формате HTML.', { selector: 'p' });
+    expect(paragraphs.length).toBeGreaterThan(0);
+  });
 
-      expect(paragraphs && paragraphs.length > 0).toBe(true);
-    });
+  it('renders article header with title and metadata', async () => {
+    renderArticle();
+
+    expect(await screen.findByRole('heading', { level: 2, name: 'Test Article' })).toBeInTheDocument();
+    expect(screen.getByText(/100/)).toBeInTheDocument();
+    expect(screen.getByText('5.10.2023')).toBeInTheDocument();
+  });
+
+  it('renders article comments section', async () => {
+    renderArticle();
+
+    expect(await screen.findByTestId('article-comments')).toBeInTheDocument();
+  });
+
+  it('renders action buttons', async () => {
+    renderArticle();
+
+    expect(await screen.findByText('Читать полностью')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Оформить ремонт' })).toBeInTheDocument();
+  });
+
+  it('renders aside menu', async () => {
+    renderArticle();
+
+    expect(await screen.findByText('Электроника')).toBeInTheDocument();
+    expect(screen.getByText('Ремонт телефонов')).toBeInTheDocument();
   });
 });

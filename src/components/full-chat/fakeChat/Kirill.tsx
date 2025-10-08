@@ -1379,7 +1379,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const measureFooter = useCallback(() => {
     const h = footerRef.current?.offsetHeight || 0;
     if (h !== footerHeight) setFooterHeight(h);
-  }, [footerRef.current?.offsetHeight || 0, footerHeight]);
+  }, [footerHeight]);
 
   useEffect(() => {
     measureFooter();

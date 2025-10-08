@@ -29,13 +29,16 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
+  const walletValue = user?.u_details?.wallets?.[0]?.value;
+  const userBalance = user?.u_details?.balance;
+
   useEffect(() => {
     //~ if (user) {
-      setInputCard(user?.u_details?.wallets?.[0]?.value || 'не указано');
-      setInputPrice(user?.u_details?.balance || '0.0');
+      setInputCard(walletValue || 'не указано');
+      setInputPrice(userBalance || '0.0');
       setCurrentPage(1); // сбрасываем страницу при смене данных
     //~ }
-  }, [user?.u_details?.wallets?.[0]?.value, user?.u_details?.balance]);
+  }, [walletValue, userBalance]);
 
   const allPayments = user?.u_details?.history_of_pay || [];
 

@@ -68,12 +68,17 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
 
       // Handle 401 Unauthorized - try to refresh token
       if (resp.status === 401 && !isRetry && headers.Authorization) {
-        const refreshSuccess = await attemptTokenRefresh();
-        if (refreshSuccess) {
-          // Retry with updated auth headers
-          return await doFetch(true, getAuthHeaders());
+        try {
+          const refreshSuccess = await attemptTokenRefresh();
+          if (refreshSuccess) {
+            // Retry with updated auth headers
+            return await doFetch(true, getAuthHeaders());
+          }
+          // If refresh failed, return original 401 error
+        } catch (refreshError) {
+          // If token refresh throws an exception, log it and continue with original 401 error
+          console.error('Token refresh failed with exception:', refreshError);
         }
-        // If refresh failed, return original 401 error
       }
 
       const err: ApiError = {

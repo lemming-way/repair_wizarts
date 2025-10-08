@@ -1,5 +1,5 @@
 import { refreshToken } from './modules/auth';
-import { setToken, clearToken } from '../../services/token.service';
+import { setToken, removeToken } from '../../services/token.service';
 
 // Token refresh helper to avoid circular imports
 export async function attemptTokenRefresh(): Promise<boolean> {
@@ -19,12 +19,12 @@ export async function attemptTokenRefresh(): Promise<boolean> {
       setToken(refreshResult.data);
       return true;
     } else {
-      clearToken();
+      removeToken();
       return false;
     }
   } catch (error) {
     console.error('Token refresh failed:', error);
-    clearToken();
+    removeToken();
     return false;
   }
 }

@@ -94,6 +94,8 @@ function ServiceDetail() {
   const services = useSelector(selectServices);
   //~ const repairMasters = getMasterRepairs();
   const { sectionId, subsectionId } = useParams();
+  const normalizedSectionId = sectionId ? String(sectionId) : '';
+  const normalizedSubsectionId = subsectionId ? String(subsectionId) : '';
   const device =
     useMemo(
       () => services?.find((v) => v.id === +id) || {},
@@ -424,9 +426,9 @@ function ServiceDetail() {
   }
   // todo: проверить, совпадают ли типы categ.id, sectionId, subsec.id, subsectionId и можно ли использовать строгое сравнение
   const prices = categories.flatMap((categ) => {
-    return categ.id == sectionId
+    return String(categ.id) === normalizedSectionId
       ? categ.subsections.flatMap((subsec) => {
-          return subsec.id == subsectionId
+          return String(subsec.id) === normalizedSubsectionId
             ? subsec.services.map((service) => ({
                 price: 100,
                 model: subsec.name,
@@ -913,7 +915,21 @@ function ServiceDetail() {
                       <Link to={`/client/feedback/${selectedMaster.id}`}>
                         {selectedMaster.reviews} отзыва
                       </Link>
-                      <a href="#">Подробнее</a>
+                      <button
+                        onClick={handleCloseModals}
+                        aria-label="Закрыть окно с информацией о мастере"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'inherit',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          padding: 0,
+                          font: 'inherit'
+                        }}
+                      >
+                        Закрыть
+                      </button>
                     </div>
                   </div>
                 </div>
