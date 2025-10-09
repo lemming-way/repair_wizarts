@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
 import { selectUser } from '../slices/user.slice';
-import appFetch from '../utilities/appFetch';
+import appFetch from '../services/api';
 
 export const useUserRating = () => {
   // Получаем ID пользователя из Redux

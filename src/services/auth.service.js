@@ -1,4 +1,4 @@
-import appFetch from '../utilities/appFetch';
+import appFetch from './api';
 
 const login = async (username, password) => {
   const { auth_hash } = await appFetch('/auth/', {

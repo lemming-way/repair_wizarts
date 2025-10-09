@@ -1,5 +1,5 @@
 import { getToken } from './token.service';
-import appFetch, { BASE_URL } from '../utilities/appFetch';
+import appFetch, { BASE_URL } from './api';
 // Функция для отправки кода на email
 //~ const sendEmailCodeTest = () => {
   //~ // Имитация запроса для отправки email кода

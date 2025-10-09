@@ -10,7 +10,7 @@ import style from './AddedDevice.module.css';
 import ModalConfirmDelete from './ModalConfirmDelete';
 import ModalConfirmPause from './ModalConfirmPause';
 import { deleteRequest, updateRequest } from '../../services/request.service';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 import formatDate from '../../utilities/formatDate';
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>

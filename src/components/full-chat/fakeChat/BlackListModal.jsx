@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import style from './blackListModal.module.css';
 import { updateUser } from '../../../services/user.service';
 import { selectUser } from '../../../slices/user.slice';
-import appFetch from '../../../utilities/appFetch';
+import appFetch from '../../../services/api';
 
 const EMPTY_ARRAY = []
 

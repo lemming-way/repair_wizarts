@@ -12,7 +12,7 @@ import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 
 
 import type { RootState } from '../../../store';
-import appFetch from '../../../utilities/appFetch';
+import appFetch from '../../../services/api';
 
 const RegistrationMasterPage = () => {
   const { categories } = useSelector((state: RootState) => state.categories);

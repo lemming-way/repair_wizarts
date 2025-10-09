@@ -1,4 +1,4 @@
-import appFetch from "../utilities/appFetch"
+import appFetch from './api'
 
 const createDialog = (payload) =>
     appFetch("chat/dialog", {

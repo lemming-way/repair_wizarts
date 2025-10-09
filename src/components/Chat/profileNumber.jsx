@@ -7,7 +7,7 @@ import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
 import { selectUser } from '../../slices/user.slice';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
 
 function App() {

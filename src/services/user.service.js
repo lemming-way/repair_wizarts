@@ -1,5 +1,5 @@
 import { removeToken } from './token.service';
-import appFetch from '../utilities/appFetch';
+import appFetch from './api';
 
 const getUser = () => appFetch('user/authorized');
 // Method to fetch the current user data
