@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 import styles from './RegistrationUserPage.module.scss';
 import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics";
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
-import Error from "../../../components/Error/Error";
+// import Error from "../../../components/Error/Error";
 import { useLanguage } from '../../../state/language';
 import {registerAsClient} from "../../../services/auth.service";
 
@@ -13,7 +13,7 @@ const RegistrationUserPage = () => {
 
   useEffect(() => {
     document.title =  text('Registration');
-  }, [text]);
+  }, []);
 
   const navigate = useNavigate();
 
@@ -51,10 +51,10 @@ const RegistrationUserPage = () => {
       <div className={`${styles.registrationUserPage} appContainer`}>
         <h1 className={styles.registrationUserPage_title}>{text('Registration')}</h1>
          <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
-           {error && (
-           // В старом коде className="auth-err"
-           <Error error={error} />
-           )}
+           {/*{error && (*/}
+           {/*// В старом коде className="auth-err"*/}
+           {/*<Error error={error} />*/}
+           {/*)}*/}
            <input
              className={styles.registrationUserPage_form_input}
              type="text"
