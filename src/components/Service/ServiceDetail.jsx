@@ -187,7 +187,7 @@ function ServiceDetail() {
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
     setShowSmallModal(true);
-    setShowBigModal(true);
+    setShowBigModal(false);
     setMasterCarData(null);
 
     try {
@@ -227,6 +227,11 @@ function ServiceDetail() {
     setShowBigModal(false);
     setSelectedMaster({});
     setMasterCarData(null);
+  };
+
+  const handleShowBigModal = () => {
+    setShowSmallModal(false);
+    setShowBigModal(true);
   };
 
   //~ const [invoice, setInvoice] = useState({
@@ -916,19 +921,11 @@ function ServiceDetail() {
                         {selectedMaster.reviews} отзыва
                       </Link>
                       <button
-                        onClick={handleCloseModals}
-                        aria-label="Закрыть окно с информацией о мастере"
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'inherit',
-                          textDecoration: 'underline',
-                          cursor: 'pointer',
-                          padding: 0,
-                          font: 'inherit'
-                        }}
+                        type="button"
+                        className="info_master__row-link"
+                        onClick={handleShowBigModal}
                       >
-                        Закрыть
+                        Подробнее
                       </button>
                     </div>
                   </div>
