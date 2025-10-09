@@ -1,5 +1,5 @@
 import { getConfigValue } from './config';
-import { getAuthHeaders } from './auth';
+import { getAuthParams } from './auth';
 import { attemptTokenRefresh } from './token';
 import type { ApiError, RequestOptions, Result } from './types';
 
@@ -41,24 +41,51 @@ export function createAbortableController(timeoutMs?: number, external?: AbortSi
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<Result<T>> {
   const base = getConfigValue('react-app.api.url') || '';
   const correlationId = Math.random().toString(36).slice(2);
-  const url = buildUrl(base, path, opts.query);
-
   const method = opts.method || 'GET';
-  const body = opts.body !== undefined && method !== 'GET' ? JSON.stringify(opts.body) : undefined;
 
   const { signal, dispose } = createAbortableController(opts.timeoutMs, opts.signal);
 
-  const doFetch = async (isRetry = false, overrideAuthHeaders?: Record<string, string>): Promise<Result<T>> => {
+  const doFetch = async (isRetry = false): Promise<Result<T>> => {
+    const rawAuthParams = getAuthParams();
+    const authParams =
+      rawAuthParams && typeof rawAuthParams === 'object' ? rawAuthParams : ({} as Record<string, string>);
+    const hasAuthParams = Object.keys(authParams).length > 0;
+    const url = buildUrl(
+      base,
+      path,
+      method === 'GET' ? { ...(opts.query ?? {}), ...authParams } : opts.query,
+    );
+
+    let requestBody: string | undefined;
+
+    if (method !== 'GET') {
+      let mergedBody: unknown = opts.body;
+
+      if (
+        mergedBody &&
+        typeof mergedBody === 'object' &&
+        mergedBody !== null &&
+        !Array.isArray(mergedBody)
+      ) {
+        mergedBody = { ...(mergedBody as Record<string, unknown>), ...authParams };
+      } else if (mergedBody === undefined && hasAuthParams) {
+        mergedBody = authParams;
+      }
+
+      if (mergedBody !== undefined) {
+        requestBody = JSON.stringify(mergedBody);
+      }
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...opts.headers,
-      ...overrideAuthHeaders || getAuthHeaders(),
     };
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.debug('[api]', correlationId, method, url);
       }
-      const resp = await fetch(url, { method, headers, body, signal });
+      const resp = await fetch(url, { method, headers, body: requestBody, signal });
       const ct = resp.headers.get('content-type') || '';
       const isJson = ct.includes('application/json');
       const data = isJson ? await resp.json().catch(() => undefined) : await resp.text();
@@ -67,12 +94,12 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       }
 
       // Handle 401 Unauthorized - try to refresh token
-      if (resp.status === 401 && !isRetry && headers.Authorization) {
+      if (resp.status === 401 && !isRetry && hasAuthParams) {
         try {
           const refreshSuccess = await attemptTokenRefresh();
           if (refreshSuccess) {
             // Retry with updated auth headers
-            return await doFetch(true, getAuthHeaders());
+            return await doFetch(true);
           }
           // If refresh failed, return original 401 error
         } catch (refreshError) {
