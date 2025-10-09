@@ -2,9 +2,6 @@ import { getAuthParams } from './auth';
 import { attemptTokenRefresh } from './token';
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
-import { attemptTokenRefresh } from './token';
-import type { ApiError, RequestOptions, Result } from './types';
-import SERVER_PATH from '../../constants/SERVER_PATH.js';
 
 function buildUrl(base: string, path: string, query?: RequestOptions['query']): string {
   const effectiveBase = base && /^https?:\/\//.test(base) ? base : 'http://localhost/';
