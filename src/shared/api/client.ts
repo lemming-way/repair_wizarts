@@ -1,7 +1,7 @@
-import { getConfigValue } from './config';
 import { getAuthHeaders } from './auth';
 import { attemptTokenRefresh } from './token';
 import type { ApiError, RequestOptions, Result } from './types';
+import SERVER_PATH from '../../constants/SERVER_PATH.js';
 
 function buildUrl(base: string, path: string, query?: RequestOptions['query']): string {
   const effectiveBase = base && /^https?:\/\//.test(base) ? base : 'http://localhost/';
@@ -39,7 +39,7 @@ export function createAbortableController(timeoutMs?: number, external?: AbortSi
 }
 
 export async function request<T>(path: string, opts: RequestOptions = {}): Promise<Result<T>> {
-  const base = getConfigValue('react-app.api.url') || '';
+  const base = process.env.REACT_APP_API_URL || SERVER_PATH || '';
   const correlationId = Math.random().toString(36).slice(2);
   const url = buildUrl(base, path, opts.query);
 
