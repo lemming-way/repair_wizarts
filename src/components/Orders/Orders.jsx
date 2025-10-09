@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import EmptyOrder from './EmptyOrder';
 import OrderRow from './OrderRow';
 import style from './Orders.module.css';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 import NavigationOrders from '../Settings/NavigationOrders';
 
 const STATE_ENUM = {

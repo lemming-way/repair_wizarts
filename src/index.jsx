@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './state/global';
+import { QueryProvider } from './app/providers/QueryProvider';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from "react-router-dom";
 import {CustomProvider} from 'rsuite';
@@ -17,7 +16,7 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+    <QueryProvider>
       <Provider store={store}>
         <BrowserRouter>
           <CustomProvider theme="dark">
@@ -25,7 +24,7 @@ root.render(
           </CustomProvider>
         </BrowserRouter>
       </Provider>
-    </QueryClientProvider>
+    </QueryProvider>
   </React.StrictMode>
 );
 

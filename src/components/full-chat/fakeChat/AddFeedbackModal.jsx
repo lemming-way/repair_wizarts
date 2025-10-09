@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import style from './AddFeedbackModal.module.css';
 import { createRequest } from '../../../services/request.service';
-import appFetch from '../../../utilities/appFetch';
+import appFetch from '../../../services/api';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>

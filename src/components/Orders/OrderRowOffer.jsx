@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 import ModalOfferGo from './ModalOfferGo';
 import style from './OrderRow.module.css';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 
 // Компонент для отображения dropbox-фото через POST-запрос
 const DropboxImage = ({ url, alt = '', style: imgStyle }) => {

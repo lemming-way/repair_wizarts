@@ -16,7 +16,7 @@ import { createRequest } from '../../services/request.service';
 import { selectServices } from '../../slices/services.slice';
 import { selectUI } from '../../slices/ui.slice';
 import { selectUser } from '../../slices/user.slice';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 import YMap from '../Map';
 
 const EMPTY_ARRAY = []

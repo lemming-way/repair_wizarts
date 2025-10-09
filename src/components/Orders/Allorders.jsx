@@ -12,7 +12,7 @@ import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
 import { selectUser } from '../../slices/user.slice';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 

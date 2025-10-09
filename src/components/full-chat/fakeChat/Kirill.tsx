@@ -32,7 +32,7 @@ import OkModal from './OkModal';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
-import appFetch from '../../../utilities/appFetch';
+import appFetch from '../../../services/api';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';

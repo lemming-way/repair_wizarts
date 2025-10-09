@@ -15,7 +15,7 @@ import {
   recoverPasswordSend,
   recoverPasswordVerify,
 } from '../../services/user.service';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
 
 const RecoveryState = {
   IDLE: 0,

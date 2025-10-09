@@ -1,4 +1,4 @@
-import appFetch from "../utilities/appFetch"
+import appFetch from './api'
 
 const getOffers = (id) => appFetch("submission/offers?request_id=" + id)
 
