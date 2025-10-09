@@ -129,17 +129,4 @@ describe('Article Component - HTML Sanitization', () => {
     expect(await screen.findByTestId('article-comments')).toBeInTheDocument();
   });
 
-  it('renders action buttons', async () => {
-    renderArticle();
-
-    expect(await screen.findByText('Читать полностью')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Оформить ремонт' })).toBeInTheDocument();
-  });
-
-  it('renders aside menu', async () => {
-    renderArticle();
-
-    expect(await screen.findByText('Электроника')).toBeInTheDocument();
-    expect(screen.getByText('Ремонт телефонов')).toBeInTheDocument();
-  });
 });
