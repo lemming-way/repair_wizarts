@@ -9,13 +9,13 @@ jest.mock('./token', () => ({
 }));
 
 jest.mock('./auth', () => ({
-  getAuthHeaders: jest.fn(),
+  getAuthParams: jest.fn(),
 }));
 
 describe('api client', () => {
   const originalFetch = global.fetch as any;
   const mockAttemptTokenRefresh = attemptTokenRefresh as jest.MockedFunction<typeof attemptTokenRefresh>;
-  const mockGetAuthHeaders = authModule.getAuthHeaders as jest.MockedFunction<typeof authModule.getAuthHeaders>;
+  const mockGetAuthParams = authModule.getAuthParams as jest.MockedFunction<typeof authModule.getAuthParams>;
 
   function assertOk<T>(result: Result<T>): asserts result is Ok<T> {
     expect(result.ok).toBe(true);
@@ -90,8 +90,8 @@ describe('api client', () => {
   });
 
   describe('token refresh', () => {
-    it('does not retry on 401 without Authorization header', async () => {
-      mockGetAuthHeaders.mockReturnValue({});
+    it('does not retry on 401 without auth params', async () => {
+      mockGetAuthParams.mockReturnValue({});
       const fetchMock = jest.fn().mockResolvedValue({
         ok: false,
         status: 401,
@@ -109,7 +109,7 @@ describe('api client', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
-    it('retries on 401 with Authorization header when token refresh succeeds', async () => {
+    it('retries on 401 with auth params when token refresh succeeds', async () => {
       // First call returns 401, second call succeeds
       const fetchMock = jest.fn()
         .mockResolvedValueOnce({
@@ -128,9 +128,9 @@ describe('api client', () => {
       (global.fetch as any) = fetchMock;
 
       // Mock auth headers with Authorization
-      mockGetAuthHeaders
-        .mockReturnValueOnce({ Authorization: 'Bearer old-token' })
-        .mockReturnValueOnce({ Authorization: 'Bearer new-token' });
+      mockGetAuthParams
+        .mockReturnValueOnce({ token: 'old-token', u_hash: 'hash-1' })
+        .mockReturnValueOnce({ token: 'new-token', u_hash: 'hash-2' });
 
       // Mock successful token refresh
       mockAttemptTokenRefresh.mockResolvedValue(true);
@@ -153,7 +153,7 @@ describe('api client', () => {
       });
       (global.fetch as any) = fetchMock;
 
-      mockGetAuthHeaders.mockReturnValue({ Authorization: 'Bearer old-token' });
+      mockGetAuthParams.mockReturnValue({ token: 'some-token', u_hash: 'hash' });
       mockAttemptTokenRefresh.mockResolvedValue(false);
 
       const res = await api.get<any>('test', { retry: { attempts: 0 } });
@@ -164,7 +164,7 @@ describe('api client', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1); // No retry
     });
 
-    it('does not retry on non-401 errors even with Authorization header', async () => {
+    it('does not retry on non-401 errors even with auth params', async () => {
       const fetchMock = jest.fn().mockResolvedValue({
         ok: false,
         status: 403,
@@ -174,7 +174,7 @@ describe('api client', () => {
       });
       (global.fetch as any) = fetchMock;
 
-      mockGetAuthHeaders.mockReturnValue({ Authorization: 'Bearer token' });
+      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
 
       const res = await api.get<any>('test', { retry: { attempts: 0 } });
 
@@ -194,7 +194,7 @@ describe('api client', () => {
       });
       (global.fetch as any) = fetchMock;
 
-      mockGetAuthHeaders.mockReturnValue({ Authorization: 'Bearer token' });
+      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
       mockAttemptTokenRefresh.mockRejectedValue(new Error('Network error'));
 
       const res = await api.get<any>('test', { retry: { attempts: 0 } });
@@ -224,7 +224,7 @@ describe('api client', () => {
         });
       (global.fetch as any) = fetchMock;
 
-      mockGetAuthHeaders.mockReturnValue({ Authorization: 'Bearer token' });
+      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
       mockAttemptTokenRefresh.mockResolvedValue(true);
 
       const res = await api.get<any>('test', { retry: { attempts: 0 } });
