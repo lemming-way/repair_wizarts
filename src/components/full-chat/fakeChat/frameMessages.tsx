@@ -1,15 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import '../../../scss/chat.css';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
 import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
-import { selectUI } from '../../../slices/ui.slice';
 import { useUserQuery } from '../../../hooks/useUserQuery';
+import { useUIState } from '../../../state/ui/UIStateContext';
 
 function App() {
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
   const { user: authorizedUser } = useUserQuery();
   const user = (authorizedUser as any) || ({} as any);
   const masterOrdersQuery = useMasterOrdersQuery({ enabled: ui.isMaster });

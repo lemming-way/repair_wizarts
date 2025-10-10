@@ -1,34 +1,33 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { removeToken } from '../services/token.service';
-import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
 import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
 import { userKeys } from '../queries';
+import { useUIActions, useUIState } from '../state/ui/UIStateContext';
 
 function DropdownService() {
-  const dispatch = useDispatch();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
+  const { setAuthorization, setMaster } = useUIActions();
   const text = useLanguage();
 
   const switchMode = () => {
     console.log(ui);
     if (!ui.isMaster) {
       setUserMode(!ui.isMaster);
-      dispatch(setMaster(!ui.isMaster));
+      setMaster(!ui.isMaster);
       return;
     }
     setUserMode(false);
-    dispatch(setMaster(false));
+    setMaster(false);
   };
 
   const logout = (e) => {
-    dispatch(setAuthorization(false));
+    setAuthorization(false);
     queryClient.removeQueries({ queryKey: userKeys.all });
     removeToken();
     navigate('/');

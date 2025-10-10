@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
 import '../../scss/detail.scss';
@@ -13,12 +12,12 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import style from './serviceDetail.module.scss';
 import ServiceDetailContext from './ServiceDetailContext';
 import { createRequest } from '../../services/request.service';
-import { selectUI } from '../../slices/ui.slice';
 import appFetch from '../../services/api';
 import YMap from '../Map';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../../hooks/useServicesQuery';
+import { useUIState } from '../../state/ui/UIStateContext';
 
 function ServiceDetail() {
   const test_price = [
@@ -89,7 +88,7 @@ function ServiceDetail() {
   const { categories } = useCategoriesQuery();
   const { user } = useUserQuery();
   const currentUser = user || {};
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
   const { services } = useServicesQuery();
   const servicesList = useMemo(() => {
     if (Array.isArray(services)) {

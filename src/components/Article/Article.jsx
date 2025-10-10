@@ -4,7 +4,6 @@ import React, {
     useState,
     Suspense
 } from 'react'
-import { useSelector } from 'react-redux'
 import { useParams, Link } from 'react-router-dom'
 
 import styles from './Article.module.css'
@@ -17,7 +16,7 @@ import {
     getArticle,
     getArticles
 } from '../../services/article.service'
-import { selectUI } from '../../slices/ui.slice'
+import { useUIState } from '../../state/ui/UIStateContext'
 
 const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
@@ -33,7 +32,7 @@ const Article = (props) => {
     });
 
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
-    const ui = useSelector(selectUI)
+    const ui = useUIState()
 
 
 

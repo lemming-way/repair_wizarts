@@ -62,6 +62,8 @@
 - `npm run build`
 - `npm test -- --watchAll=false`
 
+_Статус:_ Выполнено — клиентское состояние перенесено в `UIStateProvider`/`NotificationsProvider`, а WebSocket уведомления работают через контекстные обработчики вместо Redux middleware.【F:src/state/ui/UIStateContext.tsx†L5-L102】【F:src/state/notifications/NotificationsContext.tsx†L1-L79】【F:src/services/notification.service.js†L1-L162】
+
 ## Общие рекомендации
 - После каждого шага фиксируй изменения в отдельном коммите, чтобы упростить откат.
 - Если какой-то шаг оказывается слишком объёмным, разбей его на подшаги с теми же проверками.

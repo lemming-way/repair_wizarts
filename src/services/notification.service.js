@@ -1,114 +1,195 @@
 import { getToken } from "./token.service"
 import { SERVER_WSPATH } from "../constants/SERVER_PATH"
 import popit from "../img/popit.wav"
-import { pushNotification } from "../slices/notifications.slice"
-import { updateOnline } from "../slices/online.slice"
 import { queryClient } from "../app/queryClient";
 import { messageKeys } from "../queries";
 
 let ws = null
+let keepAliveTimer = null
+let handlersRef = {
+    onNotification: undefined,
+    onOnlineUpdate: undefined,
+}
 
 const NotificationType = {
     UPDATE_ONLINE: 1,
     CREATED_MESSAGE: 2,
     ACCEPTED_ORDER: 3,
     CREATED_OFFER: 4,
-    ACCEPTED_OFFER: 5
+    ACCEPTED_OFFER: 5,
 }
 
-const dispatchDependOnTheType = (dispatch, data) => {
-    const audio = new Audio(popit)
+const createAudio = () =>
+    typeof Audio !== 'undefined' ? new Audio(popit) : null
+
+const playAudio = (audio) => {
+    if (!audio || typeof audio.play !== 'function') {
+        return
+    }
+
+    audio.play().catch(() => {
+        // ignored – autoplay restrictions can prevent playback
+    })
+}
+
+const dispatchDependOnTheType = (data) => {
+    const audio = createAudio()
 
     switch (data.type) {
-        case NotificationType.UPDATE_ONLINE:
-            dispatch(updateOnline(data.online_users))
+        case NotificationType.UPDATE_ONLINE: {
+            const onlineUsers = Array.isArray(data.online_users)
+                ? data.online_users
+                : []
+            handlersRef.onOnlineUpdate?.(onlineUsers)
             break
-        case NotificationType.CREATED_MESSAGE:
+        }
+        case NotificationType.CREATED_MESSAGE: {
             if (Array.isArray(data.unread_messages)) {
                 queryClient.setQueryData(messageKeys.unread(), data.unread_messages)
             } else {
                 queryClient.invalidateQueries({ queryKey: messageKeys.unread() })
             }
-            audio.play()
+            playAudio(audio)
             break
-        case NotificationType.ACCEPTED_ORDER:
-            dispatch(pushNotification({
+        }
+        case NotificationType.ACCEPTED_ORDER: {
+            handlersRef.onNotification?.({
                 title: 'Заявка одобрена!',
                 description: 'Чтобы пройти в чат нажмите на это сообщение.',
-                url: '/client/chat'
-            }))
-            audio.play()
+                url: '/client/chat',
+            })
+            playAudio(audio)
             break
-        case NotificationType.CREATED_OFFER:
-            dispatch(pushNotification({
+        }
+        case NotificationType.CREATED_OFFER: {
+            handlersRef.onNotification?.({
                 title: `На ваш заказ #${data.request} поступило предложение!`,
                 description: 'Чтобы просмотреть все предложения на этот заказ, нажмите это сообщение.',
-                url: '/client/offers/' + data.request
-            }))
-            audio.play()
+                url: '/client/offers/' + data.request,
+            })
+            playAudio(audio)
             break
-        case NotificationType.ACCEPTED_OFFER:
-            dispatch(pushNotification({
-                title: "Ваше предложение было принято!",
+        }
+        case NotificationType.ACCEPTED_OFFER: {
+            handlersRef.onNotification?.({
+                title: 'Ваше предложение было принято!',
                 description: 'Чтобы пройти в чат нажмите на это сообщение',
-                url: '/master/chat'
-            }))
-            audio.play()
+                url: '/master/chat',
+            })
+            playAudio(audio)
             break
+        }
         default:
             break
     }
 }
 
-const connect = (dispatch) => {
-    ws = new WebSocket(SERVER_WSPATH + "ws/notifications?token=" + getToken()?.access_token)
-    ws?.addEventListener("open", (e) => {
-        ws.send(JSON.stringify({ type: NotificationType.UPDATE_ONLINE }))
-        setInterval(() => ws.send(
-            JSON.stringify({ type: NotificationType.UPDATE_ONLINE })),
-            30000
-        )
+const safeSend = (payload) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+        return
+    }
+
+    ws.send(JSON.stringify(payload))
+}
+
+const startKeepAlive = () => {
+    keepAliveTimer = setInterval(() => {
+        safeSend({ type: NotificationType.UPDATE_ONLINE })
+    }, 30000)
+}
+
+const stopKeepAlive = () => {
+    if (keepAliveTimer) {
+        clearInterval(keepAliveTimer)
+        keepAliveTimer = null
+    }
+}
+
+const connect = (handlers = {}) => {
+    if (typeof WebSocket === 'undefined') {
+        return
+    }
+
+    const token = getToken()?.access_token
+    if (!token) {
+        return
+    }
+
+    disconnect()
+
+    handlersRef = {
+        onNotification: handlers.onNotification,
+        onOnlineUpdate: handlers.onOnlineUpdate,
+    }
+
+    ws = new WebSocket(`${SERVER_WSPATH}ws/notifications?token=${token}`)
+
+    ws.addEventListener('open', () => {
+        safeSend({ type: NotificationType.UPDATE_ONLINE })
+        startKeepAlive()
     })
-    ws?.addEventListener("message", (e) => dispatchDependOnTheType(
-        dispatch, JSON.parse(e.data)
-    ))
+
+    ws.addEventListener('message', (event) => {
+        try {
+            const payload = JSON.parse(event.data)
+            dispatchDependOnTheType(payload)
+        } catch (error) {
+            console.error('Failed to parse notification payload', error)
+        }
+    })
+
+    ws.addEventListener('close', () => {
+        stopKeepAlive()
+    })
+
+    ws.addEventListener('error', () => {
+        stopKeepAlive()
+    })
 }
 
 const disconnect = () => {
-    ws?.close()
+    stopKeepAlive()
+    if (ws) {
+        ws.close()
+        ws = null
+    }
+    handlersRef = {
+        onNotification: undefined,
+        onOnlineUpdate: undefined,
+    }
 }
 
 const sendMessageCreate = (receiver_id, dialog_id, message_id) => {
-    ws.send(JSON.stringify({
+    safeSend({
         type: NotificationType.CREATED_MESSAGE,
         receiver_id,
         dialog_id,
-        message_id
-    }))
+        message_id,
+    })
 }
 
 const sendOrderAccept = (receiver_id, order_id) => {
-    ws.send(JSON.stringify({
+    safeSend({
         type: NotificationType.ACCEPTED_ORDER,
         receiver_id,
-        order_id
-    }))
+        order_id,
+    })
 }
 
 const sendOfferCreate = (receiver_id, request_id) => {
-    ws.send(JSON.stringify({
+    safeSend({
         type: NotificationType.CREATED_OFFER,
         receiver_id,
-        request_id
-    }))
+        request_id,
+    })
 }
 
 const sendOfferAccept = (receiver_id, offer_id) => {
-    ws.send(JSON.stringify({
+    safeSend({
         type: NotificationType.ACCEPTED_OFFER,
         receiver_id,
-        offer_id
-    }))
+        offer_id,
+    })
 }
 
 export {
@@ -117,5 +198,5 @@ export {
     sendMessageCreate,
     sendOrderAccept,
     sendOfferCreate,
-    sendOfferAccept
+    sendOfferAccept,
 }

@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryProvider } from './app/providers/QueryProvider';
-import { Provider } from 'react-redux';
 import { BrowserRouter } from "react-router-dom";
 import {CustomProvider} from 'rsuite';
 
@@ -9,7 +8,8 @@ import App from './components/App';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
 import reportWebVitals from './reportWebVitals';
-import store from './store'
+import { UIStateProvider } from './state/ui/UIStateContext';
+import { NotificationsProvider } from './state/notifications/NotificationsContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
@@ -17,13 +17,15 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <QueryProvider>
-      <Provider store={store}>
-        <BrowserRouter>
-          <CustomProvider theme="dark">
-            <App />
-          </CustomProvider>
-        </BrowserRouter>
-      </Provider>
+      <UIStateProvider>
+        <NotificationsProvider>
+          <BrowserRouter>
+            <CustomProvider theme="dark">
+              <App />
+            </CustomProvider>
+          </BrowserRouter>
+        </NotificationsProvider>
+      </UIStateProvider>
     </QueryProvider>
   </React.StrictMode>
 );

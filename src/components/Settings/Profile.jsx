@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { updateUser } from '../../services/user.service';
 import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
+import { useUIState } from '../../state/ui/UIStateContext';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -55,7 +54,7 @@ function Profile() {
   //     { value: 5, label: "Восстановление программного обеспечения" },
   //   ]; ###
 
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
   const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
   const { user } = useUserQuery();

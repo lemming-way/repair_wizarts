@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 
 import '../scss/swiper.css';
-import { useDispatch } from 'react-redux';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClient';
@@ -41,12 +40,6 @@ import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
 import Article from './Article';
-import {
-  setAuthorization,
-  setLoading,
-  setLocation,
-  setMaster,
-} from '../slices/ui.slice';
 import { getLocation } from '../services/location.service';
 import { getToken } from '../services/token.service';
 import { getUserMode, updateUser } from '../services/user.service';
@@ -77,12 +70,15 @@ import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
 import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../hooks/useServicesQuery';
+import { useUIActions } from '../state/ui/UIStateContext';
+import { useNotifications } from '../state/notifications/NotificationsContext';
 
 function App() {
   const { user, status } = useUserQuery();
   const currentUser = user || {};
   const __location__ = useLocation();
-  const dispatch = useDispatch();
+  const { setAuthorization, setLoading, setLocation, setMaster } = useUIActions();
+  const { connect: connectNotifications } = useNotifications();
 
   const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
   useServicesQuery();
@@ -147,12 +143,12 @@ function App() {
     const location = getLocation();
 
     if (location) {
-      dispatch(setLocation(location));
+      setLocation(location);
     }
     if (isMaster) {
-      dispatch(setMaster(true));
+      setMaster(true);
     }
-  }, [dispatch]);
+  }, [setLocation, setMaster]);
 
   useEffect(() => {
     const currentVersion = new URLSearchParams(window.location.search).get(
@@ -163,19 +159,19 @@ function App() {
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      dispatch(setLoading(false));
+      setLoading(false);
       return;
     }
 
     if (status === 'success') {
-      dispatch({ type: 'notifications/connect' });
-      dispatch(setLoading(false));
-      dispatch(setAuthorization(true));
+      connectNotifications();
+      setLoading(false);
+      setAuthorization(true);
     }
     if (status === 'error') {
-      dispatch(setLoading(false));
+      setLoading(false);
     }
-  }, [dispatch, status]);
+  }, [connectNotifications, setAuthorization, setLoading, status]);
 
   if (!categories.length && areCategoriesLoading) {
     return 'Loading...';

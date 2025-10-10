@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -16,15 +15,14 @@ import Popup from 'reactjs-popup';
 
 import style from './SettingsMaster.module.css';
 import { deleteUser } from '../../services/user.service';
-import { selectUI, setAuthorization } from '../../slices/ui.slice';
 import VerificationInput from '../VerificationInput';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
+import { useUIActions, useUIState } from '../../state/ui/UIStateContext';
 
 const EMPTY_OBJECT = {}
 
 export default function SettingsMaster() {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
@@ -36,7 +34,8 @@ export default function SettingsMaster() {
   const { user } = useUserQuery();
   const currentUser = user || EMPTY_OBJECT;
   const userId = currentUser?.u_id ?? currentUser?.id;
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
+  const { setAuthorization } = useUIActions();
 
   const [mask_value, setMask_value] = useState('+7(9');
 
@@ -167,7 +166,7 @@ export default function SettingsMaster() {
   const onDelete = (e) => {
     e.preventDefault();
     return deleteUser().then(() => {
-      dispatch(setAuthorization(false));
+      setAuthorization(false);
       navigate('/');
     });
   };
