@@ -1,15 +1,17 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { removeToken } from '../services/token.service';
 import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
-import { wipeUser } from '../slices/user.slice';
 import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
+import { userKeys } from '../queries';
 
 function DropdownService() {
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const ui = useSelector(selectUI);
   const text = useLanguage();
@@ -26,8 +28,8 @@ function DropdownService() {
   };
 
   const logout = (e) => {
-    dispatch(wipeUser());
     dispatch(setAuthorization(false));
+    queryClient.removeQueries({ queryKey: userKeys.all });
     removeToken();
     navigate('/');
   };

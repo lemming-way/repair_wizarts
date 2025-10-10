@@ -1,14 +1,13 @@
 import React, { useEffect, useState, Suspense } from 'react';
 
 import '../../scss/applications.css';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 
 import style from './applications.module.css';
 import NavApplication from './NavApplication';
 import { useService } from '../../hooks/useService';
 import { getMasterOrders } from '../../services/order.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 //~ const statusEnum = {
@@ -23,13 +22,13 @@ const StylesStatusEnum = {
   Пауза: 'status_stop',
 };
 function MyApplications() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
   const navigator = useNavigate();
   const orders = useService(getMasterOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];
   const filteredRequests = rawRequests.filter(
-    (item) => item.b_options.type === 'order' && item.u_id !== user.u_id,
+    (item) => item.b_options.type === 'order' && item.u_id !== currentUser.u_id,
   );
   //   // test
   //   // const filteredOrders = [

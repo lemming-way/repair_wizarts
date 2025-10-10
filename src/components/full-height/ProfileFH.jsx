@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updatePassword, updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const EMPTY_OBJECT = {}
 
 function ProfileFH() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || EMPTY_OBJECT;
+  const userId = currentUser?.u_id ?? currentUser?.id;
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -21,10 +24,10 @@ function ProfileFH() {
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    name: user.u_name || '',
-    lastname: user.u_family || '',
-    phone: user.u_phone || '',
-    email: user.u_email || '',
+    name: currentUser.u_name || '',
+    lastname: currentUser.u_family || '',
+    phone: currentUser.u_phone || '',
+    email: currentUser.u_email || '',
   });
 
   const getFormAttrs = (field) => {
@@ -39,11 +42,16 @@ function ProfileFH() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    updateUser(form, user.u_id)
+    if (!userId) {
+      return;
+    }
+
+    updateUser(form, userId)
       .then((v) => {
         setSucceeded(true);
         setError('');
         console.log(v);
+        queryClient.invalidateQueries({ queryKey: userKeys.all });
       })
       .catch((err) => console.log(err))
       .catch((err) => {
@@ -64,15 +72,15 @@ function ProfileFH() {
     }
   };
   useEffect(() => {
-    if (Object.keys(user) && !form.name) {
+    if (Object.keys(currentUser) && !form.name) {
       setForm({
-        name: user.u_name,
-        lastname: user.u_family,
-        phone: user.u_phone,
-        email: user.u_email,
+        name: currentUser.u_name,
+        lastname: currentUser.u_family,
+        phone: currentUser.u_phone,
+        email: currentUser.u_email,
       });
     }
-  }, [user, form.name]);
+  }, [currentUser, form.name]);
 
   useEffect(() => {
     document.title = 'Настройки';
@@ -145,14 +153,14 @@ function ProfileFH() {
             {...getFormAttrs('lastname')}
           />
           <VerificationInput
-            isConfirmed={user.is_phone_verified}
+            isConfirmed={currentUser.is_phone_verified}
             {...getFormAttrs('phone')}
             mask_value={mask_value}
             onChangeMask={correctPhoneNumder}
           />
           <VerificationInput
             isEmail
-            isConfirmed={user.is_email_verified}
+            isConfirmed={currentUser.is_email_verified}
             value={form.email || ''}
             {...getFormAttrs('email')}
           />

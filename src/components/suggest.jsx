@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react"
-import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { Rating } from "react-simple-star-rating";
 
@@ -9,7 +8,7 @@ import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
 import { getMasterServices } from "../services/service.service"
 import { getMasterByUsername } from "../services/user.service";
-import { selectUser } from "../slices/user.slice";
+import { useUserQuery } from "../hooks/useUserQuery";
 
 const Suggest = (props) => {
     const {
@@ -22,7 +21,8 @@ const Suggest = (props) => {
     } = props
 
     const navigate = useNavigate()
-    const user = useSelector(selectUser)
+    const { user } = useUserQuery()
+    const currentUserId = user?.u_id || user?.id
 
     const [error, setError] = useState("")
     const [master, setMaster] = useState({ })
@@ -39,7 +39,7 @@ const Suggest = (props) => {
 
         acceptOffer(offerId).then((res) => {
             const payload = {
-                sender1_id: user?.id,
+                sender1_id: currentUserId,
                 sender2_id: res.master_id,
                 request_id
             }

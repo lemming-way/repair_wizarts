@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import '../../scss/service.css';
 import '../../scss/register-master.scss';
 import style from './services.module.css';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 //~ import { getMasterRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 
 const EMPTY_OBJECT = {}
 
 function Services() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || EMPTY_OBJECT;
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
@@ -23,34 +27,40 @@ function Services() {
     useState(null);
   //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
-  const username = user.u_details?.login;
+  const username = currentUser.u_details?.login;
   const { categories } = useSelector((state) => state.categories);
   useEffect(() => {
     if (!username) return;
     if (
-      user.u_details?.section &&
-      user.u_details?.subsection &&
-      user.u_details?.service &&
-      user.u_details?.servicesBlocks
+      currentUser.u_details?.section &&
+      currentUser.u_details?.subsection &&
+      currentUser.u_details?.service &&
+      currentUser.u_details?.servicesBlocks
     ) {
       setCategoryMainOptionSelected(
-        Array.isArray(user.u_details.section) ? user.u_details.section : [],
+        Array.isArray(currentUser.u_details.section)
+          ? currentUser.u_details.section
+          : [],
       );
       setCategoryOptionSelected(
-        Array.isArray(user.u_details.subsection)
-          ? user.u_details.subsection
+        Array.isArray(currentUser.u_details.subsection)
+          ? currentUser.u_details.subsection
           : [],
       );
       setModelPhoneOptionSelected(
-        Array.isArray(user.u_details.service) ? user.u_details.service : [],
+        Array.isArray(currentUser.u_details.service)
+          ? currentUser.u_details.service
+          : [],
       );
       setBrandOptionSelected(
-        Array.isArray(user.u_details.question) ? user.u_details.question : [],
+        Array.isArray(currentUser.u_details.question)
+          ? currentUser.u_details.question
+          : [],
       );
-      setServicesBlocks({ ...user.u_details.servicesBlocks });
+      setServicesBlocks({ ...currentUser.u_details.servicesBlocks });
     }
     //~ getMasterRepairsByUsername(username).then(setRepairs);
-  }, [user, username]);
+  }, [currentUser, username]);
   useEffect(() => {
     var obj = {};
     if (!brandOptionSelected) {
@@ -182,6 +192,10 @@ function Services() {
   }
   function onSubmit(e) {
     e.preventDefault();
+    if (!userId) {
+      return;
+    }
+
     updateUser(
       {
         details: {
@@ -192,8 +206,11 @@ function Services() {
           servicesBlocks: [],
         },
       },
-      user.u_id,
-    ).then((v) => console.log(v));
+      userId,
+    ).then((v) => {
+      console.log(v);
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    });
   }
   const categoriesMainOptions = categories.map((item) => ({
     label: item.name,

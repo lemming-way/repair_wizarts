@@ -15,9 +15,9 @@ import ServiceDetailContext from './ServiceDetailContext';
 import { createRequest } from '../../services/request.service';
 import { selectServices } from '../../slices/services.slice';
 import { selectUI } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../services/api';
 import YMap from '../Map';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 const EMPTY_ARRAY = []
 
@@ -88,8 +88,8 @@ function ServiceDetail() {
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
   const { categories } = useSelector((state) => state.categories);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
   const ui = useSelector(selectUI);
   const services = useSelector(selectServices);
   //~ const repairMasters = getMasterRepairs();
@@ -180,9 +180,9 @@ function ServiceDetail() {
   }, []);
 
   useEffect(() => {
-    setPhone(user.u_phone);
-    setName(user.u_name);
-  }, [user.u_phone, user.u_name]);
+    setPhone(currentUser.u_phone);
+    setName(currentUser.u_name);
+  }, [currentUser.u_phone, currentUser.u_name]);
 
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
@@ -714,7 +714,7 @@ function ServiceDetail() {
                       <input
                         type="text"
                         placeholder="Ваше имя"
-                        defaultValue={user.u_name}
+                        defaultValue={currentUser.u_name}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         // disabled
@@ -723,7 +723,7 @@ function ServiceDetail() {
                         className="ismrf"
                         type="text"
                         placeholder="Номер телефона"
-                        defaultValue={user.u_phone}
+                        defaultValue={currentUser.u_phone}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         // disabled

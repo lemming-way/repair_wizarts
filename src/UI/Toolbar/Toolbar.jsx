@@ -13,7 +13,7 @@ import './header.scss';
 import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
 import { selectUI } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -26,8 +26,8 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const ui = useSelector(selectUI);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -130,7 +130,11 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={user.u_photo ? user.u_photo : '/img/icons/avatar.png'}
+                  src={
+                    currentUser.u_photo
+                      ? currentUser.u_photo
+                      : '/img/icons/avatar.png'
+                  }
                   width="40px"
                   height="40px"
                   alt=""

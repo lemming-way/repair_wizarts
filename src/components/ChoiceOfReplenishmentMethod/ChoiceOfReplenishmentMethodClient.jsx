@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import '../../scss/ChoiceOfReplenishmentMethod.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import style from './style.module.css';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 function ChoiceOfReplenishmentMethodClient() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || {};
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const navigator = useNavigate();
 
   // const [error, setError] = useState("")
@@ -86,7 +89,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>Пополнение счета</h3>
 
           <div>
-            {user?.u_details?.wallets ? (
+            {currentUser?.u_details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -98,8 +101,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {user?.u_details?.wallets[0]?.type} <br />
-                    {user?.u_details?.wallets[0]?.value}
+                    {currentUser?.u_details?.wallets[0]?.type} <br />
+                    {currentUser?.u_details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -203,8 +206,11 @@ function ChoiceOfReplenishmentMethodClient() {
             <button
               className={style.button}
               onClick={() => {
-                const oldHistory = user?.u_details?.history_of_pay
-                  ? user?.u_details?.history_of_pay
+                if (!userId) {
+                  return;
+                }
+                const oldHistory = currentUser?.u_details?.history_of_pay
+                  ? currentUser?.u_details?.history_of_pay
                   : [];
                 const newPayment = {
                   cost: Number(cost),
@@ -213,16 +219,23 @@ function ChoiceOfReplenishmentMethodClient() {
                   status: 'Активно',
                   title: 'Зачисление',
                 };
-                updateUser({
-                  details: {
-                    balance:
-                      Number(cost) +
-                      Number(
-                        user?.u_details.balance ? user?.u_details.balance : 0,
-                      ),
-                    history_of_pay: [...oldHistory, newPayment],
+                updateUser(
+                  {
+                    details: {
+                      balance:
+                        Number(cost) +
+                        Number(
+                          currentUser?.u_details.balance
+                            ? currentUser?.u_details.balance
+                            : 0,
+                        ),
+                      history_of_pay: [...oldHistory, newPayment],
+                    },
                   },
-                });
+                  userId,
+                ).then(() =>
+                  queryClient.invalidateQueries({ queryKey: userKeys.all }),
+                );
                 setStage(0);
               }}
             >
