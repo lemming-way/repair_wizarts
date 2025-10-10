@@ -11,6 +11,7 @@ import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -55,7 +56,7 @@ function Profile() {
   //   ]; ###
 
   const ui = useSelector(selectUI);
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
   const currentUser = user || EMPTY_OBJECT;

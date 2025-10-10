@@ -1,6 +1,5 @@
-import { useSelector } from 'react-redux';
-
 import style from './Allorders.module.css'; // Убедитесь, что стили подключены правильно
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
 export default function FilterBlock({
@@ -13,7 +12,7 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {

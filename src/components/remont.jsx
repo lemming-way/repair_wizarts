@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 
 import style from './remont.module.css';
 
 import '../scss/remont.css';
+import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 
 function Remont() {
   const { sectionId, subsectionId } = useParams();
   const normalizedSectionId = sectionId ? String(sectionId) : '';
   const [currentServices, setCurrentServices] = useState([]);
   console.log(sectionId, subsectionId);
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
 
   useEffect(() => {
     const getData = async () => {

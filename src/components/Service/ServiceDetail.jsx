@@ -13,13 +13,12 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import style from './serviceDetail.module.scss';
 import ServiceDetailContext from './ServiceDetailContext';
 import { createRequest } from '../../services/request.service';
-import { selectServices } from '../../slices/services.slice';
 import { selectUI } from '../../slices/ui.slice';
 import appFetch from '../../services/api';
 import YMap from '../Map';
 import { useUserQuery } from '../../hooks/useUserQuery';
-
-const EMPTY_ARRAY = []
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
+import { useServicesQuery } from '../../hooks/useServicesQuery';
 
 function ServiceDetail() {
   const test_price = [
@@ -87,20 +86,36 @@ function ServiceDetail() {
   const [visibleConfirm, setVisibleConfirm] = useState(false);
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
   const { user } = useUserQuery();
   const currentUser = user || {};
   const ui = useSelector(selectUI);
-  const services = useSelector(selectServices);
+  const { services } = useServicesQuery();
+  const servicesList = useMemo(() => {
+    if (Array.isArray(services)) {
+      return services;
+    }
+
+    if (services && Array.isArray(services?.devices)) {
+      return services.devices;
+    }
+
+    if (services && Array.isArray(services?.repair_types)) {
+      return services.repair_types;
+    }
+
+    return [];
+  }, [services]);
   //~ const repairMasters = getMasterRepairs();
   const { sectionId, subsectionId } = useParams();
   const normalizedSectionId = sectionId ? String(sectionId) : '';
   const normalizedSubsectionId = subsectionId ? String(subsectionId) : '';
-  const device =
-    useMemo(
-      () => services?.find((v) => v.id === +id) || {},
-      [services, id],
-    ) || EMPTY_ARRAY;
+  const device = useMemo(
+    () =>
+      servicesList.find((serviceItem) => String(serviceItem?.id) === String(id)) ||
+      {},
+    [servicesList, id],
+  );
 
   const [show, setShow] = useState(false);
 
@@ -353,7 +368,7 @@ function ServiceDetail() {
       client_price: getSumPrice(),
       section: sectionId,
       subsection: subsectionId,
-      service: selectServices[0],
+      service: servicesList[0],
       orderType: 'request',
       winnerMaster: selectedMaster.id,
       type: 'order',

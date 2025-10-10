@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { useSelector } from 'react-redux';
 
 import styles from './RegistrationMasterPage.module.scss';
 import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
@@ -11,11 +10,11 @@ import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
 
-import type { RootState } from '../../../store';
 import appFetch from '../../../services/api';
+import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
 
 const RegistrationMasterPage = () => {
-  const { categories } = useSelector((state: RootState) => state.categories);
+  const { categories } = useCategoriesQuery();
 
   const [login, setLogin] = useState('');
   const [city, setCity] = useState('');
@@ -236,8 +235,9 @@ const RegistrationMasterPage = () => {
           const isSelectedSubCategoryId = categoryOptionSelected?.find(
             (item) => item.value === j.id,
           );
+          const services = Array.isArray(j.services) ? j.services : [];
           return isSelectedSubCategoryId
-            ? j.services.map((c) => ({ label: c.name, value: c.id }))
+            ? services.map((c) => ({ label: c.name, value: c.id }))
             : [];
         })
       : [];
@@ -251,15 +251,19 @@ const RegistrationMasterPage = () => {
           const isSelectedSubCategoryId = categoryOptionSelected?.find(
             (item) => item.value === j.id,
           );
+          const services = Array.isArray(j.services) ? j.services : [];
           return isSelectedSubCategoryId
-            ? j.services.flatMap((s) => {
+            ? services.flatMap((s) => {
+                const serviceQuestions = Array.isArray((s as any)?.questions)
+                  ? ((s as any).questions as Array<any>)
+                  : [];
                 const isSelectedService = modelPhoneOptionSelected?.find(
                   (item) => item.value === s.id,
                 );
                 return isSelectedService
-                  ? (s.questions || []).map((sub) => ({
-                      label: sub.text,
-                      value: sub.number,
+                  ? serviceQuestions.map((sub) => ({
+                      label: sub?.text,
+                      value: sub?.number,
                     }))
                   : [];
               })
