@@ -1,18 +1,60 @@
 import { api } from '../client';
 import type { Result } from '../types';
 
+type BooleanLike = 0 | 1 | '0' | '1';
+
+type UserBanInfo = {
+  auth: number;
+  order: number;
+};
+
+type AuthUser = {
+  u_id: string;
+  u_name: string;
+  u_family: string;
+  u_middle: string | null;
+  u_email: string;
+  u_phone: string;
+  u_role: string | number;
+  u_check_state: string | number;
+  u_ban: UserBanInfo;
+  u_active: BooleanLike;
+  u_photo: string | null;
+  u_birthday: string | null;
+  u_lang: string | number;
+  u_currency: string;
+};
+
+type UserDetails = {
+  u_id: string;
+  u_role: string | number;
+  u_name: string;
+  u_family: string;
+  u_middle: string | null;
+  u_phone: string;
+  u_phone_checked: BooleanLike;
+  u_email: string;
+  u_email_checked: BooleanLike;
+  u_photo: string | null;
+  u_lang: string | number;
+  u_currency: string;
+  u_city: string | number | null;
+  u_description: string | null;
+  u_active: BooleanLike;
+  u_birthday: string | null;
+  u_details: unknown;
+  b_comments: unknown;
+  b_services: unknown;
+  b_location_classes?: unknown;
+  u_ban: UserBanInfo;
+  props?: Record<string, string[]>;
+};
+
 export type UserProfile = {
-  id: number;
-  name: string;
-  lastname: string;
-  email: string;
-  phone: string;
-  avatar?: string;
-  is_superuser: boolean;
-  is_email_verified: boolean;
-  is_phone_verified: boolean;
-  number_of_submissions: number;
-  master?: any;
+  auth_user: AuthUser;
+  data: {
+    user: Record<string, UserDetails>;
+  };
 };
 
 export type UpdateProfilePayload = {
