@@ -5,7 +5,6 @@ const login = async (username, password) => {
     body: {
       login: username,
       password,
-      st: true,
       type: 'phone',
     },
   });

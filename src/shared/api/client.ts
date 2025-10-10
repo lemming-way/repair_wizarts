@@ -1,4 +1,4 @@
-import { getAuthParams, maybeRefreshToken } from './auth';
+import { clearTokenOnUnauthorized, getAuthParams } from './auth';
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
 
@@ -117,8 +117,6 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   const base = process.env.REACT_APP_API_URL || SERVER_PATH || '';
   const correlationId = Math.random().toString(36).slice(2);
   const method = opts.method || 'GET';
-  const skipAuthRetry = opts.skipAuthRetry === true;
-
   const { signal, dispose } = createAbortableController(opts.timeoutMs, opts.signal);
 
   const rawAuthParams = getAuthParams();
@@ -156,12 +154,8 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       return { ok: true, data: data as T, correlationId };
     }
 
-    if (resp.status === 401 && !skipAuthRetry) {
-      const refreshed = await maybeRefreshToken(resp);
-      if (refreshed) {
-        dispose();
-        return request<T>(path, { ...opts, skipAuthRetry: true });
-      }
+    if (resp.status === 401) {
+      clearTokenOnUnauthorized();
     }
 
     const err: ApiError = {
