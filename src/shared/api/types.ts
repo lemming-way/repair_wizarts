@@ -17,5 +17,4 @@ export type RequestOptions = {
   body?: unknown;
   timeoutMs?: number;
   signal?: AbortSignal;
-  skipAuthRetry?: boolean;
 };

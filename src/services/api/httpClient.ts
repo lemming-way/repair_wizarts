@@ -1,6 +1,5 @@
 import SERVER_PATH from '../../constants/SERVER_PATH';
-import { getToken, removeToken, setToken } from '../token.service';
-import { getKeepUserAuthorized } from '../user.service';
+import { getToken, removeToken } from '../token.service';
 
 type RequestBodyValue = string | number | boolean | null | undefined;
 
@@ -10,15 +9,6 @@ export interface AppFetchOptions {
 }
 
 export const BASE_URL = SERVER_PATH;
-
-type RefreshQueueCallback = (result: boolean) => void;
-
-let refreshing = false;
-let refreshQueue: RefreshQueueCallback[] = [];
-
-const processRefreshQueue = (result: boolean) => {
-  refreshQueue.forEach((cb) => cb(result));
-};
 
 const toFormData = (body: Record<string, RequestBodyValue> = {}) => {
   const params = new URLSearchParams();
@@ -32,52 +22,6 @@ const toFormData = (body: Record<string, RequestBodyValue> = {}) => {
   });
 
   return params.toString();
-};
-
-const refreshAccessToken = async (): Promise<boolean> => {
-  if (refreshing) {
-    return new Promise<boolean>((resolve) => {
-      refreshQueue.push((result) => resolve(result));
-    });
-  }
-
-  try {
-    refreshing = true;
-
-    const token = getToken();
-    const response = await fetch(BASE_URL + 'user/refresh', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token: token?.refresh_token,
-      }),
-    });
-
-    if (!response.ok) {
-      removeToken();
-      processRefreshQueue(false);
-      return false;
-    }
-
-    const data = (await response.json()) as { access_token?: string };
-    if (!data.access_token) {
-      processRefreshQueue(false);
-      return false;
-    }
-
-    setToken({ access_token: data.access_token, refresh_token: token?.refresh_token });
-    processRefreshQueue(true);
-    return true;
-  } catch (error) {
-    removeToken();
-    processRefreshQueue(false);
-    return false;
-  } finally {
-    refreshing = false;
-    refreshQueue = [];
-  }
 };
 
 const buildBody = (
@@ -135,11 +79,9 @@ export const appFetch = async <TResponse = any>(
       return data as TResponse;
     }
 
-    if (response.status === 401 && token && getKeepUserAuthorized()) {
-      const refresh = await refreshAccessToken();
-
-      if (refresh) {
-        return appFetch<TResponse>(location, init);
+    if (response.status === 401) {
+      if (token) {
+        removeToken();
       }
 
       return Promise.reject({
