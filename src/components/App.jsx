@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import '../scss/swiper.css';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClient';
@@ -41,7 +41,6 @@ import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
 import Article from './Article';
-import { fetchServices } from '../slices/services.slice';
 import {
   setAuthorization,
   setLoading,
@@ -74,9 +73,10 @@ import Register from './Registration/register';
 import Remont from './remont';
 import { ServiceDetail } from './Service';
 import BalanceClient from './Settings/BalanceClient';
-import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
+import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
+import { useServicesQuery } from '../hooks/useServicesQuery';
 
 function App() {
   const { user, status } = useUserQuery();
@@ -84,7 +84,8 @@ function App() {
   const __location__ = useLocation();
   const dispatch = useDispatch();
 
-  const { categories } = useSelector((state) => state.categories);
+  const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
+  useServicesQuery();
   const [currentHome, setCurrentHome] = useState('electron');
 
   // Add visibility change tracking
@@ -154,41 +155,11 @@ function App() {
   }, [dispatch]);
 
   useEffect(() => {
-    const fetchFullDataAboutCategories = async () => {
-      try {
-        const sectionData = JSON.parse(localStorage.getItem('sections'));
-        console.log(sectionData);
-        if (sectionData) return dispatch(setCategories(sectionData));
-        const response = await fetch(
-          'https://profiback.itest24.com/api/full-data',
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${'123'}`,
-            },
-          },
-        );
-        const data = await response.json();
-        data.forEach((item) =>
-          item.subsections
-            .slice(0, 5)
-            .forEach((item) => item.services.slice(0, 5)),
-        );
-        localStorage.setItem('sections', JSON.stringify(data));
-        dispatch(setCategories(data));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
     const currentVersion = new URLSearchParams(window.location.search).get(
       'main',
     );
     setCurrentHome(currentVersion || 'electron');
-    if (categories.length === 0) {
-      fetchFullDataAboutCategories();
-    }
-  }, [categories, dispatch]);
+  }, []);
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -206,10 +177,7 @@ function App() {
     }
   }, [dispatch, status]);
 
-  useEffect(() => {
-    dispatch(fetchServices());
-  }, [dispatch]);
-  if (categories.length === 0) {
+  if (!categories.length && areCategoriesLoading) {
     return 'Loading...';
   }
 

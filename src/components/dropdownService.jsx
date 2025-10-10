@@ -1,28 +1,44 @@
 import {useMemo} from 'react';
-import {useSelector} from 'react-redux';
 import {useNavigate, Link} from 'react-router-dom';
 import {Dropdown} from 'rsuite';
 
-import {selectServices} from '../slices/services.slice'
+import { useServicesQuery } from '../hooks/useServicesQuery';
 
 function DropdownService({children}) {
-    const services = useSelector(selectServices)
+    const { services } = useServicesQuery();
+    const servicesCatalog = services && !Array.isArray(services) ? services : null;
     const navigate = useNavigate()
 
-    const dropdownItems = useMemo(() => services.categories.map(category => ({
-        id: category.id,
-        label: category.name,
-        items: services.service_types.filter(serviceType => serviceType.category_id === category.id).map(serviceType => ({
-            id: serviceType.id,
-            label: serviceType.name,
-            href: `/devices/${serviceType.id}`,
-            items: services.devices.filter(device => device.service_id === serviceType.id).map((device) => ({
-                id: device.id,
-                label: device.name,
-                href: `/services/${device.id}`,
-            }))
-        })),
-    })), [services])
+    const dropdownItems = useMemo(() => {
+        if (!servicesCatalog) {
+            return [];
+        }
+
+        const categories = Array.isArray(servicesCatalog.categories)
+            ? servicesCatalog.categories
+            : [];
+        const serviceTypes = Array.isArray(servicesCatalog.service_types)
+            ? servicesCatalog.service_types
+            : [];
+        const devices = Array.isArray(servicesCatalog.devices)
+            ? servicesCatalog.devices
+            : [];
+
+        return categories.map(category => ({
+            id: category.id,
+            label: category.name,
+            items: serviceTypes.filter(serviceType => serviceType.category_id === category.id).map(serviceType => ({
+                id: serviceType.id,
+                label: serviceType.name,
+                href: `/devices/${serviceType.id}`,
+                items: devices.filter(device => device.service_id === serviceType.id).map((device) => ({
+                    id: device.id,
+                    label: device.name,
+                    href: `/services/${device.id}`,
+                }))
+            })),
+        }));
+    }, [servicesCatalog])
 
     const renderDropdownItem = (item) => {
         if (item.items) {

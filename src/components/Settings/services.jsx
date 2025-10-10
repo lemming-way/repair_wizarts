@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
 import { useQueryClient } from '@tanstack/react-query';
 
 import '../../scss/service.css';
@@ -10,6 +9,7 @@ import { updateUser } from '../../services/user.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
 
 const EMPTY_OBJECT = {}
@@ -28,7 +28,7 @@ function Services() {
   //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
   const username = currentUser.u_details?.login;
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
   useEffect(() => {
     if (!username) return;
     if (
