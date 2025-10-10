@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 
-import { getOffers } from '../services/offer.service';
 import styles from './mysuggest.module.css';
 
 import '../scss/mysuggest.css';
@@ -12,14 +11,14 @@ import { Navigation, Pagination } from 'swiper';
 
 import Suggest from './suggest';
 import SERVER_PATH from '../constants/SERVER_PATH';
-import { useService } from '../hooks/useService';
-import { getClientRequests } from '../services/request.service';
+import { useClientRequestsQuery } from '../hooks/useClientRequestsQuery';
+import { useOffersQuery } from '../hooks/useOffersQuery';
 import { useUserQuery } from '../hooks/useUserQuery';
 
 function MySuggest() {
   const { id } = useParams();
-  const requests = useService(getClientRequests, []);
-  const offers = useService(getOffers.bind(null, id), []);
+  const { clientRequests } = useClientRequestsQuery();
+  const { offers } = useOffersQuery(id);
   const { user } = useUserQuery();
   const avatar = user?.u_photo || user?.avatar || '';
   const name = user?.u_name || user?.name || '';
@@ -27,10 +26,10 @@ function MySuggest() {
   const phone = user?.u_phone || user?.phone || '';
   const req = useMemo(
     () =>
-      Object.values(requests.data?.data?.booking || []).find(
+      Object.values(clientRequests?.data?.booking || []).find(
         (v) => v.id === Number(id),
       ),
-    [requests.data, id],
+    [clientRequests, id],
   );
 
   const getDate = (exp) => {
@@ -246,10 +245,10 @@ function MySuggest() {
       </div>
       <div className="sentence-2 font_abel">
         <div className="sentaince_text mobile-sentaince_text">
-          {offers.data.length > 0 && <h2>Предложения мастеров</h2>}
+          {offers.length > 0 && <h2>Предложения мастеров</h2>}
         </div>
       </div>
-      {offers.data.map((v) => (
+      {offers.map((v) => (
         <Suggest key={v.id} {...v} />
       ))}
     </section>

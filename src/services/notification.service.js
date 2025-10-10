@@ -1,9 +1,10 @@
 import { getToken } from "./token.service"
 import { SERVER_WSPATH } from "../constants/SERVER_PATH"
 import popit from "../img/popit.wav"
-import { updateMessages } from "../slices/messages.slice"
 import { pushNotification } from "../slices/notifications.slice"
 import { updateOnline } from "../slices/online.slice"
+import { queryClient } from "../app/queryClient";
+import { messageKeys } from "../queries";
 
 let ws = null
 
@@ -23,7 +24,11 @@ const dispatchDependOnTheType = (dispatch, data) => {
             dispatch(updateOnline(data.online_users))
             break
         case NotificationType.CREATED_MESSAGE:
-            dispatch(updateMessages(data.unread_messages))
+            if (Array.isArray(data.unread_messages)) {
+                queryClient.setQueryData(messageKeys.unread(), data.unread_messages)
+            } else {
+                queryClient.invalidateQueries({ queryKey: messageKeys.unread() })
+            }
             audio.play()
             break
         case NotificationType.ACCEPTED_ORDER:

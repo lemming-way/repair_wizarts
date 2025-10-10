@@ -6,7 +6,7 @@
 - **`services`** → Navigation surfaces such as the desktop dropdown (`components/dropdownService.jsx`), footer quick links (`components/Footer.tsx`), toolbar menus (`UI/Toolbar/components/ServiceDropdown/ServiceDropdown.tsx`, `UI/Toolbar/components/ServiceDropDownMobile/ServiceDropDownMobile.tsx`), and service detail pages (`components/Service/ServiceDetail.jsx`).【F:src/components/dropdownService.jsx†L8-L52】【F:src/components/Footer.tsx†L8-L51】【F:src/UI/Toolbar/components/ServiceDropdown/ServiceDropdown.tsx†L112-L194】【F:src/UI/Toolbar/components/ServiceDropDownMobile/ServiceDropDownMobile.tsx†L7-L48】【F:src/components/Service/ServiceDetail.jsx†L83-L220】
 - **`categories`** → Toolbar mega menus and mobile dropdowns (`UI/Toolbar/components/ServiceDropdown/ServiceDropdown.tsx`, `UI/Toolbar/components/ServiceDropDownMobile/ServiceDropDownMobile.tsx`), landing pages (`components/remont.jsx`), service detail flows (`components/Service/ServiceDetail.jsx`), order filters (`components/Orders/FilterBlock.jsx`), settings forms (`components/Settings/Profile.jsx`, `components/Settings/services.jsx`), and high-level app gating (`components/App.jsx`).【F:src/UI/Toolbar/components/ServiceDropdown/ServiceDropdown.tsx†L112-L194】【F:src/UI/Toolbar/components/ServiceDropDownMobile/ServiceDropDownMobile.tsx†L7-L48】【F:src/components/remont.jsx†L9-L93】【F:src/components/Service/ServiceDetail.jsx†L83-L220】【F:src/components/Orders/FilterBlock.jsx†L16-L178】【F:src/components/Settings/Profile.jsx†L55-L120】【F:src/components/Settings/services.jsx†L15-L198】【F:src/components/App.jsx†L83-L215】
 - **`online`** → Updated via WebSocket notifications and exposed through `selectOnline`; no UI layer currently consumes it directly.【F:src/services/notification.service.js†L18-L55】【F:src/slices/online.slice.js†L3-L19】
-- **`messages`** → Header badge counts and WebSocket updates (`components/Header.jsx`, `services/notification.service.js`).【F:src/components/Header.jsx†L20-L80】【F:src/services/notification.service.js†L18-L83】
+- **`unreadMessages` (React Query)** → Header badge counts and WebSocket updates (`components/Header.jsx`, `hooks/useUnreadMessagesQuery.ts`, `services/notification.service.js`).【F:src/components/Header.jsx†L1-L120】【F:src/hooks/useUnreadMessagesQuery.ts†L1-L68】【F:src/services/notification.service.js†L1-L90】
 - **`notifications`** → Toast surface (`components/Notifications/Notifications.jsx`, `components/Notifications/Notification.jsx`) fed by the notification service middleware pipeline.【F:src/components/Notifications/Notifications.jsx†L8-L31】【F:src/components/Notifications/Notification.jsx†L7-L29】【F:src/services/notification.service.js†L18-L115】
 - **`ui`** → Application routing guards and layout toggles (`components/App.jsx`, `components/ClientRoute.jsx`, `components/dropdownSetout.jsx`, `UI/Toolbar/Toolbar.jsx`, `components/Service/ServiceDetail.jsx`, `components/Header.jsx`, `components/Map/index.js`).【F:src/components/App.jsx†L83-L215】【F:src/components/ClientRoute.jsx†L9-L24】【F:src/components/dropdownSetout.jsx†L17-L98】【F:src/UI/Toolbar/Toolbar.jsx†L24-L171】【F:src/components/Service/ServiceDetail.jsx†L83-L220】【F:src/components/Header.jsx†L20-L125】【F:src/components/Map/index.js†L6-L120】
 
@@ -33,12 +33,11 @@
 - **Data origin:** Driven purely by WebSocket push notifications; `notificationMiddleware` responds to `notifications/connect` by opening a socket that dispatches `updateOnline` payloads whenever the backend notifies the client list.【F:src/notification-middleware.js†L1-L16】【F:src/services/notification.service.js†L18-L115】 No client-only mutations exist.
 - **Entry points & side effects:** `App` starts the connection after successful user fetch and would disconnect on logout if the commented dispatch were restored.【F:src/components/App.jsx†L195-L215】 There is no local caching; data resets on reload.
 
-### `messages`
-- **Data origin:** Intended to fetch unread messages from `user/unread-messages` via `fetchMessages`, though the bootstrap call is currently commented. Real-time updates arrive through the notification WebSocket via `updateMessages` actions.【F:src/slices/messages.slice.js†L1-L54】【F:src/services/notification.service.js†L18-L83】
+### `unreadMessages` (React Query)
+- **Data origin:** `useUnreadMessagesQuery` wraps `getUserUnreadMessages` and caches results under `messageKeys.unread`, with access gated by tokens.【F:src/hooks/useUnreadMessagesQuery.ts†L1-L68】
 - **Entry points & side effects:**
-  - Potential initial sync (currently disabled) in `App` alongside the user fetch.【F:src/components/App.jsx†L195-L204】
-  - WebSocket pushes keep counts in sync and trigger audio feedback when new messages arrive.【F:src/services/notification.service.js†L18-L83】
-  - `removeMessages` exists for targeted deletions but is unused in the current UI surface.【F:src/slices/messages.slice.js†L11-L36】
+  - Header badges consume the hook and react to count changes, invalidated after chat mutations.【F:src/components/Header.jsx†L1-L120】【F:src/components/suggest.jsx†L1-L260】
+  - WebSocket pushes update the React Query cache directly, keeping badge counts in sync without Redux actions.【F:src/services/notification.service.js†L1-L115】
 
 ### `notifications`
 - **Data origin:** Entirely client-side. WebSocket events enqueue notifications via `pushNotification`, while the toast component dispatches `removeNotification` when users dismiss items.【F:src/services/notification.service.js†L18-L115】【F:src/components/Notifications/Notification.jsx†L17-L29】 The reducer keeps only the three most recent messages to avoid overflow.【F:src/slices/notifications.slice.js†L12-L29】
@@ -53,10 +52,10 @@
   - Routing guards rely on `isLoading`/`isAuthorized` in `ClientRoute` and (commented) `MasterRoute` to determine access.【F:src/components/ClientRoute.jsx†L9-L24】【F:src/components/MasterRoute.jsx†L1-L20】
 
 ### `online` / `messages` / `notifications` middleware interplay
-- `notificationMiddleware` listens for the connect/disconnect actions and manages a single WebSocket instance; on each message it dispatches to the relevant slice, optionally playing an audio cue for user-facing events.【F:src/notification-middleware.js†L1-L16】【F:src/services/notification.service.js†L18-L115】 Local timers poll online status every 30 seconds to keep the `online` slice fresh.【F:src/services/notification.service.js†L58-L69】
+- `notificationMiddleware` listens for the connect/disconnect actions and manages a single WebSocket instance; on each message it dispatches to the relevant slice, optionally playing an audio cue for user-facing events.【F:src/notification-middleware.js†L1-L16】【F:src/services/notification.service.js†L18-L115】 Local timers poll online status every 30 seconds to keep the `online` slice fresh.【F:src/services/notification.service.js†L58-L69】 Unread message payloads now hydrate the React Query cache directly via `queryClient`, while Redux temporarily continues to host `online` presence until a dedicated query observer is introduced for socket streams.【F:src/services/notification.service.js†L1-L90】【F:src/store.ts†L1-L20】
 
 ## Notes on server vs client data
 
-- Server-backed slices: `user`, `services` (mocked fetch), `categories` (remote + cached), `messages` (API + WebSocket), `online` (WebSocket stream).
+- Server-backed data sources: `user`, `services` (mocked fetch), `categories` (remote + cached), `unreadMessages` (React Query + WebSocket cache updates), `online` (WebSocket stream).
 - Client-only slices: `notifications` and `ui` (with localStorage synchronization), plus any transient state maintained in components.
 

@@ -8,9 +8,9 @@ import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { useLanguage } from '../state/language';
-import { selectUnreadMessages } from '../slices/messages.slice';
 import { selectUI } from '../slices/ui.slice';
 import { useUserQuery } from '../hooks/useUserQuery';
+import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
@@ -20,7 +20,7 @@ function Header() {
     const ui = useSelector(selectUI)
     const { user } = useUserQuery()
     const currentUser = user || {}
-    const messages = useSelector(selectUnreadMessages)
+    const { unreadCount } = useUnreadMessagesQuery()
     const text = useLanguage();
     return (
         <>
@@ -77,7 +77,7 @@ function Header() {
                                     }}
                                 >
                                     <img className="" src="/img/hfjsa.png" alt="" />
-                                    {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>}
+                                    {unreadCount > 0 && <div className='chat-message-counter'>{unreadCount}</div>}
                                 </Link>
                                 <div
                                     className='yosetout'
