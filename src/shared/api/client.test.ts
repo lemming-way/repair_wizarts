@@ -1,12 +1,6 @@
 import { api } from './client';
-import { attemptTokenRefresh } from './token';
 import * as authModule from './auth';
 import type { Err, Ok, Result } from './types';
-
-// Mock the auth and token modules
-jest.mock('./token', () => ({
-  attemptTokenRefresh: jest.fn(),
-}));
 
 jest.mock('./auth', () => ({
   getAuthParams: jest.fn(),
@@ -14,7 +8,6 @@ jest.mock('./auth', () => ({
 
 describe('api client', () => {
   const originalFetch = global.fetch as any;
-  const mockAttemptTokenRefresh = attemptTokenRefresh as jest.MockedFunction<typeof attemptTokenRefresh>;
   const mockGetAuthParams = authModule.getAuthParams as jest.MockedFunction<typeof authModule.getAuthParams>;
 
   function assertOk<T>(result: Result<T>): asserts result is Ok<T> {
@@ -54,7 +47,7 @@ describe('api client', () => {
       headers: { get: () => 'application/json' },
       json: async () => ({ hello: 'world' }),
     });
-    const res = await api.get<{ hello: string }>('test', { retry: { attempts: 0 } });
+    const res = await api.get<{ hello: string }>('test');
     assertOk(res);
     expect(res.data.hello).toBe('world');
   });
@@ -67,7 +60,7 @@ describe('api client', () => {
       headers: { get: () => 'application/json' },
       json: async () => ({ message: 'boom' }),
     });
-    const res = await api.get<any>('test', { retry: { attempts: 0 } });
+    const res = await api.get<any>('test');
     assertErr(res);
     expect(res.error.status).toBe(500);
   });
@@ -85,154 +78,71 @@ describe('api client', () => {
     });
     const controller = new AbortController();
     controller.abort();
-    const res = await api.get<any>('test', { signal: controller.signal, retry: { attempts: 0 } });
+    const res = await api.get<any>('test', { signal: controller.signal });
     assertErr(res);
   });
 
-  describe('token refresh', () => {
-    it('does not retry on 401 without auth params', async () => {
-      mockGetAuthParams.mockReturnValue({});
-      const fetchMock = jest.fn().mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: { get: () => 'application/json' },
-        json: async () => ({ message: 'unauthorized' }),
-      });
-      (global.fetch as any) = fetchMock;
-
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertErr(res);
-      expect(res.error.status).toBe(401);
-      expect(mockAttemptTokenRefresh).not.toHaveBeenCalled();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+  it('sends auth params in POST body as form data', async () => {
+    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ success: true }),
     });
+    (global.fetch as any) = fetchMock;
 
-    it('retries on 401 with auth params when token refresh succeeds', async () => {
-      // First call returns 401, second call succeeds
-      const fetchMock = jest.fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 401,
-          statusText: 'Unauthorized',
-          headers: { get: () => 'application/json' },
-          json: async () => ({ message: 'unauthorized' }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          headers: { get: () => 'application/json' },
-          json: async () => ({ data: 'success' }),
-        });
-      (global.fetch as any) = fetchMock;
+    const res = await api.post<{ success: boolean }>('test', { foo: 'bar' });
 
-      // Mock auth headers with Authorization
-      mockGetAuthParams
-        .mockReturnValueOnce({ token: 'old-token', u_hash: 'hash-1' })
-        .mockReturnValueOnce({ token: 'new-token', u_hash: 'hash-2' });
+    assertOk(res);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.method).toBe('POST');
+    const body = init.body as URLSearchParams;
+    expect(body).toBeInstanceOf(URLSearchParams);
+    expect(body.get('foo')).toBe('bar');
+    expect(body.get('token')).toBe('abc');
+    expect(body.get('u_hash')).toBe('def');
+  });
 
-      // Mock successful token refresh
-      mockAttemptTokenRefresh.mockResolvedValue(true);
-
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertOk(res);
-      expect(res.data).toEqual({ data: 'success' });
-      expect(mockAttemptTokenRefresh).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+  it('does not attach auth params to GET query automatically', async () => {
+    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ success: true }),
     });
+    (global.fetch as any) = fetchMock;
 
-    it('does not retry when token refresh fails', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: { get: () => 'application/json' },
-        json: async () => ({ message: 'unauthorized' }),
-      });
-      (global.fetch as any) = fetchMock;
+    const res = await api.get<{ success: boolean }>('test', { query: { q: 'value' } });
 
-      mockGetAuthParams.mockReturnValue({ token: 'some-token', u_hash: 'hash' });
-      mockAttemptTokenRefresh.mockResolvedValue(false);
+    assertOk(res);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toContain('?q=value');
+    expect(url).not.toContain('token=');
+    expect(init.body).toBeUndefined();
+  });
 
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertErr(res);
-      expect(res.error.status).toBe(401);
-      expect(mockAttemptTokenRefresh).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledTimes(1); // No retry
+  it('merges existing URLSearchParams bodies with auth params', async () => {
+    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ success: true }),
     });
+    (global.fetch as any) = fetchMock;
 
-    it('does not retry on non-401 errors even with auth params', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-        headers: { get: () => 'application/json' },
-        json: async () => ({ message: 'forbidden' }),
-      });
-      (global.fetch as any) = fetchMock;
+    const params = new URLSearchParams();
+    params.set('hello', 'world');
 
-      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
+    const res = await api.post<{ success: boolean }>('test', params);
 
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertErr(res);
-      expect(res.error.status).toBe(403);
-      expect(mockAttemptTokenRefresh).not.toHaveBeenCalled();
-      expect(fetchMock).toHaveBeenCalledTimes(1);
-    });
-
-    it('handles token refresh exceptions gracefully', async () => {
-      const fetchMock = jest.fn().mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        headers: { get: () => 'application/json' },
-        json: async () => ({ message: 'unauthorized' }),
-      });
-      (global.fetch as any) = fetchMock;
-
-      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
-      mockAttemptTokenRefresh.mockRejectedValue(new Error('Network error'));
-
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertErr(res);
-      // When token refresh throws an exception, it should return the original 401 error
-      expect(res.error.status).toBe(401);
-      expect(mockAttemptTokenRefresh).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledTimes(1); // No retry
-    });
-
-    it('only retries token refresh once (prevents infinite loops)', async () => {
-      const fetchMock = jest.fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 401,
-          statusText: 'Unauthorized',
-          headers: { get: () => 'application/json' },
-          json: async () => ({ message: 'unauthorized' }),
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 401,
-          statusText: 'Unauthorized',
-          headers: { get: () => 'application/json' },
-          json: async () => ({ message: 'still unauthorized' }),
-        });
-      (global.fetch as any) = fetchMock;
-
-      mockGetAuthParams.mockReturnValue({ token: 'token', u_hash: 'hash' });
-      mockAttemptTokenRefresh.mockResolvedValue(true);
-
-      const res = await api.get<any>('test', { retry: { attempts: 0 } });
-
-      assertErr(res);
-      expect(res.error.status).toBe(401);
-      expect(mockAttemptTokenRefresh).toHaveBeenCalledTimes(1);
-      expect(fetchMock).toHaveBeenCalledTimes(2); // Original + one retry
-    });
+    assertOk(res);
+    const [, init] = fetchMock.mock.calls[0];
+    const body = init.body as URLSearchParams;
+    expect(body.get('hello')).toBe('world');
+    expect(body.get('token')).toBe('abc');
   });
 });

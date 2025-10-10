@@ -1,5 +1,4 @@
 import { getAuthParams } from './auth';
-import { attemptTokenRefresh } from './token';
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
 
@@ -22,7 +21,74 @@ function toApiError(e: unknown, status = 0, correlationId?: string): ApiError {
   return { status, message, correlationId };
 }
 
-async function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+type AuthParams = Record<string, string>;
+
+function appendFormValue(params: URLSearchParams, key: string, value: unknown, tracker: { used: boolean }) {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => appendFormValue(params, key, item, tracker));
+    return;
+  }
+
+  const normalized = typeof value === 'string' ? value : String(value);
+  params.append(key, normalized);
+  tracker.used = true;
+}
+
+function preparePostBody(body: unknown, authParams: AuthParams): {
+  body?: BodyInit;
+  isFormData: boolean;
+} {
+  const authEntries = Object.entries(authParams);
+
+  if (body instanceof FormData) {
+    authEntries.forEach(([key, value]) => body.append(key, value));
+    return { body, isFormData: true };
+  }
+
+  if (body instanceof URLSearchParams) {
+    const params = new URLSearchParams(body);
+    const tracker = { used: false };
+    params.forEach(() => {
+      tracker.used = true;
+    });
+    authEntries.forEach(([key, value]) => {
+      params.append(key, value);
+      tracker.used = true;
+    });
+    return tracker.used ? { body: params, isFormData: false } : { body: undefined, isFormData: false };
+  }
+
+  const params = new URLSearchParams();
+  const tracker = { used: false };
+
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    Object.entries(body as Record<string, unknown>).forEach(([key, value]) => {
+      if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+        appendFormValue(params, key, JSON.stringify(value), tracker);
+        return;
+      }
+      appendFormValue(params, key, value, tracker);
+    });
+  } else if (typeof body === 'string') {
+    if (body.trim()) {
+      appendFormValue(params, 'payload', body, tracker);
+    }
+  } else if (body !== undefined && body !== null) {
+    appendFormValue(params, 'payload', body, tracker);
+  }
+
+  authEntries.forEach(([key, value]) => appendFormValue(params, key, value, tracker));
+
+  if (!tracker.used) {
+    return { body: undefined, isFormData: false };
+  }
+
+  return { body: params, isFormData: false };
+}
 
 export function createAbortableController(timeoutMs?: number, external?: AbortSignal) {
   const controller = new AbortController();
@@ -45,101 +111,57 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
 
   const { signal, dispose } = createAbortableController(opts.timeoutMs, opts.signal);
 
-  const doFetch = async (isRetry = false): Promise<Result<T>> => {
-    const rawAuthParams = getAuthParams();
-    const authParams =
-      rawAuthParams && typeof rawAuthParams === 'object' ? rawAuthParams : ({} as Record<string, string>);
-    const hasAuthParams = Object.keys(authParams).length > 0;
-    const url = buildUrl(
-      base,
-      path,
-      method === 'GET' ? { ...(opts.query ?? {}), ...authParams } : opts.query,
-    );
+  const rawAuthParams = getAuthParams();
+  const authParams = rawAuthParams && typeof rawAuthParams === 'object' ? (rawAuthParams as AuthParams) : {};
 
-    let requestBody: string | undefined;
+  const url = buildUrl(base, path, opts.query);
 
-    if (method !== 'GET') {
-      let mergedBody: unknown = opts.body;
+  let body: BodyInit | undefined;
+  let isFormData = false;
 
-      if (
-        mergedBody &&
-        typeof mergedBody === 'object' &&
-        mergedBody !== null &&
-        !Array.isArray(mergedBody)
-      ) {
-        mergedBody = { ...(mergedBody as Record<string, unknown>), ...authParams };
-      } else if (mergedBody === undefined && hasAuthParams) {
-        mergedBody = authParams;
-      }
-
-      if (mergedBody !== undefined) {
-        requestBody = JSON.stringify(mergedBody);
-      }
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...opts.headers,
-    };
-    try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.debug('[api]', correlationId, method, url);
-      }
-      const resp = await fetch(url, { method, headers, body: requestBody, signal });
-      const ct = resp.headers.get('content-type') || '';
-      const isJson = ct.includes('application/json');
-      const data = isJson ? await resp.json().catch(() => undefined) : await resp.text();
-      if (resp.ok) {
-        return { ok: true, data: data as T, correlationId };
-      }
-
-      // Handle 401 Unauthorized - try to refresh token
-      if (resp.status === 401 && !isRetry && hasAuthParams) {
-        try {
-          const refreshSuccess = await attemptTokenRefresh();
-          if (refreshSuccess) {
-            // Retry with updated auth headers
-            return await doFetch(true);
-          }
-          // If refresh failed, return original 401 error
-        } catch (refreshError) {
-          // If token refresh throws an exception, log it and continue with original 401 error
-          console.error('Token refresh failed with exception:', refreshError);
-        }
-      }
-
-      const err: ApiError = {
-        status: resp.status,
-        message: (data && (data.detail || data.message)) || resp.statusText || 'HTTP error',
-        correlationId,
-        details: data,
-      };
-      return { ok: false, error: err, correlationId };
-    } catch (e) {
-      return { ok: false, error: toApiError(e, 0, correlationId), correlationId };
-    }
-  };
-
-  const isIdempotentGet = method === 'GET';
-  const attempts = isIdempotentGet ? Math.min(opts.retry?.attempts ?? 2, 4) : 0;
-  const backoff = opts.retry?.backoffMs ?? [200, 800];
-
-  let result = await doFetch();
-  for (let i = 0; i < attempts && !result.ok; i++) {
-    const s = result.error.status;
-    if (s && (s >= 400 && s < 500) && s !== 408) break; // no retry on 4xx except optional 408
-    await sleep(backoff[Math.min(i, backoff.length - 1)]);
-    result = await doFetch();
+  if (method === 'POST') {
+    const prepared = preparePostBody(opts.body, authParams);
+    body = prepared.body;
+    isFormData = prepared.isFormData;
   }
 
-  dispose();
-  return result;
+  const headers: Record<string, string> = {
+    ...(opts.headers ?? {}),
+  };
+
+  if (method === 'POST' && !isFormData && body instanceof URLSearchParams && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
+  }
+
+  try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.debug('[api]', correlationId, method, url);
+    }
+    const resp = await fetch(url, { method, headers, body, signal });
+    const ct = resp.headers.get('content-type') || '';
+    const isJson = ct.includes('application/json');
+    const data = isJson ? await resp.json().catch(() => undefined) : await resp.text();
+    if (resp.ok) {
+      dispose();
+      return { ok: true, data: data as T, correlationId };
+    }
+
+    const err: ApiError = {
+      status: resp.status,
+      message: (data && (data.detail || data.message)) || resp.statusText || 'HTTP error',
+      correlationId,
+      details: data,
+    };
+    dispose();
+    return { ok: false, error: err, correlationId };
+  } catch (e) {
+    dispose();
+    return { ok: false, error: toApiError(e, 0, correlationId), correlationId };
+  }
 }
 
 export const api = {
   get: <T>(path: string, opts: Omit<RequestOptions, 'method' | 'body'> = {}) => request<T>(path, { ...opts, method: 'GET' }),
-  post: <T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) => request<T>(path, { ...opts, method: 'POST', body }),
-  put: <T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) => request<T>(path, { ...opts, method: 'PUT', body }),
-  patch: <T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) => request<T>(path, { ...opts, method: 'PATCH', body }),
-  delete: <T>(path: string, opts: Omit<RequestOptions, 'method' | 'body'> = {}) => request<T>(path, { ...opts, method: 'DELETE' }),
+  post: <T>(path: string, body?: unknown, opts: Omit<RequestOptions, 'method' | 'body'> = {}) =>
+    request<T>(path, { ...opts, method: 'POST', body }),
 };
