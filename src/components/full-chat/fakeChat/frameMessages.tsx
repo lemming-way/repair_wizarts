@@ -3,9 +3,8 @@ import '../../../scss/chat.css';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
-import { useService } from '../../../hooks/useService';
-import { getMasterOrders } from '../../../services/order.service';
-import { getAllClientRequests } from '../../../services/request.service';
+import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
+import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
 import { selectUI } from '../../../slices/ui.slice';
 import { useUserQuery } from '../../../hooks/useUserQuery';
 
@@ -13,10 +12,11 @@ function App() {
   const ui = useSelector(selectUI);
   const { user: authorizedUser } = useUserQuery();
   const user = (authorizedUser as any) || ({} as any);
-  const userRequests = useService(
-    ui.isMaster ? getMasterOrders : getAllClientRequests,
-    [],
-  );
+  const masterOrdersQuery = useMasterOrdersQuery({ enabled: ui.isMaster });
+  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: !ui.isMaster });
+  const userRequests = ui.isMaster
+    ? masterOrdersQuery.masterOrders
+    : allClientRequestsQuery.clientRequests;
 
   // утилита: получить последнее сообщение по всем заказам чата
   function getLastMessageFromOrders(orders: any[]): {
@@ -51,13 +51,14 @@ function App() {
   }
 
   const groupedChats = useMemo(() => {
+    const requestEntries: any[] = Array.isArray(userRequests) ? userRequests : [];
     const rawRequests = Array.from(
       new Map(
-        userRequests?.data
-          ?.map((item) => Object.values(item?.data?.booking || {}))
+        requestEntries
+          .map((item: any) => Object.values(item?.data?.booking || {}))
           .flat()
-          .filter((request) => request?.b_id)
-          .map((request) => [request.b_id, request]),
+          .filter((request: any) => request?.b_id)
+          .map((request: any) => [request.b_id, request]),
       ).values(),
     );
     const filteredRequests = rawRequests.filter(
@@ -88,7 +89,7 @@ function App() {
         orders: orders,
       };
     });
-  }, [userRequests.data, user.u_id]);
+  }, [userRequests, user.u_id]);
 
   useEffect(() => {
     document.title = 'Чат';

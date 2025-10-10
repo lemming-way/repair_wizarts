@@ -1,0 +1,46 @@
+import { useMemo } from 'react';
+import {
+  useQuery,
+  UseQueryOptions,
+  UseQueryResult,
+} from '@tanstack/react-query';
+
+import { requestKeys } from '../queries';
+import { getMasterOrders } from '../services/order.service';
+import { getToken } from '../services/token.service';
+
+type QueryFnData = Awaited<ReturnType<typeof getMasterOrders>>;
+type QueryError = unknown;
+
+type Options = Omit<
+  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof requestKeys.masterOrders>>,
+  'queryKey' | 'queryFn'
+>;
+
+type Result = UseQueryResult<QueryFnData, QueryError> & {
+  masterOrders: any[];
+};
+
+export function useMasterOrdersQuery(options?: Options): Result {
+  const token = getToken();
+  const { enabled: optionsEnabled, ...restOptions } = options ?? {};
+  const enabled = Boolean(token) && (optionsEnabled ?? true);
+
+  const queryResult = useQuery({
+    queryKey: requestKeys.masterOrders(),
+    queryFn: getMasterOrders,
+    enabled,
+    ...restOptions,
+  });
+
+  const masterOrders = useMemo(() => {
+    const data = queryResult.data;
+
+    return Array.isArray(data) ? data : [];
+  }, [queryResult.data]);
+
+  return {
+    ...queryResult,
+    masterOrders,
+  } as Result;
+}

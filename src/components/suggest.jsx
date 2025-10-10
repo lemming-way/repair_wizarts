@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Rating } from "react-simple-star-rating";
 
@@ -6,9 +7,10 @@ import SERVER_PATH from "../constants/SERVER_PATH";
 import { createDialog } from "../services/dialog.service";
 import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
-import { getMasterServices } from "../services/service.service"
-import { getMasterByUsername } from "../services/user.service";
 import { useUserQuery } from "../hooks/useUserQuery";
+import { useMasterByUsernameQuery } from "../hooks/useMasterByUsernameQuery";
+import { useMasterServicesQuery } from "../hooks/useMasterServicesQuery";
+import { messageKeys, offerKeys, requestKeys } from "../queries";
 
 const Suggest = (props) => {
     const {
@@ -21,39 +23,59 @@ const Suggest = (props) => {
     } = props
 
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const { user } = useUserQuery()
     const currentUserId = user?.u_id || user?.id
 
     const [error, setError] = useState("")
-    const [master, setMaster] = useState({ })
-    const [services, setServices] = useState({ })
+    const { data: masterData } = useMasterByUsernameQuery(master_username)
+    const { data: servicesData } = useMasterServicesQuery(master_username)
 
-    useEffect(() => {
-        getMasterByUsername(master_username).then(setMaster)
-        getMasterServices(master_username).then(setServices)
-    }, [master_username])
+    const master = masterData || {}
+    const services = servicesData || {}
 
-    const onSubmit = (e) => {
+    const acceptOfferMutation = useMutation({
+        mutationFn: acceptOffer,
+        onSuccess: async () => {
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: offerKeys.list(request_id ?? 'unknown') }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.client() }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.clientAll() }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.masterOrders() }),
+                queryClient.invalidateQueries({ queryKey: messageKeys.unread() }),
+            ])
+        }
+    })
+
+    const createDialogMutation = useMutation({
+        mutationFn: createDialog,
+    })
+
+    const onSubmit = async (e) => {
         e.preventDefault()
         e.stopPropagation()
 
-        acceptOffer(offerId).then((res) => {
+        setError("")
+
+        try {
+            const res = await acceptOfferMutation.mutateAsync(offerId)
             const payload = {
                 sender1_id: currentUserId,
                 sender2_id: res.master_id,
                 request_id
             }
-            createDialog(payload).then((dialog) => {
-                sendOfferAccept(res.master_id, offerId)
-                navigate("/client/chat/" + dialog.id)
-            })
-        }).catch((err) => {
-            if (err.status === 402) {
-                return setError("У мастера недостаточно средств")
+
+            const dialog = await createDialogMutation.mutateAsync(payload)
+            sendOfferAccept(res.master_id, offerId)
+            navigate("/client/chat/" + dialog.id)
+        } catch (err) {
+            if (err?.status === 402) {
+                setError("У мастера недостаточно средств")
+                return
             }
 
             setError("Данный мастер недоступен")
-        })
+        }
     }
 
     return (
@@ -247,7 +269,13 @@ const Suggest = (props) => {
                     </div>
                 )}
                 <div className="customer_message-but">
-                    <button onClick={onSubmit} className="btn">Выбрать мастера</button>
+                    <button
+                        onClick={onSubmit}
+                        className="btn"
+                        disabled={acceptOfferMutation.isPending || createDialogMutation.isPending}
+                    >
+                        {acceptOfferMutation.isPending || createDialogMutation.isPending ? 'Обработка...' : 'Выбрать мастера'}
+                    </button>
                     <Link to={"/client/feedback/" + master_username}>
                         <button className="btnn">Отзывы о мастере</button>
                     </Link>
