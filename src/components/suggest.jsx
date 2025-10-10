@@ -10,7 +10,7 @@ import { acceptOffer } from "../services/offer.service"
 import { useUserQuery } from "../hooks/useUserQuery";
 import { useMasterByUsernameQuery } from "../hooks/useMasterByUsernameQuery";
 import { useMasterServicesQuery } from "../hooks/useMasterServicesQuery";
-import { messageKeys, offerKeys, requestKeys } from "../queries";
+import { messageKeys, offerKeys, requestKeys, normalizeOptionalOfferRequestId } from "../queries";
 
 const Suggest = (props) => {
     const {
@@ -37,13 +37,22 @@ const Suggest = (props) => {
     const acceptOfferMutation = useMutation({
         mutationFn: acceptOffer,
         onSuccess: async () => {
-            await Promise.all([
-                queryClient.invalidateQueries({ queryKey: offerKeys.list(request_id ?? 'unknown') }),
+            const normalizedRequestId = normalizeOptionalOfferRequestId(request_id);
+
+            const invalidations = [
                 queryClient.invalidateQueries({ queryKey: requestKeys.client() }),
                 queryClient.invalidateQueries({ queryKey: requestKeys.clientAll() }),
                 queryClient.invalidateQueries({ queryKey: requestKeys.masterOrders() }),
                 queryClient.invalidateQueries({ queryKey: messageKeys.unread() }),
-            ])
+            ];
+
+            if (normalizedRequestId) {
+                invalidations.push(
+                    queryClient.invalidateQueries({ queryKey: offerKeys.list(normalizedRequestId) })
+                );
+            }
+
+            await Promise.all(invalidations)
         }
     })
 
