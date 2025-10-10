@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import MobileMenu from './MobileMenu';
@@ -12,8 +11,8 @@ import ListItem from '../../components/ListItem/ListItem';
 import './header.scss';
 import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
-import { selectUI } from '../../slices/ui.slice';
 import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUIState } from '../../state/ui/UIStateContext';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -25,7 +24,7 @@ const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
   const { user } = useUserQuery();
   const currentUser = user || {};
 

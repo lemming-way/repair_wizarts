@@ -13,7 +13,6 @@ import React, {
 } from 'react';
 import '../../../scss/chat.css';
 import Dropdown from 'react-multilevel-dropdown';
-import { useSelector } from 'react-redux';
 import MediaQuery from 'react-responsive';
 import { Link, useParams } from 'react-router-dom';
 
@@ -23,12 +22,12 @@ import BlackListModal from './BlackListModal';
 import styles from './Chat.module.css';
 import { useService } from '../../../hooks/useService';
 import { getAllClientRequests } from '../../../services/request.service';
-import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
 import { useUserQuery } from '../../../hooks/useUserQuery';
+import { useUIState } from '../../../state/ui/UIStateContext';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
@@ -1280,7 +1279,7 @@ function ChoiceOfReplenishmentMethodCard() {
     useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
-  const ui = useSelector(selectUI);
+  const ui = useUIState();
   const userRequests = useService(
     ui.isMaster ? getMasterOrders : getAllClientRequests,
     [],

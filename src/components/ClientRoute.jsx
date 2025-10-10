@@ -1,14 +1,13 @@
 import { useEffect } from 'react'
-import { useSelector } from "react-redux"
 import {
     useOutlet
 } from "react-router-dom"
 
-import { selectUI } from '../slices/ui.slice'
+import { useUIState } from '../state/ui/UIStateContext'
 
 const ProtectedRoute = () => {
     const children = useOutlet()
-    const ui = useSelector(selectUI)
+    const ui = useUIState()
 
     useEffect(() => {
         if (ui.isLoading) {

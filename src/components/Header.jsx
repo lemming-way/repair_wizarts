@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import DropdownCountry from "./dropdownCountry";
@@ -8,16 +7,16 @@ import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { useLanguage } from '../state/language';
-import { selectUI } from '../slices/ui.slice';
 import { useUserQuery } from '../hooks/useUserQuery';
 import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
+import { useUIState } from '../state/ui/UIStateContext';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
 
-    const ui = useSelector(selectUI)
+    const ui = useUIState()
     const { user } = useUserQuery()
     const currentUser = user || {}
     const { unreadCount } = useUnreadMessagesQuery()

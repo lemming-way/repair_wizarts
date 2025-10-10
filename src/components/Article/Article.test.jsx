@@ -1,11 +1,9 @@
-import { configureStore } from '@reduxjs/toolkit';
 import { render, screen, within } from '@testing-library/react';
-import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import Article from './Article';
 import * as articleService from '../../services/article.service';
-import uiReducer from '../../slices/ui.slice';
+import { UIStateProvider } from '../../state/ui/UIStateContext';
 
 jest.mock('../../services/article.service');
 jest.mock('swiper/react', () => ({
@@ -45,17 +43,6 @@ afterAll(() => {
   console.warn = originalWarn;
 });
 
-const mockStore = configureStore({
-  reducer: {
-    ui: uiReducer,
-  },
-  preloadedState: {
-    ui: {
-      isAuthorized: false,
-    },
-  },
-});
-
 const mockArticleData = {
   id: 1,
   title: 'Test Article',
@@ -67,11 +54,11 @@ const mockArticleData = {
 
 const renderWithRouter = (component, initialEntries = ['/articles/1']) => {
   return render(
-    <Provider store={mockStore}>
+    <UIStateProvider initialState={{ isAuthorized: false }}>
       <MemoryRouter initialEntries={initialEntries}>
         {component}
       </MemoryRouter>
-    </Provider>
+    </UIStateProvider>
   );
 };
 
