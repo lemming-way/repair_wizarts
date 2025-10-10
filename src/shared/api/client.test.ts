@@ -4,11 +4,15 @@ import type { Err, Ok, Result } from './types';
 
 jest.mock('./auth', () => ({
   getAuthParams: jest.fn(),
+  maybeRefreshToken: jest.fn(),
 }));
 
 describe('api client', () => {
   const originalFetch = global.fetch as any;
   const mockGetAuthParams = authModule.getAuthParams as jest.MockedFunction<typeof authModule.getAuthParams>;
+  const mockMaybeRefreshToken = authModule.maybeRefreshToken as jest.MockedFunction<
+    typeof authModule.maybeRefreshToken
+  >;
 
   function assertOk<T>(result: Result<T>): asserts result is Ok<T> {
     expect(result.ok).toBe(true);
@@ -144,5 +148,52 @@ describe('api client', () => {
     const body = init.body as URLSearchParams;
     expect(body.get('hello')).toBe('world');
     expect(body.get('token')).toBe('abc');
+  });
+
+  it('retries once on 401 when refresh succeeds', async () => {
+    mockGetAuthParams.mockReturnValue({ token: 'old', u_hash: 'hash' });
+    mockMaybeRefreshToken.mockResolvedValueOnce(true);
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { get: () => 'application/json' },
+        json: async () => ({ message: 'expired' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ success: true }),
+      });
+
+    (global.fetch as any) = fetchMock;
+
+    const res = await api.post<{ success: boolean }>('secure', { foo: 'bar' });
+
+    assertOk(res);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(mockMaybeRefreshToken).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns error when refresh fails for 401 responses', async () => {
+    mockMaybeRefreshToken.mockResolvedValueOnce(false);
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      headers: { get: () => 'application/json' },
+      json: async () => ({ message: 'expired' }),
+    });
+
+    (global.fetch as any) = fetchMock;
+
+    const res = await api.post<{ success: boolean }>('secure');
+
+    assertErr(res);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mockMaybeRefreshToken).toHaveBeenCalledTimes(1);
   });
 });

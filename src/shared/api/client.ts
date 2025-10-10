@@ -1,4 +1,4 @@
-import { getAuthParams } from './auth';
+import { getAuthParams, maybeRefreshToken } from './auth';
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
 
@@ -38,6 +38,14 @@ function appendFormValue(params: URLSearchParams, key: string, value: unknown, t
   tracker.used = true;
 }
 
+function cloneFormData(input: FormData): FormData {
+  const copy = new FormData();
+  input.forEach((value, key) => {
+    copy.append(key, value as any);
+  });
+  return copy;
+}
+
 function preparePostBody(body: unknown, authParams: AuthParams): {
   body?: BodyInit;
   isFormData: boolean;
@@ -45,8 +53,9 @@ function preparePostBody(body: unknown, authParams: AuthParams): {
   const authEntries = Object.entries(authParams);
 
   if (body instanceof FormData) {
-    authEntries.forEach(([key, value]) => body.append(key, value));
-    return { body, isFormData: true };
+    const params = cloneFormData(body);
+    authEntries.forEach(([key, value]) => params.append(key, value));
+    return { body: params, isFormData: true };
   }
 
   if (body instanceof URLSearchParams) {
@@ -108,6 +117,7 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
   const base = process.env.REACT_APP_API_URL || SERVER_PATH || '';
   const correlationId = Math.random().toString(36).slice(2);
   const method = opts.method || 'GET';
+  const skipAuthRetry = opts.skipAuthRetry === true;
 
   const { signal, dispose } = createAbortableController(opts.timeoutMs, opts.signal);
 
@@ -144,6 +154,14 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
     if (resp.ok) {
       dispose();
       return { ok: true, data: data as T, correlationId };
+    }
+
+    if (resp.status === 401 && !skipAuthRetry) {
+      const refreshed = await maybeRefreshToken(resp);
+      if (refreshed) {
+        dispose();
+        return request<T>(path, { ...opts, skipAuthRetry: true });
+      }
     }
 
     const err: ApiError = {
