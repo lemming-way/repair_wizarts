@@ -1,4 +1,3 @@
-import { getToken } from './token.service';
 import appFetch, { BASE_URL } from './api';
 // Функция для отправки кода на email
 //~ const sendEmailCodeTest = () => {
@@ -63,20 +62,19 @@ const sendEmailVerificationCode = (code) =>
   );
 
 const sendPhoneCode = () =>
-  fetch(BASE_URL + 'user/send-phone-code', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + getToken()?.access_token,
+  appFetch('/auth/', {
+    body: {
+      type: 'phone_code',
     },
-  }).then((res) => res.json());
+  });
 
 const sendPhoneVerificationCode = (code) =>
-  fetch(BASE_URL + 'user/verify-phone/' + code, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + getToken()?.access_token,
+  appFetch('/auth/', {
+    body: {
+      type: 'phone_code',
+      code,
     },
-  }).then((res) => res.json());
+  });
 
 export {
   sendEmailCode,
