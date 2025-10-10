@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
 import '../../scss/profileNumber.css';
 import '../../scss/swiper.css';
-import { useSelector } from 'react-redux';
 
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../services/api';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
   const [feedback, setFeedback] = useState([]);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
@@ -66,14 +65,14 @@ function App() {
     };
 
     const fetchFeedback = async () => {
-      if (user.u_details?.login) {
-        const comments = await getUserCommentsFromBookings(user.u_id);
+      if (currentUser.u_details?.login) {
+        const comments = await getUserCommentsFromBookings(currentUser.u_id);
         setFeedback(comments);
       }
     };
 
     fetchFeedback();
-  }, [user.u_id, user.u_details?.login]);
+  }, [currentUser.u_id, currentUser.u_details?.login]);
 
   useEffect(() => {
     document.title = 'Отзывы';

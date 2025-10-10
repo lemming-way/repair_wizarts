@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -54,8 +56,10 @@ function Profile() {
 
   const ui = useSelector(selectUI);
   const { categories } = useSelector((state) => state.categories);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || EMPTY_OBJECT;
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -237,10 +241,17 @@ function Profile() {
         service: selectedServices,
       },
     };
+    if (!userId) {
+      setError('');
+      setSuceeded(false);
+      return;
+    }
+
     try {
-      await updateUser(payload, user.u_id).then((v) => console.log(v));
+      await updateUser(payload, userId).then((v) => console.log(v));
       setError('');
       setSuceeded(true);
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     } catch (err) {
       setError(err.message);
       setSuceeded(false);
@@ -250,7 +261,7 @@ function Profile() {
   useEffect(() => {
     if (!ui.isAuthorized) return;
 
-    const master = user;
+    const master = currentUser;
 
     const fetchAllData = async () => {
       if (
@@ -353,7 +364,7 @@ function Profile() {
     ) {
       fetchAllData();
     }
-  }, [ui.isAuthorized, categories, user]);
+  }, [ui.isAuthorized, categories, currentUser]);
 
   useEffect(() => {
     document.title = 'Настройки';

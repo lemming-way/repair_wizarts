@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { fetchUser } from '../../slices/user.slice';
 import { login } from '../../services/auth.service';
 
 import './login.css';
@@ -16,6 +15,7 @@ import {
   recoverPasswordVerify,
 } from '../../services/user.service';
 import appFetch from '../../services/api';
+import { userKeys } from '../../queries';
 
 const RecoveryState = {
   IDLE: 0,
@@ -24,7 +24,7 @@ const RecoveryState = {
 };
 
 function AuthLogin() {
-  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [error, setError] = useState('');
@@ -186,7 +186,7 @@ function AuthLogin() {
           c_id: Object.values(userProfile.data.car || {})[0].c_id,
         },
       });
-      dispatch(fetchUser());
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
       navigate('/');
     } catch (err) {
       console.log(err);

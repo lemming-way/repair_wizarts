@@ -1,17 +1,16 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
 
-import { selectUser } from '../slices/user.slice';
 import AlertMessage from './AlertMessage/AlertMessage';
 import { useUserRating } from '../hooks/useUserRating';
+import { useUserQuery } from '../hooks/useUserQuery';
 function Sidebar() {
   const location = useLocation();
 
   // Получаем основные данные пользователя
-  const userData = useSelector(selectUser)?.data?.user;
-  const user = userData ? Object.values(userData)[0] : {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
 
   // 2. Вызываем хук для получения данных о рейтинге
   const { averageRating, feedbackCount, isLoading } = useUserRating();
@@ -25,9 +24,10 @@ function Sidebar() {
   }
 
   // Формируем имя и аватар
-  const userAvatar = user?.u_photo || '/img/profil_img/1.png';
+  const userAvatar = currentUser?.u_photo || '/img/profil_img/1.png';
   const userName =
-    `${user?.u_name || ''} ${user?.u_family || ''}`.trim() || 'Имя Фамилия';
+    `${currentUser?.u_name || ''} ${currentUser?.u_family || ''}`.trim() ||
+    'Имя Фамилия';
 
   return (
     <div>

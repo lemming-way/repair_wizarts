@@ -23,12 +23,12 @@ import BlackListModal from './BlackListModal';
 import styles from './Chat.module.css';
 import { useService } from '../../../hooks/useService';
 import { getAllClientRequests } from '../../../services/request.service';
-import { selectUser } from '../../../slices/user.slice';
 import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
+import { useUserQuery } from '../../../hooks/useUserQuery';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
@@ -565,9 +565,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   setBalanceErrorNum,
   viewerIsMaster, // НОВОЕ
 }) => {
-  const user =
-    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
-    ({} as any);
+  const user = currentUser || ({} as any);
 
   // ===== ЧАТ: история для этого заказа =====
   const chatHistory: ChatMessage[] = useMemo(() => {
@@ -1264,9 +1262,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 };
 
 function ChoiceOfReplenishmentMethodCard() {
-  const user =
-    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
-    ({} as any);
+  const { user: authorizedUser } = useUserQuery();
+  const user = (authorizedUser as any) || ({} as any);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1377,9 +1374,11 @@ function ChoiceOfReplenishmentMethodCard() {
   const [footerHeight, setFooterHeight] = useState<number>(0);
 
   const measureFooter = useCallback(() => {
-    const h = footerRef.current?.offsetHeight || 0;
-    if (h !== footerHeight) setFooterHeight(h);
-  }, [footerRef.current?.offsetHeight || 0, footerHeight]);
+    const nextHeight = footerRef.current?.offsetHeight ?? 0;
+    setFooterHeight((prevHeight) =>
+      prevHeight === nextHeight ? prevHeight : nextHeight,
+    );
+  }, []);
 
   useEffect(() => {
     measureFooter();

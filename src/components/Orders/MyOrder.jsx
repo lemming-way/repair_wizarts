@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Popup from 'reactjs-popup';
@@ -11,16 +10,16 @@ import ModalDelete from './ModalDelete';
 import ModalEditOrder from './ModalEditOrder';
 import styles from './MyOrder.module.css';
 import { deleteRequest, updateRequest } from '../../services/request.service';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../services/api';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import style from '../Service/serviceDetail.module.scss';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 
 
 function MyOrder() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const currentUser = user || {};
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
@@ -256,7 +255,7 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    Баланс: {user?.u_details?.balance || 0}р
+                    Баланс: {currentUser?.u_details?.balance || 0}р
                   </label>
                 </div>
                 <p>Обычная цена сделки без риска</p>

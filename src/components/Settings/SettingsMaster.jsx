@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   updateUserPhoto,
   updateUser,
   updatePassword,
 } from '../../services/user.service';
-
-import { useDispatch, useSelector } from 'react-redux';
 
 import '../../scss/settings-all.css';
 import 'swiper/css';
@@ -17,8 +17,9 @@ import Popup from 'reactjs-popup';
 import style from './SettingsMaster.module.css';
 import { deleteUser } from '../../services/user.service';
 import { selectUI, setAuthorization } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const EMPTY_OBJECT = {}
 
@@ -26,13 +27,15 @@ export default function SettingsMaster() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const [deleteAccount, setDeleteAccount] = useState(false);
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('данные сохранились');
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const { user } = useUserQuery();
+  const currentUser = user || EMPTY_OBJECT;
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const ui = useSelector(selectUI);
 
   const [mask_value, setMask_value] = useState('+7(9');
@@ -94,10 +97,17 @@ export default function SettingsMaster() {
   };
   const onSubmit = (e) => {
     e.preventDefault();
-    updateUser(form, user.id)
+    if (!userId) {
+      setError('Пользователь не найден');
+      setSuceeded(false);
+      return;
+    }
+
+    updateUser(form, userId)
       .then((v) => {
         setSuceeded(true);
         setError('');
+        queryClient.invalidateQueries({ queryKey: userKeys.all });
       })
       .catch((err) => {
         setError(err.message);
@@ -127,12 +137,13 @@ export default function SettingsMaster() {
     }
     try {
       const base64 = await convertToBase64(file);
-      await updateUserPhoto(base64, user.id);
+      await updateUserPhoto(base64, userId);
 
       setSuceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     } catch (err) {
       setSuceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');
@@ -162,10 +173,10 @@ export default function SettingsMaster() {
   };
   useEffect(() => {
     if (ui.isAuthorized) {
-      const master = user;
+      const master = currentUser;
       const obj = {
-        phone: user.u_phone || '',
-        email: user.u_email || '',
+        phone: currentUser.u_phone || '',
+        email: currentUser.u_email || '',
         details: {
           availability_from: master.u_details?.availability_from || '00:00:00',
           availability_to: master.u_details?.availability_to || '00:00:00',
@@ -177,10 +188,10 @@ export default function SettingsMaster() {
       };
       setForm(obj);
     }
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
+    if (currentUser.u_photo) {
+      setPreviewUrl(currentUser.u_photo);
     }
-  }, [ui, user]);
+  }, [ui, currentUser]);
   useEffect(() => {
     document.title = 'Настройки';
   }, []);

@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { useRef } from 'react';
-import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
 import style from './AddOrderModal.module.css';
 import { updateRequest } from '../../../services/request.service';
 import { getToken } from '../../../services/token.service';
-import { selectUser } from '../../../slices/user.slice';
+import { useUserQuery } from '../../../hooks/useUserQuery';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -45,7 +44,8 @@ export default function AddOrderModal({
   setVisibleOkModal,
   currentOrder,
 }) {
-  const user = Object.values(useSelector(selectUser)?.data?.user || {})[0];
+  const { user } = useUserQuery();
+  const currentUser = user || {};
   const { id } = useParams();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -96,7 +96,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>Предложить заказ</h2>
-        {(user?.u_details?.balance || 0) < 500 && (
+        {(currentUser?.u_details?.balance || 0) < 500 && (
           <p className={style.error}>
             Пожалуйста пополните баланс на 500 рублей
           </p>
@@ -126,7 +126,7 @@ export default function AddOrderModal({
           <div>
             <p className={style.mini_heading}>Бюджет</p>
             <p className={style.balance}>
-              Баланс {user?.u_details?.balance || 0} ₽
+              Баланс {currentUser?.u_details?.balance || 0} ₽
             </p>
             <div className={style.icon}>
               <input

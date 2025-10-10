@@ -1,13 +1,17 @@
 import { useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './SettingsMaster.module.css';
 import SERVER_PATH from '../../constants/SERVER_PATH';
 import { updateUserPhoto } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const Photo = () => {
-  const user = useSelector(selectUser);
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || {};
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const inputRef = useRef(null);
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
@@ -18,9 +22,13 @@ const Photo = () => {
 
     if (file) {
       try {
-        await updateUserPhoto(file, user.id);
+        if (!userId) {
+          throw new Error('Пользователь не найден');
+        }
+        await updateUserPhoto(file, userId);
         setSuceeded(true);
         setError('');
+        queryClient.invalidateQueries({ queryKey: userKeys.all });
       } catch (err) {
         setError(err.message);
         setSuceeded(false);
@@ -37,7 +45,13 @@ const Photo = () => {
 
       <label htmlFor="profileLogoUpload">
         <img
-          src={user.avatar ? SERVER_PATH + user.avatar : '/img/img-camera.png'}
+          src={
+            currentUser.u_photo
+              ? currentUser.u_photo
+              : currentUser.avatar
+              ? SERVER_PATH + currentUser.avatar
+              : '/img/img-camera.png'
+          }
           alt="Фото профиля"
           className="settings-picture"
         />

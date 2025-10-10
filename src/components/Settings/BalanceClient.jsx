@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import Pagination from 'react-bootstrap/Pagination';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './Balance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const BalanceClient = () => {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || {};
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
   const [isVisibleRow, setVisibleRow] = useState(false);
@@ -29,8 +31,8 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  const walletValue = user?.u_details?.wallets?.[0]?.value;
-  const userBalance = user?.u_details?.balance;
+  const walletValue = currentUser?.u_details?.wallets?.[0]?.value;
+  const userBalance = currentUser?.u_details?.balance;
 
   useEffect(() => {
     //~ if (user) {
@@ -40,7 +42,7 @@ const BalanceClient = () => {
     //~ }
   }, [walletValue, userBalance]);
 
-  const allPayments = user?.u_details?.history_of_pay || [];
+  const allPayments = currentUser?.u_details?.history_of_pay || [];
 
   // Apply filtering
   const filteredPayments = allPayments.filter((item) => {
@@ -118,7 +120,7 @@ const BalanceClient = () => {
         <h3 className={style.heading}>Баланс</h3>
 
         <div className={style.wrap_row1}>
-          <p className={style.balance}>{user?.u_details?.balance || '0.0'}</p>
+          <p className={style.balance}>{currentUser?.u_details?.balance || '0.0'}</p>
 
           {!isVisibleRow && (
             <div className={style.buttons_row}>
@@ -134,18 +136,18 @@ const BalanceClient = () => {
             </div>
           )}
 
-          {isVisibleRow && user?.u_details?.wallets && (
+          {isVisibleRow && currentUser?.u_details?.wallets && (
             <div className={style.wrap_row1__row}>
               <select
                 className={style.select}
                 onChange={(e) => {
-                  const currentCard = user?.u_details.wallets.find(
+                  const currentCard = currentUser?.u_details.wallets.find(
                     (item) => item.type === e.target.value,
                   );
                   setInputCard(currentCard.value);
                 }}
               >
-                {user?.u_details?.wallets.map((item) => (
+                {currentUser?.u_details?.wallets.map((item) => (
                   <option key={item.type} value={item.type}>
                     {item.type}
                   </option>
@@ -168,8 +170,8 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = user?.u_details?.history_of_pay
-                      ? user?.u_details?.history_of_pay
+                    const oldHistory = currentUser?.u_details?.history_of_pay
+                      ? currentUser?.u_details?.history_of_pay
                       : [];
                     const newPayment = {
                       cost: Number(inputPrice),
@@ -178,12 +180,22 @@ const BalanceClient = () => {
                       status: 'Успешно',
                       title: 'Вывод средств',
                     };
-                    updateUser({
-                      details: {
-                        balance: user?.u_details?.balance - inputPrice,
-                        history_of_pay: [...oldHistory, newPayment],
+                    if (!currentUser?.u_id) {
+                      return;
+                    }
+                    updateUser(
+                      {
+                        details: {
+                          balance:
+                            (currentUser?.u_details?.balance || 0) -
+                            Number(inputPrice),
+                          history_of_pay: [...oldHistory, newPayment],
+                        },
                       },
-                    });
+                      currentUser.u_id,
+                    ).then(() =>
+                      queryClient.invalidateQueries({ queryKey: userKeys.all }),
+                    );
                   }}
                 >
                   Вывести

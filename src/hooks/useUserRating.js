@@ -1,15 +1,12 @@
 // src/hooks/useUserRating.js
 
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-
-import { selectUser } from '../slices/user.slice';
+import { useUserQuery } from './useUserQuery';
 import appFetch from '../services/api';
 
 export const useUserRating = () => {
   // Получаем ID пользователя из Redux
-  const userData = useSelector(selectUser)?.data?.user;
-  const user = userData ? Object.values(userData)[0] : {};
+  const { user } = useUserQuery();
   const userId = user?.u_id;
 
   const [ratingData, setRatingData] = useState({

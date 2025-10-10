@@ -8,20 +8,23 @@ import { Link, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useSelector } from 'react-redux';
 import { Navigation, Pagination } from 'swiper';
 
 import Suggest from './suggest';
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { useService } from '../hooks/useService';
 import { getClientRequests } from '../services/request.service';
-import { selectUser } from '../slices/user.slice';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function MySuggest() {
   const { id } = useParams();
   const requests = useService(getClientRequests, []);
   const offers = useService(getOffers.bind(null, id), []);
-  const user = useSelector(selectUser);
+  const { user } = useUserQuery();
+  const avatar = user?.u_photo || user?.avatar || '';
+  const name = user?.u_name || user?.name || '';
+  const lastname = user?.u_family || user?.lastname || '';
+  const phone = user?.u_phone || user?.phone || '';
   const req = useMemo(
     () =>
       Object.values(requests.data?.data?.booking || []).find(
@@ -157,7 +160,7 @@ function MySuggest() {
           <div className="bloc-1 df">
             <div className="bloc_img">
               <img
-                src={SERVER_PATH + user.avatar}
+                src={SERVER_PATH + avatar}
                 width="120px"
                 height="120px"
                 style={{ borderRadius: '60px', objectFit: 'cover' }}
@@ -166,9 +169,9 @@ function MySuggest() {
             </div>
             <div className="bloc_text">
               <h2>
-                {user.name} {user.lastname}
+              {name} {lastname}
               </h2>
-              <h3>{user.phone}</h3>
+              <h3>{phone}</h3>
             </div>
           </div>
           <div className="bloc-2 df align mobile-bloc-2">

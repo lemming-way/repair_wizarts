@@ -7,13 +7,12 @@ import { useService } from '../../../hooks/useService';
 import { getMasterOrders } from '../../../services/order.service';
 import { getAllClientRequests } from '../../../services/request.service';
 import { selectUI } from '../../../slices/ui.slice';
-import { selectUser } from '../../../slices/user.slice';
+import { useUserQuery } from '../../../hooks/useUserQuery';
 
 function App() {
   const ui = useSelector(selectUI);
-  const user =
-    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
-    ({} as any);
+  const { user: authorizedUser } = useUserQuery();
+  const user = (authorizedUser as any) || ({} as any);
   const userRequests = useService(
     ui.isMaster ? getMasterOrders : getAllClientRequests,
     [],

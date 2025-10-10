@@ -7,11 +7,9 @@ import notificationsReducer from './slices/notifications.slice';
 import onlineReducer from './slices/online.slice';
 import servicesSlice from './slices/services.slice';
 import uiSlice from './slices/ui.slice';
-import userReducer from './slices/user.slice';
 
 const store = configureStore({
   reducer: combineReducers({
-    user: userReducer,
     services: servicesSlice,
     online: onlineReducer,
     messages: messagesReducer,

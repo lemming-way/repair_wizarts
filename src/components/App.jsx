@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 
-import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
-
 import '../scss/swiper.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { Routes, Route, useLocation } from 'react-router-dom';
@@ -43,7 +41,6 @@ import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
 import Article from './Article';
-import FetchStatus from '../constants/FetchStatus';
 import { fetchServices } from '../slices/services.slice';
 import {
   setAuthorization,
@@ -54,6 +51,7 @@ import {
 import { getLocation } from '../services/location.service';
 import { getToken } from '../services/token.service';
 import { getUserMode, updateUser } from '../services/user.service';
+import { useUserQuery } from '../hooks/useUserQuery';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
 import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
@@ -81,12 +79,11 @@ import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user, status } = useUserQuery();
+  const currentUser = user || {};
   const __location__ = useLocation();
   const dispatch = useDispatch();
 
-  const userStatus = useSelector(selectUserStatus);
   const { categories } = useSelector((state) => state.categories);
   const [currentHome, setCurrentHome] = useState('electron');
 
@@ -94,6 +91,35 @@ function App() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        if (currentUser?.u_id) {
+          updateUser(
+            {
+              details: {
+                isOnline: false,
+                lastTimeBeenOnline: new Date().toISOString(),
+              },
+            },
+            currentUser.u_id,
+          );
+        }
+      } else if (document.visibilityState === 'visible') {
+        if (currentUser?.u_id) {
+          updateUser(
+            {
+              details: {
+                isOnline: true,
+                lastTimeBeenOnline: new Date().toISOString(),
+              },
+            },
+            currentUser.u_id,
+          );
+        }
+      }
+    };
+
+    // Add page unload tracking
+    const handleBeforeUnload = (event) => {
+      if (currentUser?.u_id) {
         updateUser(
           {
             details: {
@@ -101,32 +127,9 @@ function App() {
               lastTimeBeenOnline: new Date().toISOString(),
             },
           },
-          user.u_id,
-        );
-      } else if (document.visibilityState === 'visible') {
-        updateUser(
-          {
-            details: {
-              isOnline: true,
-              lastTimeBeenOnline: new Date().toISOString(),
-            },
-          },
-          user.u_id,
+          currentUser.u_id,
         );
       }
-    };
-
-    // Add page unload tracking
-    const handleBeforeUnload = (event) => {
-      updateUser(
-        {
-          details: {
-            isOnline: false,
-            lastTimeBeenOnline: new Date().toISOString(),
-          },
-        },
-        user.u_id,
-      );
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -136,7 +139,7 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dispatch, user.u_id]);
+  }, [currentUser?.u_id]);
 
   useEffect(() => {
     const isMaster = getUserMode();
@@ -149,11 +152,6 @@ function App() {
       dispatch(setMaster(true));
     }
   }, [dispatch]);
-
-  useEffect(() => {
-    const token = getToken();
-    if (token) dispatch(fetchUser());
-  }, [__location__.pathname, dispatch]);
 
   useEffect(() => {
     const fetchFullDataAboutCategories = async () => {
@@ -193,26 +191,24 @@ function App() {
   }, [categories, dispatch]);
   useEffect(() => {
     const token = getToken();
-    if (userStatus === FetchStatus.IDLE) {
-      if (token) {
-        dispatch(fetchUser());
-        //dispatch(fetchMessages());
-      } else {
-        dispatch(setLoading(false));
-      }
-
-      // dispatch({ type: 'notifications/disconnect' });
-      dispatch(fetchServices());
+    if (!token) {
+      dispatch(setLoading(false));
+      return;
     }
-    if (userStatus === FetchStatus.SUCCEEDED) {
+
+    if (status === 'success') {
       dispatch({ type: 'notifications/connect' });
       dispatch(setLoading(false));
       dispatch(setAuthorization(true));
     }
-    if (userStatus === FetchStatus.FAILED) {
+    if (status === 'error') {
       dispatch(setLoading(false));
     }
-  }, [userStatus, dispatch]);
+  }, [dispatch, status]);
+
+  useEffect(() => {
+    dispatch(fetchServices());
+  }, [dispatch]);
   if (categories.length === 0) {
     return 'Loading...';
   }

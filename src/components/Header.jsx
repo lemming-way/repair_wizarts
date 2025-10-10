@@ -10,7 +10,7 @@ import SERVER_PATH from '../constants/SERVER_PATH';
 import { useLanguage } from '../state/language';
 import { selectUnreadMessages } from '../slices/messages.slice';
 import { selectUI } from '../slices/ui.slice';
-import { selectUser } from '../slices/user.slice';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
@@ -18,7 +18,8 @@ function Header() {
     const [menuActive, setMenuActive] = useState(false)
 
     const ui = useSelector(selectUI)
-    const user = useSelector(selectUser)
+    const { user } = useUserQuery()
+    const currentUser = user || {}
     const messages = useSelector(selectUnreadMessages)
     const text = useLanguage();
     return (
@@ -87,7 +88,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + user.avatar}
+                                        src={SERVER_PATH + (currentUser.avatar || '')}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -100,10 +101,10 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {ui.isMaster && user.master[0] && (
+                                {ui.isMaster && currentUser.master?.[0] && (
                                     <>
                                         <p className='master__moneys'>
-                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
+                                            {parseFloat(currentUser.master[0].balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
                                             <Link to="/master/wallet">{text("Top up balance")}</Link>

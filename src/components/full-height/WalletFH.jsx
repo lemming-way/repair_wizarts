@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updateUserPhoto } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import './startff.css';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const currentUser = user || {};
+  const userId = currentUser?.u_id ?? currentUser?.id;
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -15,10 +18,10 @@ function App() {
 
   useEffect(() => {
     document.title = 'Настройки';
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
+    if (currentUser.u_photo) {
+      setPreviewUrl(currentUser.u_photo);
     }
-  }, [user.u_photo]);
+  }, [currentUser.u_photo]);
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -28,14 +31,19 @@ function App() {
       setError('Файл не выбран');
       return;
     }
+    if (!userId) {
+      setError('Пользователь не найден');
+      return;
+    }
     try {
       const base64 = await convertToBase64(file);
-      const answer = await updateUserPhoto(base64, user.id);
+      const answer = await updateUserPhoto(base64, userId);
       console.log(answer);
       setSucceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
     } catch (err) {
       setSucceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');
