@@ -104,9 +104,26 @@ const updateMasterPictures = (userId, payload) => {
   });
 };
 
-const deleteUser = async () => {
-  const result = await appFetch('user/delete-account', { method: 'DELETE' });
-  removeToken();
+const deleteUser = async (userId, asAdmin = false) => {
+  const body = {
+    data: JSON.stringify({
+      u_is_deleted: 1,
+    }),
+    ...(asAdmin && typeof userId === 'number' ? { u_a_id: userId } : {}),
+  };
+
+  const result = await appFetch(
+    'user',
+    {
+      body,
+    },
+    asAdmin,
+  );
+
+  if (!asAdmin) {
+    removeToken();
+  }
+
   return result;
 };
 
