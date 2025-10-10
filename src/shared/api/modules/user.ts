@@ -30,7 +30,7 @@ export type UpdatePasswordPayload = {
 };
 
 export async function getProfile(): Promise<Result<UserProfile>> {
-  return api.get<UserProfile>('user/authorized');
+  return api.post<UserProfile>('user/authorized');
 }
 
 export async function updateProfile(data: UpdateProfilePayload, id?: number, asAdmin?: boolean): Promise<Result<UserProfile>> {
@@ -55,7 +55,7 @@ export async function updateProfile(data: UpdateProfilePayload, id?: number, asA
 }
 
 export async function deleteAccount(): Promise<Result<void>> {
-  return api.delete<void>('user/delete-account');
+  return api.post<void>('user/delete-account');
 }
 
 export async function updatePassword(data: UpdatePasswordPayload): Promise<Result<void>> {
