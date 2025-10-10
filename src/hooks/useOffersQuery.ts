@@ -5,7 +5,11 @@ import {
   UseQueryResult,
 } from '@tanstack/react-query';
 
-import { offerKeys } from '../queries';
+import {
+  offerKeys,
+  normalizeOptionalOfferRequestId,
+  UNKNOWN_OFFER_REQUEST_ID,
+} from '../queries';
 import { getOffers } from '../services/offer.service';
 import { getToken } from '../services/token.service';
 
@@ -22,17 +26,18 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
 };
 
 export function useOffersQuery(
-  requestId: string | number | undefined,
+  requestId: string | number | null | undefined,
   options?: Options,
 ): Result {
   const token = getToken();
   const { enabled: optionsEnabled, ...restOptions } = options ?? {};
   const enabled = Boolean(token) && Boolean(requestId) && (optionsEnabled ?? true);
-  const normalizedId = (requestId ?? 'unknown') as string | number;
+  const normalizedId =
+    normalizeOptionalOfferRequestId(requestId) ?? UNKNOWN_OFFER_REQUEST_ID;
 
   const queryResult = useQuery({
     queryKey: offerKeys.list(normalizedId),
-    queryFn: () => getOffers(requestId as string | number),
+    queryFn: () => getOffers(normalizedId),
     enabled,
     ...restOptions,
   });
