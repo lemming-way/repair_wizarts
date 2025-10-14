@@ -22,13 +22,12 @@ const StylesStatusEnum = {
   Пауза: 'status_stop',
 };
 function MyApplications() {
-  const { user } = useUserQuery();
-  const currentUser = user || {};
+  const { user = {} } = useUserQuery();
   const navigator = useNavigate();
   const orders = useService(getMasterOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];
   const filteredRequests = rawRequests.filter(
-    (item) => item.b_options.type === 'order' && item.u_id !== currentUser.u_id,
+    (item) => item.b_options.type === 'order' && item.u_id !== user.u_id,
   );
   //   // test
   //   // const filteredOrders = [
