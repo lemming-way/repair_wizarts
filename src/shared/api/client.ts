@@ -164,9 +164,15 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
       correlationId,
       details: data,
     };
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[api]', correlationId, err);
+    }
     dispose();
     return { ok: false, error: err, correlationId };
   } catch (e) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[api]', correlationId, e);
+    }
     dispose();
     return { ok: false, error: toApiError(e, 0, correlationId), correlationId };
   }
