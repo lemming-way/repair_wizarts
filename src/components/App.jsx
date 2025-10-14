@@ -72,6 +72,9 @@ import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../hooks/useServicesQuery';
 import { useUIActions } from '../state/ui/UIStateContext';
 import { useNotifications } from '../state/notifications/NotificationsContext';
+import { QueryDevtools } from '../app/providers/QueryDevtools';
+
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 function App() {
   const { user, status } = useUserQuery();
@@ -185,6 +188,7 @@ function App() {
         <>
           {/* <Notifications /> */}
           <Toolbar />
+          {isDevelopment ? <QueryDevtools /> : null}
           <main>
             <Routes>
               <Route>
