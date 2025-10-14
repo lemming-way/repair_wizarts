@@ -25,8 +25,7 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const ui = useUIState();
-  const { user } = useUserQuery();
-  const currentUser = user || {};
+  const { user = {} } = useUserQuery();
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -50,7 +49,6 @@ const Toolbar = () => {
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
-  console.log(ui.isAuthorized);
   return (
     <header>
       <div className={`${styles.toolbar} appContainer test`}>
@@ -88,7 +86,7 @@ const Toolbar = () => {
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
         <div className="header__profile">
-          {ui.isAuthorized ? (
+          {!!user.u_id ? (
             <div className="header__profile">
               {ui.isMaster ? (
                 <Link
@@ -129,11 +127,7 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={
-                    currentUser.u_photo
-                      ? currentUser.u_photo
-                      : '/img/icons/avatar.png'
-                  }
+                  src={user.u_photo || '/img/icons/avatar.png'}
                   width="40px"
                   height="40px"
                   alt=""
@@ -205,7 +199,7 @@ const Toolbar = () => {
       <div
         className={[
           styles.toolbar_burger2,
-          ui.isAuthorized
+          !!user.u_id
             ? styles.toolbar_burger2_visibility_none
             : styles.toolbar_burger2_visibility_block,
         ].join(' ')}
