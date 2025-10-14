@@ -10,8 +10,10 @@ type QueryError = unknown;
 
 type Options = Omit<UseQueryOptions<QueryFnData, QueryError>, 'queryKey' | 'queryFn'>;
 
+type UserRecord = Record<string, unknown>;
+
 type Result = UseQueryResult<QueryFnData, QueryError> & {
-  user?: Record<string, any> | undefined;
+  user: UserRecord;
 };
 
 export function useUserQuery(options?: Options): Result {
@@ -26,16 +28,20 @@ export function useUserQuery(options?: Options): Result {
     ...restOptions,
   });
 
-  const user = useMemo(() => {
+  const user = useMemo<UserRecord>(() => {
     const rawUser = (queryResult.data as QueryFnData | undefined)?.data?.user;
 
     if (!rawUser) {
-      return undefined;
+      return {};
     }
 
     const [resolvedUser] = Object.values(rawUser);
 
-    return resolvedUser as Record<string, any> | undefined;
+    if (!resolvedUser || typeof resolvedUser !== 'object') {
+      return {};
+    }
+
+    return resolvedUser as UserRecord;
   }, [queryResult.data]);
 
   return {
