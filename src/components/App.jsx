@@ -75,7 +75,7 @@ import { useNotifications } from '../state/notifications/NotificationsContext';
 
 function App() {
   const { user, status } = useUserQuery();
-  const currentUser = user || {};
+  const userId = user?.u_id;
   const __location__ = useLocation();
   const { setAuthorization, setLoading, setLocation, setMaster } = useUIActions();
   const { connect: connectNotifications } = useNotifications();
@@ -86,47 +86,35 @@ function App() {
 
   // Add visibility change tracking
   useEffect(() => {
+    if (!userId) {
+      return undefined;
+    }
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        if (currentUser?.u_id) {
-          updateUser(
-            {
-              details: {
-                isOnline: false,
-                lastTimeBeenOnline: new Date().toISOString(),
-              },
-            },
-            currentUser.u_id,
-          );
-        }
-      } else if (document.visibilityState === 'visible') {
-        if (currentUser?.u_id) {
-          updateUser(
-            {
-              details: {
-                isOnline: true,
-                lastTimeBeenOnline: new Date().toISOString(),
-              },
-            },
-            currentUser.u_id,
-          );
-        }
-      }
+      const isVisible = document.visibilityState === 'visible';
+
+      updateUser(
+        {
+          details: {
+            isOnline: isVisible,
+            lastTimeBeenOnline: new Date().toISOString(),
+          },
+        },
+        userId,
+      );
     };
 
     // Add page unload tracking
-    const handleBeforeUnload = (event) => {
-      if (currentUser?.u_id) {
-        updateUser(
-          {
-            details: {
-              isOnline: false,
-              lastTimeBeenOnline: new Date().toISOString(),
-            },
+    const handleBeforeUnload = () => {
+      updateUser(
+        {
+          details: {
+            isOnline: false,
+            lastTimeBeenOnline: new Date().toISOString(),
           },
-          currentUser.u_id,
-        );
-      }
+        },
+        userId,
+      );
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -136,7 +124,7 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [currentUser?.u_id]);
+  }, [userId]);
 
   useEffect(() => {
     const isMaster = getUserMode();
