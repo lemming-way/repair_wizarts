@@ -10,11 +10,11 @@ import { userKeys } from '../../queries';
 const Photo = () => {
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const currentUser = user || {};
-  const userId = currentUser?.u_id ?? currentUser?.id;
   const inputRef = useRef(null);
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
+
+  const userId = user?.u_id;
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -36,6 +36,11 @@ const Photo = () => {
     }
   };
 
+  // Early return if no user ID
+  if (!userId) {
+    return null;
+  }
+
   return (
     <div className={`photo-wrap ${style.photo_wrap}`}>
       {suceeded && (
@@ -46,10 +51,10 @@ const Photo = () => {
       <label htmlFor="profileLogoUpload">
         <img
           src={
-            currentUser.u_photo
-              ? currentUser.u_photo
-              : currentUser.avatar
-              ? SERVER_PATH + currentUser.avatar
+            user.u_photo
+              ? user.u_photo
+              : user.avatar
+              ? SERVER_PATH + user.avatar
               : '/img/img-camera.png'
           }
           alt="Фото профиля"

@@ -18,9 +18,7 @@ import { deleteUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
-import { useUIActions, useUIState } from '../../state/ui/UIStateContext';
-
-const EMPTY_OBJECT = {}
+import { useUIActions } from '../../state/ui/UIStateContext';
 
 export default function SettingsMaster() {
   const navigate = useNavigate();
@@ -32,9 +30,7 @@ export default function SettingsMaster() {
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('данные сохранились');
   const { user } = useUserQuery();
-  const currentUser = user || EMPTY_OBJECT;
-  const userId = currentUser?.u_id ?? currentUser?.id;
-  const ui = useUIState();
+  const userId = user?.u_id;
   const { setAuthorization } = useUIActions();
 
   const [mask_value, setMask_value] = useState('+7(9');
@@ -171,11 +167,11 @@ export default function SettingsMaster() {
     });
   };
   useEffect(() => {
-    if (ui.isAuthorized) {
-      const master = currentUser;
+    if (user.u_id) {
+      const master = user;
       const obj = {
-        phone: currentUser.u_phone || '',
-        email: currentUser.u_email || '',
+        phone: user.u_phone || '',
+        email: user.u_email || '',
         details: {
           availability_from: master.u_details?.availability_from || '00:00:00',
           availability_to: master.u_details?.availability_to || '00:00:00',
@@ -187,10 +183,10 @@ export default function SettingsMaster() {
       };
       setForm(obj);
     }
-    if (currentUser.u_photo) {
-      setPreviewUrl(currentUser.u_photo);
+    if (user.u_photo) {
+      setPreviewUrl(user.u_photo);
     }
-  }, [ui, currentUser]);
+  }, [user]);
   useEffect(() => {
     document.title = 'Настройки';
   }, []);

@@ -12,8 +12,6 @@ import { userKeys } from '../../queries';
 const FinanceClient = () => {
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const userId = user?.u_id;
-
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -21,17 +19,26 @@ const FinanceClient = () => {
   const [isVisibleSuccess, setVisibleSuccess] = useState(false);
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
-  useEffect(() => {
-    const cardWallet = user.u_details?.wallets?.find(
-      (w) => w.type === 'card',
-    );
-    const wmWallet = user.u_details?.wallets?.find(
-      (w) => w.type === 'webmoney',
-    );
+  const userId = user?.u_id;
 
-    setCard(cardWallet?.value || '');
-    setWebmoney(wmWallet?.value || '');
-  }, [user.u_details?.wallets]);
+  useEffect(() => {
+    if (userId) {
+      const cardWallet = user.u_details?.wallets?.find(
+        (w) => w.type === 'card',
+      );
+      const wmWallet = user.u_details?.wallets?.find(
+        (w) => w.type === 'webmoney',
+      );
+
+      setCard(cardWallet?.value || '');
+      setWebmoney(wmWallet?.value || '');
+    }
+  }, [user.u_details?.wallets, userId]);
+
+  // Early return if no user ID
+  if (!userId) {
+    return null;
+  }
 
   const onSubmitWallets = async () => {
     try {
@@ -47,10 +54,7 @@ const FinanceClient = () => {
         wallets,
       };
 
-      const res = await updateUser({ details: payload }, userId).then(
-        (v) =>
-        console.log(v),
-      );
+      const res = await updateUser({ details: payload }, userId);
       console.log(res);
       if (!res?.code === '200') throw new Error('Ошибка при сохранении');
       setVisibleSuccess(true);

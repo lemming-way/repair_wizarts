@@ -10,7 +10,6 @@ import style from './Profile.module.css';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
-import { useUIState } from '../../state/ui/UIStateContext';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -30,7 +29,6 @@ import { useUIState } from '../../state/ui/UIStateContext';
 //       ]
 //   }
 // }
-const EMPTY_OBJECT = {}
 const experienceOptions = [
 { value: 1, label: '1 год' },
 { value: 2, label: '2 года' },
@@ -54,12 +52,9 @@ function Profile() {
   //     { value: 5, label: "Восстановление программного обеспечения" },
   //   ]; ###
 
-  const ui = useUIState();
   const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const currentUser = user || EMPTY_OBJECT;
-  const userId = currentUser?.u_id ?? currentUser?.id;
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -81,8 +76,10 @@ function Profile() {
   });
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
-  //~ const [gender, setGender] = useState('Мужской');
   const [business_model, setBusiness] = useState('Частный мастер');
+
+  const userId = user?.u_id;
+
   //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
     //~ try {
       //~ switch (type) {
@@ -259,9 +256,9 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (!ui.isAuthorized) return;
+    if (!user.u_id) return;
 
-    const master = currentUser;
+    const master = user;
 
     const fetchAllData = async () => {
       if (
@@ -364,7 +361,7 @@ function Profile() {
     ) {
       fetchAllData();
     }
-  }, [ui.isAuthorized, categories, currentUser]);
+  }, [user.u_id, categories, user]);
 
   useEffect(() => {
     document.title = 'Настройки';
@@ -372,6 +369,12 @@ function Profile() {
       categories.map((item) => ({ label: item.name, value: item.id })),
     );
   }, [categories]);
+
+  // Early return if no user ID
+  if (!userId) {
+    return null;
+  }
+
   //   useEffect(() => {
   //     ymaps.ready(() => {
   //       const suggestView = new ymaps.SuggestView('suggest-input');
