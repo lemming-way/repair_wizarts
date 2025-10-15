@@ -5,12 +5,11 @@ import { useUserQuery } from '../../hooks/useUserQuery';
 
 function ChoiceOfReplenishmentMethodHistoryClient() {
   const { user } = useUserQuery();
-  const currentUser = user || {};
   const [history, setHistory] = useState([]);
   useEffect(() => {
-    if (currentUser?.u_details?.history_of_pay)
-      setHistory(currentUser?.u_details?.history_of_pay);
-  }, [currentUser?.u_details?.history_of_pay]);
+    if (user?.u_details?.history_of_pay)
+      setHistory(user?.u_details?.history_of_pay);
+  }, [user?.u_details?.history_of_pay]);
   const historyOfPaymentsItems = history.map((item) => (
     <div className="blocks">
       <div className="block df">

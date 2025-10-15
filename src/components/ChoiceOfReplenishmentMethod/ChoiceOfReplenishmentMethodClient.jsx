@@ -15,8 +15,7 @@ import { userKeys } from '../../queries';
 function ChoiceOfReplenishmentMethodClient() {
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const currentUser = user || {};
-  const userId = currentUser?.u_id ?? currentUser?.id;
+  const userId = user?.u_id;
   const navigator = useNavigate();
 
   // const [error, setError] = useState("")
@@ -89,7 +88,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>Пополнение счета</h3>
 
           <div>
-            {currentUser?.u_details?.wallets ? (
+            {user?.u_details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -101,8 +100,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {currentUser?.u_details?.wallets[0]?.type} <br />
-                    {currentUser?.u_details?.wallets[0]?.value}
+                    {user?.u_details?.wallets[0]?.type} <br />
+                    {user?.u_details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -209,8 +208,8 @@ function ChoiceOfReplenishmentMethodClient() {
                 if (!userId) {
                   return;
                 }
-                const oldHistory = currentUser?.u_details?.history_of_pay
-                  ? currentUser?.u_details?.history_of_pay
+                const oldHistory = user?.u_details?.history_of_pay
+                  ? user?.u_details?.history_of_pay
                   : [];
                 const newPayment = {
                   cost: Number(cost),
@@ -225,8 +224,8 @@ function ChoiceOfReplenishmentMethodClient() {
                       balance:
                         Number(cost) +
                         Number(
-                          currentUser?.u_details.balance
-                            ? currentUser?.u_details.balance
+                          user?.u_details.balance
+                            ? user?.u_details.balance
                             : 0,
                         ),
                       history_of_pay: [...oldHistory, newPayment],

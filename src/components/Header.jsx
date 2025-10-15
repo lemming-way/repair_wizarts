@@ -18,7 +18,6 @@ function Header() {
 
     const ui = useUIState()
     const { user } = useUserQuery()
-    const currentUser = user || {}
     const { unreadCount } = useUnreadMessagesQuery()
     const text = useLanguage();
     return (
@@ -87,7 +86,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + (currentUser.avatar || '')}
+                                        src={SERVER_PATH + (user.avatar || '')}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -100,10 +99,10 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {ui.isMaster && currentUser.master?.[0] && (
+                                {ui.isMaster && user.master?.[0] && (
                                     <>
                                         <p className='master__moneys'>
-                                            {parseFloat(currentUser.master[0].balance).toFixed(2)}₽
+                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
                                             <Link to="/master/wallet">{text("Top up balance")}</Link>
