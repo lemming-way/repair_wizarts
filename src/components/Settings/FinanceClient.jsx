@@ -12,8 +12,7 @@ import { userKeys } from '../../queries';
 const FinanceClient = () => {
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const currentUser = user || {};
-  const userId = currentUser?.u_id ?? currentUser?.id;
+  const userId = user?.u_id;
 
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
@@ -23,16 +22,16 @@ const FinanceClient = () => {
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
   useEffect(() => {
-    const cardWallet = currentUser.u_details?.wallets?.find(
+    const cardWallet = user.u_details?.wallets?.find(
       (w) => w.type === 'card',
     );
-    const wmWallet = currentUser.u_details?.wallets?.find(
+    const wmWallet = user.u_details?.wallets?.find(
       (w) => w.type === 'webmoney',
     );
 
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
-  }, [currentUser.u_details?.wallets]);
+  }, [user.u_details?.wallets]);
 
   const onSubmitWallets = async () => {
     try {

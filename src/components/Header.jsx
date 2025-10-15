@@ -66,7 +66,7 @@ function Header() {
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={ui.isMaster ? "/master/chat" : "/client/chat"}
+                                <Link to={user.u_role === '2' ? "/master/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -86,7 +86,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + (user.avatar || '')}
+                                        src={user.avatar ? SERVER_PATH + user.avatar : "/img/blank.png"}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -99,10 +99,10 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {ui.isMaster && user.master?.[0] && (
+                                {user.u_role === '2' && user.u_details?.balance && (
                                     <>
                                         <p className='master__moneys'>
-                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
+                                            {parseFloat(user.u_details.balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
                                             <Link to="/master/wallet">{text("Top up balance")}</Link>

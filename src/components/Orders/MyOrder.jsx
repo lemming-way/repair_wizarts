@@ -19,7 +19,6 @@ import { useUserQuery } from '../../hooks/useUserQuery';
 
 function MyOrder() {
   const { user } = useUserQuery();
-  const currentUser = user || {};
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
@@ -255,7 +254,7 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    Баланс: {currentUser?.u_details?.balance || 0}р
+                    Баланс: {user?.u_details?.balance || 0}р
                   </label>
                 </div>
                 <p>Обычная цена сделки без риска</p>

@@ -19,7 +19,6 @@ import { useUserQuery } from '../../hooks/useUserQuery';
 // Переименовал App в AllOrders для большей ясности
 function App() {
   const { user } = useUserQuery();
-  const currentUser = user || {};
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('Все предложения');
   const [serviceInPage, setServiceInPage] = useState(10);
@@ -37,7 +36,7 @@ function App() {
     max: '',
   });
   const fetchUserOrderReqs = useCallback(async () => {
-    if (!currentUser.u_id) {
+    if (!user.u_id) {
       console.warn('User ID not found, skipping fetch.');
       return;
     }
@@ -59,7 +58,7 @@ function App() {
       ).filter(
         (order) =>
           order.b_options?.type === 'order' &&
-          order.drivers?.some((driver) => driver.u_id === currentUser.u_id),
+          order.drivers?.some((driver) => driver.u_id === user.u_id),
       );
 
       // Форматируем данные, чтобы в `drivers` был только объект текущего мастера
@@ -68,7 +67,7 @@ function App() {
           ...item,
           // Находим и сохраняем только данные нашего мастера для этого заказа
           driverData: item.drivers.find(
-            (driver) => driver.u_id === currentUser.u_id,
+            (driver) => driver.u_id === user.u_id,
           ),
         };
       });
@@ -82,7 +81,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser.u_id]);
+  }, [user.u_id]);
   // Загрузка данных при монтировании компонента
   useEffect(() => {
     const fetchOrders = async () => {
@@ -149,7 +148,7 @@ function App() {
       order.b_options?.author?.id ||
       order.b_options?.author?.u_id ||
       order.b_options?.u_id;
-    if (ownerId && String(ownerId) === String(currentUser.u_id)) return false;
+    if (ownerId && String(ownerId) === String(user.u_id)) return false;
 
     // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'Новые' && !order.isNew) return false;
