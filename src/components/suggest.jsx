@@ -24,8 +24,9 @@ const Suggest = (props) => {
 
     const navigate = useNavigate()
     const queryClient = useQueryClient()
-    const { user } = useUserQuery()
-    const currentUserId = user?.u_id || user?.id
+    const { user: queriedUser } = useUserQuery()
+    const user = queriedUser || {}
+    const currentUserId = user?.u_id ?? null
 
     const [error, setError] = useState("")
     const { data: masterData } = useMasterByUsernameQuery(master_username)
@@ -67,6 +68,10 @@ const Suggest = (props) => {
         setError("")
 
         try {
+            if (!currentUserId) {
+                setError("Пользователь не авторизован")
+                return
+            }
             const res = await acceptOfferMutation.mutateAsync(offerId)
             const payload = {
                 sender1_id: currentUserId,

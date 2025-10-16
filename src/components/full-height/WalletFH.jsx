@@ -8,9 +8,9 @@ import { userKeys } from '../../queries';
 
 function App() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
-  const currentUser = user || {};
-  const userId = currentUser?.u_id ?? currentUser?.id;
+  const { user: queriedUser } = useUserQuery();
+  const user = queriedUser || {};
+  const userId = user?.u_id;
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -18,10 +18,10 @@ function App() {
 
   useEffect(() => {
     document.title = 'Настройки';
-    if (currentUser.u_photo) {
-      setPreviewUrl(currentUser.u_photo);
+    if (user.u_photo) {
+      setPreviewUrl(user.u_photo);
     }
-  }, [currentUser.u_photo]);
+  }, [user.u_photo]);
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();

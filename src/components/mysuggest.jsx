@@ -19,11 +19,14 @@ function MySuggest() {
   const { id } = useParams();
   const { clientRequests } = useClientRequestsQuery();
   const { offers } = useOffersQuery(id);
-  const { user } = useUserQuery();
-  const avatar = user?.u_photo || user?.avatar || '';
-  const name = user?.u_name || user?.name || '';
-  const lastname = user?.u_family || user?.lastname || '';
-  const phone = user?.u_phone || user?.phone || '';
+  const { user: queriedUser } = useUserQuery();
+  const user = queriedUser || {};
+  const avatarSrc = user?.u_photo
+    ? `${SERVER_PATH}${user.u_photo}`
+    : '/img/blank.png';
+  const name = user?.u_name || '';
+  const lastname = user?.u_family || '';
+  const phone = user?.u_phone || '';
   const req = useMemo(
     () =>
       Object.values(clientRequests?.data?.booking || []).find(
@@ -159,7 +162,7 @@ function MySuggest() {
           <div className="bloc-1 df">
             <div className="bloc_img">
               <img
-                src={SERVER_PATH + avatar}
+                src={avatarSrc}
                 width="120px"
                 height="120px"
                 style={{ borderRadius: '60px', objectFit: 'cover' }}

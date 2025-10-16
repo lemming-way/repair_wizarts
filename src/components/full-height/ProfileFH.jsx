@@ -7,13 +7,13 @@ import style from './ProfileFH.module.css';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 
-const EMPTY_OBJECT = {}
+const EMPTY_USER = {};
 
 function ProfileFH() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
-  const currentUser = user || EMPTY_OBJECT;
-  const userId = currentUser?.u_id ?? currentUser?.id;
+  const { user: queriedUser } = useUserQuery();
+  const user = queriedUser || EMPTY_USER;
+  const userId = user?.u_id;
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -24,10 +24,12 @@ function ProfileFH() {
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    name: currentUser.u_name || '',
-    lastname: currentUser.u_family || '',
-    phone: currentUser.u_phone || '',
-    email: currentUser.u_email || '',
+    name: user.u_name || '',
+    lastname: user.u_family || '',
+    phone: user.u_phone || '',
+    email: user.u_email || '',
+    password: '',
+    new_password: '',
   });
 
   const getFormAttrs = (field) => {
@@ -72,15 +74,28 @@ function ProfileFH() {
     }
   };
   useEffect(() => {
-    if (Object.keys(currentUser) && !form.name) {
-      setForm({
-        name: currentUser.u_name,
-        lastname: currentUser.u_family,
-        phone: currentUser.u_phone,
-        email: currentUser.u_email,
-      });
+    if (!userId || form.name) {
+      return;
     }
-  }, [currentUser, form.name]);
+
+    setForm((prev) => ({
+      ...prev,
+      name: user.u_name || '',
+      lastname: user.u_family || '',
+      phone: user.u_phone || '',
+      email: user.u_email || '',
+    }));
+    if (user.u_phone) {
+      setMask_value(user.u_phone);
+    }
+  }, [
+    userId,
+    user.u_name,
+    user.u_family,
+    user.u_phone,
+    user.u_email,
+    form.name,
+  ]);
 
   useEffect(() => {
     document.title = 'Настройки';
@@ -125,6 +140,10 @@ function ProfileFH() {
     setMask_value(new_text);
   }
 
+  if (!userId) {
+    return null;
+  }
+
   return (
     <>
       {succeeded && (
@@ -153,14 +172,14 @@ function ProfileFH() {
             {...getFormAttrs('lastname')}
           />
           <VerificationInput
-            isConfirmed={currentUser.is_phone_verified}
+            isConfirmed={user.u_phone_checked === '1'}
             {...getFormAttrs('phone')}
             mask_value={mask_value}
             onChangeMask={correctPhoneNumder}
           />
           <VerificationInput
             isEmail
-            isConfirmed={currentUser.is_email_verified}
+            isConfirmed={user.u_email_checked === '1'}
             value={form.email || ''}
             {...getFormAttrs('email')}
           />

@@ -9,8 +9,8 @@ function Sidebar() {
   const location = useLocation();
 
   // Получаем основные данные пользователя
-  const { user } = useUserQuery();
-  const currentUser = user || {};
+  const { user: queriedUser } = useUserQuery();
+  const user = queriedUser || {};
 
   // 2. Вызываем хук для получения данных о рейтинге
   const { averageRating, feedbackCount, isLoading } = useUserRating();
@@ -24,9 +24,9 @@ function Sidebar() {
   }
 
   // Формируем имя и аватар
-  const userAvatar = currentUser?.u_photo || '/img/profil_img/1.png';
+  const userAvatar = user?.u_photo || '/img/profil_img/1.png';
   const userName =
-    `${currentUser?.u_name || ''} ${currentUser?.u_family || ''}`.trim() ||
+    `${user?.u_name || ''} ${user?.u_family || ''}`.trim() ||
     'Имя Фамилия';
 
   return (
