@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 
 import { getUser } from '../services/user.service';
@@ -16,6 +15,8 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
   user: UserRecord;
 };
 
+const EMPTY_OBJECT: UserRecord = {};
+
 export function useUserQuery(options?: Options): Result {
   const token = getToken();
   const { enabled: optionsEnabled, ...restOptions } = options ?? {};
@@ -28,21 +29,17 @@ export function useUserQuery(options?: Options): Result {
     ...restOptions,
   });
 
-  const user = useMemo<UserRecord>(() => {
-    const rawUser = (queryResult.data as QueryFnData | undefined)?.data?.user;
-
-    if (!rawUser) {
-      return {};
-    }
-
-    const [resolvedUser] = Object.values(rawUser);
-
-    if (!resolvedUser || typeof resolvedUser !== 'object') {
-      return {};
-    }
-
-    return resolvedUser as UserRecord;
-  }, [queryResult.data]);
+  const data = queryResult.data as QueryFnData | undefined;
+  const userId = data?.auth_user?.u_id;
+  const userMap = data?.data?.user;
+  const resolvedUser =
+    userId && userMap && typeof userMap === 'object'
+      ? (userMap as Record<string, unknown>)[userId]
+      : undefined;
+  const user =
+    resolvedUser !== undefined && typeof resolvedUser === 'object'
+      ? (resolvedUser as UserRecord)
+      : EMPTY_OBJECT;
 
   return {
     ...queryResult,

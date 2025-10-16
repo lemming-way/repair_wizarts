@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   useQuery,
   UseQueryOptions,
@@ -34,27 +33,16 @@ export function useUnreadMessagesQuery(options?: Options): Result {
     ...restOptions,
   });
 
-  const { unreadMessages, unreadCount } = useMemo(() => {
-    const dialogs = queryResult.data;
+  const dialogs = Array.isArray(queryResult.data) ? queryResult.data : [];
+  const unreadCount = dialogs.reduce((total, dialog: any) => {
+    const messages = Array.isArray(dialog?.messages) ? dialog.messages.length : 0;
 
-    if (!Array.isArray(dialogs)) {
-      return { unreadMessages: dialogs, unreadCount: 0 };
-    }
-
-    const count = dialogs.reduce((total, dialog: any) => {
-      const messages = Array.isArray(dialog?.messages)
-        ? dialog.messages.length
-        : 0;
-
-      return total + messages;
-    }, 0);
-
-    return { unreadMessages: dialogs, unreadCount: count };
-  }, [queryResult.data]);
+    return total + messages;
+  }, 0);
 
   return {
     ...queryResult,
-    unreadMessages,
+    unreadMessages: dialogs,
     unreadCount,
   };
 }

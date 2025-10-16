@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   useQuery,
   UseQueryOptions,
@@ -21,6 +20,8 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
   masterOrders: any[];
 };
 
+const EMPTY_ARRAY = [] as unknown as QueryFnData;
+
 export function useMasterOrdersQuery(options?: Options): Result {
   const token = getToken();
   const { enabled: optionsEnabled, ...restOptions } = options ?? {};
@@ -33,11 +34,9 @@ export function useMasterOrdersQuery(options?: Options): Result {
     ...restOptions,
   });
 
-  const masterOrders = useMemo(() => {
-    const data = queryResult.data;
-
-    return Array.isArray(data) ? data : [];
-  }, [queryResult.data]);
+  const masterOrders = Array.isArray(queryResult.data)
+    ? queryResult.data
+    : EMPTY_ARRAY;
 
   return {
     ...queryResult,

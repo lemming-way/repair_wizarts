@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   useQuery,
   UseQueryOptions,
@@ -33,13 +32,7 @@ export function useClientRequestsQuery(options?: Options): Result {
     ...restOptions,
   });
 
-  const clientRequests = useMemo(() => {
-    if (!queryResult.data) {
-      return undefined;
-    }
-
-    return queryResult.data;
-  }, [queryResult.data]);
+  const clientRequests = queryResult.data || undefined;
 
   return {
     ...queryResult,

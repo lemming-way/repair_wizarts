@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   useQuery,
   UseQueryOptions,
@@ -25,6 +24,8 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
   offers: any[];
 };
 
+const EMPTY_ARRAY = [] as unknown as QueryFnData;
+
 export function useOffersQuery(
   requestId: string | number | null | undefined,
   options?: Options,
@@ -42,11 +43,9 @@ export function useOffersQuery(
     ...restOptions,
   });
 
-  const offers = useMemo(() => {
-    const data = queryResult.data;
-
-    return Array.isArray(data) ? data : [];
-  }, [queryResult.data]);
+  const offers = Array.isArray(queryResult.data)
+    ? queryResult.data
+    : EMPTY_ARRAY;
 
   return {
     ...queryResult,
