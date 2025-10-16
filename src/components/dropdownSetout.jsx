@@ -6,28 +6,24 @@ import '../scss/setout.css';
 import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
 import { userKeys } from '../queries';
-import { useUIActions, useUIState } from '../state/ui/UIStateContext';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function DropdownService() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const ui = useUIState();
-  const { setAuthorization, setMaster } = useUIActions();
+  const { user = {} } = useUserQuery();
   const text = useLanguage();
 
   const switchMode = () => {
-    console.log(ui);
-    if (!ui.isMaster) {
-      setUserMode(!ui.isMaster);
-      setMaster(!ui.isMaster);
+    const isMaster = user.u_role === "2";
+    if (!isMaster) {
+      setUserMode(true);
       return;
     }
     setUserMode(false);
-    setMaster(false);
   };
 
   const logout = (e) => {
-    setAuthorization(false);
     queryClient.removeQueries({ queryKey: userKeys.all });
     removeToken();
     navigate('/');
@@ -36,7 +32,7 @@ function DropdownService() {
   return (
     <div className="bldropdownfff-content">
       <div className="fix_hover_drop"></div>
-      {ui.isMaster ? (
+      {user.u_role === "2" ? (
         <div className="client__dropdown">
           <div className="recent">
             <Link

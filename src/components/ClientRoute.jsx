@@ -3,22 +3,19 @@ import {
     useOutlet
 } from "react-router-dom"
 
-import { useUIState } from '../state/ui/UIStateContext'
+import { useUserQuery } from '../hooks/useUserQuery'
 
 const ProtectedRoute = () => {
     const children = useOutlet()
-    const ui = useUIState()
+    const { user = {} } = useUserQuery()
 
     useEffect(() => {
-        if (ui.isLoading) {
-            return
-        }
-        if (ui.isAuthorized) {
+        if (!!user.u_id) {
             return
         }
 
         // navigate("/login")
-    }, [ui])
+    }, [user])
 
     return children
 }

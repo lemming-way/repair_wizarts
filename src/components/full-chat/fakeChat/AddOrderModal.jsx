@@ -44,8 +44,7 @@ export default function AddOrderModal({
   setVisibleOkModal,
   currentOrder,
 }) {
-  const { user } = useUserQuery();
-  const currentUser = user || {};
+  const { user = {} } = useUserQuery();
   const { id } = useParams();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -96,7 +95,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>Предложить заказ</h2>
-        {(currentUser?.u_details?.balance || 0) < 500 && (
+        {(user?.u_details?.balance || 0) < 500 && (
           <p className={style.error}>
             Пожалуйста пополните баланс на 500 рублей
           </p>
@@ -126,7 +125,7 @@ export default function AddOrderModal({
           <div>
             <p className={style.mini_heading}>Бюджет</p>
             <p className={style.balance}>
-              Баланс {currentUser?.u_details?.balance || 0} ₽
+              Баланс {user?.u_details?.balance || 0} ₽
             </p>
             <div className={style.icon}>
               <input

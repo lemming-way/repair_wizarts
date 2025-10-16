@@ -166,6 +166,7 @@ export default function SettingsMaster() {
       navigate('/');
     });
   };
+
   useEffect(() => {
     if (user.u_id) {
       const master = user;
@@ -187,9 +188,16 @@ export default function SettingsMaster() {
       setPreviewUrl(user.u_photo);
     }
   }, [user]);
+
   useEffect(() => {
     document.title = 'Настройки';
-  }, []);
+    }, []);
+
+  // Early return if no user ID
+  if (!userId) {
+    return null;
+  }
+
   return (
     <>
       <div className={`mini-main df ${style.form_wrap_flex}`}>

@@ -17,7 +17,6 @@ import YMap from '../Map';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../../hooks/useServicesQuery';
-import { useUIState } from '../../state/ui/UIStateContext';
 
 function ServiceDetail() {
   const test_price = [
@@ -86,8 +85,7 @@ function ServiceDetail() {
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
   const { categories } = useCategoriesQuery();
-  const { user } = useUserQuery();
-  const ui = useUIState();
+  const { user = {} } = useUserQuery();
   const { services } = useServicesQuery();
   const servicesList = useMemo(() => {
     if (Array.isArray(services)) {
@@ -707,7 +705,7 @@ function ServiceDetail() {
                   </h1>
                   <p style={{ marginBottom: '10px' }}>Официальные цены</p>
 
-                  {!ui.isAuthorized ? (
+                  {!user.u_id ? (
                     <div
                       className="modfdfsdafasal-error"
                       style={{ marginBottom: '10px' }}
