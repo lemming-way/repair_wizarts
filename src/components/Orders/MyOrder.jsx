@@ -1,25 +1,18 @@
-import { useEffect, useState } from 'react';
+import styles from './MyOrder.module.css';
 import { Link, useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
-import Popup from 'reactjs-popup';
-import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-
+import { Navigation } from 'swiper';
 import ModalConfirmMaster from './ModalConfirmMaster';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import style from '../Service/serviceDetail.module.scss';
 import ModalDelete from './ModalDelete';
 import ModalEditOrder from './ModalEditOrder';
-import styles from './MyOrder.module.css';
-import { deleteRequest, updateRequest } from '../../services/request.service';
-import appFetch from '../../services/api';
+import Popup from 'reactjs-popup';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
-import style from '../Service/serviceDetail.module.scss';
-import { useUserQuery } from '../../hooks/useUserQuery';
-
-
+import appFetch from '../../utilities/appFetch';
 
 function MyOrder() {
-  const { user } = useUserQuery();
-  const currentUser = user || {};
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
@@ -28,6 +21,9 @@ function MyOrder() {
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalEditOrder, setVisibleModalEditOrder] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [errorBalance] = useState(true);
+  const [errorCash] = useState(true);
+  const [errorSumm] = useState(true);
   const [isVisibleConfirmPause, setVisibleConfirmPause] = useState(false);
   const [orderstatus, setOrderStatus] = useState('сбор предложений');
   // тестовый список для слайдера
@@ -39,7 +35,7 @@ function MyOrder() {
     const fetchData = async () => {
       try {
         console.log(id);
-        await appFetch(`drive/get/`, {
+        const response = await appFetch(`drive/get/`, {
           body: {
             u_a_role: 2,
             b_max_waiting: Math.floor(
@@ -72,66 +68,65 @@ function MyOrder() {
       }
     };
     fetchData();
-  }, [id]);
-  //~ const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
-    //~ try {
-      //~ switch (type) {
-        //~ case 'section':
-          //~ const sectionsResponse = await fetch(
-            //~ 'https://profiback.itest24.com/api/sections',
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: `Bearer ${'123'}`,
-              //~ },
-            //~ },
-          //~ );
-          //~ const sections = await sectionsResponse.json();
-          //~ return (
-            //~ sections.find((item) => item.id === sectionId)?.name || 'не найдено'
-          //~ );
-          //~ break;
-        //~ case 'subsection':
-          //~ const subsectionResponse = await fetch(
-            //~ `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: `Bearer ${'123'}`,
-              //~ },
-            //~ },
-          //~ );
-          //~ const subsections = await subsectionResponse.json();
-          //~ return (
-            //~ subsections.find((item) => item.id === subsectionId)?.name ||
-            //~ 'не найдено'
-          //~ );
-          //~ break;
-        //~ case 'service':
-          //~ console.log(sectionId, subsectionId);
-          //~ const serviceResponse = await fetch(
-            //~ `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: `Bearer ${'123'}`,
-              //~ },
-            //~ },
-          //~ );
-          //~ const services = await serviceResponse.json();
-          //~ return (
-            //~ services.find((item) => item.id === serviceId)?.name || 'не найдено'
-          //~ );
-          //~ break;
-      //~ }
-    //~ } catch (error) {
-      //~ console.error(error);
-    //~ }
-  //~ };
+  }, []);
+  const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
+    try {
+      switch (type) {
+        case 'section':
+          const sectionsResponse = await fetch(
+            'https://profiback.itest24.com/api/sections',
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${'123'}`,
+              },
+            },
+          );
+          const sections = await sectionsResponse.json();
+          return (
+            sections.find((item) => item.id === sectionId)?.name || 'не найдено'
+          );
+          break;
+        case 'subsection':
+          const subsectionResponse = await fetch(
+            `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${'123'}`,
+              },
+            },
+          );
+          const subsections = await subsectionResponse.json();
+          return (
+            subsections.find((item) => item.id === subsectionId)?.name ||
+            'не найдено'
+          );
+          break;
+        case 'service':
+          console.log(sectionId, subsectionId);
+          const serviceResponse = await fetch(
+            `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${'123'}`,
+              },
+            },
+          );
+          const services = await serviceResponse.json();
+          return (
+            services.find((item) => item.id === serviceId)?.name || 'не найдено'
+          );
+          break;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
   // Состояние для управления модальным окном
   const [isModalOpen, setIsModalOpen] = useState(false);
-  //~ const [modalImage, setModalImage] = useState('');
-  const modalImage = '';
+  const [modalImage, setModalImage] = useState('');
 
   // Массив картинок для слайдера в модальном окне
   const images = [
@@ -139,11 +134,12 @@ function MyOrder() {
     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
     '/img/sentence_img/iphone-x.png',
   ];
-  //~ // Функция для открытия модального окна
-  //~ const openModal = (imageSrc) => {
-    //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
-    //~ setIsModalOpen(true); // Открываем модальное окно
-  //~ };
+
+  // Функция для открытия модального окна
+  const openModal = (imageSrc) => {
+    setModalImage(imageSrc); // Устанавливаем путь к картинке
+    setIsModalOpen(true); // Открываем модальное окно
+  };
 
   // Функция для закрытия модального окна
   const closeModal = () => {
@@ -157,6 +153,7 @@ function MyOrder() {
     if (file) {
       // Создаем URL для выбранного изображения
       const imageUrl = URL.createObjectURL(file);
+
       // добавить фото в общий список
       var spisok = [...photos];
       spisok.push(imageUrl);
@@ -164,21 +161,14 @@ function MyOrder() {
       console.log(spisok);
     }
   };
-  const onSubmit = async (winnerId, orderId, selectedBudget) => {
+  const onSubmit = async (winnerId, orderId) => {
     try {
-      updateRequest(orderId, {
-        winnerMaster: winnerId,
-        selectedBudget,
-        status: 'В работе',
+      const answer = await appFetch(`/drive/get/${orderId}`, {
+        u_a_role: 1,
+        u_id: winnerId,
+        action: 'set_performer',
       });
-      // const answer = await appFetch(`/drive/get/${orderId}`, {
-      //   body: {
-      //     u_a_role: 1,
-      //     u_id: winnerId,
-      //     action: 'set_performer',
-      //   },
-      // });
-      // console.log(answer);
+      console.log(answer);
     } catch (error) {
       console.log(error);
     }
@@ -186,39 +176,18 @@ function MyOrder() {
   const [price, setPrice] = useState('');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const onSubmitChange = (e) => {
-    e.preventDefault();
 
-    return updateRequest(id, {
-      title,
-      client_price: price,
-      description: message,
-    }).then((v) => {
-      console.log(v);
-    });
-  };
-
-  const onDelete = (e) => {
-    e.preventDefault();
-    return deleteRequest(id).then((v) => {
-      console.log(v, id);
-    });
-  };
-  //~ const setRequestStatus = (status) => {
-    //~ return updateRequest(id, { status: status }).then((v) => {});
-  //~ };
   return (
     <>
       {visibleModalConfirmMaster ? (
         <ModalConfirmMaster
           setVisibleModalConfirmMaster={setVisibleModalConfirmMaster}
-          id={currentOrder.b_id}
         />
       ) : null}
       {/* блок с оплатой */}
       {visibleBlockPayment ? (
         <div className={style.blockPayment_wrap}>
-          {/* {errorBalance ? (
+          {errorBalance ? (
             <div className={style.error}>
               Пополните, пожалуйста, баланс на 500р
             </div>
@@ -232,7 +201,7 @@ function MyOrder() {
             <div className={style.error}>
               С вашего баланса спишется 500 рублей{' '}
             </div>
-          ) : null} */}
+          ) : null}
 
           <div className={style.blockPayment}>
             <div
@@ -254,9 +223,7 @@ function MyOrder() {
                     checked={selectedIdx === 0}
                     onChange={() => setSelectedIdx(0)}
                   />
-                  <label htmlFor="inputSite">
-                    Баланс: {currentUser?.u_details?.balance || 0}р
-                  </label>
+                  <label htmlFor="inputSite">Баланс: 0р</label>
                 </div>
                 <p>Обычная цена сделки без риска</p>
                 <p className={style.mini_text}>
@@ -291,9 +258,6 @@ function MyOrder() {
             <div
               className={style.button}
               onClick={() => {
-                updateRequest(currentOrder.b_id, {
-                  pay_type: selectedIdx === 0 ? 'card' : 'cash',
-                });
                 setVisibleBlockPayment(false);
                 setVisibleModalConfirmMaster(true);
               }}
@@ -310,16 +274,10 @@ function MyOrder() {
         />
       ) : null}
       {visibleModalDelete ? (
-        <ModalDelete
-          setVisibleDeleteModal={setVisibleModalDelete}
-          onDelete={onDelete}
-        />
+        <ModalDelete setVisibleDeleteModal={setVisibleModalDelete} />
       ) : null}
       {visibleModalEditOrder ? (
-        <ModalEditOrder
-          setVisibleModalEdit={setVisibleModalEditOrder}
-          onEdit={onSubmitChange}
-        />
+        <ModalEditOrder setVisibleModalEdit={setVisibleModalEditOrder} />
       ) : null}
 
       {/* <Sidebar /> */}
@@ -748,7 +706,7 @@ function MyOrder() {
                     </tr>
                     <tr>
                       <td className={styles.light_text}>Ваша деятельность: </td>
-                      <td>{item.c_options.author?.u_details?.main_business}</td>
+                      <td>{item.c_options.author.u_details.main_business}</td>
                     </tr>
                     <tr>
                       <td className={styles.light_text}>
@@ -758,7 +716,7 @@ function MyOrder() {
                     </tr>
                     <tr>
                       <td className={styles.light_text}>Основной бизнес: </td>
-                      <td>{item.c_options.author.u_details?.main_business}</td>
+                      <td>{item.c_options.author.u_details.main_business}</td>
                     </tr>
                   </table>
                   <div className={styles.col}>
@@ -796,11 +754,7 @@ function MyOrder() {
                 <button
                   className={styles.button}
                   onClick={() => {
-                    onSubmit(
-                      item.u_id,
-                      currentOrder.b_id,
-                      item.c_options.bind_amount,
-                    );
+                    onSubmit(item.u_id, currentOrder.b_id);
                     setVisibleBlockPayment(true);
                   }}
                 >

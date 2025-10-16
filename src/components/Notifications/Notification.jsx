@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-
+import { useDispatch } from 'react-redux'
+import { removeNotification } from '../../slices/notifications.slice'
 import styles from './Notifications.module.css'
-import { useNotifications } from '../../state/notifications/NotificationsContext'
 
 const Notification = (props) => {
     const {
@@ -11,11 +11,11 @@ const Notification = (props) => {
         index
     } = props
 
-    const { removeNotification } = useNotifications()
+    const dispatch = useDispatch()
 
     const onClose = (e) => {
         e.preventDefault()
-        removeNotification(index)
+        dispatch(removeNotification(index))
     }
 
     return (

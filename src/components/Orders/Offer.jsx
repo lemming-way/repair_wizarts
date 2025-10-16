@@ -2,12 +2,11 @@ import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-
-import OrderRowOffer from './OrderRowOffer';
 import style from './Orders.module.css';
-import appFetch from '../../services/api';
+import OrderRowOffer from './OrderRowOffer';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import appFetch from '../../utilities/appFetch';
 
 function Offer() {
   const { id } = useParams();
@@ -16,7 +15,7 @@ function Offer() {
     const fetchData = async () => {
       try {
         console.log(id);
-        await appFetch(`drive/get/`, {
+        const response = await appFetch(`drive/get/`, {
           body: {
             u_a_role: 2,
             b_max_waiting: Math.floor(
@@ -48,7 +47,7 @@ function Offer() {
       }
     };
     fetchData();
-  }, [id]);
+  }, []);
   // const requests = useService(getMasterRequests, [])
   // тестовые данные
   // const requests = {
@@ -98,7 +97,7 @@ function Offer() {
         </div>
         {/* <NavigationOrders /> */}
       </div>
-      {console.log(currentOrder)}
+
       <OrderRowOffer
         b_id={id}
         userName={currentOrder.b_options?.author.name}
@@ -109,7 +108,7 @@ function Offer() {
         timeLeft={'1 день'} // можно рассчитать от b_start_datetime
         views={0}
         budget={currentOrder.b_options?.client_price}
-        images={currentOrder.b_options?.photoUrls || []} // если будут фотки - подставишь
+        images={[]} // если будут фотки - подставишь
         profileImage={
           currentOrder.b_options?.author.photo || '/img/profil_img/1.png'
         }

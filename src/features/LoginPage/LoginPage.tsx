@@ -1,19 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import {useQueryClient} from '@tanstack/react-query';
+import {useDispatch} from "react-redux";
 import {Link, useNavigate} from "react-router-dom";
 import Popup from "reactjs-popup";
-
-import styles from './LoginPage.module.scss';
-import Error from "../../components/Error/Error";
-import { useLanguage } from '../../state/language';
-import {login} from "../../services/auth.service";
 import {
   keepUserAuthorized,
   recoverPassword,
   recoverPasswordSend,
   recoverPasswordVerify
 } from "../../services/user.service";
-import {userKeys} from '../../queries';
+import {login} from "../../services/auth.service";
+import {fetchUser} from "../../slices/user.slice";
+import styles from './LoginPage.module.scss';
+import Error from "../../components/Error/Error";
 
 const RecoveryState = {
   IDLE: 0,
@@ -22,10 +20,8 @@ const RecoveryState = {
 }
 
 const LoginPage = () => {
-  const text = useLanguage();
-
   // Оставила без изменений
-  const queryClient = useQueryClient();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
@@ -41,8 +37,8 @@ const LoginPage = () => {
   const [recoveryCode, setRecoveryCode] = useState("");
 
   useEffect(() => {
-    document.title = text("Login");
-  }, [text]);
+    document.title = 'Войти';
+  }, []);
 
   const onSendPhone = (e) => {
     e.preventDefault()
@@ -81,7 +77,7 @@ const LoginPage = () => {
           return setRecoveryError(err.message)
         }
 
-        setRecoveryError(text("Unable to process the request"))
+        setRecoveryError("Невозможно выполнить запрос")
       })
   };
 
@@ -97,17 +93,18 @@ const LoginPage = () => {
         keepUserAuthorized(false)
       }
 
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      // @ts-ignore
+      dispatch(fetchUser());
       navigate("/");
     } catch (err) {
-      setError(text("Incorrect data"));
+      setError("Некорректные данные");
     }
   };
 
   return (
     // Изменила блок с формой
     <div className={`${styles.loginPage} appContainer`}>
-      <h1 className={styles.loginPage_title}>{text("Login")}</h1>
+      <h1 className={styles.loginPage_title}>Войти</h1>
       <form className={styles.loginPage_form} onSubmit={onSubmit}>
         {error && (
           // В старом коде className="auth-err"
@@ -118,7 +115,7 @@ const LoginPage = () => {
           className={styles.loginPage_form_input}
           type="text"
           name="phone"
-          placeholder={text("Phone")}
+          placeholder="Телефон"
           onChange={(e) => setPhone(e.target.value)}
           value={phone}
           required
@@ -127,7 +124,7 @@ const LoginPage = () => {
           className={styles.loginPage_form_input}
           type="password"
           name="password"
-          placeholder={text("Password")}
+          placeholder="Пароль"
           onChange={(e) => setPassword(e.target.value)}
           value={password}
           required
@@ -140,20 +137,20 @@ const LoginPage = () => {
             // value={keep}
             onChange={(e) => setKeep(e.target.checked)}
           />
-          {text("Stay logged in")}
+          Оставаться в системе
         </label>
 
-        <button className={styles.loginPage_form_button} type="submit">{text("Login")}</button>
+        <button className={styles.loginPage_form_button} type="submit">Войти</button>
       </form>
 
       <div className={styles.loginPage_options}>
-        <span>{text("No account?")} </span>
-        <Link to="/register" className={styles.loginPage_options_register}>{text("Register")}</Link>
+        <span>Нет аккаунта? </span>
+        <Link to="/register" className={styles.loginPage_options_register}>Зарегистрируйтесь</Link>
         <span
           className={styles.loginPage_options_recovery}
           onClick={() => setRecoveryState(RecoveryState.PHONE)}
         >
-          {text("Forgot password?")}
+         Забыли пароль?
         </span>
       </div>
 
@@ -171,10 +168,10 @@ const LoginPage = () => {
           ×
         </button>
         <h2 className="password-recovery__title">
-          {text("Password recovery")}
+          Восстановление пароля
         </h2>
         <p className="password-recovery__info">
-          {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
+          Введите номер телефона, после чего на почту, привязанную к вашему аккаунту придёт письмо подтверждения.
         </p>
         {recoveryState === RecoveryState.CODE ? (
           <form
@@ -188,18 +185,18 @@ const LoginPage = () => {
             )}
             <input
               className="password-recovery-form__input password-recovery-form__input--extended"
-              placeholder={text("Enter the code from email")}
+              placeholder="Введите код с почты"
               onChange={(e) => setRecoveryCode(e.target.value)}
               value={recoveryCode}
             />
             <input
               className="password-recovery-form__input password-recovery-form__input--extended"
-              placeholder={text("New password")}
+              placeholder="Новый пароль"
               onChange={(e) => setRecoveryPassword(e.target.value)}
               value={recoveryPassword}
             />
             <button className="password-recovery-form__button">
-              {text("Send")}
+              Отправить
             </button>
 
           </form>
@@ -215,12 +212,12 @@ const LoginPage = () => {
             )}
             <input
               className="password-recovery-form__input"
-              placeholder={text("Phone number")}
+              placeholder="Номер телефона"
               onChange={(e) => setRecoveryPhone(e.target.value)}
               value={recoveryPhone}
             />
             <button className="password-recovery-form__button" type="submit">
-              {text("Send")}
+              Отправить
             </button>
           </form>
         )}

@@ -1,10 +1,11 @@
+import { useSelector } from "react-redux"
+import { selectNotifications } from "../../slices/notifications.slice"
 import Portal from '../Portal'
 import Notification from './Notification'
 import styles from './Notifications.module.css'
-import { useNotifications } from '../../state/notifications/NotificationsContext'
 
 const Notifications = (props) => {
-    const { notifications } = useNotifications()
+    const notifications = useSelector(selectNotifications)
     // const dispatch_ = useDispatch() ###
 
     // useEffect(() => {
@@ -13,7 +14,7 @@ const Notifications = (props) => {
     //     }
     // }, [notifications.length, dispatch])
 
-    if (!notifications.length) return null
+    if (!notifications.length) return
 
     return (
         <Portal>

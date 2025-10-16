@@ -1,19 +1,15 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from "react-router-dom";
-
-import styles from './RegistrationUserPage.module.scss';
+import {registerAsClient} from "../../../services/auth.service";
 import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics";
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 // import Error from "../../../components/Error/Error";
-import { useLanguage } from '../../../state/language';
-import {registerAsClient} from "../../../services/auth.service";
+import styles from './RegistrationUserPage.module.scss';
 
 const RegistrationUserPage = () => {
-  const text = useLanguage(); // функция для перевода
-
   useEffect(() => {
-    document.title = text('Registration');
-  }, [text]);
+    document.title = 'Регистрация';
+  }, []);
 
   const navigate = useNavigate();
 
@@ -31,7 +27,7 @@ const RegistrationUserPage = () => {
 
     if (!accept) {
       // @ts-ignore
-      return setError(text("To continue, you must accept the privacy policy."));
+      return setError("Чтобы продолжить необходимо принять политику конфиденциальности.");
     }
 
     return registerAsClient({
@@ -49,18 +45,17 @@ const RegistrationUserPage = () => {
   return (
     <ConfirmPoliticsContext.Provider value={{accept, setAccept}}>
       <div className={`${styles.registrationUserPage} appContainer`}>
-        <h1 className={styles.registrationUserPage_title}>{text('Registration')}</h1>
+        <h1 className={styles.registrationUserPage_title}>Регистрация</h1>
          <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
-           {error && (
-             <p className={styles.registrationUserPage_form_error} role="alert">
-               {error}
-             </p>
-           )}
+           {/*{error && (*/}
+           {/*// В старом коде className="auth-err"*/}
+           {/*<Error error={error} />*/}
+           {/*)}*/}
            <input
              className={styles.registrationUserPage_form_input}
              type="text"
              name="name"
-             placeholder={text("First Name")}
+             placeholder="Имя"
              value={name}
              onChange={(e) => setName(e.target.value)}
              required
@@ -69,7 +64,7 @@ const RegistrationUserPage = () => {
              className={styles.registrationUserPage_form_input}
              type="text"
              name="lastname"
-             placeholder={text("Last Name")}
+             placeholder="Фамилия"
              value={lastname}
              onChange={(e) => setLastname(e.target.value)}
              required
@@ -78,7 +73,7 @@ const RegistrationUserPage = () => {
              className={styles.registrationUserPage_form_input}
              type="email"
              name="email"
-             placeholder={text("Email")}
+             placeholder="Email"
              value={email}
              onChange={(e) => setEmail(e.target.value)}
              required
@@ -87,7 +82,7 @@ const RegistrationUserPage = () => {
              className={styles.registrationUserPage_form_input}
              type="text"
              name="phone"
-             placeholder={text("Phone")}
+             placeholder="Телефон"
              value={phone}
              onChange={(e) => setPhone(e.target.value)}
              required
@@ -96,7 +91,7 @@ const RegistrationUserPage = () => {
              className={styles.registrationUserPage_form_input}
              type="password"
              name="password"
-             placeholder={text("Password")}
+             placeholder="Пароль"
              value={password}
              onChange={(e) => setPassword(e.target.value)}
              required
@@ -104,7 +99,7 @@ const RegistrationUserPage = () => {
            <input
              className={styles.registrationUserPage_form_input}
              type="password"
-             placeholder={text("Confirm Password")}
+             placeholder="Подтвердите пароль"
              value={passwordVerification}
              onChange={(e) => setPasswordVerification(e.target.value)}
              required
@@ -113,7 +108,7 @@ const RegistrationUserPage = () => {
            {/*Вынесла в отдельный компонент, т.к. будет переиспользован*/}
            <ConfirmPolitics />
 
-           <button className={styles.registrationUserPage_form_button} type="submit">{text("Register")}</button>
+           <button className={styles.registrationUserPage_form_button} type="submit">Регистрация</button>
          </form>
       </div>
     </ConfirmPoliticsContext.Provider>

@@ -1,43 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
 import AddedDevice from './AddedDevice';
 import './added-devices.css';
-import styles from './AddedDevices.module.css';
 import { useService } from '../../hooks/useService';
 import { getClientRequests } from '../../services/request.service';
-import appFetch from '../../services/api';
+import styles from './AddedDevices.module.css';
 
 function AddedDevices() {
   const requests = useService(getClientRequests, []);
-  const [archiveOrders, setArchiveOrders] = useState([]);
-  const tabsFilter = window.location.hash;
-  useEffect(() => {
-    appFetch('/drive/archive', {
-      body: {
-        lc: 9999999999,
-      },
-    }).then((v) => {
-      const formattedData = Object.values(v.data.booking)
-        .filter(
-          (item) =>
-            item.b_options.type === 'order' && !item.b_options.question1,
-        )
-        .sort(
-          (a, b) =>
-            new Date(b.b_created).getTime() - new Date(a.b_created).getTime(),
-        );
-      console.log(formattedData);
-      setArchiveOrders(formattedData);
-    });
-  }, []);
-  const filteredRequests = Object.values(requests.data?.data?.booking || [])
-    .filter((item) => item.b_options.type === 'order')
-    .sort(
-      (a, b) =>
-        new Date(b.b_created).getTime() - new Date(a.b_created).getTime(),
-    );
+
+  // временно тестовые данные
+  const filteredRequests = Object.values(
+    requests.data?.data?.booking || [],
+  ).filter((item) => item.b_options.type === 'order');
   const onDeviceUpdate = (e) => requests.refetch();
+
   useEffect(() => {
     document.title = 'Добавленные устройства';
   }, []);
@@ -60,13 +37,13 @@ function AddedDevices() {
                 } ${styles.relative}`}
               >
                 {/* <Link to="/added-device">
-                                      <h2>Актуальное</h2>
-                                  </Link> */}
+                                    <h2>Актуальное</h2>
+                                </Link> */}
                 <Link className="just__flexingfaa" to="/client/requests">
                   <h2>Актуальное</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{filteredRequests.length}</span>
+                  <span>5</span>
                 </div>
               </div>
               <div
@@ -78,7 +55,7 @@ function AddedDevices() {
                   <h2>Архив</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{archiveOrders.length || 0}</span>
+                  <span>2</span>
                 </div>
               </div>
             </div>
@@ -106,39 +83,17 @@ function AddedDevices() {
                 </div>
               </div>
             </div>
-            {tabsFilter === '#archive'
-              ? archiveOrders.map((v) => (
-                  <AddedDevice
-                    {...v.b_options}
-                    status={v.b_options.status}
-                    created_at={v.b_created}
-                    key={v.b_id}
-                    id={v.b_id}
-                    onUpdate={onDeviceUpdate}
-                    number_of_offers={v.drivers?.length || 0}
-                    photoUrls={
-                      v.b_options.client_feedback_photo_urls ||
-                      v.b_options.photoUrls ||
-                      []
-                    }
-                  />
-                )) || []
-              : filteredRequests?.map((v) => (
-                  <AddedDevice
-                    {...v.b_options}
-                    status={v.b_options.status}
-                    created_at={v.b_created}
-                    key={v.b_id}
-                    id={v.b_id}
-                    onUpdate={onDeviceUpdate}
-                    number_of_offers={v.drivers?.length || 0}
-                    photoUrls={
-                      v.b_options.client_feedback_photo_urls ||
-                      v.b_options.photoUrls ||
-                      []
-                    }
-                  />
-                )) || []}
+            {filteredRequests?.map((v) => (
+              <AddedDevice
+                {...v.b_options}
+                status={v.b_options.status}
+                created_at={v.b_created}
+                key={v.b_id}
+                id={v.b_id}
+                onUpdate={onDeviceUpdate}
+                number_of_offers={v.drivers?.length || 0}
+              />
+            )) || []}
           </div>
         </div>
       </div>

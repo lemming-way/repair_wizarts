@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useDispatch } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
-
+import { fetchUser } from '../../slices/user.slice'
 import { login } from '../../services/auth.service'
 
 import './login.css'
 import Popup from 'reactjs-popup'
-
 import { keepUserAuthorized, recoverPassword, recoverPasswordSend, recoverPasswordVerify } from '../../services/user.service'
-import { userKeys } from '../../queries'
 
 const RecoveryState = {
     IDLE: 0,
@@ -17,7 +15,7 @@ const RecoveryState = {
 }
 
 function Login() {
-    const queryClient = useQueryClient()
+    const dispatch = useDispatch()
     const navigate = useNavigate()
 
     const [error, setError] = useState("")
@@ -53,42 +51,41 @@ function Login() {
 
     function correctPhoneNumder (e) {
         var text = e.target.value
-        var new_text
 
         // стирание
         if (text.length < phone.length) {
-            new_text = text
+            var new_text = text
             if (new_text.length < 4) {
                 new_text = "+7(9"
             }
         }
         // +7(988)-842-44-44
         else if (text.length === 6) {
-            new_text = text + ")-"
+            var new_text = text + ")-"
         }
         else if (text.length === 7) {
-            new_text = text.slice(0, -1) + ')-' + text.slice(-1);
+            var new_text = text.slice(0, -1) + ')-' + text.slice(-1);
         }
         else if (text.length === 8) {
-            new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 11) {
-            new_text = text + "-" 
+            var new_text = text + "-" 
         }
         else if (text.length === 12) {
-            new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length === 14) {
-            new_text = text + "-"
+            var new_text = text + "-"
         }
         else if (text.length === 15) {
-            new_text = text.slice(0, -1) + '-' + text.slice(-1);
+            var new_text = text.slice(0, -1) + '-' + text.slice(-1);
         }
         else if (text.length > 17) {
-            new_text = text.slice(0,17)
+            var new_text = text.slice(0,17)
         }
         else {
-            new_text = text
+            var new_text = text
         }
         return new_text
     }
@@ -168,7 +165,7 @@ function Login() {
                 keepUserAuthorized(false)
             }
 
-            queryClient.invalidateQueries({ queryKey: userKeys.all })
+            dispatch(fetchUser())
             navigate("/")
         } catch (err) {
             setError("Некорректные данные")

@@ -1,185 +1,262 @@
-import { useEffect, useMemo } from 'react';
-import '../../../scss/chat.css';
-import { Link } from 'react-router-dom';
-
-import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
-import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
-import { useUserQuery } from '../../../hooks/useUserQuery';
-import { useUIState } from '../../../state/ui/UIStateContext';
+import { useEffect } from "react";
+import '../../../scss/chat.css'
+import { Link } from 'react-router-dom'
 
 function App() {
-  const ui = useUIState();
-  const { user: authorizedUser } = useUserQuery();
-  const user = (authorizedUser as any) || ({} as any);
-  const masterOrdersQuery = useMasterOrdersQuery({ enabled: ui.isMaster });
-  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: !ui.isMaster });
-  const userRequests = ui.isMaster
-    ? masterOrdersQuery.masterOrders
-    : allClientRequestsQuery.clientRequests;
 
-  // утилита: получить последнее сообщение по всем заказам чата
-  function getLastMessageFromOrders(orders: any[]): {
-    text: string;
-    ts?: string;
-  } {
-    let latest: { text: string; ts?: string } = {
-      text: 'Нет сообщений',
-      ts: undefined,
-    };
-    let latestTs = -Infinity;
+    useEffect(() => {
+        document.title = 'Чат';
+    }, []);
 
-    for (const order of orders || []) {
-      const hist = Array.isArray(order?.b_options?.chat_history)
-        ? order.b_options.chat_history
-        : [];
+    return (
+        <div className="frame_messages frame_messages__fullchat">
 
-      for (const m of hist) {
-        const t = m?.ts ? new Date(m.ts).getTime() : NaN;
-        if (!Number.isNaN(t) && t > latestTs) {
-          latestTs = t;
-          latest = { text: String(m?.text ?? ''), ts: m.ts };
-        }
-      }
-    }
-    // небольшое визуальное сокращение длинных сообщений
-    const MAX_LEN = 120;
-    if (latest.text.length > MAX_LEN) {
-      latest.text = latest.text.slice(0, MAX_LEN).trimEnd() + '…';
-    }
-    return latest;
-  }
+            <div className="block_messages font_inter">
+                <div className="messages_text">
+                    <h2>
+                        Сообщения
+                    </h2>
+                </div>
+                <div className="magnafire df align">
+                    <div className="magnafire_img">
+                        <img src="/img/chat_img/лупа.png" alt="no img" />
+                    </div>
+                    <div className="magnafire_input">
+                        <input type="text" placeholder="Поиск..." />
+                    </div>
+                </div>
+            </div>
 
-  const groupedChats = useMemo(() => {
-    const requestEntries: any[] = Array.isArray(userRequests) ? userRequests : [];
-    const rawRequests = Array.from(
-      new Map(
-        requestEntries
-          .map((item: any) => Object.values(item?.data?.booking || {}))
-          .flat()
-          .filter((request: any) => request?.b_id)
-          .map((request: any) => [request.b_id, request]),
-      ).values(),
-    );
-    const filteredRequests = rawRequests.filter(
-      (item: any) =>
-        item.b_options?.winnerMaster && item.drivers && item.drivers.length > 0,
-    );
-    const chatsByMaster: any = filteredRequests.reduce(
-      (acc: any, request: any) => {
-        const masterId = request.b_options.winnerMaster;
-        if (!acc[masterId]) {
-          acc[masterId] = [];
-        }
-        acc[masterId].push(request);
-        return acc;
-      },
-      {},
-    );
-    return Object.values(chatsByMaster).map((orders: any) => {
-      const firstOrder = orders[0];
-      const winnerDriver = firstOrder.drivers.find(
-        (d) => d.u_id === firstOrder.b_options.winnerMaster,
-      );
-      return {
-        isOwner: firstOrder.u_id === user.u_id,
-        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
-        clientInfo: firstOrder.b_options.author || {},
-        masterInfo: winnerDriver.c_options.author || {},
-        orders: orders,
-      };
-    });
-  }, [userRequests, user.u_id]);
+            <div className="big_messages__wrap">
 
-  useEffect(() => {
-    document.title = 'Чат';
-  }, []);
+                <div className="big_messages">
+                    <Link to={window.location.href.includes("master")
+                        ? "/master/chat/111"
+                        : "/client/chat/111"
+                    }>
+                        <div className="ilya df font_inter align">
+                            <div className="ilya_img">
+                                <img src="/img/chat_img/ilya.png" alt="chat icon" />
+                            </div>
 
-  return (
-    <div className="frame_messages frame_messages__fullchat">
-      <div className="block_messages font_inter">
-        <div className="messages_text">
-          <h2>Сообщения</h2>
-        </div>
-        <div className="magnafire df align">
-          <div className="magnafire_img">
-            <img src="/img/chat_img/лупа.png" alt="no img" />
-          </div>
-          <div className="magnafire_input">
-            <input type="text" placeholder="Поиск..." />
-          </div>
-        </div>
-      </div>
+                            <div className="ilya_text">
+                                <h2>
+                                    Илья Брага
+                                </h2>
 
-      <div className="big_messages__wrap">
-        {groupedChats.length === 0
-          ? 'Пусто'
-          : groupedChats.map(
-              ({ chatId, masterInfo, isOwner, clientInfo, orders }) => {
-                const lastMsg = getLastMessageFromOrders(orders);
-                return (
-                  <div className="big_messages" key={chatId}>
-                    <Link
-                      to={
-                        window.location.href.includes('master')
-                          ? `/master/chat/${chatId}`
-                          : `/client/chat/${chatId}`
-                      }
-                    >
-                      <div className="ilya df font_inter align">
+                                <h3 className="txt-text-small-ver" style={{color: "#D9573B"}}>
+                                    Печатает...
+                                </h3>
+                            </div>
+
+                            <div className="ilya_text-2">
+                                <h2>
+                                    14:12
+                                </h2>
+
+                                <h3>
+                                    1
+                                </h3>
+                            </div>
+                        </div>
+                        <div className="line_ilya"></div>
+                    </Link>
+                </div>
+
+                <div className="big_messages">
+                    <Link to={window.location.href.includes("master")
+                        ? "/master/chat/168789461"
+                        : "/client/chat/168789461"
+                    }>
+                        <div className="ilya df font_inter align">
+                            <div className="ilya_img">
+                                <img src="/img/chat_img/тех подержка.png" alt="chat icon" />
+                            </div>
+
+                            <div className="ilya_text">
+                                <h2>
+                                    Тех поддержка
+                                </h2>
+
+                                <h3 className="txt-text-small-ver">
+                                    Хорошо
+                                </h3>
+                            </div>
+
+                            <div className="ilya_text-2">
+                                <h2>
+                                    14:12
+                                </h2>
+
+                                <h3>
+                                    1
+                                </h3>
+                            </div>
+                        </div>
+                        <div className="line_ilya"></div>
+                    </Link>
+                </div>
+
+                <div className="big_messages">
+                    <Link to={window.location.href.includes("master")
+                        ? "/master/chat/16854163"
+                        : "/client/chat/16854163"
+                    }>
+                        <div className="ilya df font_inter align">
+                            <div className="ilya_img">
+                                <img src="/img/chat_img/кирил.png" alt="chat icon" />
+                            </div>
+
+                            <div className="ilya_text">
+                                <h2>
+                                    Кирилл Воронов
+                                </h2>
+
+                                <h3 className="txt-text-small-ver">
+                                    Смогу приехать через час
+                                </h3>
+                            </div>
+
+                            <div className="ilya_text-2">
+                                <h2>
+                                    14:02
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="line_ilya"></div>
+                    </Link>
+                </div>
+                <div className="big_messages">
+                    <Link to={window.location.href.includes("master")
+                            ? "/master/chat/16854163"
+                            : "/client/chat/16854163"
+                        }>
+                        <div className="ilya df font_inter align">
+                            <div className="ilya_img">
+                                <img src="/img/chat_img/кирил.png" alt="chat icon" />
+                            </div>
+
+                            <div className="ilya_text">
+                                <h2>
+                                    Кирилл Воронов
+                                </h2>
+
+                                <h3 className="txt-text-small-ver">
+                                    Смогу приехать через час
+                                </h3>
+                            </div>
+
+                            <div className="ilya_text-2">
+                                <h2>
+                                    14:02
+                                </h2>
+                            </div>
+                        </div>
+                        <div className="line_ilya"></div>
+                    </Link>
+                </div>
+
+                <div className="big_messages">
+                    <div className="ilya df font_inter align">
                         <div className="ilya_img">
-                          <img
-                            src={masterInfo.u_photo || '/img/img-camera.png'}
-                            style={{ height: 65, width: 66, borderRadius: 30 }}
-                            alt="chat icon"
-                          />
+                            <img src="/img/chat_img/елена.png" alt="chat icon" />
                         </div>
 
                         <div className="ilya_text">
-                          <h2>
-                            {isOwner
-                              ? masterInfo.u_name || 'Мастер'
-                              : clientInfo.name || 'Мастер'}
-                          </h2>
+                            <h2>
+                                Елена Ионова
+                            </h2>
 
-                          <h3
-                            className="txt-text-small-ver"
-                            style={{ color: '#555' }}
-                            title={lastMsg.text}
-                          >
-                            {lastMsg.text}
-                          </h3>
+                            <h3 className="txt-text-small-ver">
+                                Фото пришлю позже
+                            </h3>
                         </div>
 
                         <div className="ilya_text-2">
-                          <h2>
-                            {lastMsg.ts
-                              ? new Date(lastMsg.ts).toLocaleTimeString(
-                                  'ru-RU',
-                                  {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  },
-                                )
-                              : new Date(
-                                  masterInfo.u_details?.lastTimeBeenOnline ||
-                                    new Date().toISOString(),
-                                ).toLocaleTimeString('ru-RU', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                          </h2>
-                          {/* Убрали индикатор нового сообщения */}
+                            <h2>
+                                11:57
+                            </h2>
                         </div>
-                      </div>
-                      <div className="line_ilya"></div>
-                    </Link>
-                  </div>
-                );
-              },
-            )}
-      </div>
-    </div>
-  );
+                    </div>
+                    <div className="line_ilya"></div>
+                </div>
+
+                <div className="big_messages">
+                    <div className="ilya df font_inter align">
+                        <div className="ilya_img">
+                            <img src="/img/chat_img/флипп.png" alt="chat icon" />
+                        </div>
+                        <div className="ilya_text">
+                            <h2>
+                                Филипп Терешов
+                            </h2>
+
+                            <h3 className="txt-text-small-ver">
+                                Спасибо
+                            </h3>
+                        </div>
+
+                        <div className="ilya_text-2">
+                            <h2>
+                                10:33
+                            </h2>
+                        </div>
+                    </div>
+                    <div className="line_ilya"></div>
+                </div>
+
+                <div className="big_messages">
+                    <div className="ilya df font_inter align">
+                        <div className="ilya_img">
+                            <img src="/img/chat_img/михаил.png" alt="chat icon" />
+                        </div>
+
+                        <div className="ilya_text">
+                            <h2>
+                                Михаил Серов
+                            </h2>
+
+                            <h3 className="txt-text-small-ver">
+                                Отправьте адрес
+                            </h3>
+                        </div>
+
+                        <div className="ilya_text-2">
+                            <h2>
+                                09:56
+                            </h2>
+                        </div>
+                    </div>
+                    <div className="line_ilya"></div>
+                </div>
+
+                <div className="big_messages">
+                    <div className="ilya df font_inter align">
+                        <div className="ilya_img">
+                            <img src="/img/chat_img/евгений.png" alt="chat icon" />
+                        </div>
+
+                        <div className="ilya_text">
+                            <h2>
+                                Евгений Конеев
+                            </h2>
+
+                            <h3 className="txt-text-small-ver">
+                                Спасибо
+                            </h3>
+                        </div>
+
+                        <div className="ilya_text-2">
+                            <h2>
+                                09:23
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 }
+
 
 export default App;
