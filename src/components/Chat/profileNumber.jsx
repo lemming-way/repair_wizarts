@@ -11,6 +11,7 @@ import { useUserQuery } from '../../hooks/useUserQuery';
 
 function App() {
   const { user } = useUserQuery();
+  const currentUser = user || {};
   const [feedback, setFeedback] = useState([]);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
@@ -64,16 +65,14 @@ function App() {
     };
 
     const fetchFeedback = async () => {
-      if (!user?.u_details?.login) {
-        return;
+      if (currentUser.u_details?.login) {
+        const comments = await getUserCommentsFromBookings(currentUser.u_id);
+        setFeedback(comments);
       }
-
-      const comments = await getUserCommentsFromBookings(user.u_id);
-      setFeedback(comments);
     };
 
     fetchFeedback();
-  }, [user?.u_id, user?.u_details?.login]);
+  }, [currentUser.u_id, currentUser.u_details?.login]);
 
   useEffect(() => {
     document.title = 'Отзывы';

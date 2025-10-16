@@ -7,13 +7,14 @@ import appFetch from '../../../services/api';
 import { useUserQuery } from '../../../hooks/useUserQuery';
 import { userKeys } from '../../../queries';
 
-const EMPTY_ARRAY = [];
+const EMPTY_ARRAY = []
 
 export default function BlackListModal({ setVisibleBlackList }) {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
-  const blackList = user?.u_details?.black_list ?? EMPTY_ARRAY;
+  const { user } = useUserQuery();
+  const currentUser = user || {};
+  const userId = currentUser?.u_id ?? currentUser?.id;
+  const blackList = currentUser?.u_details?.black_list || EMPTY_ARRAY;
 
   const [blackListData, setBlackListData] = useState([]);
 
@@ -50,6 +51,7 @@ export default function BlackListModal({ setVisibleBlackList }) {
 
   const handleUnblock = (id) => {
     const newList = blackList.filter((l) => l.id !== id);
+    console.log(newList);
     if (!userId) {
       return;
     }
@@ -61,12 +63,8 @@ export default function BlackListModal({ setVisibleBlackList }) {
       },
       userId,
     ).then(() => queryClient.invalidateQueries({ queryKey: userKeys.all }));
-    setBlackListData((prev) => prev.filter((userItem) => userItem.id !== id));
+    setBlackListData((prev) => prev.filter((user) => user.id !== id));
   };
-
-  if (!userId) {
-    return null;
-  }
 
   return (
     <div className={style.wrap}>
