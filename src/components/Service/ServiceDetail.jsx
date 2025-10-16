@@ -1,22 +1,21 @@
 import { useEffect, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { selectUI } from "../../slices/ui.slice";
 import { Navigation } from "swiper";
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from "swiper/react";
-import { selectUser } from "../../slices/user.slice";
 import { selectServices } from "../../slices/services.slice";
 import { getMasterByUsername } from "../../services/user.service";
 import { createOrder } from "../../services/order.service";
 import { useService } from "../../hooks/useService";
-import Map from '../Map'
-import ServiceDetailContext from "./ServiceDetailContext"
-import '../../scss/detail.scss'
-import '../../scss/media.css'
+import Map from '../Map';
+import ServiceDetailContext from "./ServiceDetailContext";
+import '../../scss/detail.scss';
+import '../../scss/media.css';
 import { getMasterRepairs } from "../../services/service.service";
 import { Link } from "react-router-dom";
+import { useUserQuery } from "../../hooks/useUserQuery";
 
-import style from "./serviceDetail.module.scss"
+import style from "./serviceDetail.module.scss";
 
 function ServiceDetail() {
 
@@ -89,14 +88,21 @@ function ServiceDetail() {
 
     const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([])
 
-    const navigate = useNavigate()
-    const { id } = useParams()
+    const navigate = useNavigate();
+    const { id } = useParams();
 
-    const user = useSelector(selectUser)
-    const services = useSelector(selectServices)
-    const repairMasters = useService(getMasterRepairs, [])
-    const device = useMemo(() =>
-        services.devices.find((v) => v.id === +id) || { }, [services.devices, id])
+    const services = useSelector(selectServices);
+    const { user = {} } = useUserQuery();
+    const userId = user?.u_id;
+    const userMasterUsername = user?.master?.[0]?.username;
+    const userFullName = [user?.u_name, user?.u_family].filter(Boolean).join(' ').trim();
+    const userPhone = user?.u_phone ?? '';
+    const isAuthorized = !!userId;
+    const repairMasters = useService(getMasterRepairs, []);
+    const device = useMemo(
+        () => services.devices.find((v) => v.id === +id) || {},
+        [services.devices, id],
+    );
 
     const [show, setShow] = useState(false)
 
@@ -123,33 +129,34 @@ function ServiceDetail() {
     })
     const [description, setDescription] = useState("")
 
-    const masters = useMemo(() =>
-        repairMasters.data.reduce((arr, {
-            master_id,
-            repair_id,
-            address_latitude,
-            address_longitude
-        }) => {
-            if (arr.find((v) => v.id === master_id)) {
-                return arr
-            }
-            const repairService = services.repair_types.find(({ id: repid, device_id }) =>
-                device_id === +id && repair_id === repid)
-            if (!repairService) {
-                return arr
-            }
-            if (master_id === user.master?.[0]?.username) {
-                return arr
-            }
+    const masters = useMemo(
+        () =>
+            repairMasters.data.reduce((arr, {
+                master_id,
+                repair_id,
+                address_latitude,
+                address_longitude
+            }) => {
+                if (arr.find((v) => v.id === master_id)) {
+                    return arr;
+                }
+                const repairService = services.repair_types.find(({ id: repid, device_id }) =>
+                    device_id === +id && repair_id === repid);
+                if (!repairService) {
+                    return arr;
+                }
+                if (master_id === userMasterUsername) {
+                    return arr;
+                }
 
-            return [...arr, {
-                id: master_id,
-                latitude: address_latitude,
-                longitude: address_longitude
-            }]
-        }, []),
-        [repairMasters.data, user.master, services]
-    )
+                return [...arr, {
+                    id: master_id,
+                    latitude: address_latitude,
+                    longitude: address_longitude
+                }];
+            }, []),
+        [repairMasters.data, services.repair_types, id, userMasterUsername]
+    );
     const repairFiltered = useMemo(() =>
         repairMasters.data.reduce((arr, { master_id, repair_id, price, time }) => {
             if (master_id !== selectedMaster.username) {
@@ -430,7 +437,7 @@ function ServiceDetail() {
                                     <p style={{marginBottom: "10px"}}>Официальные цены</p>
 
                                     {/* {!ui.isAuthorized  */}
-                                    { true 
+                                    { !isAuthorized 
                                             ? <div className="modfdfsdafasal-error" style={{marginBottom: "10px"}}>Пожалуйста, зарегистрируйтесь или войдите</div>
                                             : null
                                         }
@@ -444,8 +451,8 @@ function ServiceDetail() {
 
 
                                         <div className={`df ${style.modal_from_row}`}>
-                                            <input type="text" placeholder="Ваше имя" defaultValue={user.name} disabled />
-                                            <input className="ismrf" type="text" placeholder="Номер телефона" defaultValue={user.phone} disabled />
+                                            <input type="text" placeholder="Ваше имя" defaultValue={userFullName} disabled />
+                                            <input className="ismrf" type="text" placeholder="Номер телефона" defaultValue={userPhone} disabled />
                                         </div>
 
 

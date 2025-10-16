@@ -15,7 +15,7 @@ import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
 function Services() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const userId = user?.u_id;
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
@@ -25,7 +25,7 @@ function Services() {
     useState(null);
   //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
-  const username = user.u_details?.login;
+  const username = user?.u_details?.login;
   const { categories } = useCategoriesQuery();
 
   useEffect(() => {
@@ -189,27 +189,29 @@ function Services() {
 
     setServicesBlocks(obj);
   }
-  function onSubmit(e) {
+  async function onSubmit(e) {
     e.preventDefault();
     if (!userId) {
       return;
     }
 
-    updateUser(
-      {
-        details: {
-          section: categoryMainOptionSelected || [],
-          subsection: categoryOptionSelected || [],
-          service: modelPhoneOptionSelected || [],
-          question: brandOptionSelected || [],
-          servicesBlocks: [],
+    try {
+      await updateUser(
+        {
+          details: {
+            section: categoryMainOptionSelected || [],
+            subsection: categoryOptionSelected || [],
+            service: modelPhoneOptionSelected || [],
+            question: brandOptionSelected || [],
+            servicesBlocks: [],
+          },
         },
-      },
-      userId,
-    ).then((v) => {
-      console.log(v);
+        userId,
+      );
       queryClient.invalidateQueries({ queryKey: userKeys.all });
-    });
+    } catch (err) {
+      console.error(err);
+    }
   }
   const categoriesMainOptions = categories.map((item) => ({
     label: item.name,

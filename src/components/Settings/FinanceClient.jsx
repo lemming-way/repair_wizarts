@@ -11,7 +11,7 @@ import { userKeys } from '../../queries';
 
 const FinanceClient = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -55,7 +55,6 @@ const FinanceClient = () => {
       };
 
       const res = await updateUser({ details: payload }, userId);
-      console.log(res);
       if (!res?.code === '200') throw new Error('Ошибка при сохранении');
       setVisibleSuccess(true);
       setSuccess(true);

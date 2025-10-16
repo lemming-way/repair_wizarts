@@ -54,7 +54,7 @@ function Profile() {
 
   const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -245,7 +245,7 @@ function Profile() {
     }
 
     try {
-      await updateUser(payload, userId).then((v) => console.log(v));
+      await updateUser(payload, userId);
       setError('');
       setSuceeded(true);
       queryClient.invalidateQueries({ queryKey: userKeys.all });

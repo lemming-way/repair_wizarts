@@ -14,7 +14,7 @@ import { userKeys } from '../../queries';
 
 function ChoiceOfReplenishmentMethodClient() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const userId = user?.u_id;
   const navigator = useNavigate();
 
@@ -224,8 +224,8 @@ function ChoiceOfReplenishmentMethodClient() {
                       balance:
                         Number(cost) +
                         Number(
-                          user?.u_details.balance
-                            ? user?.u_details.balance
+                          user?.u_details?.balance
+                            ? user?.u_details?.balance
                             : 0,
                         ),
                       history_of_pay: [...oldHistory, newPayment],

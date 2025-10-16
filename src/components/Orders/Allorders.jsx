@@ -13,6 +13,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import appFetch from '../../utilities/appFetch';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function App() {
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
@@ -29,6 +30,8 @@ function App() {
     min: '',
     max: '',
   });
+  const { user = {} } = useUserQuery();
+  const userId = user?.u_id;
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -76,6 +79,14 @@ function App() {
 
   // фильтрация заказов в зависимости от выбранного значения
   const filteredOrders = orders.filter((order) => {
+    const ownerId =
+      order.b_options?.author?.id ||
+      order.b_options?.author?.u_id ||
+      order.b_options?.u_id;
+    if (userId && ownerId && String(ownerId) === String(userId)) {
+      return false;
+    }
+
     if (selectValue === 'Новые' && !order.isNew) return false;
     if (selectValue === 'Просмотренные' && order.isNew) return false;
 

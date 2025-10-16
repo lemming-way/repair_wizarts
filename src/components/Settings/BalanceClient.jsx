@@ -13,7 +13,9 @@ import { userKeys } from '../../queries';
 
 const BalanceClient = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
+  const userId = user?.u_id;
+  const isAuthorized = !!userId;
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
   const [isVisibleRow, setVisibleRow] = useState(false);
@@ -34,12 +36,13 @@ const BalanceClient = () => {
   const userBalance = user?.u_details?.balance;
 
   useEffect(() => {
-    //~ if (user) {
+    if (!isAuthorized) {
+      return;
+    }
       setInputCard(walletValue || 'не указано');
       setInputPrice(userBalance || '0.0');
       setCurrentPage(1); // сбрасываем страницу при смене данных
-    //~ }
-  }, [walletValue, userBalance]);
+  }, [isAuthorized, walletValue, userBalance]);
 
   const allPayments = user?.u_details?.history_of_pay || [];
 
@@ -95,6 +98,10 @@ const BalanceClient = () => {
       </div>
     );
   });
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <>
@@ -179,7 +186,7 @@ const BalanceClient = () => {
                       status: 'Успешно',
                       title: 'Вывод средств',
                     };
-                    if (!user?.u_id) {
+                    if (!userId) {
                       return;
                     }
                     updateUser(
@@ -191,7 +198,7 @@ const BalanceClient = () => {
                           history_of_pay: [...oldHistory, newPayment],
                         },
                       },
-                      user.u_id,
+                      userId,
                     ).then(() =>
                       queryClient.invalidateQueries({ queryKey: userKeys.all }),
                     );

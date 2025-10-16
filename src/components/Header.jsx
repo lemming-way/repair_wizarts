@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { selectUser } from '../slices/user.slice';
 import { selectUnreadMessages } from '../slices/messages.slice';
-import { selectUI } from '../slices/ui.slice';
 import DropdownCountry from "./dropdownCountry";
 import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
 
-    const ui = useSelector(selectUI)
-    const user = useSelector(selectUser)
     const messages = useSelector(selectUnreadMessages)
+    const { user = {} } = useUserQuery();
+    const isAuthorized = !!user.u_id;
+    const isMaster = user.u_role === '2';
+    const avatarSrc = user?.avatar ? SERVER_PATH + user.avatar : '/img/blank.png';
+    const masterDetails = user?.u_details;
+    const masterBalance = masterDetails?.balance;
 
     return (
         <>
@@ -59,13 +62,13 @@ function Header() {
                         </li>
                     </ul>
                     <div className="header__profile">
-                        {ui.isAuthorized ? (
+                        {isAuthorized ? (
                             <div className="header__profile">
                                 <Link to={"/client/requests/create/title"} className="header__button">Дать задание</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={ui.isMaster ? "/master/chat" : "/client/chat"}
+                                <Link to={isMaster ? "/master/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -74,7 +77,7 @@ function Header() {
                                     }}
                                 >
                                     <img className="" src="/img/hfjsa.png" alt="" />
-                                    {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>}
+                                    {messages?.count > 0 && <div className='chat-message-counter'>{messages.count}</div>}
                                 </Link>
                                 <div
                                     className='yosetout'
@@ -85,7 +88,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + user.avatar}
+                                        src={avatarSrc}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -98,10 +101,10 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {ui.isMaster && user.master[0] && (
+                                {isMaster && masterDetails && (
                                     <>
                                         <p className='master__moneys'>
-                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
+                                            {parseFloat(masterBalance || 0).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
                                             <Link to="/master/wallet">Пополнить баланс</Link>

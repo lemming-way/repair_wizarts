@@ -9,7 +9,7 @@ import { userKeys } from '../../queries';
 
 const Photo = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const inputRef = useRef(null);
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');

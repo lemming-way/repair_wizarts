@@ -11,10 +11,14 @@ import ModalEditOrder from './ModalEditOrder';
 import Popup from 'reactjs-popup';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import appFetch from '../../utilities/appFetch';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function MyOrder() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user = {} } = useUserQuery();
+  const userId = user?.u_id;
+  const isAuthorized = !!userId;
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
     useState(false);
   const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
@@ -33,6 +37,9 @@ function MyOrder() {
   const [currentOrder, setCurrentOrder] = useState({});
   useEffect(() => {
     const fetchData = async () => {
+      if (!userId) {
+        return;
+      }
       try {
         console.log(id);
         const response = await appFetch(`drive/get/`, {
@@ -68,7 +75,7 @@ function MyOrder() {
       }
     };
     fetchData();
-  }, []);
+  }, [id, userId]);
   const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
     try {
       switch (type) {
@@ -176,6 +183,10 @@ function MyOrder() {
   const [price, setPrice] = useState('');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <>

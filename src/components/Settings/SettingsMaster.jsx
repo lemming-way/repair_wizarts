@@ -29,7 +29,7 @@ export default function SettingsMaster() {
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('данные сохранились');
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const userId = user?.u_id;
   const { setAuthorization } = useUIActions();
 
@@ -90,7 +90,7 @@ export default function SettingsMaster() {
 
     return attrs;
   };
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     if (!userId) {
       setError('Пользователь не найден');
@@ -98,27 +98,24 @@ export default function SettingsMaster() {
       return;
     }
 
-    updateUser(form, userId)
-      .then((v) => {
+    try {
+      await updateUser(form, userId);
+      setSuceeded(true);
+      setError('');
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    } catch (err) {
+      setError(err.message);
+      setSuceeded(false);
+    }
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
+      try {
+        await updatePassword(form);
         setSuceeded(true);
         setError('');
-        queryClient.invalidateQueries({ queryKey: userKeys.all });
-      })
-      .catch((err) => {
-        setError(err.message);
+      } catch (err) {
         setSuceeded(false);
-      });
-    if (form.password?.length > 0 && form.new_password?.length > 0) {
-      updatePassword(form)
-        .then((v) => {
-          setSuceeded(true);
-          setError('');
-          console.log(v);
-        })
-        .catch((err) => {
-          setSuceeded(false);
-          setError(err.message);
-        });
+        setError(err.message);
+      }
     }
   };
 

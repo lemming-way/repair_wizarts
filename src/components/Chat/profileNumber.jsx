@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
-import '../../scss/profileNumber.css'
-import '../../scss/swiper.css'
-import { useSelector } from "react-redux";
-import { selectUser } from "../../slices/user.slice";
+import '../../scss/profileNumber.css';
+import '../../scss/swiper.css';
 import { getFeedback } from "../../services/feedback.service";
 import ModalDelete from "./ModalDelete";
-import style from "./profileNumber.module.css"
+import style from "./profileNumber.module.css";
 import ModalAddCommentMini from "./ModalAddCommentMini";
-import ProfileSlider  from "../profileNumberClient/ProfileSlider";
+import ProfileSlider from "../profileNumberClient/ProfileSlider";
+import { useUserQuery } from "../../hooks/useUserQuery";
 
 function App() {
-    const user = useSelector(selectUser)
-    const [feedback, setFeedback] = useState([])
+    const { user = {} } = useUserQuery();
+    const [feedback, setFeedback] = useState([]);
 
     // const onSubmit = (id) => () => {
     //     return replyToFeedback({
@@ -32,11 +31,24 @@ function App() {
     //         (state[value.rating - 1]++, state)
     //     ), [0, 0, 0, 0, 0]), [feedback])
 
+    const masterUsername = user?.master?.[0]?.username;
+
     useEffect(() => {
-        if (user.master) {
-            getFeedback(user.master[0].username).then(setFeedback)
+        if (!masterUsername) {
+            return;
         }
-    }, [user.master])
+
+        let isMounted = true;
+        getFeedback(masterUsername).then((result) => {
+            if (isMounted) {
+                setFeedback(result);
+            }
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [masterUsername]);
 
     useEffect(() => {
         document.title = 'Отзывы';

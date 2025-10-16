@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useUserQuery } from '../../hooks/useUserQuery';
 
 function ChoiceOfReplenishmentMethodHistoryClient() {
-  const { user } = useUserQuery();
+  const { user = {} } = useUserQuery();
   const [history, setHistory] = useState([]);
   useEffect(() => {
     if (user?.u_details?.history_of_pay)
