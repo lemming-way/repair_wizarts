@@ -12,13 +12,11 @@ import { userKeys } from '../../queries';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
 
-const EMPTY_OBJECT = {}
 
 function Services() {
   const queryClient = useQueryClient();
   const { user } = useUserQuery();
-  const currentUser = user || EMPTY_OBJECT;
-  const userId = currentUser?.u_id ?? currentUser?.id;
+  const userId = user?.u_id;
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
@@ -27,40 +25,41 @@ function Services() {
     useState(null);
   //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
-  const username = currentUser.u_details?.login;
+  const username = user.u_details?.login;
   const { categories } = useCategoriesQuery();
+
   useEffect(() => {
     if (!username) return;
     if (
-      currentUser.u_details?.section &&
-      currentUser.u_details?.subsection &&
-      currentUser.u_details?.service &&
-      currentUser.u_details?.servicesBlocks
+      user.u_details?.section &&
+      user.u_details?.subsection &&
+      user.u_details?.service &&
+      user.u_details?.servicesBlocks
     ) {
       setCategoryMainOptionSelected(
-        Array.isArray(currentUser.u_details.section)
-          ? currentUser.u_details.section
+        Array.isArray(user.u_details.section)
+          ? user.u_details.section
           : [],
       );
       setCategoryOptionSelected(
-        Array.isArray(currentUser.u_details.subsection)
-          ? currentUser.u_details.subsection
+        Array.isArray(user.u_details.subsection)
+          ? user.u_details.subsection
           : [],
       );
       setModelPhoneOptionSelected(
-        Array.isArray(currentUser.u_details.service)
-          ? currentUser.u_details.service
+        Array.isArray(user.u_details.service)
+          ? user.u_details.service
           : [],
       );
       setBrandOptionSelected(
-        Array.isArray(currentUser.u_details.question)
-          ? currentUser.u_details.question
+        Array.isArray(user.u_details.question)
+          ? user.u_details.question
           : [],
       );
-      setServicesBlocks({ ...currentUser.u_details.servicesBlocks });
+      setServicesBlocks({ ...user.u_details.servicesBlocks });
     }
     //~ getMasterRepairsByUsername(username).then(setRepairs);
-  }, [currentUser, username]);
+  }, [user, username]);
   useEffect(() => {
     var obj = {};
     if (!brandOptionSelected) {
@@ -269,6 +268,11 @@ function Services() {
         })
       : [];
   });
+
+  // Early return if no user ID
+  if (!userId) {
+    return null;
+  }
 
   return (
     <div className={style.services_wrap}>
