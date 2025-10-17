@@ -1,4 +1,4 @@
-import appFetch from './api'
+import appFetch from '../utilities/appFetch'
 
 const setLocation = (data) =>
     localStorage.setItem("location", JSON.stringify(data))

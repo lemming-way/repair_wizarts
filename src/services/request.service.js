@@ -1,5 +1,5 @@
 import { getToken } from './token.service';
-import appFetch from './api';
+import appFetch from '../utilities/appFetch';
 import formatDateForApI from '../utilities/formatDateForApi';
 
 const createRequest = (payload, asAdmin) => {

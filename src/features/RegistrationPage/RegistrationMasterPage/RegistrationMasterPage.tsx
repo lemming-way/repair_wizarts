@@ -10,7 +10,7 @@ import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
 
-import appFetch from '../../../services/api';
+import appFetch from '../../../utilities/appFetch';
 import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
 
 const RegistrationMasterPage = () => {

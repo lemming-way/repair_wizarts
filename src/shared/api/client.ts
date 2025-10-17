@@ -1,6 +1,6 @@
-import { clearTokenOnUnauthorized, getAuthParams } from './auth';
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
+import { getToken, removeToken } from '../../services/token.service';
 
 function buildUrl(base: string, path: string, query?: RequestOptions['query']): string {
   const effectiveBase = base && /^https?:\/\//.test(base) ? base : 'http://localhost/';
@@ -22,6 +22,25 @@ function toApiError(e: unknown, status = 0, correlationId?: string): ApiError {
 }
 
 type AuthParams = Record<string, string>;
+
+function getAuthParams(): AuthParams {
+  const token = getToken();
+
+  if (!token || typeof token !== 'object') {
+    return {};
+  }
+
+  const { token: accessToken, u_hash: hash } = token as Record<string, unknown>;
+
+  if (typeof accessToken !== 'string' || typeof hash !== 'string') {
+    return {};
+  }
+
+  return {
+    token: accessToken,
+    u_hash: hash,
+  };
+}
 
 function appendFormValue(params: URLSearchParams, key: string, value: unknown, tracker: { used: boolean }) {
   if (value === undefined || value === null) {
@@ -155,7 +174,7 @@ export async function request<T>(path: string, opts: RequestOptions = {}): Promi
     }
 
     if (resp.status === 401) {
-      clearTokenOnUnauthorized();
+      removeToken();
     }
 
     const err: ApiError = {

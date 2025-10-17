@@ -1,4 +1,4 @@
-import appFetch, { BASE_URL } from './api';
+import appFetch, { BASE_URL } from '../utilities/appFetch';
 // Функция для отправки кода на email
 //~ const sendEmailCodeTest = () => {
   //~ // Имитация запроса для отправки email кода

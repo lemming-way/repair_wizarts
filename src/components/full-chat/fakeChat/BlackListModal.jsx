@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import style from './blackListModal.module.css';
 import { updateUser } from '../../../services/user.service';
-import appFetch from '../../../services/api';
+import appFetch from '../../../utilities/appFetch';
 import { useUserQuery } from '../../../hooks/useUserQuery';
 import { userKeys } from '../../../queries';
 

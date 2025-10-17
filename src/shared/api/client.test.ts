@@ -1,18 +1,16 @@
 import { api } from './client';
-import * as authModule from './auth';
 import type { Err, Ok, Result } from './types';
+import * as tokenService from '../../services/token.service';
 
-jest.mock('./auth', () => ({
-  getAuthParams: jest.fn(),
-  clearTokenOnUnauthorized: jest.fn(),
+jest.mock('../../services/token.service', () => ({
+  getToken: jest.fn(),
+  removeToken: jest.fn(),
 }));
 
 describe('api client', () => {
   const originalFetch = global.fetch as any;
-  const mockGetAuthParams = authModule.getAuthParams as jest.MockedFunction<typeof authModule.getAuthParams>;
-  const mockClearTokenOnUnauthorized = authModule.clearTokenOnUnauthorized as jest.MockedFunction<
-    typeof authModule.clearTokenOnUnauthorized
-  >;
+  const mockGetToken = tokenService.getToken as jest.MockedFunction<typeof tokenService.getToken>;
+  const mockRemoveToken = tokenService.removeToken as jest.MockedFunction<typeof tokenService.removeToken>;
 
   function assertOk<T>(result: Result<T>): asserts result is Ok<T> {
     expect(result.ok).toBe(true);
@@ -25,6 +23,8 @@ describe('api client', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockGetToken.mockReturnValue(null as any);
+    mockRemoveToken.mockImplementation(() => {});
     // Mock localStorage
     const localStorageMock = {
       getItem: jest.fn(),
@@ -87,7 +87,7 @@ describe('api client', () => {
   });
 
   it('sends auth params in POST body as form data', async () => {
-    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    mockGetToken.mockReturnValue({ token: 'abc', u_hash: 'def' });
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -110,7 +110,7 @@ describe('api client', () => {
   });
 
   it('does not attach auth params to GET query automatically', async () => {
-    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    mockGetToken.mockReturnValue({ token: 'abc', u_hash: 'def' });
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -129,7 +129,7 @@ describe('api client', () => {
   });
 
   it('merges existing URLSearchParams bodies with auth params', async () => {
-    mockGetAuthParams.mockReturnValue({ token: 'abc', u_hash: 'def' });
+    mockGetToken.mockReturnValue({ token: 'abc', u_hash: 'def' });
     const fetchMock = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -151,7 +151,7 @@ describe('api client', () => {
   });
 
   it('clears token on 401 responses and returns error', async () => {
-    mockClearTokenOnUnauthorized.mockImplementation(() => {});
+    mockRemoveToken.mockImplementation(() => {});
     const fetchMock = jest.fn().mockResolvedValue({
       ok: false,
       status: 401,
@@ -166,6 +166,6 @@ describe('api client', () => {
 
     assertErr(res);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(mockClearTokenOnUnauthorized).toHaveBeenCalledTimes(1);
+    expect(mockRemoveToken).toHaveBeenCalledTimes(1);
   });
 });
