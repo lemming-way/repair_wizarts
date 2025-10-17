@@ -25,28 +25,15 @@ type AuthUser = {
   u_currency: string;
 };
 
-type UserDetails = {
-  u_id: string;
-  u_role: string | number;
-  u_name: string;
-  u_family: string;
-  u_middle: string | null;
-  u_phone: string;
+type UserDetails = AuthUser & {
   u_phone_checked: BooleanLike;
-  u_email: string;
   u_email_checked: BooleanLike;
-  u_photo: string | null;
-  u_lang: string | number;
-  u_currency: string;
   u_city: string | number | null;
   u_description: string | null;
-  u_active: BooleanLike;
-  u_birthday: string | null;
   u_details: unknown;
   b_comments: unknown;
   b_services: unknown;
   b_location_classes?: unknown;
-  u_ban: UserBanInfo;
   props?: Record<string, string[]>;
 };
 
@@ -75,7 +62,7 @@ export async function getProfile(): Promise<Result<UserProfile>> {
   return api.post<UserProfile>('user/authorized');
 }
 
-export async function updateProfile(data: UpdateProfilePayload, id?: number, asAdmin?: boolean): Promise<Result<UserProfile>> {
+export async function updateProfile(data: UpdateProfilePayload, id?: number): Promise<Result<UserProfile>> {
   const formattedDetails = Object.entries(data.details || {}).map(
     ([key, value]) =>
       value !== null || value !== undefined
@@ -84,7 +71,7 @@ export async function updateProfile(data: UpdateProfilePayload, id?: number, asA
   );
 
   return api.post<UserProfile>('user', {
-    ...(asAdmin ? { u_a_id: id } : {}),
+    ...(typeof id === 'number' ? { u_a_id: id } : {}),
     data: JSON.stringify({
       u_name: data.name,
       u_family: data.lastname,

@@ -61,10 +61,11 @@ const sendEmailVerificationCode = (code) =>
     res.json(),
   );
 
-const sendPhoneCode = () =>
+const sendPhoneCode = (phone) =>
   appFetch('/auth/', {
     body: {
       type: 'phone_code',
+      login: phone,
     },
   });
 

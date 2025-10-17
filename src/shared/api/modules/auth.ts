@@ -3,7 +3,7 @@ import type { Result } from '../types';
 
 export type LoginPayload = { username: string; password: string; type?: 'phone' | 'email' };
 export type AuthHashResponse = { auth_hash: string };
-export type TokenResponse = { access_token: string };
+export type TokenResponse = { data: { token: string; u_hash: string } };
 
 export async function login(username: string, password: string, type: 'phone' | 'email' = 'phone'): Promise<Result<TokenResponse>> {
   const normalizeLogin = (username: string, type: 'phone' | 'email') => {
@@ -45,4 +45,3 @@ export async function login(username: string, password: string, type: 'phone' | 
 export async function logout(): Promise<Result<void>> {
   return api.post<void>('/auth/logout');
 }
-

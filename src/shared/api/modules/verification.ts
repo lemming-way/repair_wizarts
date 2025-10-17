@@ -31,8 +31,11 @@ export async function verifyEmailCode(code: string): Promise<Result<EmailCodeVer
   return api.get<EmailCodeVerificationResponse>(`email/verification/complete?ev_hash=${code}`);
 }
 
-export async function sendPhoneCode(): Promise<Result<PhoneVerificationResponse>> {
-  return api.post<PhoneVerificationResponse>('/auth/', { type: 'phone_code' });
+export async function sendPhoneCode(phone: string): Promise<Result<PhoneVerificationResponse>> {
+  return api.post<PhoneVerificationResponse>('/auth/', {
+    type: 'phone_code',
+    login: phone,
+  });
 }
 
 export async function verifyPhoneCode(code: string): Promise<Result<PhoneCodeVerificationResponse>> {
