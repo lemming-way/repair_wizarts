@@ -69,13 +69,21 @@ const sendPhoneCode = (phone) =>
     },
   });
 
-const sendPhoneVerificationCode = (code) =>
-  appFetch('/auth/', {
+const sendPhoneVerificationCode = (phone, code) => {
+  const trimmedCode = typeof code === 'string' ? code.trim() : '';
+
+  if (!trimmedCode) {
+    return Promise.reject(new Error('Verification code is required'));
+  }
+
+  return appFetch('/auth/', {
     body: {
       type: 'phone_code',
-      code,
+      login: phone,
+      password: trimmedCode,
     },
   });
+};
 
 export {
   sendEmailCode,

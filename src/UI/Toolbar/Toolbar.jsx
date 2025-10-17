@@ -12,7 +12,6 @@ import './header.scss';
 import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
 import { useUserQuery } from '../../hooks/useUserQuery';
-import { useUIState } from '../../state/ui/UIStateContext';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -24,8 +23,8 @@ const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
-  const ui = useUIState();
   const { user = {} } = useUserQuery();
+  const isMaster = user.u_role === '2';
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -88,7 +87,7 @@ const Toolbar = () => {
         <div className="header__profile">
           {!!user.u_id ? (
             <div className="header__profile">
-              {ui.isMaster ? (
+              {isMaster ? (
                 <Link
                   to={'/client/requests/create/title'}
                   className="header__button"
@@ -107,8 +106,8 @@ const Toolbar = () => {
               <a className="header__icons" href="tel:+79697148750">
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
-              <Link
-                to={ui.isMaster ? '/master/chat' : '/client/chat'}
+                <Link
+                  to={isMaster ? '/master/chat' : '/client/chat'}
                 className="header__icons"
                 style={{ display: 'flex', position: 'relative' }}
                 onClick={() => {

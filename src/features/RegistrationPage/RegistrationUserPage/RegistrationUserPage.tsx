@@ -13,6 +13,7 @@ const RegistrationUserPage = () => {
 
   const navigate = useNavigate();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState();
   const [name, setName] = useState("");
   const [lastname, setLastname] = useState("");

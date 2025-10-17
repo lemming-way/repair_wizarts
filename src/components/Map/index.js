@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import ReactDom from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import { useUIState } from '../../state/ui/UIStateContext';
+import { useUIState } from '../../state/ui';
 
 // --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 function queryYMaps() {

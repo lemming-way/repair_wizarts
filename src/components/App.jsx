@@ -70,7 +70,7 @@ import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
 import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../hooks/useServicesQuery';
-import { useUIActions } from '../state/ui/UIStateContext';
+import { useUIActions } from '../state/ui';
 import { useNotifications } from '../state/notifications/NotificationsContext';
 import { QueryDevtools } from '../app/providers/QueryDevtools';
 

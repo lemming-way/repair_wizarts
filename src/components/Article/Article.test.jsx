@@ -3,7 +3,10 @@ import { MemoryRouter } from 'react-router-dom';
 
 import Article from './Article';
 import * as articleService from '../../services/article.service';
-import { UIStateProvider } from '../../state/ui/UIStateContext';
+
+jest.mock('../../hooks/useUserQuery', () => ({
+  useUserQuery: () => ({ user: {} }),
+}));
 
 jest.mock('../../services/article.service');
 jest.mock('swiper/react', () => ({
@@ -54,11 +57,9 @@ const mockArticleData = {
 
 const renderWithRouter = (component, initialEntries = ['/articles/1']) => {
   return render(
-    <UIStateProvider initialState={{ isAuthorized: false }}>
-      <MemoryRouter initialEntries={initialEntries}>
-        {component}
-      </MemoryRouter>
-    </UIStateProvider>
+    <MemoryRouter initialEntries={initialEntries}>
+      {component}
+    </MemoryRouter>
   );
 };
 

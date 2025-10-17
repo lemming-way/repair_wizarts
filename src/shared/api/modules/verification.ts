@@ -38,6 +38,22 @@ export async function sendPhoneCode(phone: string): Promise<Result<PhoneVerifica
   });
 }
 
-export async function verifyPhoneCode(code: string): Promise<Result<PhoneCodeVerificationResponse>> {
-  return api.post<PhoneCodeVerificationResponse>('/auth/', { type: 'phone_code', code });
+export async function verifyPhoneCode(phone: string, code: string): Promise<Result<PhoneCodeVerificationResponse>> {
+  const trimmedCode = code?.trim();
+
+  if (!trimmedCode) {
+    return Promise.resolve({
+      ok: false,
+      error: {
+        status: 400,
+        message: 'Verification code is required',
+      },
+    });
+  }
+
+  return api.post<PhoneCodeVerificationResponse>('/auth/', {
+    type: 'phone_code',
+    login: phone,
+    password: trimmedCode,
+  });
 }

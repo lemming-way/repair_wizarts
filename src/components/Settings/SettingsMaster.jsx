@@ -18,7 +18,7 @@ import { deleteUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
-import { useUIActions } from '../../state/ui/UIStateContext';
+import { useUIActions } from '../../state/ui';
 
 export default function SettingsMaster() {
   const navigate = useNavigate();

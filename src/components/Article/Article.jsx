@@ -16,7 +16,7 @@ import {
     getArticle,
     getArticles
 } from '../../services/article.service'
-import { useUIState } from '../../state/ui/UIStateContext'
+import { useUserQuery } from '../../hooks/useUserQuery'
 
 const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
@@ -32,7 +32,7 @@ const Article = (props) => {
     });
 
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
-    const ui = useUIState()
+    const { user = {} } = useUserQuery()
 
 
 
@@ -117,7 +117,7 @@ const Article = (props) => {
                     </div>
                 : null}
                 <div className={styles.bodyActions}>
-                    <Link to={ui.isAuthorized ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
+                    <Link to={user.u_id ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
                 </div>
             </div>
             <ArticleComments

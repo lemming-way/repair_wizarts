@@ -14,10 +14,6 @@ import '../scss/verification-input.css';
 const VerificationInput = (props) => {
   const { isConfirmed, isEmail, onChangeMask, value } = props;
 
-  const sendVerificationCode = isEmail
-    ? sendEmailVerificationCode
-    : sendPhoneVerificationCode;
-
   const [isModalOpen, setModalOpen] = useState(false);
   const [code, setCode] = useState('');
 
@@ -50,10 +46,30 @@ const VerificationInput = (props) => {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    sendVerificationCode(code).then((v) => {
-      console.log(v);
-      setModalOpen(false);
-    });
+    const trimmedCode = code.trim();
+
+    if (!trimmedCode) {
+      return;
+    }
+
+    const send = isEmail
+      ? () => sendEmailVerificationCode(trimmedCode)
+      : () => {
+          if (!value) {
+            return Promise.reject(new Error('Phone number is required'));
+          }
+
+          return sendPhoneVerificationCode(value, trimmedCode);
+        };
+
+    send()
+      .then((v) => {
+        console.log(v);
+        setModalOpen(false);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   };
 
   return (

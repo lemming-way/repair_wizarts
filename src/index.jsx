@@ -8,7 +8,6 @@ import {CustomProvider} from 'rsuite';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
 import reportWebVitals from './reportWebVitals';
-import { UIStateProvider } from './state/ui/UIStateContext';
 import { NotificationsProvider } from './state/notifications/NotificationsContext';
 import App from './components/App';
 import store from './store';
@@ -20,15 +19,13 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <QueryProvider>
-        <UIStateProvider>
-          <NotificationsProvider>
-            <BrowserRouter>
-              <CustomProvider theme="dark">
-                <App />
-              </CustomProvider>
-            </BrowserRouter>
-          </NotificationsProvider>
-        </UIStateProvider>
+        <NotificationsProvider>
+          <BrowserRouter>
+            <CustomProvider theme="dark">
+              <App />
+            </CustomProvider>
+          </BrowserRouter>
+        </NotificationsProvider>
       </QueryProvider>
     </Provider>
   </React.StrictMode>
