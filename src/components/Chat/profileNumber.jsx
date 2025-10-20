@@ -1,398 +1,215 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import '../../scss/profileNumber.css';
 import '../../scss/swiper.css';
-import { getFeedback } from "../../services/feedback.service";
-import ModalDelete from "./ModalDelete";
-import style from "./profileNumber.module.css";
-import ModalAddCommentMini from "./ModalAddCommentMini";
-import ProfileSlider from "../profileNumberClient/ProfileSlider";
-import { useUserQuery } from "../../hooks/useUserQuery";
+
+import ModalAddCommentMini from './ModalAddCommentMini';
+import ModalDelete from './ModalDelete';
+import style from './profileNumber.module.css';
+import appFetch from '../../utilities/appFetch';
+import ProfileSlider from '../profileNumberClient/ProfileSlider';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function App() {
-    const { user = {} } = useUserQuery();
-    const [feedback, setFeedback] = useState([]);
+  const { user } = useUserQuery();
+  const currentUser = user || {};
+  const [feedback, setFeedback] = useState([]);
+  const [visibleModalDelete, setVisibleModalDelete] = useState(false);
+  const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
 
-    // const onSubmit = (id) => () => {
-    //     return replyToFeedback({
-    //         id,
-    //         master_response: reply
-    //     }).then(() => {
-    //         getFeedback(user.master[0].username).then(setFeedback)
-    //     })
-    // }
-
-    // const formatDate = (date) => {
-    //     const _date = new Date(date)
-    //     return `${_date.getDate()}.${_date.getMonth() + 1}.${_date.getFullYear()}`
-    // }
-    
-    // const feedbackByValue = useMemo(() => feedback
-    //     .reduce((state, value) => (
-    //         (state[value.rating - 1]++, state)
-    //     ), [0, 0, 0, 0, 0]), [feedback])
-
-    const masterUsername = user?.master?.[0]?.username;
-
-    useEffect(() => {
-        if (!masterUsername) {
-            return;
-        }
-
-        let isMounted = true;
-        getFeedback(masterUsername).then((result) => {
-            if (isMounted) {
-                setFeedback(result);
-            }
+  useEffect(() => {
+    const getUserCommentsFromBookings = async (u_id) => {
+      try {
+        const res = await appFetch('drive/archive', {
+          method: 'POST',
+          body: {
+            ls: 9999999999999,
+          },
         });
 
-        return () => {
-            isMounted = false;
-        };
-    }, [masterUsername]);
+        const allBookings = Object.values(res?.data?.booking || {});
+        const comments = allBookings.flatMap((booking) => {
+          if (!booking.b_rating) return [];
+          if (!booking.b_comments || booking.b_comments.length === 0) {
+            console.log(booking);
+            return [
+              {
+                booking_id: booking.b_id,
+                booking_title: booking.b_options?.title || '',
+                created_at: booking.b_created || '',
+                rating: booking.b_rating,
+                text: '',
+                comment: 'Комментарий не указан',
+                photos: [],
+                author: booking.b_options.author,
+              },
+            ];
+          }
 
-    useEffect(() => {
-        document.title = 'Отзывы';
-    }, []);
+          return booking.b_comments.map((comment) => ({
+            booking_id: booking.b_id,
+            booking_title: booking.b_options?.title || '',
+            created_at: comment.created_at,
+            rating: comment.rating || null,
+            text: comment.text || '',
+            comment: comment.comment || 'Комментарий не указан',
+            photos: comment.photos || [],
+            author: comment.author || {},
+          }));
+        });
 
-    const [visibleModalDelete, setVisibleModalDelete] = useState(false)
-    const [visibleModalAddComment, setVisibleModalAddComment] = useState(false)
+        return comments;
+      } catch (err) {
+        console.error('Ошибка при получении отзывов из поездок:', err);
+        return [];
+      }
+    };
 
-    return (
-        <>
-            
-            {visibleModalDelete ? <ModalDelete setVisibleModalDelete={setVisibleModalDelete} /> : null}
-            {visibleModalAddComment ? <ModalAddCommentMini setVisibleModalAddComment={setVisibleModalAddComment} /> : null}
-            
-                <div className="mini-text">
-                    <h1>Номер профиля</h1>
-                    {/* <Link className="roboto" to="#">
-                        Запросить отзыв
-                    </Link> */}
+    const fetchFeedback = async () => {
+      if (currentUser.u_details?.login) {
+        const comments = await getUserCommentsFromBookings(currentUser.u_id);
+        setFeedback(comments);
+      }
+    };
 
-                </div>
+    fetchFeedback();
+  }, [currentUser.u_id, currentUser.u_details?.login]);
 
-                <div className="content-box">
-                    <div className={style.stars_row}>
-                        <h3 className="inter">4,6</h3>
-                        <img src="/img/img-star.png" alt="Star" />
-                        <img src="/img/img-star.png" alt="Star" />
-                        <img src="/img/img-star.png" alt="Star" />
-                        <img src="/img/img-star.png" alt="Star" />
-                        <img src="/img/img-star.png" alt="Star" />
+  useEffect(() => {
+    document.title = 'Отзывы';
+  }, []);
 
-                    </div>
+  const totalCount = feedback.length;
+  const ratingCounts = [0, 0, 0, 0, 0];
+  feedback.forEach((item) => {
+    if (item.rating >= 1 && item.rating <= 5) {
+      ratingCounts[item.rating - 1]++;
+    }
+  });
 
-                    <div className="h4">
-                        <h4 className="inter">На основании 11 оценок</h4>
-                    </div>
+  const averageRating = totalCount
+    ? (
+        feedback.reduce((sum, item) => sum + (item.rating || 0), 0) / totalCount
+      ).toFixed(1)
+    : '0.0';
 
-                    <div className="main-line">
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                            </div>
+  return (
+    <>
+      {visibleModalDelete && (
+        <ModalDelete setVisibleModalDelete={setVisibleModalDelete} />
+      )}
+      {visibleModalAddComment && (
+        <ModalAddCommentMini
+          setVisibleModalAddComment={setVisibleModalAddComment}
+        />
+      )}
 
-                            <div className="big-line">
-                                <div className="small-line"></div>
-                            </div>
+      <div className="mini-text">
+        <h1>Номер профиля</h1>
+      </div>
 
-                            <div>
-                                <p className="inter">10</p>
-                            </div>
-                        </div>
+      <div className="content-box">
+        <div className={style.stars_row}>
+          <h3 className="inter">{averageRating}</h3>
+          {Array.from({ length: 5 }, (_, i) => (
+            <img
+              key={i}
+              src="/img/img-star.png"
+              alt="Star"
+              style={{
+                opacity: i < Math.round(averageRating) ? 1 : 0.3,
+              }}
+            />
+          ))}
+        </div>
 
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
+        <div className="h4">
+          <h4 className="inter">На основании {totalCount} оценок</h4>
+        </div>
 
-                            <div className="big-line">
-                            </div>
+        <div className="main-line">
+          {[5, 4, 3, 2, 1].map((star) => (
+            <div className="line-content df" key={star}>
+              <div className="img-line">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <img
+                    key={i}
+                    src={
+                      i < star
+                        ? '/img/img-small-star.png'
+                        : '/img/img-small-star-white.png'
+                    }
+                    alt="Star"
+                  />
+                ))}
+              </div>
+              <div className="big-line">
+                {(star === 5 || star === 1) && (
+                  <div
+                    className={star === 5 ? 'small-line' : 'small-line-2'}
+                  ></div>
+                )}
+              </div>
+              <div>
+                <p className="inter">{ratingCounts[star - 1]}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-                            <div>
-                                <p className="inter">0</p>
-                            </div>
-                        </div>
+        {feedback.map((item, index) => (
+          <div className="portifoly-photo" key={index}>
+            <div className="portifoly-img df">
+              <img
+                style={{ width: 50, height: 50, borderRadius: 30 }}
+                src={item?.author?.u_photo || '/img/img-camera.png'}
+                alt="avatar"
+              />
+              <div>
+                <h2 className="inter">{item?.author?.u_name}</h2>
+                <p className="inter">
+                  {new Date(item?.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
 
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
+            <div className={style.stars_row}>
+              {[...Array(5)].map((_, i) => (
+                <img
+                  key={i}
+                  src={
+                    i < item.rating
+                      ? '/img/img-small-star.png'
+                      : '/img/img-small-star-white.png'
+                  }
+                  alt="Star"
+                />
+              ))}
+              <p>{item.text || 'Без комментария'}</p>
+            </div>
 
-                            <div className="big-line">
-                            </div>
+            <div className={style.comment_body}>
+              <div className="content-portifoly">
+                <h3 className="inter">Комментарий</h3>
+                <p className="inter">
+                  {item.comment || 'Комментарий не указан'}
+                </p>
+              </div>
+              <ProfileSlider images={item.photos || []} />
+            </div>
 
-                            <div>
-                                <p className="inter">0</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">0</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                                <div className="small-line-2"></div>
-                            </div>
-
-                            <div>
-                                <p className="inter">1</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="portifoly-photo">
-                        <div className="portifoly-img df">
-                            <img src="/img/img-kiril.png" alt="Kiril" />
-                            <div>
-                                <h2 className="inter">Кирилл Воронов</h2>
-                                <p className="inter">26 августа</p>
-                            </div>
-                        </div>
-
-                        <div className={style.stars_row}>
-                            <img src="/img/img-small-star.png" alt="Star" />
-                            <img src="/img/img-small-star.png" alt="Star" />
-                            <img src="/img/img-small-star.png" alt="Star" />
-                            <img src="/img/img-small-star.png" alt="Star" />
-                            <img src="/img/img-small-star.png" alt="Star" />
-
-                            <p>Заказ выполнен на отлично.</p>
-                        </div>
-
-                        <div className={style.comment_body}>
-                            <div className="content-portifoly">
-                                <h3 className="inter">Комментарий</h3>
-
-                                <p className="inter">Donec non justo elit. Praesent nec auctor tellus. Donec quam orci, tincidunt nec diam
-                                    at, mollis commodo libero. Nulla a ante aliquam augue mattis dapibus eget eu ipsum.
-                                    Integer fringilla vitae orci at laoreet. Quisque a justo augue. Proin a facilisis
-                                    ante. Cras at nibh ultricies magna aliquet rutrum eget in lectus. Nullam sed ornare
-                                    arcu. Curabitur bibendum ultrices sapien, eget viverra velit lobortis vel. Vivamus
-                                    eu auctor elit.</p>
-
-                                <div className="comment_buttons">
-                                    <div className="likes_block">
-                                        <div className="like_block">
-                                            <img src="/img/icons/like.png" alt="" />
-                                            <span>5</span>
-                                        </div>
-                                        <div className="like_block__line"></div>
-                                        <div className="dislike_block">
-                                            <img src="/img/icons/dislike.png" alt="" />
-                                            <span>-2</span>
-                                        </div>
-                                    </div>
-                                    {/* <div onClick={()=>setVisibleModalAddComment(true)}>
-                                        <img src="/img/pencil.png" alt="" />
-                                    </div>
-                                    <div onClick={()=>setVisibleModalDelete(true)}>
-                                        <img src="/img/icons/delete.png" alt="" />
-                                    </div> */}
-                                </div>
-
-                            </div>
-
-                            <ProfileSlider />
-                        </div>
-                        <div style={{display: "flex", justifyContent:"center"}}>
-                                    <button className={style.button} onClick={()=>setVisibleModalAddComment(true)}>Оставить ответ</button>
-                            </div>
-                    </div>
-                </div>
-
-{/* 
-            <div className="block-info-5">
-                <div className="block-info-content-5 df">
-                    <h1 className="roboto">Номер профиля {user.id}</h1>
-                </div>
-
-                <div className="content-box">
-                    <div className="main-line">
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">{feedbackByValue[4]}</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">{feedbackByValue[3]}</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">{feedbackByValue[2]}</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">{feedbackByValue[1]}</p>
-                            </div>
-                        </div>
-
-                        <div className="line-content df">
-                            <div className="img-line">
-                                <img src="/img/img-small-star.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                                <img src="/img/img-small-star-white.png" alt="Star" />
-                            </div>
-
-                            <div className="big-line">
-                            </div>
-
-                            <div>
-                                <p className="inter">{feedbackByValue[0]}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {feedback.map((v) => (
-                        <div className="portifoly-photo" key={v.id}>
-                            <div className="portifoly-img df">
-                                <img
-                                    src={SERVER_PATH + v.client_avatar}
-                                    width="66px"
-                                    height="66px"
-                                    style={{ borderRadius: "33px", objectFit: "cover" }}
-                                    alt="Kiril"
-                                />
-                                <div>
-                                    <h2 className="inter">{v.client_name} {v.client_lastname}</h2>
-                                    <p className="inter">{formatDate(v.created_at)}</p>
-                                </div>
-                            </div>
-
-                            <div className="star-portifoly df">
-                                <Rating
-                                    initialValue={user.master[0].rating}
-                                    size="20"
-                                    readonly
-                                />
-                            </div>
-
-                            <div className="slider-main-content df">
-                                <div className="content-portifoly">
-                                    <h3 className="inter">Комментарий</h3>
-                                    <p className="inter">{v.description}</p>
-                                    <button
-                                        className={cx({ "active-comment-button": !v.master_response })}
-                                        onClick={() => !v.master_response && setReplyOpen(true)}
-                                    >
-                                        Оставить отзыв
-                                    </button>
-                                    <Popup
-                                        open={isReplyOpen}
-                                        onClose={() => setReplyOpen(false)}
-                                        className="feedback-reply-modal"
-                                    >
-                                        <h2 className="feedback-reply-modal__title">
-                                            Ответ на отзыв
-                                        </h2>
-                                        <textarea
-                                            className="feedback-reply-modal__textarea"
-                                            value={reply}
-                                            onChange={(e) => setReply(e.target.value)}
-                                            placeholder="Оставьте ответ на отзыв"
-                                        />
-                                        <button
-                                            className="feedback-reply-modal__button"
-                                            onClick={onSubmit(v.id)}
-                                        >
-                                            Отправить
-                                        </button>
-                                    </Popup>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div> */}
-        </>
-    )
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button
+                className={style.button}
+                onClick={() => setVisibleModalAddComment(true)}
+              >
+                Оставить ответ
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 }
-
 
 export default App;

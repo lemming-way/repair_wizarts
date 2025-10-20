@@ -6,8 +6,7 @@ import { updateRequest } from '../../../services/request.service';
 import { getToken } from '../../../services/token.service';
 import { useUserQuery } from '../../../hooks/useUserQuery';
 
-const RANDOM_ID_MAX = 1_000_000;
-
+// Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -16,14 +15,10 @@ const fileToBase64 = (file) =>
     reader.onerror = (error) => reject(error);
   });
 
+// Функция для загрузки фото
 const uploadPhoto = async (file) => {
   const base64String = await fileToBase64(file);
   const token = getToken();
-
-  if (!token?.token || !token?.hash) {
-    return null;
-  }
-
   const body = new URLSearchParams({
     token: token.token,
     u_hash: token.hash,
@@ -38,77 +33,57 @@ const uploadPhoto = async (file) => {
     {
       method: 'POST',
       body,
+      // НЕ указываем Content-Type, fetch сам поставит нужный для URLSearchParams
     },
   );
-
   const result = await response.json();
-
-  return result?.data?.dl_id
-    ? `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`
-    : null;
+  return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
 };
 
 export default function AddOrderModal({
   setVisibleAddOrder,
   setVisibleOkModal,
-  currentOrder = {},
+  currentOrder,
 }) {
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const { id } = useParams();
-
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
   const [deadline, setDeadline] = useState('');
   const [photos, setPhotos] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-
   const inputRef = useRef(null);
 
-  const balance = Number(user?.u_details?.balance ?? 0);
-  const extraOrders = Array.isArray(currentOrder?.b_options?.extra_orders)
-    ? currentOrder.b_options.extra_orders
-    : [];
-
   const handleSubmit = async () => {
-    if (isUploading) {
-      return;
-    }
-
     setIsUploading(true);
     try {
+      // Загрузка всех фото
       const photoUrls = [];
-
       for (const photo of photos) {
-        if (!photo?.file) {
-          continue;
-        }
-        const uploadedUrl = await uploadPhoto(photo.file);
-        if (uploadedUrl) {
-          photoUrls.push(uploadedUrl);
+        if (photo.file) {
+          const url = await uploadPhoto(photo.file);
+          photoUrls.push(url);
         }
       }
-
+      const currentExtraOrders = Array.isArray(
+        currentOrder.b_options.extra_orders,
+      )
+        ? currentOrder.b_options.extra_orders
+        : [];
       const newExtraOrder = {
-        id: Math.floor(Math.random() * RANDOM_ID_MAX),
+        id: Math.floor(Math.random() * 1000000),
         title,
         description,
         client_price: budget,
         time: deadline,
         photoUrls,
       };
-
       await updateRequest(id, {
-        extra_orders: [...extraOrders, newExtraOrder],
+        extra_orders: [...currentExtraOrders, newExtraOrder],
       });
-
       setVisibleAddOrder(false);
       setVisibleOkModal(true);
-      setTitle('');
-      setDescription('');
-      setBudget('');
-      setDeadline('');
-      setPhotos([]);
     } finally {
       setIsUploading(false);
     }
@@ -121,7 +96,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>Предложить заказ</h2>
-        {balance < 500 && (
+        {(user.u_details?.balance || 0) < 500 && (
           <p className={style.error}>
             Пожалуйста пополните баланс на 500 рублей
           </p>
@@ -144,13 +119,15 @@ export default function AddOrderModal({
             placeholder="Напишите, что требуется выполнить"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-          />
+          ></textarea>
         </div>
 
         <div className={style.row1}>
           <div>
             <p className={style.mini_heading}>Бюджет</p>
-            <p className={style.balance}>Баланс {balance} ₽</p>
+            <p className={style.balance}>
+              Баланс {user.u_details?.balance || 0} ₽
+            </p>
             <div className={style.icon}>
               <input
                 className={style.input_balance}
@@ -190,7 +167,7 @@ export default function AddOrderModal({
           <p className={style.heading_h3}>Добавить фотографии</p>
           <div
             className={style.add_photo}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => inputRef.current && inputRef.current.click()}
             style={{ cursor: 'pointer' }}
           >
             <img src="/img/icons/camera.png" alt="" />
@@ -201,7 +178,7 @@ export default function AddOrderModal({
               multiple
               style={{ display: 'none' }}
               onChange={(e) => {
-                const files = Array.from(e.target.files || []);
+                const files = Array.from(e.target.files);
                 const newPhotos = files.map((file) => ({
                   file,
                   url: URL.createObjectURL(file),
@@ -210,48 +187,45 @@ export default function AddOrderModal({
               }}
             />
           </div>
-          {photos.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-              {photos.map((photo, idx) => (
-                <div key={photo.url} style={{ position: 'relative' }}>
-                  <img
-                    src={photo.url}
-                    alt="preview"
-                    style={{
-                      width: 60,
-                      height: 60,
-                      objectFit: 'cover',
-                      borderRadius: 8,
-                    }}
-                  />
-                  <button
-                    type="button"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      background: 'rgba(255,255,255,0.7)',
-                      border: 'none',
-                      cursor: 'pointer',
-                      borderRadius: '50%',
-                    }}
-                    onClick={() =>
-                      setPhotos((prev) => prev.filter((_, i) => i !== idx))
-                    }
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            {photos.map((photo, idx) => (
+              <div key={idx} style={{ position: 'relative' }}>
+                <img
+                  src={photo.url}
+                  alt="preview"
+                  style={{
+                    width: 60,
+                    height: 60,
+                    objectFit: 'cover',
+                    borderRadius: 8,
+                  }}
+                />
+                <button
+                  type="button"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    background: 'rgba(255,255,255,0.7)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    borderRadius: '50%',
+                  }}
+                  onClick={() =>
+                    setPhotos((prev) => prev.filter((_, i) => i !== idx))
+                  }
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className={style.buttons}>
           <div
             className={style.button}
-            onClick={handleSubmit}
-            aria-disabled={isUploading}
+            onClick={isUploading ? undefined : handleSubmit}
           >
             {isUploading ? 'Загрузка...' : 'Отправить'}
           </div>

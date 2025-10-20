@@ -1,13 +1,54 @@
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+
 import '../../scss/added.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { createRequest } from '../../services/request.service';
 import style from './AddDevices.module.css';
+import { createRequest } from '../../services/request.service';
+import appFetch from '../../services/api';
 
+// Вспомогательная функция для преобразования файла в base64
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
+
+// Исправленная функция для загрузки фото
+const uploadPhoto = async (file) => {
+  try {
+    const base64String = await fileToBase64(file);
+
+    const fileObject = {
+      file: JSON.stringify({
+        base64: base64String,
+        name: file.name,
+      }),
+    };
+    // --- КОНЕЦ ОТЛАДКИ ---
+
+    // Шаг 5: Отправляем запрос
+    const response = await appFetch('/dropbox/file/', {
+      method: 'POST',
+      body: fileObject,
+    });
+
+    const result = await response;
+
+    // Шаг 6: Анализируем ответ
+
+    console.log('Фото успешно загружено:', result);
+    return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
+  } catch (error) {
+    console.error('Ошибка в функции uploadPhoto:', error);
+    throw error;
+  }
+};
 function Profile() {
   const fileInputRef = useRef();
   const navigate = useNavigate();
@@ -16,32 +57,34 @@ function Profile() {
   const [error, setError] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [selectedCat, setSelectedCat] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [photos, setPhotos] = useState([
-    'https://cdn.motor1.com/images/mgl/VzMq0z/s1/bugatti-chiron-1500.webp',
-  ]);
+  const [photos, setPhotos] = useState([]);
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
+  const [selectedService, setSelectedService] = useState({
+    section: '',
+    subsection: '',
+    service: '',
+  });
+
   // загрузка фото
   const handleImageChange = (event) => {
-    const file = event.target.files[0];
-    console.log('внутри функции');
-
-    if (file) {
-      // Создаем URL для выбранного изображения
-      const imageUrl = URL.createObjectURL(file);
-
-      // добавить фото в общий список
-      var spisok = [...photos];
-      spisok.push(imageUrl);
-      setPhotos(spisok);
-      console.log(spisok);
+    const files = Array.from(event.target.files);
+    if (photos.length + files.length > 10) {
+      setError('Вы можете загрузить не более 10 файлов.');
+      return;
     }
+    setError('');
+    const newPhotos = files.map((file) => ({
+      file: file,
+      url: URL.createObjectURL(file),
+    }));
+    setPhotos((prev) => [...prev, ...newPhotos]);
   };
+
   const getData = async (type, sectionId, subsectionId) => {
     try {
+      // Your existing getData logic remains here...
       switch (type) {
         case 'section':
           const sectionsResponse = await fetch(
@@ -99,48 +142,52 @@ function Profile() {
             })),
           );
           break;
+         default:
       }
     } catch (error) {
       console.error(error);
     }
   };
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-
-    const data = {
-      title,
-      description,
-      client_price: price,
-      ...selectedService,
-    };
-    const files = fileInputRef.current?.files;
-    return createRequest({
-      data,
-      files,
-    })
-      .then((d) => {
-        console.log(d);
-        console.log(data);
-        navigate('/client/requests');
-      })
-      .catch((err) => {
-        if (err.message) {
-          return setError(err.message);
+    setError('');
+    try {
+      // Загрузка всех фото на сервер
+      const photoUrls = [];
+      for (const photo of photos) {
+        if (photo.file) {
+          const url = await uploadPhoto(photo.file);
+          photoUrls.push(url);
         }
-        setError('Проверьте корректность введённых данных');
-        console.log(err);
+      }
+
+      const data = {
+        title,
+        description,
+        client_price: price,
+        photoUrls,
+        ...selectedService,
+      };
+
+      await createRequest({
+        data,
+        files: undefined, // файлы уже загружены
       });
+      navigate('/client/requests');
+    } catch (err) {
+      if (err.message) {
+        return setError(err.message);
+      }
+      setError('Проверьте корректность введённых данных');
+      console.error(err);
+    }
   };
 
   useEffect(() => {
     document.title = 'Добавить устройства';
     getData('section');
   }, []);
-  const [selectedService, setSelectedService] = useState({
-    section: '',
-    subsection: '',
-    service: '',
-  });
+
   return (
     <section className="page_8">
       <div className="accommodation mobile-accommodation">
@@ -153,7 +200,6 @@ function Profile() {
               <div className="accommodation_text df align">
                 <div className="accom_1 mobile-accom_1">
                   <h2>Разместить устройство которого нет в списке</h2>
-
                   <h3>
                     Как сделать лучшее описание, чтобы получить отклики лучших
                     специалистов
@@ -173,10 +219,8 @@ function Profile() {
                           alt="img absent"
                         />
                       </div>
-
                       <h2>Уточните обьем работ</h2>
                     </div>
-
                     <div className="servic_text df align servic_text-mobile">
                       <div className="servic_img">
                         <img
@@ -186,7 +230,6 @@ function Profile() {
                       </div>
                       <h2>Как можно точно опишите результат</h2>
                     </div>
-
                     <div
                       className={`servic_text df align servic_text-mobile ${style.text_block}`}
                     >
@@ -196,10 +239,8 @@ function Profile() {
                           alt="img absent"
                         />
                       </div>
-
                       <h2>Опишите с каким мастером вы хотите работать</h2>
                     </div>
-
                     <div className="description">
                       <div className="description_text mobile-description_text">
                         <h2>Детальное описание задачи</h2>
@@ -211,11 +252,9 @@ function Profile() {
                             alt="img absent"
                           />
                         </div>
-
                         <textarea
                           required
-                          name=""
-                          id=""
+                          placeholder="Опишите подробно, что нужно сделать..."
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
                         />
@@ -236,7 +275,6 @@ function Profile() {
                         alt="img absent"
                       />
                     </div>
-
                     <div className="select-device__box">
                       <select
                         className="pick__price"
@@ -246,6 +284,8 @@ function Profile() {
                           setSelectedService((prev) => ({
                             ...prev,
                             section: e.target.value,
+                            subsection: '',
+                            service: '',
                           }));
                         }}
                       >
@@ -263,7 +303,6 @@ function Profile() {
                         value={selectedService.subsection}
                         disabled={!selectedService.section}
                         onChange={(e) => {
-                          console.log(selectedService);
                           getData(
                             'service',
                             selectedService.section,
@@ -272,6 +311,7 @@ function Profile() {
                           setSelectedService((prev) => ({
                             ...prev,
                             subsection: e.target.value,
+                            service: '',
                           }));
                         }}
                       >
@@ -285,6 +325,7 @@ function Profile() {
                         ))}
                       </select>
                       <select
+                        required
                         className="pick__price"
                         value={selectedService.service}
                         onChange={(e) =>
@@ -303,9 +344,6 @@ function Profile() {
                             {item.label}
                           </option>
                         ))}
-                        {/* {services.service_types.map((v) => Number(selectedCat) === v.category_id && (
-                                                    <option value={v.id} key={v.id}>{v.name}</option>
-                                                ))} */}
                       </select>
                     </div>
                   </div>
@@ -321,11 +359,10 @@ function Profile() {
                         alt="img absent"
                       />
                     </div>
-
                     <div className="heading_input df align">
                       <input
                         required
-                        type="text"
+                        type="number"
                         placeholder="цена.."
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
@@ -338,36 +375,36 @@ function Profile() {
             <div className={`right_col_photo ${style.photo_block}`}>
               <div className="accom_2 mobile-accom_2">
                 <h2>Файлы</h2>
-
                 <h3>Загрузите до 10 файлов</h3>
               </div>
-
               <div className={style.swiper_photo_row}>
                 <Swiper
-                  slidesPerView={4}
+                  slidesPerView={1}
                   spaceBetween={30}
                   navigation={true}
                   modules={[Navigation]}
                   className="mySwiper"
-                  breakpoints={{
-                    0: {
-                      slidesPerView: 1,
-                    },
-                    800: {
-                      slidesPerView: 1,
-                    },
-                    1124: {
-                      slidesPerView: 1,
-                    },
-                  }}
                 >
-                  {photos.map((src, index) => (
-                    <SwiperSlide key={index} className="">
-                      <img src={src} alt="" />
+                  {photos.length <= 0 ? (
+                    <SwiperSlide>
+                      <img
+                        src="/img/img-camera.png"
+                        className={style.swiperPhoto}
+                        alt=""
+                      />
                     </SwiperSlide>
-                  ))}
+                  ) : (
+                    photos.map((photo, index) => (
+                      <SwiperSlide key={index}>
+                        <img
+                          src={photo.url}
+                          alt={`upload-preview-${index}`}
+                          className={style.swiperPhoto}
+                        />
+                      </SwiperSlide>
+                    ))
+                  )}
                 </Swiper>
-
                 <div className="photo_upload">
                   <div className="photo_upload-img mobile-photo_upload-img">
                     <label htmlFor="upimg">

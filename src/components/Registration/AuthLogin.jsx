@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchUser } from '../../slices/user.slice';
+
 import { login } from '../../services/auth.service';
 
 import './login.css';
 import Popup from 'reactjs-popup';
+
+import { setToken } from '../../services/token.service';
 import {
   keepUserAuthorized,
   recoverPassword,
   recoverPasswordSend,
   recoverPasswordVerify,
 } from '../../services/user.service';
-import { setToken } from '../../services/token.service';
-import appFetch from '../../utilities/appFetch';
+import appFetch from '../../services/api';
+import { userKeys } from '../../queries';
 
 const RecoveryState = {
   IDLE: 0,
@@ -22,7 +24,7 @@ const RecoveryState = {
 };
 
 function AuthLogin() {
-  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [error, setError] = useState('');
@@ -161,7 +163,7 @@ function AuthLogin() {
 
     try {
       const response = await login(phone, password);
-      const userProfile = await appFetch('//user/authorized/car', {
+      const userProfile = await appFetch('user/authorized/car', {
         body: {
           u_hash: response.data.u_hash,
           token: response.data.token,
@@ -184,7 +186,7 @@ function AuthLogin() {
           c_id: Object.values(userProfile.data.car || {})[0].c_id,
         },
       });
-      dispatch(fetchUser());
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
       navigate('/');
     } catch (err) {
       console.log(err);

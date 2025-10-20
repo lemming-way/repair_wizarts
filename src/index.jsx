@@ -1,33 +1,29 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from "react-router-dom";
-import { Provider } from 'react-redux';
 import { QueryProvider } from './app/providers/QueryProvider';
+import { BrowserRouter } from "react-router-dom";
 import {CustomProvider} from 'rsuite';
 
+import App from './components/App';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
 import reportWebVitals from './reportWebVitals';
 import { NotificationsProvider } from './state/notifications/NotificationsContext';
-import App from './components/App';
-import store from './store';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
 );
 root.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <QueryProvider>
-        <NotificationsProvider>
-          <BrowserRouter>
-            <CustomProvider theme="dark">
-              <App />
-            </CustomProvider>
-          </BrowserRouter>
-        </NotificationsProvider>
-      </QueryProvider>
-    </Provider>
+    <QueryProvider>
+      <NotificationsProvider>
+        <BrowserRouter>
+          <CustomProvider theme="dark">
+            <App />
+          </CustomProvider>
+        </BrowserRouter>
+      </NotificationsProvider>
+    </QueryProvider>
   </React.StrictMode>
 );
 

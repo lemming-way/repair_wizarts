@@ -1,71 +1,116 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
+import Dropdown from 'react-bootstrap/Dropdown';
 import { Link } from 'react-router-dom';
-import style from './Allorders.module.css';
 
+import style from './Allorders.module.css';
+import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
-import EmailSettings from './EmailSettings';
-import Dropdown from 'react-bootstrap/Dropdown';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import appFetch from '../../utilities/appFetch';
 import { useUserQuery } from '../../hooks/useUserQuery';
 
+// Переименовал App в AllOrders для большей ясности
 function App() {
+  const { user } = useUserQuery();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('Все предложения');
   const [serviceInPage, setServiceInPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]); // Храним все загруженные заказы
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
-  const [categoryFilter, setCategoryFilter] = useState(null);
-  const [offersCountFilter, setOffersCountFilter] = useState([]);
-  const [budgetFilter, setBudgetFilter] = useState([]);
+  const [userOrderReqs, setUserOrderReqs] = useState(0);
+  // --- Состояния для фильтров ---
+  const [categoryFilter, setCategoryFilter] = useState(null); // null - нет фильтра
+  const [offersCountFilter, setOffersCountFilter] = useState([]); // [[5, 10], [20, null]]
+  const [budgetFilter, setBudgetFilter] = useState([]); // [[1000, 3000]]
   const [customPriceRange, setCustomPriceRange] = useState({
     min: '',
     max: '',
   });
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
 
+  const fetchUserOrderReqs = useCallback(async () => {
+    if (!user.u_id) {
+      console.warn('User ID not found, skipping fetch.');
+      return;
+    }
+
+    setIsLoading(true);
+    setFetchError(null);
+
+    try {
+      const allOrder = await appFetch('/drive', {
+        body: {
+          u_a_role: 2, // Роль "Водитель" (Мастер)
+          lc: 99999999999999, // Получить все
+        },
+      });
+
+      // Фильтруем заказы, на которые откликнулся текущий мастер
+      const filteredOrders = Object.values(
+        allOrder?.data?.booking || {},
+      ).filter(
+        (order) =>
+          order.b_options?.type === 'order' &&
+          order.drivers?.some((driver) => driver.u_id === user.u_id),
+      );
+
+      // Форматируем данные, чтобы в `drivers` был только объект текущего мастера
+      const formattedOrders = filteredOrders.map((item) => {
+        return {
+          ...item,
+          // Находим и сохраняем только данные нашего мастера для этого заказа
+          driverData: item.drivers.find(
+            (driver) => driver.u_id === user.u_id,
+          ),
+        };
+      });
+
+      // Фильтруем по статусу уже после основной загрузки
+      const ordersByStatus = formattedOrders.filter(() => true);
+      setUserOrderReqs(ordersByStatus.length);
+    } catch (error) {
+      console.error(error);
+      setFetchError(error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user.u_id]);
+  // Загрузка данных при монтировании компонента
   useEffect(() => {
     const fetchOrders = async () => {
       setIsLoading(true);
       setFetchError(null);
 
       try {
-        const data = await appFetch('drive/now', {
-          method: 'POST',
-          body: {
-            u_a_role: 2,
-            b_max_waiting: Math.floor(
-              (new Date().getTime() + 4 * 24 * 60 * 60 * 1000) / 1000,
-            ),
-          },
+        const dataNow = await appFetch('drive/now', {
+          body: { u_a_role: 2 },
         });
-        const allOrder = await appFetch('/drive', {
-          body: {
-            u_a_role: 2,
-          },
+        const dataAll = await appFetch('/drive', {
+          body: { u_a_role: 2 },
         });
-        const filteredOrders = Object.values({
-          ...(data.data.booking || {}),
-          ...(allOrder.data.booking || {}),
-        })
+
+        const combinedOrders = {
+          ...(dataNow.data.booking || {}),
+          ...(dataAll.data.booking || {}),
+        };
+
+        const initialFilteredOrders = Object.values(combinedOrders)
           .filter((order) => order.b_options?.type === 'order')
           .map((order) => ({
             ...order,
             isNew:
-              new Date().getTime() - new Date(order.b_created_at).getTime() <
+              new Date().getTime() - new Date(order.b_created).getTime() <
               2 * 24 * 60 * 60 * 1000,
           }));
 
-        setOrders(filteredOrders);
+        setAllOrders(initialFilteredOrders);
       } catch (error) {
         console.error(error);
         setFetchError(error.message);
@@ -75,29 +120,48 @@ function App() {
     };
 
     fetchOrders();
-  }, []);
+    fetchUserOrderReqs();
+  }, [fetchUserOrderReqs]);
+  const stats = useMemo(() => {
+    // Статистика считается на основе всех загруженных заказов, до применения фильтров
+    const totalProjects = allOrders.length;
 
-  // фильтрация заказов в зависимости от выбранного значения
-  const filteredOrders = orders.filter((order) => {
+    const totalAmount = allOrders.reduce((sum, order) => {
+      const price = Number(order.b_options?.client_price) || 0;
+      return sum + price;
+    }, 0);
+
+    // В данном контексте "Заказы" и "Проекты" - это одно и то же
+    const totalOrders = allOrders.length;
+
+    return {
+      totalProjects,
+      totalAmount,
+      totalOrders,
+    };
+  }, [allOrders]);
+  // --- Логика фильтрации ---
+  // Этот блок будет пересчитываться при каждом рендере, если изменится состояние фильтров
+  const filteredOrders = allOrders.filter((order) => {
+    // Исключить заказы, где владелец — текущий пользователь
     const ownerId =
       order.b_options?.author?.id ||
       order.b_options?.author?.u_id ||
       order.b_options?.u_id;
-    if (userId && ownerId && String(ownerId) === String(userId)) {
-      return false;
-    }
+    if (ownerId && String(ownerId) === String(user.u_id)) return false;
 
+    // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'Новые' && !order.isNew) return false;
     if (selectValue === 'Просмотренные' && order.isNew) return false;
 
-    // Фильтрация по категории (если выбрана)
-    if (categoryFilter && !order.category?.includes(categoryFilter)) {
+    // Фильтрация по категории
+    if (categoryFilter && order.b_options?.category !== categoryFilter) {
       return false;
     }
 
-    // Фильтрация по количеству предложений (если выбраны чекбоксы)
+    // Фильтрация по количеству предложений (откликов от мастеров)
     if (offersCountFilter.length > 0) {
-      const offersCount = order.c_options?.length ?? 0;
+      const offersCount = order.drivers?.length ?? 0;
       const match = offersCountFilter.some((range) => {
         const [min, max] = range;
         if (max === null) return offersCount >= min;
@@ -106,7 +170,7 @@ function App() {
       if (!match) return false;
     }
 
-    // Фильтрация по бюджету (если выбраны чекбоксы)
+    // Фильтрация по бюджету
     if (budgetFilter.length > 0) {
       const price = order.b_options?.client_price ?? 0;
       const match = budgetFilter.some((range) => {
@@ -126,7 +190,6 @@ function App() {
 
     return true;
   });
-
   return (
     <>
       {isVisibleEmailSettings && (
@@ -142,7 +205,7 @@ function App() {
             <Link to="/master/requests/orders#active">
               <div className="myorders">
                 <p>
-                  Мои отклики <span>1</span>
+                  Мои отклики <span>{userOrderReqs}</span>
                 </p>
               </div>
             </Link>
@@ -164,6 +227,7 @@ function App() {
 
       <div className={style.main__row}>
         <div className={style.main__column}>
+          {/* Передаем состояния и сеттеры в FilterBlock */}
           <FilterBlock
             categoryFilter={categoryFilter}
             setCategoryFilter={setCategoryFilter}
@@ -175,7 +239,7 @@ function App() {
             setCustomPriceRange={setCustomPriceRange}
           />
 
-          <StatsBlock />
+          <StatsBlock stats={stats} />
         </div>
 
         <div className={style.allorders}>
@@ -187,7 +251,6 @@ function App() {
             <div style={{ flex: 1 }}></div>
             <div className={style.flex_row_select}>
               <p className={style.heading__p}>Показать</p>
-
               <Dropdown>
                 <Dropdown.Toggle
                   variant="success"
@@ -196,7 +259,6 @@ function App() {
                 >
                   {selectValue}
                 </Dropdown.Toggle>
-
                 <Dropdown.Menu>
                   <Dropdown.Item
                     className={style.select__item}
@@ -226,7 +288,7 @@ function App() {
           ) : fetchError ? (
             <p>Ошибка загрузки: {fetchError}</p>
           ) : filteredOrders.length === 0 ? (
-            <p>Нет доступных заказов.</p>
+            <p>Нет доступных заказов, удовлетворяющих фильтрам.</p>
           ) : (
             <div>
               <div className={`${style.heading_table}`}>
@@ -239,7 +301,6 @@ function App() {
                   <p className="inter">Цена</p>
                 </div>
               </div>
-
               {filteredOrders
                 .slice(
                   (currentPage - 1) * serviceInPage,
@@ -256,7 +317,9 @@ function App() {
                           {order.b_options?.title || 'Без названия'}
                         </h3>
                       </Link>
-                      <p className={style.text_navigation}>{order.category}</p>
+                      <p className={style.text_navigation}>
+                        {order.b_options?.category}
+                      </p>
                       <div
                         className={style.row}
                         style={{
@@ -266,7 +329,7 @@ function App() {
                         }}
                       >
                         <p>осталось еще 3 дня</p>
-                        <p>предложений {order.c_options?.length ?? 0}</p>
+                        <p>предложений {order.drivers?.length ?? 0}</p>
                       </div>
                     </div>
 

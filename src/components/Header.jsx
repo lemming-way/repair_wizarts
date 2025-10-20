@@ -1,27 +1,23 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { selectUnreadMessages } from '../slices/messages.slice';
+
 import DropdownCountry from "./dropdownCountry";
 import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import SERVER_PATH from '../constants/SERVER_PATH';
+import { useLanguage } from '../state/language';
 import { useUserQuery } from '../hooks/useUserQuery';
+import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
 
-    const messages = useSelector(selectUnreadMessages)
-    const { user = {} } = useUserQuery();
-    const isAuthorized = !!user.u_id;
-    const isMaster = user.u_role === '2';
-    const avatarSrc = user?.avatar ? SERVER_PATH + user.avatar : '/img/blank.png';
-    const masterDetails = user?.u_details;
-    const masterBalance = masterDetails?.balance;
-
+    const { user } = useUserQuery()
+    const { unreadCount } = useUnreadMessagesQuery()
+    const text = useLanguage();
     return (
         <>
             <header >
@@ -36,7 +32,7 @@ function Header() {
                                     setVisibleCountry(false)
                                     setVisibleSetout(false)
                                 }}>
-                                    <span className="header__link">Услуги</span>
+                                    <span className="header__link">{text("Services")}</span>
                                     <img src="/img/afdsfads.png" alt="" />
                                 </div>
                             </DropdownService>
@@ -46,29 +42,29 @@ function Header() {
                                 setVisibleCountry(!visibleCountry)
                                 setVisibleSetout(false)
                             }}>
-                                <span className="header__link">Город</span>
+                                <span className="header__link">{text("City")}</span>
                                 <img src="/img/afdsfads.png" alt="" />
                             </div>
                             <DropdownCountry />
                         </li>
                         <li>
-                            <Link to="/articles" className="header__link">Статьи</Link>
+                            <Link to="/articles" className="header__link">{text("Articles")}</Link>
                         </li>
                         <li>
-                            <Link to="/reviews" className="header__link">Отзывы</Link>
+                            <Link to="/reviews" className="header__link">{text("Reviews")}</Link>
                         </li>
                         <li>
-                            <Link to="/contact" className="header__link">Контакты</Link>
+                            <Link to="/contact" className="header__link">{text("Contacts")}</Link>
                         </li>
                     </ul>
                     <div className="header__profile">
-                        {isAuthorized ? (
+                        {!!user.u_id ? (
                             <div className="header__profile">
-                                <Link to={"/client/requests/create/title"} className="header__button">Дать задание</Link>
+                                <Link to={"/client/requests/create/title"} className="header__button">{text("Give task")}</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={isMaster ? "/master/chat" : "/client/chat"}
+                                <Link to={user.u_role === '2' ? "/master/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -77,7 +73,7 @@ function Header() {
                                     }}
                                 >
                                     <img className="" src="/img/hfjsa.png" alt="" />
-                                    {messages?.count > 0 && <div className='chat-message-counter'>{messages.count}</div>}
+                                    {unreadCount > 0 && <div className='chat-message-counter'>{unreadCount}</div>}
                                 </Link>
                                 <div
                                     className='yosetout'
@@ -88,7 +84,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={avatarSrc}
+                                        src={SERVER_PATH + (user.avatar || '')}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -101,13 +97,13 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {isMaster && masterDetails && (
+                                {user.u_role === '2' && user.master?.[0] && (
                                     <>
                                         <p className='master__moneys'>
-                                            {parseFloat(masterBalance || 0).toFixed(2)}₽
+                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
                                         </p>
                                         <div className='master__moneys__full'>
-                                            <Link to="/master/wallet">Пополнить баланс</Link>
+                                            <Link to="/master/wallet">{text("Top up balance")}</Link>
                                         </div>
                                     </>
                                 )}
@@ -116,10 +112,10 @@ function Header() {
                         ) : (
                             <div className='header__profile'>
                                 <Link to="/login" className='login__link__pourhoie'>
-                                Вход
+                                    {text("Login")}
                                 </Link>
                                 <Link to="/register" className='regis__link__pourhoie'>
-                                    Регистрация
+                                    {text("Register")}
                                 </Link>
                             </div>
                         )}
