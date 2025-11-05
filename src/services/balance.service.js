@@ -1,4 +1,4 @@
-import appFetch from './api'
+import appFetch from '../utilities/appFetch'
 
 const getBalanceHistory = () => appFetch("user/deposit-history")
 

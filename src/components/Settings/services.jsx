@@ -11,12 +11,9 @@ import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
-
-
 function Services() {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
+  const { user } = useUserQuery();
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
@@ -25,11 +22,11 @@ function Services() {
     useState(null);
   //~ const [repairs, setRepairs] = useState([]);
   const [servicesBlocks, setServicesBlocks] = useState({});
-  const username = user?.u_details?.login;
+  //~ const username = user.u_details?.login;
   const { categories } = useCategoriesQuery();
 
   useEffect(() => {
-    if (!username) return;
+    if (!user.u_id) return;
     if (
       user.u_details?.section &&
       user.u_details?.subsection &&
@@ -59,7 +56,7 @@ function Services() {
       setServicesBlocks({ ...user.u_details.servicesBlocks });
     }
     //~ getMasterRepairsByUsername(username).then(setRepairs);
-  }, [user, username]);
+  }, [user]);
   useEffect(() => {
     var obj = {};
     if (!brandOptionSelected) {
@@ -102,6 +99,12 @@ function Services() {
     });
     setServicesBlocks(obj);
   }, [brandOptionSelected, servicesBlocks]);
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
+
   function changeInputs(value, key, field, index) {
     setServicesBlocks((prev) => {
       const updated = { ...prev };
@@ -189,29 +192,25 @@ function Services() {
 
     setServicesBlocks(obj);
   }
-  async function onSubmit(e) {
+  function onSubmit(e) {
     e.preventDefault();
-    if (!userId) {
-      return;
-    }
 
-    try {
-      await updateUser(
-        {
-          details: {
-            section: categoryMainOptionSelected || [],
-            subsection: categoryOptionSelected || [],
-            service: modelPhoneOptionSelected || [],
-            question: brandOptionSelected || [],
-            servicesBlocks: [],
-          },
+    updateUser(
+      {
+        details: {
+          section: categoryMainOptionSelected || [],
+          subsection: categoryOptionSelected || [],
+          service: modelPhoneOptionSelected || [],
+          question: brandOptionSelected || [],
+          servicesBlocks: [],
         },
-        userId,
-      );
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
-    } catch (err) {
+      },
+      user.u_id,
+    ).then( () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
+    } ).catch( err => {
       console.error(err);
-    }
+    } );
   }
   const categoriesMainOptions = categories.map((item) => ({
     label: item.name,
@@ -270,11 +269,6 @@ function Services() {
         })
       : [];
   });
-
-  // Early return if no user ID
-  if (!userId) {
-    return null;
-  }
 
   return (
     <div className={style.services_wrap}>

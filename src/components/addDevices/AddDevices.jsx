@@ -8,7 +8,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import style from './AddDevices.module.css';
 import { createRequest } from '../../services/request.service';
-import appFetch from '../../services/api';
+import appFetch from '../../utilities/appFetch';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>

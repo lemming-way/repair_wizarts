@@ -54,7 +54,7 @@ function Profile() {
 
   const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -77,8 +77,6 @@ function Profile() {
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
   const [business_model, setBusiness] = useState('Частный мастер');
-
-  const userId = user?.u_id;
 
   //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
     //~ try {
@@ -221,40 +219,6 @@ function Profile() {
     };
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    // const geo = await ymaps.geocode(form.address, { results: 1 });
-    // const [address_latitude, address_longitude] = geo.geoObjects
-    //   .get(0)
-    //   .geometry.getCoordinates();
-    const payload = {
-      ...form,
-      //~ gender,
-      details: {
-        ...form.details,
-        business_model,
-        section: categoryMainOptionSelected,
-        subsection: selectedSubsections,
-        service: selectedServices,
-      },
-    };
-    if (!userId) {
-      setError('');
-      setSuceeded(false);
-      return;
-    }
-
-    try {
-      await updateUser(payload, userId);
-      setError('');
-      setSuceeded(true);
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
-    } catch (err) {
-      setError(err.message);
-      setSuceeded(false);
-    }
-  };
-
   useEffect(() => {
     if (!user.u_id) return;
 
@@ -361,7 +325,7 @@ function Profile() {
     ) {
       fetchAllData();
     }
-  }, [user.u_id, categories, user]);
+  }, [categories, user]);
 
   useEffect(() => {
     document.title = 'Настройки';
@@ -371,9 +335,38 @@ function Profile() {
   }, [categories]);
 
   // Early return if no user ID
-  if (!userId) {
+  if (!user.u_id) {
     return null;
   }
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    // const geo = await ymaps.geocode(form.address, { results: 1 });
+    // const [address_latitude, address_longitude] = geo.geoObjects
+    //   .get(0)
+    //   .geometry.getCoordinates();
+    const payload = {
+      ...form,
+      //~ gender,
+      details: {
+        ...form.details,
+        business_model,
+        section: categoryMainOptionSelected,
+        subsection: selectedSubsections,
+        service: selectedServices,
+      },
+    };
+
+    try {
+      await updateUser(payload, user.u_id);
+      setError('');
+      setSuceeded(true);
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
+    } catch (err) {
+      setError(err.message);
+      setSuceeded(false);
+    }
+  };
 
   //   useEffect(() => {
   //     ymaps.ready(() => {

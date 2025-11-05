@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import ReactDom from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import { useUIState } from '../../state/ui';
+import { useGlobalState } from '../../state/global';
 
 // --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 function queryYMaps() {
@@ -39,14 +39,14 @@ function Map(props) {
     selectMaster, // Функция из родителя для выбора мастера
   } = props;
   const YMaps = useQuery( { queryKey: [ 'YMaps' ], queryFn: queryYMaps, placeholderData: null } ).data;
-  const ui = useUIState();
+  const mapLocation = useGlobalState( 'map:location' );
 
   const mapDefaultLocation = useMemo( () => {
     return {
-      center: [ ui.location.longitude, ui.location.latitude ],
+      center: [ mapLocation.longitude, mapLocation.latitude ],
       zoom: 10
     };
-  }, [ ui.location.latitude, ui.location.longitude ] );
+  }, [ mapLocation.latitude, mapLocation.longitude ] );
 
   return (
     <div style={{ width: '100%', height: '500px' }}>

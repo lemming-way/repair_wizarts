@@ -24,7 +24,7 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
   offers: any[];
 };
 
-const EMPTY_ARRAY = [] as unknown as QueryFnData;
+const EMPTY_ARRAY: any[] = [];
 
 export function useOffersQuery(
   requestId: string | number | null | undefined,

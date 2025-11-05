@@ -18,23 +18,14 @@ const VerificationInput = (props) => {
   const [code, setCode] = useState('');
 
   useEffect(() => {
-    if (!isModalOpen) {
+    if (!isModalOpen || !value) {
       return;
     }
 
     const send = async () => {
       try {
-        if (isEmail) {
-          const response = await sendEmailCode();
-          console.log(response);
-          return;
-        }
-
-        if (!value) {
-          return;
-        }
-
-        const response = await sendPhoneCode(value);
+        const sendFunc = isEmail ? sendEmailCode : sendPhoneCode;
+        const response = await sendFunc(value);
         console.log(response);
       } catch (error) {
         console.error(error);
@@ -48,21 +39,13 @@ const VerificationInput = (props) => {
     e.preventDefault();
     const trimmedCode = code.trim();
 
-    if (!trimmedCode) {
+    if (!value || !trimmedCode) {
       return;
     }
 
-    const send = isEmail
-      ? () => sendEmailVerificationCode(trimmedCode)
-      : () => {
-          if (!value) {
-            return Promise.reject(new Error('Phone number is required'));
-          }
+    const send = isEmail ? sendEmailVerificationCode : sendPhoneVerificationCode;
 
-          return sendPhoneVerificationCode(value, trimmedCode);
-        };
-
-    send()
+    send(value, trimmedCode)
       .then((v) => {
         console.log(v);
         setModalOpen(false);

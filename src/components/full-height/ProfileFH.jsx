@@ -7,13 +7,9 @@ import style from './ProfileFH.module.css';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 
-const EMPTY_USER = {};
-
 function ProfileFH() {
   const queryClient = useQueryClient();
-  const { user: queriedUser } = useUserQuery();
-  const user = queriedUser || EMPTY_USER;
-  const userId = user?.u_id;
+  const { user } = useUserQuery();
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -31,50 +27,13 @@ function ProfileFH() {
     password: '',
     new_password: '',
   });
+  const [visiblePassword, setVisiblePassword] = useState(false);
+  const [visiblePasswordConfirm, setVisiblePasswordConfirm] = useState(false);
+  // чтобы телефон подчинялся маске
+  const [mask_value, setMask_value] = useState('+7(9');
 
-  const getFormAttrs = (field) => {
-    const attrs = {};
-
-    attrs.value = form[field];
-    attrs.onChange = (e) =>
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
-
-    return attrs;
-  };
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-    if (!userId) {
-      return;
-    }
-
-    updateUser(form, userId)
-      .then((v) => {
-        setSucceeded(true);
-        setError('');
-        console.log(v);
-        queryClient.invalidateQueries({ queryKey: userKeys.all });
-      })
-      .catch((err) => console.log(err))
-      .catch((err) => {
-        setSucceeded(false);
-        setError(err.message);
-      });
-    if (form.password?.length > 0 && form.new_password?.length > 0) {
-      updatePassword(form)
-        .then((v) => {
-          setSucceeded(true);
-          setError('');
-          console.log(v);
-        })
-        .catch((err) => {
-          setSucceeded(false);
-          setError(err.message);
-        });
-    }
-  };
   useEffect(() => {
-    if (!userId || form.name) {
+    if (!user.u_id || form.name) {
       return;
     }
 
@@ -89,7 +48,7 @@ function ProfileFH() {
       setMask_value(user.u_phone);
     }
   }, [
-    userId,
+    user.u_id,
     user.u_name,
     user.u_family,
     user.u_phone,
@@ -101,10 +60,42 @@ function ProfileFH() {
     document.title = 'Настройки';
   }, []);
 
-  const [visiblePassword, setVisiblePassword] = useState(false);
-  const [visiblePasswordConfirm, setVisiblePasswordConfirm] = useState(false);
-  // чтобы телефон подчинялся маске
-  const [mask_value, setMask_value] = useState('+7(9');
+  if (!user.u_id) {
+    return null;
+  }
+
+  const getFormAttrs = (field) => {
+    const attrs = {};
+
+    attrs.value = form[field];
+    attrs.onChange = (e) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    return attrs;
+  };
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+
+    const promises = [
+      updateUser(form, user.u_id)
+        .then( () => queryClient.invalidateQueries({ queryKey: userKeys.all }) )  // todo: Перенести в state/user
+    ];
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
+      promises.push( updatePassword(form) );
+    }
+    Promise.all( promises )
+      .then(([ v1, v2 ]) => {
+        setSucceeded(true);
+        setError('');
+        console.log(v1);
+        console.log(v2);
+      })
+      .catch((err) => {
+        setSucceeded(false);
+        setError(err.message);
+      });
+  };
 
   function correctPhoneNumder(e) {
     var text = e.target.value;
@@ -138,10 +129,6 @@ function ProfileFH() {
     }
 
     setMask_value(new_text);
-  }
-
-  if (!userId) {
-    return null;
   }
 
   return (

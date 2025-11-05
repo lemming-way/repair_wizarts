@@ -6,7 +6,7 @@ import './added-devices.css';
 import styles from './AddedDevices.module.css';
 import { useService } from '../../hooks/useService';
 import { getClientRequests } from '../../services/request.service';
-import appFetch from '../../services/api';
+import appFetch from '../../utilities/appFetch';
 
 function AddedDevices() {
   const requests = useService(getClientRequests, []);

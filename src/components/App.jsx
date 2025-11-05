@@ -34,15 +34,13 @@ import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
 import Applications from './Applications/applications';
 import AuthLogin from './Registration/AuthLogin';
-import ClientRoute from './ClientRoute';
-import MasterRoute from './MasterRoute';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
 import Article from './Article';
 import { getLocation } from '../services/location.service';
 import { getToken } from '../services/token.service';
-import { getUserMode, updateUser } from '../services/user.service';
+import { updateUser } from '../services/user.service';
 import { useUserQuery } from '../hooks/useUserQuery';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
@@ -51,7 +49,6 @@ import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/Cho
 import MyOrdersMaster from './Orders/MyOrdersMaster';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
-
 import FChatKirill from './full-chat/fakeChat/Kirill';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
@@ -70,7 +67,7 @@ import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
 import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../hooks/useServicesQuery';
-import { useUIActions } from '../state/ui';
+import { setGlobal } from '../state/global';
 import { useNotifications } from '../state/notifications/NotificationsContext';
 import { QueryDevtools } from '../app/providers/QueryDevtools';
 
@@ -78,9 +75,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 function App() {
   const { user, status } = useUserQuery();
-  const userId = user?.u_id;
-  const __location__ = useLocation();
-  const { setAuthorization, setLoading, setLocation, setMaster } = useUIActions();
+  const location = useLocation();
   const { connect: connectNotifications } = useNotifications();
 
   const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
@@ -89,7 +84,7 @@ function App() {
 
   // Add visibility change tracking
   useEffect(() => {
-    if (!userId) {
+    if (!user.u_id) {
       return undefined;
     }
 
@@ -103,7 +98,7 @@ function App() {
             lastTimeBeenOnline: new Date().toISOString(),
           },
         },
-        userId,
+        user.u_id,
       );
     };
 
@@ -116,7 +111,7 @@ function App() {
             lastTimeBeenOnline: new Date().toISOString(),
           },
         },
-        userId,
+        user.u_id,
       );
     };
 
@@ -127,42 +122,31 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [userId]);
+  }, [user.u_id]);
 
   useEffect(() => {
-    const isMaster = getUserMode();
-    const location = getLocation();
+    const mapLocation = getLocation();
 
-    if (location) {
-      setLocation(location);
+    if (mapLocation) {
+      setGlobal( 'map:location', mapLocation );
     }
-    if (isMaster) {
-      setMaster(true);
-    }
-  }, [setLocation, setMaster]);
 
-  useEffect(() => {
     const currentVersion = new URLSearchParams(window.location.search).get(
       'main',
     );
     setCurrentHome(currentVersion || 'electron');
   }, []);
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      setLoading(false);
       return;
     }
 
     if (status === 'success') {
       connectNotifications();
-      setLoading(false);
-      setAuthorization(true);
     }
-    if (status === 'error') {
-      setLoading(false);
-    }
-  }, [connectNotifications, setAuthorization, setLoading, status]);
+  }, [connectNotifications, status]);
 
   if (!categories.length && areCategoriesLoading) {
     return 'Loading...';
@@ -204,7 +188,7 @@ function App() {
                 path="client/settings/wallet_history"
                 element={<WalletHistoryClient />}
               />
-              <Route path="client" element={<ClientRoute />}>
+              <Route path="client">
                 <Route path="settings" element={<ClientSettingsWrap />}>
                   <Route index element={<ProfileFH />} />
                   <Route path="picture" element={<WalletFH />} />
@@ -243,7 +227,7 @@ function App() {
                 {/* <Route path="feedback/:username" element={<ReviewsMaster />} /> */}
               </Route>
 
-              <Route basename="master" path="master" element={<MasterRoute />}>
+              <Route basename="master" path="master">
                 {/* Чат без связи с бэком, только заготовка */}
                 <Route element={<MasterChatWrap />}>
                   <Route path="chat" element={<FChatKirill />} />
@@ -288,7 +272,7 @@ function App() {
               </Route>
             </Routes>
           </main>
-          {__location__.pathname.includes('/chat') || <Footer />}
+          {location.pathname.includes('/chat') || <Footer />}
         </>
       )}
     </>

@@ -32,7 +32,7 @@ const Article = (props) => {
     });
 
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
-    const { user = {} } = useUserQuery()
+    const { user } = useUserQuery()
 
 
 

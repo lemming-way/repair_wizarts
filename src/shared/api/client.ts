@@ -1,3 +1,5 @@
+// todo: Разобраться здесь и навести порядок. Слишком много всего наворочено.
+
 import type { ApiError, RequestOptions, Result } from './types';
 import SERVER_PATH from '../../constants/SERVER_PATH.js';
 import { getToken, removeToken } from '../../services/token.service';
@@ -23,6 +25,7 @@ function toApiError(e: unknown, status = 0, correlationId?: string): ApiError {
 
 type AuthParams = Record<string, string>;
 
+// todo: Перенести это в token.service. Или наоборот оттуда сюда
 function getAuthParams(): AuthParams {
   const token = getToken();
 

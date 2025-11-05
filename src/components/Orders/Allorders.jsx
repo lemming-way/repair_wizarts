@@ -10,9 +10,9 @@ import style from './Allorders.module.css';
 import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
+import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
-import appFetch from '../../utilities/appFetch';
 import { useUserQuery } from '../../hooks/useUserQuery';
 
 // Переименовал App в AllOrders для большей ясности

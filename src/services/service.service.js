@@ -1,4 +1,4 @@
-import appFetch from './api';
+import appFetch from '../utilities/appFetch';
 
 const getServices = () => appFetch('service/all-services');
 

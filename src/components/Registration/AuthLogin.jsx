@@ -14,7 +14,7 @@ import {
   recoverPasswordSend,
   recoverPasswordVerify,
 } from '../../services/user.service';
-import appFetch from '../../services/api';
+import appFetch from '../../utilities/appFetch';
 import { userKeys } from '../../queries';
 
 const RecoveryState = {
@@ -186,7 +186,7 @@ function AuthLogin() {
           c_id: Object.values(userProfile.data.car || {})[0].c_id,
         },
       });
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
       navigate('/');
     } catch (err) {
       console.log(err);

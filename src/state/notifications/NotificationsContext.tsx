@@ -1,3 +1,4 @@
+// todo: Перевести на Query
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 

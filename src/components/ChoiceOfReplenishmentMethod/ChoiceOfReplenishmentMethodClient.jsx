@@ -14,8 +14,7 @@ import { userKeys } from '../../queries';
 
 function ChoiceOfReplenishmentMethodClient() {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
+  const { user } = useUserQuery();
   const navigator = useNavigate();
 
   // const [error, setError] = useState("")
@@ -88,7 +87,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>Пополнение счета</h3>
 
           <div>
-            {user?.u_details?.wallets ? (
+            {user.u_details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -100,8 +99,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {user?.u_details?.wallets[0]?.type} <br />
-                    {user?.u_details?.wallets[0]?.value}
+                    {user.u_details?.wallets[0]?.type} <br />
+                    {user.u_details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -205,12 +204,10 @@ function ChoiceOfReplenishmentMethodClient() {
             <button
               className={style.button}
               onClick={() => {
-                if (!userId) {
+                if (!user.u_id) {
                   return;
                 }
-                const oldHistory = user?.u_details?.history_of_pay
-                  ? user?.u_details?.history_of_pay
-                  : [];
+                const oldHistory = user.u_details?.history_of_pay || [];
                 const newPayment = {
                   cost: Number(cost),
                   type: 'зачисление',
@@ -222,18 +219,14 @@ function ChoiceOfReplenishmentMethodClient() {
                   {
                     details: {
                       balance:
-                        Number(cost) +
-                        Number(
-                          user?.u_details?.balance
-                            ? user?.u_details?.balance
-                            : 0,
-                        ),
+                        Number( cost ) +
+                        Number( user.u_details?.balance || 0 ),
                       history_of_pay: [...oldHistory, newPayment],
                     },
                   },
-                  userId,
+                  user.u_id,
                 ).then(() =>
-                  queryClient.invalidateQueries({ queryKey: userKeys.all }),
+                  queryClient.invalidateQueries({ queryKey: userKeys.all }), // todo: перенести в state/user
                 );
                 setStage(0);
               }}

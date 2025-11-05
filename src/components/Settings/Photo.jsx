@@ -2,19 +2,21 @@ import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import style from './SettingsMaster.module.css';
-import SERVER_PATH from '../../constants/SERVER_PATH';
 import { updateUserPhoto } from '../../services/user.service';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
 
 const Photo = () => {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const inputRef = useRef(null);
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
 
-  const userId = user?.u_id;
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -22,24 +24,16 @@ const Photo = () => {
 
     if (file) {
       try {
-        if (!userId) {
-          throw new Error('Пользователь не найден');
-        }
-        await updateUserPhoto(file, userId);
+        await updateUserPhoto(file, user.u_id);
         setSuceeded(true);
         setError('');
-        queryClient.invalidateQueries({ queryKey: userKeys.all });
+        queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
       } catch (err) {
         setError(err.message);
         setSuceeded(false);
       }
     }
   };
-
-  // Early return if no user ID
-  if (!userId) {
-    return null;
-  }
 
   return (
     <div className={`photo-wrap ${style.photo_wrap}`}>
@@ -50,13 +44,7 @@ const Photo = () => {
 
       <label htmlFor="profileLogoUpload">
         <img
-          src={
-            user.u_photo
-              ? user.u_photo
-              : user.avatar
-              ? SERVER_PATH + user.avatar
-              : '/img/img-camera.png'
-          }
+          src={user.u_photo || '/img/img-camera.png'}
           alt="Фото профиля"
           className="settings-picture"
         />

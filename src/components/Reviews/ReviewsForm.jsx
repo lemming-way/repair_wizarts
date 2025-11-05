@@ -9,8 +9,8 @@ import { useUserQuery } from '../../hooks/useUserQuery'
 const ReviewsForm = (props) => {
     const { user } = useUserQuery()
     const senderName = [
-        user?.u_name ?? '',
-        user?.u_family ?? '',
+        user.u_name ?? '',
+        user.u_family ?? '',
     ].filter(Boolean).join(' ').trim()
 
     const [modalOpen, setModalOpen] = useState(false)

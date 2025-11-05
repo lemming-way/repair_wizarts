@@ -1,15 +1,11 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useUserQuery } from '../../hooks/useUserQuery';
 
 function ChoiceOfReplenishmentMethodHistoryClient() {
-  const { user = {} } = useUserQuery();
-  const [history, setHistory] = useState([]);
-  useEffect(() => {
-    if (user?.u_details?.history_of_pay)
-      setHistory(user?.u_details?.history_of_pay);
-  }, [user?.u_details?.history_of_pay]);
+  const { user } = useUserQuery();
+  const history = user.u_details?.history_of_pay || [];
+
   const historyOfPaymentsItems = history.map((item) => (
     <div className="blocks">
       <div className="block df">
@@ -23,6 +19,7 @@ function ChoiceOfReplenishmentMethodHistoryClient() {
       </div>
     </div>
   ));
+
   return (
     <div className="middle-block-2 middle-block-2ffsdfas">
       <Link

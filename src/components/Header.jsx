@@ -5,7 +5,6 @@ import DropdownCountry from "./dropdownCountry";
 import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
-import SERVER_PATH from '../constants/SERVER_PATH';
 import { useLanguage } from '../state/language';
 import { useUserQuery } from '../hooks/useUserQuery';
 import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
@@ -14,10 +13,10 @@ function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
-
     const { user } = useUserQuery()
     const { unreadCount } = useUnreadMessagesQuery()
     const text = useLanguage();
+
     return (
         <>
             <header >
@@ -84,7 +83,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + (user.avatar || '')}
+                                        src={user.u_photo || '/img/icons/avatar.png'}
                                         width="40px"
                                         height="40px"
                                         alt=""

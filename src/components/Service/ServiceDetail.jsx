@@ -17,7 +17,6 @@ import YMap from '../Map';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../../hooks/useServicesQuery';
-import { useUIState } from '../../state/ui/UIStateContext';
 
 function ServiceDetail() {
   const test_price = [
@@ -87,8 +86,6 @@ function ServiceDetail() {
   const { id } = useParams();
   const { categories } = useCategoriesQuery();
   const { user } = useUserQuery();
-  const currentUser = user || {};
-  const ui = useUIState();
   const { services } = useServicesQuery();
   const servicesList = useMemo(() => {
     if (Array.isArray(services)) {
@@ -194,9 +191,9 @@ function ServiceDetail() {
   }, []);
 
   useEffect(() => {
-    setPhone(currentUser.u_phone);
-    setName(currentUser.u_name);
-  }, [currentUser.u_phone, currentUser.u_name]);
+    setPhone(user.u_phone);
+    setName(user.u_name);
+  }, [user.u_phone, user.u_name]);
 
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
@@ -211,8 +208,7 @@ function ServiceDetail() {
         {
           method: 'POST',
           body: { u_a_id: masterData.id },
-        },
-        true,
+        }
       );
       console.log(carResponse);
 
@@ -334,8 +330,7 @@ function ServiceDetail() {
         url,
         {
           body: requestBody,
-        },
-        true,
+        }
       ).then((v) => console.log('trueble', v));
 
       console.log(
@@ -708,7 +703,7 @@ function ServiceDetail() {
                   </h1>
                   <p style={{ marginBottom: '10px' }}>Официальные цены</p>
 
-                  {!ui.isAuthorized ? (
+                  {!user.u_id ? (
                     <div
                       className="modfdfsdafasal-error"
                       style={{ marginBottom: '10px' }}
@@ -728,7 +723,7 @@ function ServiceDetail() {
                       <input
                         type="text"
                         placeholder="Ваше имя"
-                        defaultValue={currentUser.u_name}
+                        defaultValue={user.u_name}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         // disabled
@@ -737,7 +732,7 @@ function ServiceDetail() {
                         className="ismrf"
                         type="text"
                         placeholder="Номер телефона"
-                        defaultValue={currentUser.u_phone}
+                        defaultValue={user.u_phone}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         // disabled

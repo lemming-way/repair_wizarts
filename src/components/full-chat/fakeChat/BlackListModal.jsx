@@ -60,7 +60,7 @@ export default function BlackListModal({ setVisibleBlackList }) {
         },
       },
       user.u_id,
-    ).then(() => queryClient.invalidateQueries({ queryKey: userKeys.all }));
+    ).then(() => queryClient.invalidateQueries({ queryKey: userKeys.all }));  // todo: перенести в state/user
     setBlackListData((prev) => prev.filter((user) => user.id !== id));
   };
 

@@ -139,9 +139,9 @@ const updateUserService = (data, id) =>
     body: JSON.stringify(data),
   });
 
-const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
+//~ const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
 
-const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
+//~ const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
 
 const recoverPassword = (payload) =>
   appFetch('user/recover-password', {
@@ -181,8 +181,8 @@ export {
   createUserCustomService,
   updateUserPhoto,
   getMasterByUsername,
-  getUserMode,
-  setUserMode,
+  //~ getUserMode,
+  //~ setUserMode,
   recoverPassword,
   recoverPasswordVerify,
   recoverPasswordSend,

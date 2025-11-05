@@ -1,10 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryProvider } from './app/providers/QueryProvider';
 import { BrowserRouter } from "react-router-dom";
+import { QueryClientProvider } from '@tanstack/react-query';
 import {CustomProvider} from 'rsuite';
 
 import App from './components/App';
+import { queryClient } from './app/queryClient';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
 import reportWebVitals from './reportWebVitals';
@@ -15,7 +16,7 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <QueryProvider>
+    <QueryClientProvider client={queryClient}>
       <NotificationsProvider>
         <BrowserRouter>
           <CustomProvider theme="dark">
@@ -23,7 +24,7 @@ root.render(
           </CustomProvider>
         </BrowserRouter>
       </NotificationsProvider>
-    </QueryProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
 

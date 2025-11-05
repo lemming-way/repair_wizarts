@@ -27,11 +27,10 @@ import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
 import { useUserQuery } from '../../../hooks/useUserQuery';
-import { useUIState } from '../../../state/ui/UIStateContext';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
-import appFetch from '../../../services/api';
+import appFetch from '../../../utilities/appFetch';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
@@ -1261,8 +1260,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 };
 
 function ChoiceOfReplenishmentMethodCard() {
-  const { user: authorizedUser } = useUserQuery();
-  const user = (authorizedUser as any) || ({} as any);
+  const { user } = useUserQuery();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1279,9 +1277,8 @@ function ChoiceOfReplenishmentMethodCard() {
     useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
-  const ui = useUIState();
   const userRequests = useService(
-    ui.isMaster ? getMasterOrders : getAllClientRequests,
+    user.u_role === '2' ? getMasterOrders : getAllClientRequests,
     [],
   );
 
@@ -1332,10 +1329,10 @@ function ChoiceOfReplenishmentMethodCard() {
       const client_id = currentChat.chatId.split('_')[0];
       const master_id = currentChat.chatId.split('_')[1];
 
-      appFetch(`user/${client_id}`, {}, true).then((v) =>
+      appFetch(`user/${client_id}`, {}).then((v) =>
         setCurrentUser(Object.values(v.data.user || {})[0] as object),
       );
-      appFetch(`user/${master_id}`, {}, true).then((v) =>
+      appFetch(`user/${master_id}`, {}).then((v) =>
         setMasterUser(Object.values(v.data.user || {})[0] as object),
       );
     }
@@ -1442,8 +1439,7 @@ function ChoiceOfReplenishmentMethodCard() {
         {
           method: 'POST',
           body: fileObject,
-        },
-        true,
+        }
       );
       const result = await response;
       return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
@@ -1567,7 +1563,7 @@ function ChoiceOfReplenishmentMethodCard() {
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'master' = ui.isMaster ? 'master' : 'client';
+    const role: 'client' | 'master' = user.u_role === '2' ? 'master' : 'client';
 
     // 1) загружаем все файлы → получаем постоянные URL
     const uploadedUrls: string[] = [];
@@ -1891,7 +1887,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   currentUser={currentUser}
                   masterUser={masterUser}
                   refetchRequests={userRequests.refetch}
-                  viewerIsMaster={ui.isMaster} // НОВОЕ
+                  viewerIsMaster={user.u_role === '2'} // НОВОЕ
                 />
               ))}
             </div>

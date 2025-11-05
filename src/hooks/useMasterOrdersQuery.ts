@@ -20,7 +20,7 @@ type Result = UseQueryResult<QueryFnData, QueryError> & {
   masterOrders: any[];
 };
 
-const EMPTY_ARRAY = [] as unknown as QueryFnData;
+const EMPTY_ARRAY: any[] = [];
 
 export function useMasterOrdersQuery(options?: Options): Result {
   const token = getToken();

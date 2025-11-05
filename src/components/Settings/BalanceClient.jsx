@@ -13,9 +13,7 @@ import { userKeys } from '../../queries';
 
 const BalanceClient = () => {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
-  const isAuthorized = !!userId;
+  const { user } = useUserQuery();
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
   const [isVisibleRow, setVisibleRow] = useState(false);
@@ -32,19 +30,19 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  const walletValue = user?.u_details?.wallets?.[0]?.value;
-  const userBalance = user?.u_details?.balance;
+  const walletValue = user.u_details?.wallets?.[0]?.value;
+  const userBalance = user.u_details?.balance;
 
   useEffect(() => {
-    if (!isAuthorized) {
+    if (!user.u_id) {
       return;
     }
       setInputCard(walletValue || 'не указано');
       setInputPrice(userBalance || '0.0');
       setCurrentPage(1); // сбрасываем страницу при смене данных
-  }, [isAuthorized, walletValue, userBalance]);
+  }, [user.u_id, walletValue, userBalance]);
 
-  const allPayments = user?.u_details?.history_of_pay || [];
+  const allPayments = user.u_details?.history_of_pay || [];
 
   // Apply filtering
   const filteredPayments = allPayments.filter((item) => {
@@ -99,7 +97,7 @@ const BalanceClient = () => {
     );
   });
 
-  if (!isAuthorized) {
+  if (!user.u_id) {
     return null;
   }
 
@@ -126,7 +124,7 @@ const BalanceClient = () => {
         <h3 className={style.heading}>Баланс</h3>
 
         <div className={style.wrap_row1}>
-          <p className={style.balance}>{user?.u_details?.balance || '0.0'}</p>
+          <p className={style.balance}>{user.u_details?.balance || '0.0'}</p>
 
           {!isVisibleRow && (
             <div className={style.buttons_row}>
@@ -142,7 +140,7 @@ const BalanceClient = () => {
             </div>
           )}
 
-          {isVisibleRow && user?.u_details?.wallets && (
+          {isVisibleRow && user.u_details?.wallets && (
             <div className={style.wrap_row1__row}>
               <select
                 className={style.select}
@@ -153,7 +151,7 @@ const BalanceClient = () => {
                   setInputCard(currentCard.value);
                 }}
               >
-                {user?.u_details?.wallets.map((item) => (
+                {user.u_details?.wallets.map((item) => (
                   <option key={item.type} value={item.type}>
                     {item.type}
                   </option>
@@ -176,8 +174,8 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = user?.u_details?.history_of_pay
-                      ? user?.u_details?.history_of_pay
+                    const oldHistory = user.u_details?.history_of_pay
+                      ? user.u_details?.history_of_pay
                       : [];
                     const newPayment = {
                       cost: Number(inputPrice),
@@ -186,19 +184,19 @@ const BalanceClient = () => {
                       status: 'Успешно',
                       title: 'Вывод средств',
                     };
-                    if (!userId) {
+                    if (!user.u_id) {
                       return;
                     }
                     updateUser(
                       {
                         details: {
                           balance:
-                            (user?.u_details?.balance || 0) -
+                            (user.u_details?.balance || 0) -
                             Number(inputPrice),
                           history_of_pay: [...oldHistory, newPayment],
                         },
                       },
-                      userId,
+                      user.u_id,
                     ).then(() =>
                       queryClient.invalidateQueries({ queryKey: userKeys.all }),
                     );

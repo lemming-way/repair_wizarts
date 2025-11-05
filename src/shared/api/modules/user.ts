@@ -62,7 +62,7 @@ export async function getProfile(): Promise<Result<UserProfile>> {
   return api.post<UserProfile>('user/authorized');
 }
 
-export async function updateProfile(data: UpdateProfilePayload, id?: number): Promise<Result<UserProfile>> {
+export async function updateProfile(data: UpdateProfilePayload): Promise<Result<UserProfile>> {
   const formattedDetails = Object.entries(data.details || {}).map(
     ([key, value]) =>
       value !== null || value !== undefined
@@ -71,7 +71,6 @@ export async function updateProfile(data: UpdateProfilePayload, id?: number): Pr
   );
 
   return api.post<UserProfile>('user', {
-    ...(typeof id === 'number' ? { u_a_id: id } : {}),
     data: JSON.stringify({
       u_name: data.name,
       u_family: data.lastname,
@@ -83,16 +82,12 @@ export async function updateProfile(data: UpdateProfilePayload, id?: number): Pr
   });
 }
 
-export async function deleteAccount(userId?: number): Promise<Result<void>> {
+export async function deleteAccount(): Promise<Result<void>> {
   const payload: Record<string, unknown> = {
     data: JSON.stringify({
       u_is_deleted: 1,
     }),
   };
-
-  if (typeof userId === 'number') {
-    payload.u_a_id = userId;
-  }
 
   return api.post<void>('user', payload);
 }

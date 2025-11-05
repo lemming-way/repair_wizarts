@@ -16,7 +16,7 @@ const fileToBase64 = (file) =>
   });
 
 // Функция для загрузки фото
-const uploadPhoto = async (file) => {
+const uploadPhoto = async (file) => {  // перенести в api
   const base64String = await fileToBase64(file);
   const token = getToken();
   const body = new URLSearchParams({

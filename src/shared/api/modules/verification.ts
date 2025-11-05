@@ -1,3 +1,4 @@
+// todo: Избавиться от галлюцинаций ИИ
 import { api } from '../client';
 import type { Result } from '../types';
 

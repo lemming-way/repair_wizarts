@@ -23,7 +23,7 @@ const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const isMaster = user.u_role === '2';
 
   const [isOpen, setIsOpen] = useState(false);

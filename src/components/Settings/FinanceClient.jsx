@@ -11,7 +11,7 @@ import { userKeys } from '../../queries';
 
 const FinanceClient = () => {
   const queryClient = useQueryClient();
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -19,32 +19,25 @@ const FinanceClient = () => {
   const [isVisibleSuccess, setVisibleSuccess] = useState(false);
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
-  const userId = user?.u_id;
-
   useEffect(() => {
-    if (userId) {
-      const cardWallet = user.u_details?.wallets?.find(
-        (w) => w.type === 'card',
-      );
-      const wmWallet = user.u_details?.wallets?.find(
-        (w) => w.type === 'webmoney',
-      );
+    const cardWallet = user.u_details?.wallets?.find(
+      (w) => w.type === 'card',
+    );
+    const wmWallet = user.u_details?.wallets?.find(
+      (w) => w.type === 'webmoney',
+    );
 
-      setCard(cardWallet?.value || '');
-      setWebmoney(wmWallet?.value || '');
-    }
-  }, [user.u_details?.wallets, userId]);
+    setCard(cardWallet?.value || '');
+    setWebmoney(wmWallet?.value || '');
+  }, [user.u_details?.wallets]);
 
   // Early return if no user ID
-  if (!userId) {
+  if (!user.u_id) {
     return null;
   }
 
   const onSubmitWallets = async () => {
     try {
-      if (!userId) {
-        throw new Error('Пользователь не найден');
-      }
       const wallets = [
         { type: 'card', value: card },
         { type: 'webmoney', value: webmoney },
@@ -54,11 +47,12 @@ const FinanceClient = () => {
         wallets,
       };
 
-      const res = await updateUser({ details: payload }, userId);
+      const res = await updateUser({ details: payload }, user.u_id);
+      console.log(res);
       if (!res?.code === '200') throw new Error('Ошибка при сохранении');
       setVisibleSuccess(true);
       setSuccess(true);
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
     } catch (err) {
       console.error(err);
       alert('Ошибка при сохранении кошельков');

@@ -22,7 +22,7 @@ const StylesStatusEnum = {
   Пауза: 'status_stop',
 };
 function MyApplications() {
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const navigator = useNavigate();
   const orders = useService(getMasterOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];

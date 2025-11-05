@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import OrderRowOffer from './OrderRowOffer';
 import style from './Orders.module.css';
-import appFetch from '../../services/api';
+import appFetch from '../../utilities/appFetch';
 
 function Offer() {
   const { id } = useParams();

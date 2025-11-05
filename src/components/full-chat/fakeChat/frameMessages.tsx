@@ -5,15 +5,12 @@ import { Link } from 'react-router-dom';
 import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
 import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
 import { useUserQuery } from '../../../hooks/useUserQuery';
-import { useUIState } from '../../../state/ui/UIStateContext';
 
 function App() {
-  const ui = useUIState();
-  const { user: authorizedUser } = useUserQuery();
-  const user = (authorizedUser as any) || ({} as any);
-  const masterOrdersQuery = useMasterOrdersQuery({ enabled: ui.isMaster });
-  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: !ui.isMaster });
-  const userRequests = ui.isMaster
+  const { user } = useUserQuery();
+  const masterOrdersQuery = useMasterOrdersQuery({ enabled: user.u_role === '2' });  // todo: Сделать отдельный параметр вместо enabled
+  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: user.u_role !== '2' });  // todo: Сделать отдельный параметр вместо enabled
+  const userRequests = user.u_role === '2'
     ? masterOrdersQuery.masterOrders
     : allClientRequestsQuery.clientRequests;
 

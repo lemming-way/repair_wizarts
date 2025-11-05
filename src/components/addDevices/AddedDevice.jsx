@@ -10,7 +10,7 @@ import style from './AddedDevice.module.css';
 import ModalConfirmDelete from './ModalConfirmDelete';
 import ModalConfirmPause from './ModalConfirmPause';
 import { deleteRequest, updateRequest } from '../../services/request.service';
-import appFetch from '../../services/api';
+import appFetch from '../../utilities/appFetch';
 import formatDate from '../../utilities/formatDate';
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -36,8 +36,7 @@ const uploadPhoto = async (file) => {
       {
         method: 'POST',
         body: fileObject,
-      },
-      true,
+      }
     );
     const result = await response;
     return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 import style from './AddFeedbackModal.module.css';
 import { createRequest } from '../../../services/request.service';
-import appFetch from '../../../services/api';
+import appFetch from '../../../utilities/appFetch';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -27,8 +27,7 @@ const uploadPhoto = async (file) => {
       {
         method: 'POST',
         body: fileObject,
-      },
-      true,
+      }
     );
     const result = await response;
     return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;

@@ -168,7 +168,7 @@ function Login() {
                 keepUserAuthorized(false)
             }
 
-            queryClient.invalidateQueries({ queryKey: userKeys.all })
+            queryClient.invalidateQueries({ queryKey: userKeys.all })  // todo: Перенести в state/user
             navigate("/")
         } catch (err) {
             setError("Некорректные данные")

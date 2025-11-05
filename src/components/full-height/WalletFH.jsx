@@ -8,9 +8,7 @@ import { userKeys } from '../../queries';
 
 function App() {
   const queryClient = useQueryClient();
-  const { user: queriedUser } = useUserQuery();
-  const user = queriedUser || {};
-  const userId = user?.u_id;
+  const { user } = useUserQuery();
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -31,19 +29,19 @@ function App() {
       setError('Файл не выбран');
       return;
     }
-    if (!userId) {
+    if (!user.u_id) {
       setError('Пользователь не найден');
       return;
     }
     try {
       const base64 = await convertToBase64(file);
-      const answer = await updateUserPhoto(base64, userId);
+      const answer = await updateUserPhoto(base64, user.u_id);
       console.log(answer);
       setSucceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSucceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');

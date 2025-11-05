@@ -1,4 +1,4 @@
-import appFetch from './api'
+import appFetch from '../utilities/appFetch'
 
 const getArticle = (id) => appFetch("index/article/" + id)
 

@@ -97,7 +97,7 @@ const LoginPage = () => {
         keepUserAuthorized(false)
       }
 
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
       navigate("/");
     } catch (err) {
       setError(text("Incorrect data"));

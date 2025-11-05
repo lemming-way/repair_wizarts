@@ -18,7 +18,6 @@ import { deleteUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import { useUserQuery } from '../../hooks/useUserQuery';
 import { userKeys } from '../../queries';
-import { useUIActions } from '../../state/ui';
 
 export default function SettingsMaster() {
   const navigate = useNavigate();
@@ -29,9 +28,7 @@ export default function SettingsMaster() {
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('данные сохранились');
-  const { user = {} } = useUserQuery();
-  const userId = user?.u_id;
-  const { setAuthorization } = useUIActions();
+  const { user } = useUserQuery();
 
   const [mask_value, setMask_value] = useState('+7(9');
 
@@ -47,6 +44,37 @@ export default function SettingsMaster() {
       login: '',
     },
   });
+
+  useEffect(() => {
+    if (user.u_id) {
+      const master = user;
+      const obj = {
+        phone: user.u_phone || '',
+        email: user.u_email || '',
+        details: {
+          availability_from: master.u_details?.availability_from || '00:00:00',
+          availability_to: master.u_details?.availability_to || '00:00:00',
+          status: master.u_details?.status || '',
+          mailing: master.u_details?.mailing || false,
+          is_active: master.u_details?.is_active || false,
+          login: master.u_details?.login || '',
+        },
+      };
+      setForm(obj);
+    }
+    if (user.u_photo) {
+      setPreviewUrl(user.u_photo);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    document.title = 'Настройки';
+    }, []);
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
 
   function correctPhoneNumder(e) {
     var text = e.target.value;
@@ -90,33 +118,30 @@ export default function SettingsMaster() {
 
     return attrs;
   };
-  const onSubmit = async (e) => {
+
+  const onSubmit = (e) => {
     e.preventDefault();
-    if (!userId) {
-      setError('Пользователь не найден');
-      setSuceeded(false);
-      return;
+
+    const promises = [
+      updateUser(form, user.u_id)
+        .then( () => {
+          queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
+        } )
+    ];
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
+      promises.push( updatePassword(form) );
     }
 
-    try {
-      await updateUser(form, userId);
-      setSuceeded(true);
-      setError('');
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
-    } catch (err) {
-      setError(err.message);
-      setSuceeded(false);
-    }
-    if (form.password?.length > 0 && form.new_password?.length > 0) {
-      try {
-        await updatePassword(form);
+    Promise.all( promises )
+      .then( () => {
         setSuceeded(true);
         setError('');
-      } catch (err) {
-        setSuceeded(false);
+
+      } )
+      .catch( err => {
         setError(err.message);
-      }
-    }
+        setSuceeded(false);
+      } );
   };
 
   const onProfilePicUpdate = async (e) => {
@@ -129,13 +154,13 @@ export default function SettingsMaster() {
     }
     try {
       const base64 = await convertToBase64(file);
-      await updateUserPhoto(base64, userId);
+      await updateUserPhoto(base64, user.u_id);
 
       setSuceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
-      queryClient.invalidateQueries({ queryKey: userKeys.all });
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSuceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');
@@ -159,41 +184,9 @@ export default function SettingsMaster() {
   const onDelete = (e) => {
     e.preventDefault();
     return deleteUser().then(() => {
-      setAuthorization(false);
       navigate('/');
     });
   };
-
-  useEffect(() => {
-    if (user.u_id) {
-      const master = user;
-      const obj = {
-        phone: user.u_phone || '',
-        email: user.u_email || '',
-        details: {
-          availability_from: master.u_details?.availability_from || '00:00:00',
-          availability_to: master.u_details?.availability_to || '00:00:00',
-          status: master.u_details?.status || '',
-          mailing: master.u_details?.mailing || false,
-          is_active: master.u_details?.is_active || false,
-          login: master.u_details?.login || '',
-        },
-      };
-      setForm(obj);
-    }
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    document.title = 'Настройки';
-    }, []);
-
-  // Early return if no user ID
-  if (!userId) {
-    return null;
-  }
 
   return (
     <>

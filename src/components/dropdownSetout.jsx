@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { removeToken } from '../services/token.service';
 import '../scss/setout.css';
-import { setUserMode } from '../services/user.service';
+//~ import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
 import { userKeys } from '../queries';
 import { useUserQuery } from '../hooks/useUserQuery';
@@ -11,17 +11,17 @@ import { useUserQuery } from '../hooks/useUserQuery';
 function DropdownService() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { user = {} } = useUserQuery();
+  const { user } = useUserQuery();
   const text = useLanguage();
 
-  const switchMode = () => {
-    const isMaster = user.u_role === "2";
-    if (!isMaster) {
-      setUserMode(true);
-      return;
-    }
-    setUserMode(false);
-  };
+  //~ const switchMode = () => {
+    //~ const isMaster = user.u_role === "2";
+    //~ if (!isMaster) {
+      //~ setUserMode(true);
+      //~ return;
+    //~ }
+    //~ setUserMode(false);
+  //~ };
 
   const logout = (e) => {
     queryClient.removeQueries({ queryKey: userKeys.all });
@@ -37,7 +37,7 @@ function DropdownService() {
           <div className="recent">
             <Link
               to="/client/settings"
-              onClick={switchMode}
+              onClick={/*switchMode*/null}
               className="repair__phone"
             >
               <h4>{text("I am a client")}</h4>
@@ -63,7 +63,7 @@ function DropdownService() {
           <div className="recent">
             <Link
               to="/master/wallet"
-              onClick={switchMode}
+              onClick={/*switchMode*/null}
               className="repair__phone"
             >
               <h4>{text("Become a master")}</h4>

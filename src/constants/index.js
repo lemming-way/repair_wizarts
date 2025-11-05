@@ -3,6 +3,10 @@
 const CONFIG = {
 	APP: {
 		language: 'ru',
+		'map:location': {
+			latitude: 59.9311,
+			longitude: 30.3609,
+		}
 	},
 	
 	SITE: {
