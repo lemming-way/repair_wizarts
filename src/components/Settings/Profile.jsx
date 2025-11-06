@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { selectUI } from '../../slices/ui.slice';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 // {
 //   "address": "csklncjksdncklsdncklsd",
 //   "login": "sdcsdcsdjkcnsdsdncklsd",
@@ -29,7 +30,6 @@ import { useLanguage } from '../../state/language';
 //       ]
 //   }
 // }
-const EMPTY_OBJECT = {}
 const experienceOptions = [
 { value: 1, label: '1 year' },
 { value: 2, label: '2 years' },
@@ -54,10 +54,9 @@ function Profile() {
   //     { value: 5, label: "Восстановление программного обеспечения" },
   //   ]; ###
 
-  const ui = useSelector(selectUI);
-  const { categories } = useSelector((state) => state.categories);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const { categories } = useCategoriesQuery();
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -79,8 +78,8 @@ function Profile() {
   });
   const [selectedSubsections, setSelectedSubsections] = useState(null);
   const [selectedServices, setSelectedServices] = useState(null);
-  //~ const [gender, setGender] = useState('Мужской');
   const [business_model, setBusiness] = useState('Independent technician');
+
   //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
     //~ try {
       //~ switch (type) {
@@ -222,35 +221,8 @@ function Profile() {
     };
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    // const geo = await ymaps.geocode(form.address, { results: 1 });
-    // const [address_latitude, address_longitude] = geo.geoObjects
-    //   .get(0)
-    //   .geometry.getCoordinates();
-    const payload = {
-      ...form,
-      //~ gender,
-      details: {
-        ...form.details,
-        business_model,
-        section: categoryMainOptionSelected,
-        subsection: selectedSubsections,
-        service: selectedServices,
-      },
-    };
-    try {
-      await updateUser(payload, user.u_id).then((v) => console.log(v));
-      setError('');
-      setSuceeded(true);
-    } catch (err) {
-      setError(err.message);
-      setSuceeded(false);
-    }
-  };
-
   useEffect(() => {
-    if (!ui.isAuthorized) return;
+    if (!user.u_id) return;
 
     const master = user;
 
@@ -276,12 +248,12 @@ function Profile() {
         setServices(
           categories.flatMap((item) => {
             const isSelectedSectionId = master.u_details.section.find(
-              (selec) => selec.value == item.id,
+              (selec) => String(selec.value) === String(item.id),
             );
             return isSelectedSectionId
               ? item.subsections.flatMap((item) => {
                   const isSelectedSubsection = master.u_details.subsection.find(
-                    (subSelec) => subSelec.value == item.id,
+                    (subSelec) => String(subSelec.value) === String(item.id),
                   );
                   return isSelectedSubsection
                     ? item.services.map((item) => ({
@@ -355,7 +327,7 @@ function Profile() {
     ) {
       fetchAllData();
     }
-  }, [ui.isAuthorized, categories, user]);
+  }, [categories, user]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -363,6 +335,41 @@ function Profile() {
       categories.map((item) => ({ label: item.name, value: item.id })),
     );
   }, [categories, text]);
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    // const geo = await ymaps.geocode(form.address, { results: 1 });
+    // const [address_latitude, address_longitude] = geo.geoObjects
+    //   .get(0)
+    //   .geometry.getCoordinates();
+    const payload = {
+      ...form,
+      //~ gender,
+      details: {
+        ...form.details,
+        business_model,
+        section: categoryMainOptionSelected,
+        subsection: selectedSubsections,
+        service: selectedServices,
+      },
+    };
+
+    try {
+      await updateUser(payload, user.u_id);
+      setError('');
+      setSuceeded(true);
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
+    } catch (err) {
+      setError(err.message);
+      setSuceeded(false);
+    }
+  };
+
   //   useEffect(() => {
   //     ymaps.ready(() => {
   //       const suggestView = new ymaps.SuggestView('suggest-input');

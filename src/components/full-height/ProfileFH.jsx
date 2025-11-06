@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updatePassword, updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
-
-const EMPTY_OBJECT = {}
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 function ProfileFH() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -25,7 +24,45 @@ function ProfileFH() {
     lastname: user.u_family || '',
     phone: user.u_phone || '',
     email: user.u_email || '',
+    password: '',
+    new_password: '',
   });
+  const [visiblePassword, setVisiblePassword] = useState(false);
+  const [visiblePasswordConfirm, setVisiblePasswordConfirm] = useState(false);
+  // чтобы телефон подчинялся маске
+  const [mask_value, setMask_value] = useState('+7(9');
+
+  useEffect(() => {
+    if (!user.u_id || form.name) {
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      name: user.u_name || '',
+      lastname: user.u_family || '',
+      phone: user.u_phone || '',
+      email: user.u_email || '',
+    }));
+    if (user.u_phone) {
+      setMask_value(user.u_phone);
+    }
+  }, [
+    user.u_id,
+    user.u_name,
+    user.u_family,
+    user.u_phone,
+    user.u_email,
+    form.name,
+  ]);
+
+  useEffect(() => {
+    document.title = 'Настройки';
+  }, []);
+
+  if (!user.u_id) {
+    return null;
+  }
 
   const getFormAttrs = (field) => {
     const attrs = {};
@@ -39,49 +76,26 @@ function ProfileFH() {
 
   const onSubmit = (e) => {
     e.preventDefault();
-    updateUser(form, user.u_id)
-      .then((v) => {
+
+    const promises = [
+      updateUser(form, user.u_id)
+        .then( () => queryClient.invalidateQueries({ queryKey: userKeys.all }) )  // todo: Перенести в state/user
+    ];
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
+      promises.push( updatePassword(form) );
+    }
+    Promise.all( promises )
+      .then(([ v1, v2 ]) => {
         setSucceeded(true);
         setError('');
-        console.log(v);
+        console.log(v1);
+        console.log(v2);
       })
-      .catch((err) => console.log(err))
       .catch((err) => {
         setSucceeded(false);
         setError(err.message);
       });
-    if (form.password?.length > 0 && form.new_password?.length > 0) {
-      updatePassword(form)
-        .then((v) => {
-          setSucceeded(true);
-          setError('');
-          console.log(v);
-        })
-        .catch((err) => {
-          setSucceeded(false);
-          setError(err.message);
-        });
-    }
   };
-  useEffect(() => {
-    if (Object.keys(user) && !form.name) {
-      setForm({
-        name: user.u_name,
-        lastname: user.u_family,
-        phone: user.u_phone,
-        email: user.u_email,
-      });
-    }
-  }, [user, form.name]);
-
-  useEffect(() => {
-    document.title = 'Настройки';
-  }, []);
-
-  const [visiblePassword, setVisiblePassword] = useState(false);
-  const [visiblePasswordConfirm, setVisiblePasswordConfirm] = useState(false);
-  // чтобы телефон подчинялся маске
-  const [mask_value, setMask_value] = useState('+7(9');
 
   function correctPhoneNumder(e) {
     var text = e.target.value;
@@ -145,14 +159,14 @@ function ProfileFH() {
             {...getFormAttrs('lastname')}
           />
           <VerificationInput
-            isConfirmed={user.is_phone_verified}
+            isConfirmed={user.u_phone_checked === '1'}
             {...getFormAttrs('phone')}
             mask_value={mask_value}
             onChangeMask={correctPhoneNumder}
           />
           <VerificationInput
             isEmail
-            isConfirmed={user.is_email_verified}
+            isConfirmed={user.u_email_checked === '1'}
             value={form.email || ''}
             {...getFormAttrs('email')}
           />

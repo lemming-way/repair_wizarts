@@ -4,7 +4,6 @@ import React, {
     useState,
     Suspense
 } from 'react'
-import { useSelector } from 'react-redux'
 import { useParams, Link } from 'react-router-dom'
 
 import styles from './Article.module.css'
@@ -17,8 +16,8 @@ import {
     getArticle,
     getArticles
 } from '../../services/article.service'
-import { selectUI } from '../../slices/ui.slice'
 import { useLanguage } from '../../state/language'
+import { useUserQuery } from '../../hooks/useUserQuery'
 
 const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
@@ -27,29 +26,27 @@ const Article = (props) => {
     const text = useLanguage()
     const { id } = useParams()
     const [articles, setArticles] = useState([])
-    // врмеенно для тестов
-    // const [data, setData] = useState({ })
-    const data = {
+    const [data, setData] = useState({
         title: "Заголовок статьи", // Заголовок статьи
         views: 123,                // Количество просмотров
         created_at: "2023-10-05T00:00:00Z", // Дата создания статьи (в формате ISO)
         text: "<p>Содержимое статьи в формате HTML.</p>" // Содержимое статьи в HTML
-    };
-    
+    });
+
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
-    const ui = useSelector(selectUI)
+    const { user } = useUserQuery()
 
 
 
     useEffect(() => {
-        getArticle(id).then((data) => {
-            if (data.cover_image) {
-                const path = SERVER_PATH + data.cover_image
+        getArticle(id).then((articleData) => {
+            if (articleData.cover_image) {
+                const path = SERVER_PATH + articleData.cover_image
                 setHeaderStyle({ background: `center / cover no-repeat url("${path}")` })
-                // setData(data)
+                setData(articleData)
                 return
             }
-            // setData(data)
+            setData(articleData)
             setHeaderStyle({ background: `url("${backgroundImg}")` })
         })
         getArticles().then(setArticles)
@@ -98,6 +95,7 @@ const Article = (props) => {
 
             <div className={styles.body}>
                 <div
+                    data-testid="article-body"
                     className={`${styles.bodyContent} ${offsetContent? styles.offset_content : ""}`}
                     dangerouslySetInnerHTML={{
                         __html: DOMPurify.sanitize(
@@ -121,7 +119,7 @@ const Article = (props) => {
                     </div>
                 : null}
                 <div className={styles.bodyActions}>
-                    <Link to={ui.isAuthorized ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>{text('Make repairs')}</Link>
+                    <Link to={user.u_id ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
                 </div>
             </div>
             <ArticleComments

@@ -28,8 +28,7 @@ const uploadPhoto = async (file) => {
       {
         method: 'POST',
         body: fileObject,
-      },
-      true,
+      }
     );
     const result = await response;
     return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;

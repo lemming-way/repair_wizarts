@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import MobileMenu from './MobileMenu';
@@ -12,8 +11,7 @@ import ListItem from '../../components/ListItem/ListItem';
 import './header.scss';
 import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
-import { selectUI } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -25,9 +23,8 @@ const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
-  const ui = useSelector(selectUI);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
+  const isMaster = user.u_role === '2';
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -51,7 +48,6 @@ const Toolbar = () => {
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
-  console.log(ui.isAuthorized);
   return (
     <header className={styles['toolbar-header']}>
       <div className={`${styles.toolbar} appContainer`}>
@@ -89,9 +85,9 @@ const Toolbar = () => {
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
         <div className="header__profile">
-          {ui.isAuthorized ? (
+          {!!user.u_id ? (
             <div className="header__profile">
-              {ui.isMaster ? (
+              {isMaster ? (
                 <Link
                   to={'/client/requests/create/title'}
                   className="header__button"
@@ -110,8 +106,8 @@ const Toolbar = () => {
               <a className="header__icons" href="tel:+79697148750">
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
-              <Link
-                to={ui.isMaster ? '/master/chat' : '/client/chat'}
+                <Link
+                  to={isMaster ? '/master/chat' : '/client/chat'}
                 className="header__icons"
                 style={{ display: 'flex', position: 'relative' }}
                 onClick={() => {
@@ -130,7 +126,7 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={user.u_photo ? user.u_photo : '/img/icons/avatar.png'}
+                  src={user.u_photo || '/img/icons/avatar.png'}
                   width="40px"
                   height="40px"
                   alt=""
@@ -202,7 +198,7 @@ const Toolbar = () => {
       <div
         className={[
           styles.toolbar_burger2,
-          ui.isAuthorized
+          !!user.u_id
             ? styles.toolbar_burger2_visibility_none
             : styles.toolbar_burger2_visibility_block,
         ].join(' ')}

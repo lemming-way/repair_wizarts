@@ -12,7 +12,7 @@ const RegistrationUserPage = () => {
   const text = useLanguage(); // функция для перевода
 
   useEffect(() => {
-    document.title =  text('Registration');
+    document.title = text('Registration');
   }, [text]);
 
   const navigate = useNavigate();
@@ -51,10 +51,11 @@ const RegistrationUserPage = () => {
       <div className={`${styles.registrationUserPage} appContainer`}>
         <h1 className={styles.registrationUserPage_title}>{text('Registration')}</h1>
          <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
-           {/*{error && (*/}
-           {/*// В старом коде className="auth-err"*/}
-           {/*<Error error={error} />*/}
-           {/*)}*/}
+           {error && (
+             <p className={styles.registrationUserPage_form_error} role="alert">
+               {error}
+             </p>
+           )}
            <input
              className={styles.registrationUserPage_form_input}
              type="text"

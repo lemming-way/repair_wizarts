@@ -2,20 +2,21 @@ import { useState, useEffect } from 'react';
 import '../../scss/ChoiceOfReplenishmentMethod.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import style from './style.module.css';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import { useLanguage } from '../../state/language';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 function ChoiceOfReplenishmentMethodClient() {
   const text = useLanguage();
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   const navigator = useNavigate();
 
   // const [error, setError] = useState("")
@@ -88,7 +89,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>{text('Top up balance')}</h3>
 
           <div>
-            {user?.u_details?.wallets ? (
+            {user.u_details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -100,8 +101,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {user?.u_details?.wallets[0]?.type} <br />
-                    {user?.u_details?.wallets[0]?.value}
+                    {user.u_details?.wallets[0]?.type} <br />
+                    {user.u_details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -207,9 +208,10 @@ function ChoiceOfReplenishmentMethodClient() {
             <button
               className={style.button}
               onClick={() => {
-                const oldHistory = user?.u_details?.history_of_pay
-                  ? user?.u_details?.history_of_pay
-                  : [];
+                if (!user.u_id) {
+                  return;
+                }
+                const oldHistory = user.u_details?.history_of_pay || [];
                 const newPayment = {
                   cost: Number(cost),
                   type: 'Credit',
@@ -217,16 +219,19 @@ function ChoiceOfReplenishmentMethodClient() {
                   status: 'Active',
                   title: 'Credit',
                 };
-                updateUser({
-                  details: {
-                    balance:
-                      Number(cost) +
-                      Number(
-                        user?.u_details.balance ? user?.u_details.balance : 0,
-                      ),
-                    history_of_pay: [...oldHistory, newPayment],
+                updateUser(
+                  {
+                    details: {
+                      balance:
+                        Number( cost ) +
+                        Number( user.u_details?.balance || 0 ),
+                      history_of_pay: [...oldHistory, newPayment],
+                    },
                   },
-                });
+                  user.u_id,
+                ).then(() =>
+                  queryClient.invalidateQueries({ queryKey: userKeys.all }), // todo: перенести в state/user
+                );
                 setStage(0);
               }}
             >

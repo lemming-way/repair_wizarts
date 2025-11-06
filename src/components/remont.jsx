@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 
 import style from './remont.module.css';
 import { useLanguage } from '../state/language';
 
 import '../scss/remont.css';
+import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
 
 function Remont() {
   const text = useLanguage();
   const { sectionId, subsectionId } = useParams();
+  const normalizedSectionId = sectionId ? String(sectionId) : '';
   const [currentServices, setCurrentServices] = useState([]);
   console.log(sectionId, subsectionId);
-  const { categories } = useSelector((state) => state.categories);
+  const { categories } = useCategoriesQuery();
 
   useEffect(() => {
     const getData = async () => {
@@ -47,7 +48,9 @@ function Remont() {
       );
     }
   }, [currentServices]);
-  const selectedService = categories.find((item) => item.id == sectionId);
+  const selectedService = categories.find(
+    (item) => String(item.id) === normalizedSectionId,
+  );
   const searchParam = new URLSearchParams(window.location.search).get('search');
   return (
     <section

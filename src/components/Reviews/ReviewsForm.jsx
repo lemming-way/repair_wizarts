@@ -1,16 +1,19 @@
 import { useState } from 'react'
-import { useSelector } from 'react-redux'
 import { Rating } from 'react-simple-star-rating'
 import { Popup } from 'reactjs-popup'
 
 import styles from './Reviews.module.css'
 import { createReview } from '../../services/reviews.service'
-import { selectUser } from '../../slices/user.slice'
 import { useLanguage } from '../../state/language'
+import { useUserQuery } from '../../hooks/useUserQuery'
 
 const ReviewsForm = (props) => {
     const text = useLanguage()
-    const user = useSelector(selectUser)
+    const { user } = useUserQuery()
+    const senderName = [
+        user.u_name ?? '',
+        user.u_family ?? '',
+    ].filter(Boolean).join(' ').trim()
 
     const [modalOpen, setModalOpen] = useState(false)
     const openModal = () => setModalOpen(true)
@@ -27,7 +30,7 @@ const ReviewsForm = (props) => {
         return createReview({
             rating,
             message,
-            sender: `${user.name} ${user.lastname}`
+            sender: senderName
         }).then(() => openModal())
     }
 

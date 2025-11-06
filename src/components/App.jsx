@@ -1,9 +1,6 @@
 import { useEffect } from 'react';
 
-import { fetchUser, selectUser, selectUserStatus } from '../slices/user.slice';
-
 import '../scss/swiper.css';
-import { useDispatch, useSelector } from 'react-redux';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
 import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClient';
@@ -37,23 +34,14 @@ import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
 import Applications from './Applications/applications';
 import AuthLogin from './Registration/AuthLogin';
-import ClientRoute from './ClientRoute';
-import MasterRoute from './MasterRoute';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
 import Article from './Article';
-import FetchStatus from '../constants/FetchStatus';
-import { fetchServices } from '../slices/services.slice';
-import {
-  setAuthorization,
-  setLoading,
-  setLocation,
-  setMaster,
-} from '../slices/ui.slice';
 import { getLocation } from '../services/location.service';
 import { getToken } from '../services/token.service';
-import { getUserMode, updateUser } from '../services/user.service';
+import { updateUser } from '../services/user.service';
+import { useUserQuery } from '../hooks/useUserQuery';
 import PersonalRequests from './Orders/PersonalRequests';
 import Articles from './Article/Articles';
 import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
@@ -61,7 +49,6 @@ import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/Cho
 import MyOrdersMaster from './Orders/MyOrdersMaster';
 import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './Orders/AddedDevicesPage';
-
 import FChatKirill from './full-chat/fakeChat/Kirill';
 import Home from './Home';
 import FinanceClient from './Settings/FinanceClient';
@@ -75,47 +62,46 @@ import Register from './Registration/register';
 import Remont from './remont';
 import { ServiceDetail } from './Service';
 import BalanceClient from './Settings/BalanceClient';
-import { setCategories } from '../slices/cateories.slice';
 import Footer from '../UI/Footer/FooterDesktop';
 import Toolbar from '../UI/Toolbar/Toolbar';
+import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
+import { useServicesQuery } from '../hooks/useServicesQuery';
+import { setGlobal } from '../state/global';
+import { useNotifications } from '../state/notifications/NotificationsContext';
+import { QueryDevtools } from '../app/providers/QueryDevtools';
+
+const isDevelopment = process.env.NODE_ENV === 'development';  // todo: Перенести в /index
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
-  const __location__ = useLocation();
-  const dispatch = useDispatch();
+  const { user, status } = useUserQuery();
+  const location = useLocation();
+  const { connect: connectNotifications } = useNotifications();
 
-  const userStatus = useSelector(selectUserStatus);
-  const { categories } = useSelector((state) => state.categories);
+  const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
+  useServicesQuery();
 
   // Add visibility change tracking
   useEffect(() => {
+    if (!user.u_id) {
+      return undefined;
+    }
+
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        updateUser(
-          {
-            details: {
-              isOnline: false,
-              lastTimeBeenOnline: new Date().toISOString(),
-            },
+      const isVisible = document.visibilityState === 'visible';
+
+      updateUser(
+        {
+          details: {
+            isOnline: isVisible,
+            lastTimeBeenOnline: new Date().toISOString(),
           },
-          user.u_id,
-        );
-      } else if (document.visibilityState === 'visible') {
-        updateUser(
-          {
-            details: {
-              isOnline: true,
-              lastTimeBeenOnline: new Date().toISOString(),
-            },
-          },
-          user.u_id,
-        );
-      }
+        },
+        user.u_id,
+      );
     };
 
     // Add page unload tracking
-    const handleBeforeUnload = (event) => {
+    const handleBeforeUnload = () => {
       updateUser(
         {
           details: {
@@ -134,80 +120,28 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [dispatch, user.u_id]);
+  }, [user.u_id]);
 
   useEffect(() => {
-    const isMaster = getUserMode();
-    const location = getLocation();
+    const mapLocation = getLocation();
 
-    if (location) {
-      dispatch(setLocation(location));
+    if (mapLocation) {
+      setGlobal( 'map:location', mapLocation );
     }
-    if (isMaster) {
-      dispatch(setMaster(true));
-    }
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     const token = getToken();
-    if (token) dispatch(fetchUser());
-  }, [__location__.pathname, dispatch]);
+    if (!token) {
+      return;
+    }
 
-  useEffect(() => {
-    const fetchFullDataAboutCategories = async () => {
-      try {
-        const sectionData = JSON.parse(localStorage.getItem('sections'));
-        console.log(sectionData);
-        if (sectionData) return dispatch(setCategories(sectionData));
-        const response = await fetch(
-          'https://profiback.itest24.com/api/full-data',
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${'123'}`,
-            },
-          },
-        );
-        const data = await response.json();
-        data.forEach((item) =>
-          item.subsections
-            .slice(0, 5)
-            .forEach((item) => item.services.slice(0, 5)),
-        );
-        localStorage.setItem('sections', JSON.stringify(data));
-        dispatch(setCategories(data));
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    if (status === 'success') {
+      connectNotifications();
+    }
+  }, [connectNotifications, status]);
 
-    if (categories.length === 0) {
-      fetchFullDataAboutCategories();
-    }
-  }, [categories, dispatch]);
-  useEffect(() => {
-    const token = getToken();
-    if (userStatus === FetchStatus.IDLE) {
-      if (token) {
-        dispatch(fetchUser());
-        //dispatch(fetchMessages());
-      } else {
-        dispatch(setLoading(false));
-      }
-
-      // dispatch({ type: 'notifications/disconnect' });
-      dispatch(fetchServices());
-    }
-    if (userStatus === FetchStatus.SUCCEEDED) {
-      dispatch({ type: 'notifications/connect' });
-      dispatch(setLoading(false));
-      dispatch(setAuthorization(true));
-    }
-    if (userStatus === FetchStatus.FAILED) {
-      dispatch(setLoading(false));
-    }
-  }, [userStatus, dispatch]);
-  if (categories.length === 0) {
+  if (!categories.length && areCategoriesLoading) {
     return 'Loading...';
   }
 
@@ -215,6 +149,7 @@ function App() {
     <>
       {/* <Notifications /> */}
       <Toolbar />
+      {isDevelopment ? <QueryDevtools /> : null}
       <main>
         <Routes>
           <Route>
@@ -238,17 +173,17 @@ function App() {
               <Route path="client" element={<Register />} />
             </Route>
           </Route>
-          <Route
-            path="client/settings/wallet_history"
-            element={<WalletHistoryClient />}
-          />
-          <Route path="client" element={<ClientRoute />}>
+          <Route path="client">
             <Route path="settings" element={<ClientSettingsWrap />}>
               <Route index element={<ProfileFH />} />
               <Route path="picture" element={<WalletFH />} />
               <Route
                 path="wallet"
                 element={<ChoiceOfReplenishmentMethodClient />}
+              />
+              <Route
+                path="wallet_history"
+                element={<WalletHistoryClient />}
               />
               <Route path="finance" element={<FinanceClient />} />
               <Route path="balance" element={<BalanceClient />} />
@@ -281,7 +216,7 @@ function App() {
             {/* <Route path="feedback/:username" element={<ReviewsMaster />} /> */}
           </Route>
 
-          <Route basename="master" path="master" element={<MasterRoute />}>
+          <Route basename="master" path="master">
             {/* Чат без связи с бэком, только заготовка */}
             <Route element={<MasterChatWrap />}>
               <Route path="chat" element={<FChatKirill />} />
@@ -326,7 +261,7 @@ function App() {
           </Route>
         </Routes>
       </main>
-      {__location__.pathname.includes('/chat') || <Footer />}
+      {location.pathname.includes('/chat') || <Footer />}
     </>
   );
 }

@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react"
-import { useDispatch } from "react-redux"
 
 import { useLanguage } from '../state/language';
+import { setGlobal } from '../state/global';
 import { getCities } from "../services/location.service"
-import { setLocation } from "../slices/ui.slice"
 
 function DropdownCountry() {
-    const dispatch = useDispatch()
     const text = useLanguage() 
     const [query, setQuery] = useState("")
     const [cities, setCities] = useState([])
@@ -30,10 +28,10 @@ function DropdownCountry() {
                     <div className="recent" key={v.id}>
                         <h4
                             style={{ cursor: 'pointer' }}
-                            onClick={(e) => dispatch(setLocation({
+                            onClick={(e) => setGlobal('map:location', {
                                 latitude: v.latitude,
                                 longitude: v.longitude
-                            }))}
+                            })}
                         >
                             {v.name}
                         </h4>

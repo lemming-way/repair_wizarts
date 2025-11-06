@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { updateUserPhoto } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import './startff.css';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -28,14 +29,19 @@ function App() {
       setError('Файл не выбран');
       return;
     }
+    if (!user.u_id) {
+      setError('Пользователь не найден');
+      return;
+    }
     try {
       const base64 = await convertToBase64(file);
-      const answer = await updateUserPhoto(base64, user.id);
+      const answer = await updateUserPhoto(base64, user.u_id);
       console.log(answer);
       setSucceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSucceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');

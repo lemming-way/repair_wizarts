@@ -1,12 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import {
   updateUserPhoto,
   updateUser,
   updatePassword,
 } from '../../services/user.service';
-
-import { useDispatch, useSelector } from 'react-redux';
 
 import '../../scss/settings-all.css';
 import 'swiper/css';
@@ -16,26 +15,22 @@ import Popup from 'reactjs-popup';
 
 import style from './SettingsMaster.module.css';
 import { deleteUser } from '../../services/user.service';
-import { selectUI, setAuthorization } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';
-
-const EMPTY_OBJECT = {}
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 export default function SettingsMaster() {
   const text = useLanguage();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const inputRef = useRef(null);
+  const queryClient = useQueryClient();
 
   const [deleteAccount, setDeleteAccount] = useState(false);
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('data saved');
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || EMPTY_OBJECT)[0] || EMPTY_OBJECT;
-  const ui = useSelector(selectUI);
+  const { user } = useUserQuery();
 
   const [mask_value, setMask_value] = useState('+7(9');
 
@@ -51,6 +46,37 @@ export default function SettingsMaster() {
       login: '',
     },
   });
+
+  useEffect(() => {
+    if (user.u_id) {
+      const master = user;
+      const obj = {
+        phone: user.u_phone || '',
+        email: user.u_email || '',
+        details: {
+          availability_from: master.u_details?.availability_from || '00:00:00',
+          availability_to: master.u_details?.availability_to || '00:00:00',
+          status: master.u_details?.status || '',
+          mailing: master.u_details?.mailing || false,
+          is_active: master.u_details?.is_active || false,
+          login: master.u_details?.login || '',
+        },
+      };
+      setForm(obj);
+    }
+    if (user.u_photo) {
+      setPreviewUrl(user.u_photo);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    document.title = text('Settings');
+  }, [text]);
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
 
   function correctPhoneNumder(e) {
     var text = e.target.value;
@@ -94,29 +120,30 @@ export default function SettingsMaster() {
 
     return attrs;
   };
+
   const onSubmit = (e) => {
     e.preventDefault();
-    updateUser(form, user.id)
-      .then((v) => {
+
+    const promises = [
+      updateUser(form, user.u_id)
+        .then( () => {
+          queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
+        } )
+    ];
+    if (form.password?.length > 0 && form.new_password?.length > 0) {
+      promises.push( updatePassword(form) );
+    }
+
+    Promise.all( promises )
+      .then( () => {
         setSuceeded(true);
         setError('');
-      })
-      .catch((err) => {
+
+      } )
+      .catch( err => {
         setError(err.message);
         setSuceeded(false);
-      });
-    if (form.password?.length > 0 && form.new_password?.length > 0) {
-      updatePassword(form)
-        .then((v) => {
-          setSuceeded(true);
-          setError('');
-          console.log(v);
-        })
-        .catch((err) => {
-          setSuceeded(false);
-          setError(err.message);
-        });
-    }
+      } );
   };
 
   const onProfilePicUpdate = async (e) => {
@@ -129,12 +156,13 @@ export default function SettingsMaster() {
     }
     try {
       const base64 = await convertToBase64(file);
-      await updateUserPhoto(base64, user.id);
+      await updateUserPhoto(base64, user.u_id);
 
       setSuceeded(true);
       setError('');
       setPreviewUrl(base64);
       inputRef.current.value = '';
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSuceeded(false);
       setError(err.message || text('An error occurred while uploading'));
@@ -158,34 +186,10 @@ export default function SettingsMaster() {
   const onDelete = (e) => {
     e.preventDefault();
     return deleteUser().then(() => {
-      dispatch(setAuthorization(false));
       navigate('/');
     });
   };
-  useEffect(() => {
-    if (ui.isAuthorized) {
-      const master = user;
-      const obj = {
-        phone: user.u_phone || '',
-        email: user.u_email || '',
-        details: {
-          availability_from: master.u_details?.availability_from || '00:00:00',
-          availability_to: master.u_details?.availability_to || '00:00:00',
-          status: master.u_details?.status || '',
-          mailing: master.u_details?.mailing || false,
-          is_active: master.u_details?.is_active || false,
-          login: master.u_details?.login || '',
-        },
-      };
-      setForm(obj);
-    }
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
-    }
-  }, [ui, user]);
-  useEffect(() => {
-    document.title = text('Settings');
-  }, [text]);
+
   return (
     <>
       <div className={`mini-main df ${style.form_wrap_flex}`}>

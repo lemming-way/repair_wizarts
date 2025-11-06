@@ -1,16 +1,22 @@
 import { useRef, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './SettingsMaster.module.css';
-import SERVER_PATH from '../../constants/SERVER_PATH';
 import { updateUserPhoto } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const Photo = () => {
-  const user = useSelector(selectUser);
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   const inputRef = useRef(null);
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -18,9 +24,10 @@ const Photo = () => {
 
     if (file) {
       try {
-        await updateUserPhoto(file, user.id);
+        await updateUserPhoto(file, user.u_id);
         setSuceeded(true);
         setError('');
+        queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
       } catch (err) {
         setError(err.message);
         setSuceeded(false);
@@ -37,7 +44,7 @@ const Photo = () => {
 
       <label htmlFor="profileLogoUpload">
         <img
-          src={user.avatar ? SERVER_PATH + user.avatar : '/img/img-camera.png'}
+          src={user.u_photo || '/img/img-camera.png'}
           alt="Фото профиля"
           className="settings-picture"
         />

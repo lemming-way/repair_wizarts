@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
 import '../../scss/detail.scss';
@@ -13,14 +12,12 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import style from './serviceDetail.module.scss';
 import ServiceDetailContext from './ServiceDetailContext';
 import { createRequest } from '../../services/request.service';
-import { selectServices } from '../../slices/services.slice';
-import { selectUI } from '../../slices/ui.slice';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import YMap from '../Map';
 import { useLanguage } from '../../state/language';
-
-const EMPTY_ARRAY = []
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
+import { useServicesQuery } from '../../hooks/useServicesQuery';
 
 function ServiceDetail() {
   const text = useLanguage();
@@ -89,18 +86,34 @@ function ServiceDetail() {
   const [visibleConfirm, setVisibleConfirm] = useState(false);
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
-  const { categories } = useSelector((state) => state.categories);
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
-  const ui = useSelector(selectUI);
-  const services = useSelector(selectServices);
+  const { categories } = useCategoriesQuery();
+  const { user } = useUserQuery();
+  const { services } = useServicesQuery();
+  const servicesList = useMemo(() => {
+    if (Array.isArray(services)) {
+      return services;
+    }
+
+    if (services && Array.isArray(services?.devices)) {
+      return services.devices;
+    }
+
+    if (services && Array.isArray(services?.repair_types)) {
+      return services.repair_types;
+    }
+
+    return [];
+  }, [services]);
   //~ const repairMasters = getMasterRepairs();
   const { sectionId, subsectionId } = useParams();
-  const device =
-    useMemo(
-      () => services?.find((v) => v.id === +id) || {},
-      [services, id],
-    ) || EMPTY_ARRAY;
+  const normalizedSectionId = sectionId ? String(sectionId) : '';
+  const normalizedSubsectionId = subsectionId ? String(subsectionId) : '';
+  const device = useMemo(
+    () =>
+      servicesList.find((serviceItem) => String(serviceItem?.id) === String(id)) ||
+      {},
+    [servicesList, id],
+  );
 
   const [show, setShow] = useState(false);
 
@@ -187,7 +200,7 @@ function ServiceDetail() {
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
     setShowSmallModal(true);
-    setShowBigModal(true);
+    setShowBigModal(false);
     setMasterCarData(null);
 
     try {
@@ -197,8 +210,7 @@ function ServiceDetail() {
         {
           method: 'POST',
           body: { u_a_id: masterData.id },
-        },
-        true,
+        }
       );
       console.log(carResponse);
 
@@ -227,6 +239,11 @@ function ServiceDetail() {
     setShowBigModal(false);
     setSelectedMaster({});
     setMasterCarData(null);
+  };
+
+  const handleShowBigModal = () => {
+    setShowSmallModal(false);
+    setShowBigModal(true);
   };
 
   //~ const [invoice, setInvoice] = useState({
@@ -311,8 +328,7 @@ function ServiceDetail() {
         url,
         {
           body: requestBody,
-        },
-        true,
+        }
       ).then((v) => console.log('trueble', v));
 
       console.log(
@@ -341,7 +357,7 @@ function ServiceDetail() {
       client_price: getSumPrice(),
       section: sectionId,
       subsection: subsectionId,
-      service: selectServices[0],
+      service: servicesList[0],
       orderType: 'request',
       winnerMaster: selectedMaster.id,
       type: 'order',
@@ -416,9 +432,9 @@ function ServiceDetail() {
   }
   // todo: проверить, совпадают ли типы categ.id, sectionId, subsec.id, subsectionId и можно ли использовать строгое сравнение
   const prices = categories.flatMap((categ) => {
-    return categ.id == sectionId
+    return String(categ.id) === normalizedSectionId
       ? categ.subsections.flatMap((subsec) => {
-          return subsec.id == subsectionId
+          return String(subsec.id) === normalizedSubsectionId
             ? subsec.services.map((service) => ({
                 price: 100,
                 model: subsec.name,
@@ -678,7 +694,7 @@ function ServiceDetail() {
                   </h1>
                   <p style={{ marginBottom: '10px' }}>{text('Official prices')}</p>
 
-                  {!ui.isAuthorized ? (
+                  {!user.u_id ? (
                     <div
                       className="modfdfsdafasal-error"
                       style={{ marginBottom: '10px' }}
@@ -903,7 +919,13 @@ function ServiceDetail() {
                       <Link to={`/client/feedback/${selectedMaster.id}`}>
                         {selectedMaster.reviews} {text('reviews received')}
                       </Link>
-                      <a href="#">{text('Learn more')}</a>
+                      <button
+                        type="button"
+                        className="info_master__row-link"
+                        onClick={handleShowBigModal}
+                      >
+                        {text('Learn more')}
+                      </button>
                     </div>
                   </div>
                 </div>

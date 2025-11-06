@@ -1,116 +1,90 @@
-import { getToken } from "./token.service"
-import { SERVER_WSPATH } from "../constants/SERVER_PATH"
-import popit from "../img/popit.wav"
-import { updateMessages } from "../slices/messages.slice"
-import { pushNotification } from "../slices/notifications.slice"
-import { updateOnline } from "../slices/online.slice"
+const noop = (..._args) => {}
 
-let ws = null
-
-const NotificationType = {
-    UPDATE_ONLINE: 1,
-    CREATED_MESSAGE: 2,
-    ACCEPTED_ORDER: 3,
-    CREATED_OFFER: 4,
-    ACCEPTED_OFFER: 5
+// Временная заглушка: WebSocket уведомления отключены до новой реализации
+const connect = ({ onNotification, onOnlineUpdate } = {}) => {
+  noop(onNotification, onOnlineUpdate)
 }
 
-const dispatchDependOnTheType = (dispatch, data) => {
-    const audio = new Audio(popit)
+const disconnect = () => {}
 
-    switch (data.type) {
-        case NotificationType.UPDATE_ONLINE:
-            dispatch(updateOnline(data.online_users))
-            break
-        case NotificationType.CREATED_MESSAGE:
-            dispatch(updateMessages(data.unread_messages))
-            audio.play()
-            break
-        case NotificationType.ACCEPTED_ORDER:
-            dispatch(pushNotification({
-                title: 'Заявка одобрена!',
-                description: 'Чтобы пройти в чат нажмите на это сообщение.',
-                url: '/client/chat'
-            }))
-            audio.play()
-            break
-        case NotificationType.CREATED_OFFER:
-            dispatch(pushNotification({
-                title: `На ваш заказ #${data.request} поступило предложение!`,
-                description: 'Чтобы просмотреть все предложения на этот заказ, нажмите это сообщение.',
-                url: '/client/offers/' + data.request
-            }))
-            audio.play()
-            break
-        case NotificationType.ACCEPTED_OFFER:
-            dispatch(pushNotification({
-                title: "Ваше предложение было принято!",
-                description: 'Чтобы пройти в чат нажмите на это сообщение',
-                url: '/master/chat'
-            }))
-            audio.play()
-            break
-        default:
-            break
-    }
-}
+//~ const createAudio = () =>
+    //~ typeof Audio !== 'undefined' ? new Audio(popit) : null
 
-const connect = (dispatch) => {
-    ws = new WebSocket(SERVER_WSPATH + "ws/notifications?token=" + getToken()?.access_token)
-    ws?.addEventListener("open", (e) => {
-        ws.send(JSON.stringify({ type: NotificationType.UPDATE_ONLINE }))
-        setInterval(() => ws.send(
-            JSON.stringify({ type: NotificationType.UPDATE_ONLINE })),
-            30000
-        )
-    })
-    ws?.addEventListener("message", (e) => dispatchDependOnTheType(
-        dispatch, JSON.parse(e.data)
-    ))
-}
+//~ const playAudio = (audio) => {
+    //~ if (!audio || typeof audio.play !== 'function') {
+        //~ return
+    //~ }
 
-const disconnect = () => {
-    ws?.close()
-}
+    //~ audio.play().catch(() => {
+        //~ // ignored – autoplay restrictions can prevent playback
+    //~ })
+//~ }
 
-const sendMessageCreate = (receiver_id, dialog_id, message_id) => {
-    ws.send(JSON.stringify({
-        type: NotificationType.CREATED_MESSAGE,
-        receiver_id,
-        dialog_id,
-        message_id
-    }))
-}
+//~ const dispatchDependOnTheType = (data) => {
+    //~ const audio = createAudio()
 
-const sendOrderAccept = (receiver_id, order_id) => {
-    ws.send(JSON.stringify({
-        type: NotificationType.ACCEPTED_ORDER,
-        receiver_id,
-        order_id
-    }))
-}
+    //~ switch (data.type) {
+        //~ case NotificationType.UPDATE_ONLINE: {
+            //~ const onlineUsers = Array.isArray(data.online_users)
+                //~ ? data.online_users
+                //~ : []
+            //~ handlersRef.onOnlineUpdate?.(onlineUsers)
+            //~ break
+        //~ }
+        //~ case NotificationType.CREATED_MESSAGE: {
+            //~ if (Array.isArray(data.unread_messages)) {
+                //~ queryClient.setQueryData(messageKeys.unread(), data.unread_messages)
+            //~ } else {
+                //~ queryClient.invalidateQueries({ queryKey: messageKeys.unread() })
+            //~ }
+            //~ playAudio(audio)
+            //~ break
+        //~ }
+        //~ case NotificationType.ACCEPTED_ORDER: {
+            //~ handlersRef.onNotification?.({
+                //~ title: 'Заявка одобрена!',
+                //~ description: 'Чтобы пройти в чат нажмите на это сообщение.',
+                //~ url: '/client/chat',
+            //~ })
+            //~ playAudio(audio)
+            //~ break
+        //~ }
+        //~ case NotificationType.CREATED_OFFER: {
+            //~ handlersRef.onNotification?.({
+                //~ title: `На ваш заказ #${data.request} поступило предложение!`,
+                //~ description: 'Чтобы просмотреть все предложения на этот заказ, нажмите это сообщение.',
+                //~ url: '/client/offers/' + data.request,
+            //~ })
+            //~ playAudio(audio)
+            //~ break
+        //~ }
+        //~ case NotificationType.ACCEPTED_OFFER: {
+            //~ handlersRef.onNotification?.({
+                //~ title: 'Ваше предложение было принято!',
+                //~ description: 'Чтобы пройти в чат нажмите на это сообщение',
+                //~ url: '/master/chat',
+            //~ })
+            //~ playAudio(audio)
+            //~ break
+        //~ }
+        //~ default:
+            //~ break
+    //~ }
+//~ }
 
-const sendOfferCreate = (receiver_id, request_id) => {
-    ws.send(JSON.stringify({
-        type: NotificationType.CREATED_OFFER,
-        receiver_id,
-        request_id
-    }))
-}
+const sendMessageCreate = () => {}
 
-const sendOfferAccept = (receiver_id, offer_id) => {
-    ws.send(JSON.stringify({
-        type: NotificationType.ACCEPTED_OFFER,
-        receiver_id,
-        offer_id
-    }))
-}
+const sendOrderAccept = () => {}
+
+const sendOfferCreate = () => {}
+
+const sendOfferAccept = () => {}
 
 export {
-    connect,
-    disconnect,
-    sendMessageCreate,
-    sendOrderAccept,
-    sendOfferCreate,
-    sendOfferAccept
+  connect,
+  disconnect,
+  sendMessageCreate,
+  sendOrderAccept,
+  sendOfferCreate,
+  sendOfferAccept,
 }

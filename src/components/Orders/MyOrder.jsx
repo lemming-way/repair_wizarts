@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import Popup from 'reactjs-popup';
@@ -11,18 +10,15 @@ import ModalDelete from './ModalDelete';
 import ModalEditOrder from './ModalEditOrder';
 import styles from './MyOrder.module.css';
 import { deleteRequest, updateRequest } from '../../services/request.service';
-import { selectUser } from '../../slices/user.slice';
-import appFetch from '../../utilities/appFetch';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
+import appFetch from '../../utilities/appFetch';
 import style from '../Service/serviceDetail.module.scss';
 import { useLanguage } from '../../state/language';
-
-
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function MyOrder() {
   const text = useLanguage();
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
@@ -40,6 +36,9 @@ function MyOrder() {
   const [currentOrder, setCurrentOrder] = useState({});
   useEffect(() => {
     const fetchData = async () => {
+      if (!user.u_id) {
+        return;
+      }
       try {
         console.log(id);
         await appFetch(`drive/get/`, {
@@ -75,7 +74,7 @@ function MyOrder() {
       }
     };
     fetchData();
-  }, [id]);
+  }, [user.u_id, id]);
   //~ const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
     //~ try {
       //~ switch (type) {
@@ -258,7 +257,7 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    {text('Balance')}: {user?.u_details?.balance || 0}р
+                    {text('Balance')}: {user.u_details?.balance || 0}р
                   </label>
                 </div>
                 <p>{text('Standard risk-free deal price')}</p>

@@ -13,7 +13,6 @@ import React, {
 } from 'react';
 import '../../../scss/chat.css';
 import Dropdown from 'react-multilevel-dropdown';
-import { useSelector } from 'react-redux';
 import MediaQuery from 'react-responsive';
 import { Link, useParams } from 'react-router-dom';
 
@@ -23,12 +22,11 @@ import BlackListModal from './BlackListModal';
 import styles from './Chat.module.css';
 import { useService } from '../../../hooks/useService';
 import { getAllClientRequests } from '../../../services/request.service';
-import { selectUser } from '../../../slices/user.slice';
-import { selectUI } from '../../../slices/ui.slice';
 import { getMasterOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
+import { useUserQuery } from '../../../hooks/useUserQuery';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
@@ -569,9 +567,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   viewerIsMaster, // НОВОЕ
 }) => {
   const text = useLanguage();
-  const user =
-    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
-    ({} as any);
+  const user = currentUser || ({} as any);
   const isRequestType = order?.b_options?.orderType === 'request';
 
   // ===== ЧАТ: история для этого заказа =====
@@ -1257,10 +1253,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 };
 
 function ChoiceOfReplenishmentMethodCard() {
-  const user =
-    (Object.values(useSelector(selectUser)?.data?.user || {})[0] as any) ||
-    ({} as any);
   const text = useLanguage();
+  const { user } = useUserQuery();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1277,9 +1271,8 @@ function ChoiceOfReplenishmentMethodCard() {
     useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
-  const ui = useSelector(selectUI);
   const userRequests = useService(
-    ui.isMaster ? getMasterOrders : getAllClientRequests,
+    user.u_role === '2' ? getMasterOrders : getAllClientRequests,
     [],
   );
 
@@ -1330,10 +1323,10 @@ function ChoiceOfReplenishmentMethodCard() {
       const client_id = currentChat.chatId.split('_')[0];
       const master_id = currentChat.chatId.split('_')[1];
 
-      appFetch(`user/${client_id}`, {}, true).then((v) =>
+      appFetch(`user/${client_id}`, {}).then((v) =>
         setCurrentUser(Object.values(v.data.user || {})[0] as object),
       );
-      appFetch(`user/${master_id}`, {}, true).then((v) =>
+      appFetch(`user/${master_id}`, {}).then((v) =>
         setMasterUser(Object.values(v.data.user || {})[0] as object),
       );
     }
@@ -1371,9 +1364,11 @@ function ChoiceOfReplenishmentMethodCard() {
   const [footerHeight, setFooterHeight] = useState<number>(0);
 
   const measureFooter = useCallback(() => {
-    const h = footerRef.current?.offsetHeight || 0;
-    if (h !== footerHeight) setFooterHeight(h);
-  }, [footerRef.current?.offsetHeight || 0, footerHeight]);
+    const nextHeight = footerRef.current?.offsetHeight ?? 0;
+    setFooterHeight((prevHeight) =>
+      prevHeight === nextHeight ? prevHeight : nextHeight,
+    );
+  }, []);
 
   useEffect(() => {
     measureFooter();
@@ -1438,8 +1433,7 @@ function ChoiceOfReplenishmentMethodCard() {
         {
           method: 'POST',
           body: fileObject,
-        },
-        true,
+        }
       );
       const result = await response;
       return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
@@ -1563,7 +1557,7 @@ function ChoiceOfReplenishmentMethodCard() {
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'master' = ui.isMaster ? 'master' : 'client';
+    const role: 'client' | 'master' = user.u_role === '2' ? 'master' : 'client';
 
     // 1) загружаем все файлы → получаем постоянные URL
     const uploadedUrls: string[] = [];
@@ -1888,7 +1882,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   currentUser={currentUser}
                   masterUser={masterUser}
                   refetchRequests={userRequests.refetch}
-                  viewerIsMaster={ui.isMaster} // НОВОЕ
+                  viewerIsMaster={user.u_role === '2'} // НОВОЕ
                 />
               ))}
             </div>

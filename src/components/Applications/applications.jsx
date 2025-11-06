@@ -1,7 +1,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 
 import '../../scss/applications.css';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../state/language';
 
@@ -9,7 +8,7 @@ import style from './applications.module.css';
 import NavApplication from './NavApplication';
 import { useService } from '../../hooks/useService';
 import { getMasterOrders } from '../../services/order.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 //~ const statusEnum = {
@@ -25,8 +24,7 @@ const StylesStatusEnum = {
 };
 function MyApplications() {
   const text = useLanguage();
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
   const navigator = useNavigate();
   const orders = useService(getMasterOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];

@@ -1,18 +1,16 @@
 import { useEffect, useState } from 'react';
 import '../../scss/profileNumber.css';
 import '../../scss/swiper.css';
-import { useSelector } from 'react-redux';
 
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 function App() {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
   const [feedback, setFeedback] = useState([]);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);

@@ -1,15 +1,6 @@
-import { QueryClient, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '../app/queryClient';
 import CONFIG from '../constants';
-
-// Глобальный Query Client
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: CONFIG.API?.queryStaleTime ?? 30 * 60 * 1000,
-      retry: CONFIG.API?.queryRetry ?? 3
-    },
-  },
-});
 
 // Тип глобального состояния
 export interface GlobalState {
@@ -48,12 +39,12 @@ initGlobals();
 // Функции для работы с состоянием
 // Получить значение по ключу
 export function getGlobal<T = any>(key: string): T | null {
-  return queryClient.getQueryData([ GLOBAL_STATE_QUERY_KEY, key ]) ?? null;
+  return queryClient.getQueryData( [ GLOBAL_STATE_QUERY_KEY, key ] ) ?? null;
 }
 
 // Установить значение
 export function setGlobal<T = any>(key: string, value: T): void {
-  if (value !== undefined && !Object.is( value, queryClient.getQueryData([ GLOBAL_STATE_QUERY_KEY, key ]) )) {
+  if (value !== undefined && !Object.is( value, queryClient.getQueryData( [ GLOBAL_STATE_QUERY_KEY, key ] ) )) {
     if ('function' === typeof value) {
       // Чтобы записать в кэш функцию, нужно обернуть её в другую функцию из-за интерфейса setQueryData
       queryClient.setQueryData( [ GLOBAL_STATE_QUERY_KEY, key ], () => value );
@@ -75,7 +66,7 @@ export function resetGlobal(key: string): void {
 
 // Проверить наличие ключа
 export function isGlobalExists(key: string): boolean {
-  return queryClient.getQueryData([ GLOBAL_STATE_QUERY_KEY, key ]) !== undefined;
+  return queryClient.getQueryData( [ GLOBAL_STATE_QUERY_KEY, key ] ) !== undefined;
 }
 
 // React Hook для использования глобального состояния

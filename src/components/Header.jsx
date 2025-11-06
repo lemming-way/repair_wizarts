@@ -1,26 +1,22 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import DropdownCountry from "./dropdownCountry";
 import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
-import SERVER_PATH from '../constants/SERVER_PATH';
 import { useLanguage } from '../state/language';
-import { selectUnreadMessages } from '../slices/messages.slice';
-import { selectUI } from '../slices/ui.slice';
-import { selectUser } from '../slices/user.slice';
+import { useUserQuery } from '../hooks/useUserQuery';
+import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
-
-    const ui = useSelector(selectUI)
-    const user = useSelector(selectUser)
-    const messages = useSelector(selectUnreadMessages)
+    const { user } = useUserQuery()
+    const { unreadCount } = useUnreadMessagesQuery()
     const text = useLanguage();
+
     return (
         <>
             <header >
@@ -61,13 +57,13 @@ function Header() {
                         </li>
                     </ul>
                     <div className="header__profile">
-                        {ui.isAuthorized ? (
+                        {!!user.u_id ? (
                             <div className="header__profile">
                                 <Link to={"/client/requests/create/title"} className="header__button">{text("Give task")}</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={ui.isMaster ? "/master/chat" : "/client/chat"}
+                                <Link to={user.u_role === '2' ? "/master/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -76,7 +72,7 @@ function Header() {
                                     }}
                                 >
                                     <img className="" src="/img/hfjsa.png" alt="" />
-                                    {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>}
+                                    {unreadCount > 0 && <div className='chat-message-counter'>{unreadCount}</div>}
                                 </Link>
                                 <div
                                     className='yosetout'
@@ -87,7 +83,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={SERVER_PATH + user.avatar}
+                                        src={user.u_photo || '/img/icons/avatar.png'}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -100,7 +96,7 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {ui.isMaster && user.master[0] && (
+                                {user.u_role === '2' && user.master?.[0] && (
                                     <>
                                         <p className='master__moneys'>
                                             {parseFloat(user.master[0].balance).toFixed(2)}₽

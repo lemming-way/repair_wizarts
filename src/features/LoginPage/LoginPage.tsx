@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {useDispatch} from "react-redux";
+import {useQueryClient} from '@tanstack/react-query';
 import {Link, useNavigate} from "react-router-dom";
 import Popup from "reactjs-popup";
 
@@ -13,7 +13,7 @@ import {
   recoverPasswordSend,
   recoverPasswordVerify
 } from "../../services/user.service";
-import {fetchUser} from "../../slices/user.slice";
+import {userKeys} from '../../queries';
 
 const RecoveryState = {
   IDLE: 0,
@@ -25,7 +25,7 @@ const LoginPage = () => {
   const text = useLanguage();
 
   // Оставила без изменений
-  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
@@ -97,8 +97,7 @@ const LoginPage = () => {
         keepUserAuthorized(false)
       }
 
-      // @ts-ignore
-      dispatch(fetchUser());
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
       navigate("/");
     } catch (err) {
       setError(text("Incorrect data"));

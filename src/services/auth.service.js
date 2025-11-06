@@ -26,7 +26,6 @@ const login = async (username, password, type = 'phone') => {
     body: {
       login: normalizedLogin,
       password,
-      st: true,
       type,
     },
   });

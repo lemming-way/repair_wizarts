@@ -1,4 +1,4 @@
-import appFetch from "../utilities/appFetch"
+import appFetch from '../utilities/appFetch'
 
 const getReviews = () => appFetch("index/reviews")
 

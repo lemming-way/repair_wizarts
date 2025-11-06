@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react';
 
-import { getOffers } from '../services/offer.service';
 import styles from './mysuggest.module.css';
 import { useLanguage } from '../state/language';
 
@@ -9,27 +8,29 @@ import { Link, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useSelector } from 'react-redux';
 import { Navigation, Pagination } from 'swiper';
 
 import Suggest from './suggest';
 import SERVER_PATH from '../constants/SERVER_PATH';
-import { useService } from '../hooks/useService';
-import { getClientRequests } from '../services/request.service';
-import { selectUser } from '../slices/user.slice';
+import { useClientRequestsQuery } from '../hooks/useClientRequestsQuery';
+import { useOffersQuery } from '../hooks/useOffersQuery';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function MySuggest() {
   const text = useLanguage();
   const { id } = useParams();
-  const requests = useService(getClientRequests, []);
-  const offers = useService(getOffers.bind(null, id), []);
-  const user = useSelector(selectUser);
+  const { clientRequests } = useClientRequestsQuery();
+  const { offers } = useOffersQuery(id);
+  const { user } = useUserQuery();
+  const name = user.u_name || '';
+  const lastname = user.u_family || '';
+  const phone = user.u_phone || '';
   const req = useMemo(
     () =>
-      Object.values(requests.data?.data?.booking || []).find(
+      Object.values(clientRequests?.data?.booking || []).find(
         (v) => v.id === Number(id),
       ),
-    [requests.data, id],
+    [clientRequests, id],
   );
 
   const getDate = (exp) => {
@@ -159,7 +160,7 @@ function MySuggest() {
           <div className="bloc-1 df">
             <div className="bloc_img">
               <img
-                src={SERVER_PATH + user.avatar}
+                src={user.u_photo || '/img/blank.png'}
                 width="120px"
                 height="120px"
                 style={{ borderRadius: '60px', objectFit: 'cover' }}
@@ -168,9 +169,9 @@ function MySuggest() {
             </div>
             <div className="bloc_text">
               <h2>
-                {user.name} {user.lastname}
+              {name} {lastname}
               </h2>
-              <h3>{user.phone}</h3>
+              <h3>{phone}</h3>
             </div>
           </div>
           <div className="bloc-2 df align mobile-bloc-2">
@@ -245,10 +246,10 @@ function MySuggest() {
       </div>
       <div className="sentence-2 font_abel">
         <div className="sentaince_text mobile-sentaince_text">
-          {offers.data.length > 0 && <h2>{text('Master proposals')}</h2>}
+          {offers.length > 0 && <h2>{text('Master proposals')}</h2>}
         </div>
       </div>
-      {offers.data.map((v) => (
+      {offers.map((v) => (
         <Suggest key={v.id} {...v} />
       ))}
     </section>

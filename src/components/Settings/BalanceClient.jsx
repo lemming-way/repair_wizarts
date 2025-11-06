@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import Pagination from 'react-bootstrap/Pagination';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './Balance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const BalanceClient = () => {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
   const [isVisibleRow, setVisibleRow] = useState(false);
@@ -29,15 +30,19 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  useEffect(() => {
-    //~ if (user) {
-      setInputCard(user?.u_details?.wallets?.[0]?.value || 'не указано');
-      setInputPrice(user?.u_details?.balance || '0.0');
-      setCurrentPage(1); // сбрасываем страницу при смене данных
-    //~ }
-  }, [user?.u_details?.wallets?.[0]?.value, user?.u_details?.balance]);
+  const walletValue = user.u_details?.wallets?.[0]?.value;
+  const userBalance = user.u_details?.balance;
 
-  const allPayments = user?.u_details?.history_of_pay || [];
+  useEffect(() => {
+    if (!user.u_id) {
+      return;
+    }
+      setInputCard(walletValue || 'не указано');
+      setInputPrice(userBalance || '0.0');
+      setCurrentPage(1); // сбрасываем страницу при смене данных
+  }, [user.u_id, walletValue, userBalance]);
+
+  const allPayments = user.u_details?.history_of_pay || [];
 
   // Apply filtering
   const filteredPayments = allPayments.filter((item) => {
@@ -92,6 +97,10 @@ const BalanceClient = () => {
     );
   });
 
+  if (!user.u_id) {
+    return null;
+  }
+
   return (
     <>
       {isVisibleModalVivod && (
@@ -115,7 +124,7 @@ const BalanceClient = () => {
         <h3 className={style.heading}>Баланс</h3>
 
         <div className={style.wrap_row1}>
-          <p className={style.balance}>{user?.u_details?.balance || '0.0'}</p>
+          <p className={style.balance}>{user.u_details?.balance || '0.0'}</p>
 
           {!isVisibleRow && (
             <div className={style.buttons_row}>
@@ -131,7 +140,7 @@ const BalanceClient = () => {
             </div>
           )}
 
-          {isVisibleRow && user?.u_details?.wallets && (
+          {isVisibleRow && user.u_details?.wallets && (
             <div className={style.wrap_row1__row}>
               <select
                 className={style.select}
@@ -142,7 +151,7 @@ const BalanceClient = () => {
                   setInputCard(currentCard.value);
                 }}
               >
-                {user?.u_details?.wallets.map((item) => (
+                {user.u_details?.wallets.map((item) => (
                   <option key={item.type} value={item.type}>
                     {item.type}
                   </option>
@@ -165,8 +174,8 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = user?.u_details?.history_of_pay
-                      ? user?.u_details?.history_of_pay
+                    const oldHistory = user.u_details?.history_of_pay
+                      ? user.u_details?.history_of_pay
                       : [];
                     const newPayment = {
                       cost: Number(inputPrice),
@@ -175,12 +184,22 @@ const BalanceClient = () => {
                       status: 'Успешно',
                       title: 'Вывод средств',
                     };
-                    updateUser({
-                      details: {
-                        balance: user?.u_details?.balance - inputPrice,
-                        history_of_pay: [...oldHistory, newPayment],
+                    if (!user.u_id) {
+                      return;
+                    }
+                    updateUser(
+                      {
+                        details: {
+                          balance:
+                            (user.u_details?.balance || 0) -
+                            Number(inputPrice),
+                          history_of_pay: [...oldHistory, newPayment],
+                        },
                       },
-                    });
+                      user.u_id,
+                    ).then(() =>
+                      queryClient.invalidateQueries({ queryKey: userKeys.all }),
+                    );
                   }}
                 >
                   Вывести

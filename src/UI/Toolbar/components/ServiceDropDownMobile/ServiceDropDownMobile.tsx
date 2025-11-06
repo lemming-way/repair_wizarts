@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
 
 import arrowRight from '../../../../img/header/icons/arrow-right-icon.svg';
 import styles from '../ServiceDropDownMobile/ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './components/ServiceCategoriesDropdown/ServiceCategoriesDropdown';
+import { useCategoriesQuery } from '../../../../hooks/useCategoriesQuery';
 const ServiceDropdownMobile = () => {
   
-  const categories = useSelector(
-    (state: any) => state.categories.categories || [],
-  );
+  const { categories } = useCategoriesQuery();
   const [openItem, setOpenItem] = useState<number | null>(null);
 
   // Что бы отображался dropdown для подкатегории услуг и кнопка аниммировала только по клику на конкетный элемент

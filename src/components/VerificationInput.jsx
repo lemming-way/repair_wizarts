@@ -14,24 +14,45 @@ import '../scss/verification-input.css';
 const VerificationInput = (props) => {
   const { isConfirmed, isEmail, onChangeMask, value } = props;
 
-  const sendCode = isEmail ? sendEmailCode : sendPhoneCode;
-  const sendVerificationCode = isEmail
-    ? sendEmailVerificationCode
-    : sendPhoneVerificationCode;
-
   const [isModalOpen, setModalOpen] = useState(false);
   const [code, setCode] = useState('');
 
   useEffect(() => {
-    if (isModalOpen) sendCode().then((v) => console.log(v));
-  }, [isModalOpen, sendCode]);
+    if (!isModalOpen || !value) {
+      return;
+    }
+
+    const send = async () => {
+      try {
+        const sendFunc = isEmail ? sendEmailCode : sendPhoneCode;
+        const response = await sendFunc(value);
+        console.log(response);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    send();
+  }, [isModalOpen, isEmail, value]);
 
   const onSubmit = (e) => {
     e.preventDefault();
-    sendVerificationCode(code).then((v) => {
-      console.log(v);
-      setModalOpen(false);
-    });
+    const trimmedCode = code.trim();
+
+    if (!value || !trimmedCode) {
+      return;
+    }
+
+    const send = isEmail ? sendEmailVerificationCode : sendPhoneVerificationCode;
+
+    send(value, trimmedCode)
+      .then((v) => {
+        console.log(v);
+        setModalOpen(false);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   };
 
   return (

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react"
-import { useSelector } from "react-redux";
+import { useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Rating } from "react-simple-star-rating";
 import { useLanguage } from "../state/language";
@@ -8,9 +8,10 @@ import SERVER_PATH from "../constants/SERVER_PATH";
 import { createDialog } from "../services/dialog.service";
 import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
-import { getMasterServices } from "../services/service.service"
-import { getMasterByUsername } from "../services/user.service";
-import { selectUser } from "../slices/user.slice";
+import { useUserQuery } from "../hooks/useUserQuery";
+import { useMasterByUsernameQuery } from "../hooks/useMasterByUsernameQuery";
+import { useMasterServicesQuery } from "../hooks/useMasterServicesQuery";
+import { messageKeys, offerKeys, requestKeys, normalizeOptionalOfferRequestId } from "../queries";
 
 const Suggest = (props) => {
     const text = useLanguage();
@@ -24,38 +25,71 @@ const Suggest = (props) => {
     } = props
 
     const navigate = useNavigate()
-    const user = useSelector(selectUser)
+    const queryClient = useQueryClient()
+    const { user } = useUserQuery()
 
     const [error, setError] = useState("")
-    const [master, setMaster] = useState({ })
-    const [services, setServices] = useState({ })
+    const { data: masterData } = useMasterByUsernameQuery(master_username)
+    const { data: servicesData } = useMasterServicesQuery(master_username)
 
-    useEffect(() => {
-        getMasterByUsername(master_username).then(setMaster)
-        getMasterServices(master_username).then(setServices)
-    }, [master_username])
+    const master = masterData || {}
+    const services = servicesData || {}
 
-    const onSubmit = (e) => {
+    const acceptOfferMutation = useMutation({  // todo: перенести всё в state, и без useMutation
+        mutationFn: acceptOffer,
+        onSuccess: async () => {
+            const normalizedRequestId = normalizeOptionalOfferRequestId(request_id);
+
+            const invalidations = [
+                queryClient.invalidateQueries({ queryKey: requestKeys.client() }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.clientAll() }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.masterOrders() }),
+                queryClient.invalidateQueries({ queryKey: messageKeys.unread() }),
+            ];
+
+            if (normalizedRequestId) {
+                invalidations.push(
+                    queryClient.invalidateQueries({ queryKey: offerKeys.list(normalizedRequestId) })
+                );
+            }
+
+            await Promise.all(invalidations)
+        }
+    })
+
+    const createDialogMutation = useMutation({
+        mutationFn: createDialog,
+    })
+
+    const onSubmit = async (e) => {
         e.preventDefault()
         e.stopPropagation()
 
-        acceptOffer(offerId).then((res) => {
+        setError("")
+
+        try {
+            if (!user.u_id) {
+                setError("Пользователь не авторизован")
+                return
+            }
+            const res = await acceptOfferMutation.mutateAsync(offerId)
             const payload = {
-                sender1_id: user?.id,
+                sender1_id: user.u_id,
                 sender2_id: res.master_id,
                 request_id
             }
-            createDialog(payload).then((dialog) => {
-                sendOfferAccept(res.master_id, offerId)
-                navigate("/client/chat/" + dialog.id)
-            })
-        }).catch((err) => {
-            if (err.status === 402) {
-                return setError(text("Master has insufficient funds"))
+
+            const dialog = await createDialogMutation.mutateAsync(payload)
+            sendOfferAccept(res.master_id, offerId)
+            navigate("/client/chat/" + dialog.id)
+        } catch (err) {
+            if (err?.status === 402) {
+                setError(text("Master has insufficient funds"))
+                return
             }
 
             setError(text("This master is unavailable"))
-        })
+        }
     }
 
     return (
@@ -249,7 +283,13 @@ const Suggest = (props) => {
                     </div>
                 )}
                 <div className="customer_message-but">
-                    <button onClick={onSubmit} className="btn">{text("Choose a master")}</button>
+                    <button
+                        onClick={onSubmit}
+                        className="btn"
+                        disabled={acceptOfferMutation.isPending || createDialogMutation.isPending}
+                    >
+                        {acceptOfferMutation.isPending || createDialogMutation.isPending ? text("Processing...") : text("Choose a master")}
+                    </button>
                     <Link to={"/client/feedback/" + master_username}>
                         <button className="btnn">{text("Reviews about the master")}</button>
                     </Link>

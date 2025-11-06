@@ -102,19 +102,17 @@
 // export default ServiceDropdown;
 import { useState } from 'react';
 import Dropdown from 'react-multilevel-dropdown';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import styles from './ServiceDropdown.module.scss';
 import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
 import { useLanguage } from '../../../../state/language';
-import type { RootState } from '../../../../store';
+import { useCategoriesQuery } from '../../../../hooks/useCategoriesQuery';
 
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-
-  const { categories } = useSelector((state: RootState) => state.categories);
+  const { categories } = useCategoriesQuery();
   return (
     <Dropdown
       title={
@@ -152,7 +150,7 @@ const ServiceDropdown = () => {
               position="right-top"
               className={styles.Submenu_submenu}
             >
-              {categoryContent.subsections.map(
+              {categoryContent.subsections?.map(
                 (subCategoryContent, subIndex) => (
                   <Dropdown.Item
                     className={styles.serviceDropdown_item}
@@ -167,7 +165,7 @@ const ServiceDropdown = () => {
                       position="right-top"
                       className={styles.Submenu_submenu}
                     >
-                      {subCategoryContent.services
+                      {((subCategoryContent.services ?? []) as Array<any>)
                         .slice(0, 5)
                         .map((service, serviceIndex) => (
                           <Dropdown.Item
@@ -177,7 +175,7 @@ const ServiceDropdown = () => {
                             <Link
                               to={`/devices/${categoryContent.id}/${subCategoryContent.id}`}
                             >
-                              <span>{service.name}</span>
+                              <span>{service?.name}</span>
                             </Link>
                           </Dropdown.Item>
                         ))}

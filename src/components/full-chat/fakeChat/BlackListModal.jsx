@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './blackListModal.module.css';
 import { updateUser } from '../../../services/user.service';
-import { selectUser } from '../../../slices/user.slice';
 import appFetch from '../../../utilities/appFetch';
+import { useUserQuery } from '../../../hooks/useUserQuery';
+import { userKeys } from '../../../queries';
 
 const EMPTY_ARRAY = []
 
 export default function BlackListModal({ setVisibleBlackList }) {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
-  const blackList = user?.u_details?.black_list || EMPTY_ARRAY;
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
+  const blackList = user.u_details?.black_list || EMPTY_ARRAY;
 
   const [blackListData, setBlackListData] = useState([]);
 
@@ -49,11 +50,17 @@ export default function BlackListModal({ setVisibleBlackList }) {
   const handleUnblock = (id) => {
     const newList = blackList.filter((l) => l.id !== id);
     console.log(newList);
-    updateUser({
-      details: {
-        black_list: newList,
+    if (!user.u_id) {
+      return;
+    }
+    updateUser(
+      {
+        details: {
+          black_list: newList,
+        },
       },
-    });
+      user.u_id,
+    ).then(() => queryClient.invalidateQueries({ queryKey: userKeys.all }));  // todo: перенести в state/user
     setBlackListData((prev) => prev.filter((user) => user.id !== id));
   };
 

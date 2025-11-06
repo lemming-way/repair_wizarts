@@ -4,25 +4,22 @@ import '../../scss/swiper.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import Dropdown from 'react-bootstrap/Dropdown';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import style from './Allorders.module.css';
 import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
-import { selectUser } from '../../slices/user.slice';
 import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-
+import { useUserQuery } from '../../hooks/useUserQuery';
 
 // Переименовал App в AllOrders для большей ясности
 function App() {
   const text = useLanguage();
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
+  const { user } = useUserQuery();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [serviceInPage, setServiceInPage] = useState(10);
@@ -39,6 +36,7 @@ function App() {
     min: '',
     max: '',
   });
+
   const fetchUserOrderReqs = useCallback(async () => {
     if (!user.u_id) {
       console.warn('User ID not found, skipping fetch.');
@@ -70,7 +68,9 @@ function App() {
         return {
           ...item,
           // Находим и сохраняем только данные нашего мастера для этого заказа
-          driverData: item.drivers.find((driver) => driver.u_id === user.u_id),
+          driverData: item.drivers.find(
+            (driver) => driver.u_id === user.u_id,
+          ),
         };
       });
 

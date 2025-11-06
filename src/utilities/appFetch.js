@@ -63,11 +63,12 @@ const refreshAccessToken = async () => {
   }
 };
 
-const appFetch = async (location, init = {}, admin) => {
+const appFetch = async (location, init = {}) => {
   try {
     const token = getToken();
     const response = await fetch(BASE_URL + location, {
       method: init.method || 'POST',
+      // credentials: 'include',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -75,16 +76,7 @@ const appFetch = async (location, init = {}, admin) => {
         ? {}
         : {
             body: new URLSearchParams({
-              ...(token
-                ? {
-                    token: admin
-                      ? 'bbdd06a50ddcc1a4adc91fa0f6f86444'
-                      : token?.token,
-                    u_hash: admin
-                      ? 'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr'
-                      : token?.hash,
-                  }
-                : {}),
+              ...(token ? { token: token?.token, u_hash: token?.hash } : {}),
               ...init.body,
             }).toString(),
           }),

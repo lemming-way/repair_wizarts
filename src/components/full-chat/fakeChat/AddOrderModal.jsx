@@ -1,13 +1,11 @@
-import { useState } from 'react';
-import { useRef } from 'react';
-import { useSelector } from 'react-redux';
+import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 import style from './AddOrderModal.module.css';
 import { updateRequest } from '../../../services/request.service';
 import { getToken } from '../../../services/token.service';
-import { selectUser } from '../../../slices/user.slice';
 import { useLanguage } from '../../../state/language';
+import { useUserQuery } from '../../../hooks/useUserQuery';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -17,8 +15,9 @@ const fileToBase64 = (file) =>
     reader.onload = () => resolve(reader.result);
     reader.onerror = (error) => reject(error);
   });
+
 // Функция для загрузки фото
-const uploadPhoto = async (file) => {
+const uploadPhoto = async (file) => {  // перенести в api
   const base64String = await fileToBase64(file);
   const token = getToken();
   const body = new URLSearchParams({
@@ -29,6 +28,7 @@ const uploadPhoto = async (file) => {
       name: file.name,
     }),
   });
+
   const response = await fetch(
     'https://ibronevik.ru/taxi/api/v1/dropbox/file/',
     {
@@ -47,7 +47,7 @@ export default function AddOrderModal({
   currentOrder,
 }) {
   const text = useLanguage();
-  const user = Object.values(useSelector(selectUser)?.data?.user || {})[0];
+  const { user } = useUserQuery();
   const { id } = useParams();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -98,7 +98,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>{text('Propose an order')}</h2>
-        {(user?.u_details?.balance || 0) < 500 && (
+        {(user.u_details?.balance || 0) < 500 && (
           <p className={style.error}>
             {text('Please top up your balance by 500 rubles')}
           </p>
@@ -128,7 +128,7 @@ export default function AddOrderModal({
           <div>
             <p className={style.mini_heading}>{text('Budget')}</p>
             <p className={style.balance}>
-              {text('Balance')} {user?.u_details?.balance || 0} ₽
+              {text('Balance')} {user.u_details?.balance || 0} ₽
             </p>
             <div className={style.icon}>
               <input

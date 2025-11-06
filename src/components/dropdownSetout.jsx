@@ -1,33 +1,30 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { removeToken } from '../services/token.service';
-import { selectUI, setAuthorization, setMaster } from '../slices/ui.slice';
-import { wipeUser } from '../slices/user.slice';
 import '../scss/setout.css';
-import { setUserMode } from '../services/user.service';
+//~ import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
+import { userKeys } from '../queries';
+import { useUserQuery } from '../hooks/useUserQuery';
 
 function DropdownService() {
-  const dispatch = useDispatch();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const ui = useSelector(selectUI);
+  const { user } = useUserQuery();
   const text = useLanguage();
 
-  const switchMode = () => {
-    console.log(ui);
-    if (!ui.isMaster) {
-      setUserMode(!ui.isMaster);
-      dispatch(setMaster(!ui.isMaster));
-      return;
-    }
-    setUserMode(false);
-    dispatch(setMaster(false));
-  };
+  //~ const switchMode = () => {
+    //~ const isMaster = user.u_role === "2";
+    //~ if (!isMaster) {
+      //~ setUserMode(true);
+      //~ return;
+    //~ }
+    //~ setUserMode(false);
+  //~ };
 
   const logout = (e) => {
-    dispatch(wipeUser());
-    dispatch(setAuthorization(false));
+    queryClient.removeQueries({ queryKey: userKeys.all });
     removeToken();
     navigate('/');
   };
@@ -35,12 +32,12 @@ function DropdownService() {
   return (
     <div className="bldropdownfff-content">
       <div className="fix_hover_drop"></div>
-      {ui.isMaster ? (
+      {user.u_role === "2" ? (
         <div className="client__dropdown">
           <div className="recent">
             <Link
               to="/client/settings"
-              onClick={switchMode}
+              onClick={/*switchMode*/null}
               className="repair__phone"
             >
               <h4>{text("I am a client")}</h4>
@@ -66,7 +63,7 @@ function DropdownService() {
           <div className="recent">
             <Link
               to="/master/wallet"
-              onClick={switchMode}
+              onClick={/*switchMode*/null}
               className="repair__phone"
             >
               <h4>{text("Become a master")}</h4>

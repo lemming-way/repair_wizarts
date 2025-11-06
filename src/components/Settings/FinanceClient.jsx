@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import { updateUser } from '../../services/user.service';
-import { selectUser } from '../../slices/user.slice';
+import { useUserQuery } from '../../hooks/useUserQuery';
+import { userKeys } from '../../queries';
 
 const FinanceClient = () => {
-  const user =
-    Object.values(useSelector(selectUser)?.data?.user || {})[0] || {};
-
+  const queryClient = useQueryClient();
+  const { user } = useUserQuery();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -20,7 +20,9 @@ const FinanceClient = () => {
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
   useEffect(() => {
-    const cardWallet = user.u_details?.wallets?.find((w) => w.type === 'card');
+    const cardWallet = user.u_details?.wallets?.find(
+      (w) => w.type === 'card',
+    );
     const wmWallet = user.u_details?.wallets?.find(
       (w) => w.type === 'webmoney',
     );
@@ -28,6 +30,11 @@ const FinanceClient = () => {
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
   }, [user.u_details?.wallets]);
+
+  // Early return if no user ID
+  if (!user.u_id) {
+    return null;
+  }
 
   const onSubmitWallets = async () => {
     try {
@@ -40,13 +47,12 @@ const FinanceClient = () => {
         wallets,
       };
 
-      const res = await updateUser({ details: payload }, user.u_id).then((v) =>
-        console.log(v),
-      );
+      const res = await updateUser({ details: payload }, user.u_id);
       console.log(res);
       if (!res?.code === '200') throw new Error('Ошибка при сохранении');
       setVisibleSuccess(true);
       setSuccess(true);
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
     } catch (err) {
       console.error(err);
       alert('Ошибка при сохранении кошельков');

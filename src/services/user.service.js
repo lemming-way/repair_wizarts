@@ -104,9 +104,26 @@ const updateMasterPictures = (userId, payload) => {
   });
 };
 
-const deleteUser = async () => {
-  const result = await appFetch('user/delete-account', { method: 'DELETE' });
-  removeToken();
+const deleteUser = async (userId, asAdmin = false) => {
+  const body = {
+    data: JSON.stringify({
+      u_is_deleted: 1,
+    }),
+    ...(asAdmin && typeof userId === 'number' ? { u_a_id: userId } : {}),
+  };
+
+  const result = await appFetch(
+    'user',
+    {
+      body,
+    },
+    asAdmin,
+  );
+
+  if (!asAdmin) {
+    removeToken();
+  }
+
   return result;
 };
 
@@ -122,9 +139,9 @@ const updateUserService = (data, id) =>
     body: JSON.stringify(data),
   });
 
-const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
+//~ const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
 
-const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
+//~ const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
 
 const recoverPassword = (payload) =>
   appFetch('user/recover-password', {
@@ -164,8 +181,8 @@ export {
   createUserCustomService,
   updateUserPhoto,
   getMasterByUsername,
-  getUserMode,
-  setUserMode,
+  //~ getUserMode,
+  //~ setUserMode,
   recoverPassword,
   recoverPasswordVerify,
   recoverPasswordSend,

@@ -1,5 +1,4 @@
-import { getToken } from './token.service';
-import appFetch, { BASE_URL } from '../utilities/appFetch';
+import appFetch from '../utilities/appFetch';
 // Функция для отправки кода на email
 //~ const sendEmailCodeTest = () => {
   //~ // Имитация запроса для отправки email кода
@@ -54,29 +53,53 @@ import appFetch, { BASE_URL } from '../utilities/appFetch';
   //~ });
 //~ };
 
-const sendEmailCode = () =>
-  appFetch('email/verification/start', { method: 'POST' });
-
-const sendEmailVerificationCode = (code) =>
-  fetch(BASE_URL + `email/verification/complete?ev_hash=${code}`).then((res) =>
-    res.json(),
-  );
-
-const sendPhoneCode = () =>
-  fetch(BASE_URL + 'user/send-phone-code', {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + getToken()?.access_token,
+const sendEmailCode = (email) =>
+  appFetch('/auth/', {
+    body: {
+      type: 'e-mail_code',
+      login: email,
     },
-  }).then((res) => res.json());
+  });
 
-const sendPhoneVerificationCode = (code) =>
-  fetch(BASE_URL + 'user/verify-phone/' + code, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + getToken()?.access_token,
+const sendEmailVerificationCode = (email, code) => {
+  const trimmedCode = typeof code === 'string' ? code.trim() : '';
+
+  if (!trimmedCode) {
+    return Promise.reject(new Error('Verification code is required'));
+  }
+
+  return appFetch('/auth/', {
+    body: {
+      type: 'e-mail_code',
+      login: email,
+      password: trimmedCode,
     },
-  }).then((res) => res.json());
+  });
+};
+
+const sendPhoneCode = (phone) =>
+  appFetch('/auth/', {
+    body: {
+      type: 'phone_code',
+      login: phone,
+    },
+  });
+
+const sendPhoneVerificationCode = (phone, code) => {
+  const trimmedCode = typeof code === 'string' ? code.trim() : '';
+
+  if (!trimmedCode) {
+    return Promise.reject(new Error('Verification code is required'));
+  }
+
+  return appFetch('/auth/', {
+    body: {
+      type: 'phone_code',
+      login: phone,
+      password: trimmedCode,
+    },
+  });
+};
 
 export {
   sendEmailCode,

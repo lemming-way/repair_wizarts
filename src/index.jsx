@@ -1,19 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './state/global';
-import { Provider } from 'react-redux';
 import { BrowserRouter } from "react-router-dom";
+import { QueryClientProvider } from '@tanstack/react-query';
 import {CustomProvider} from 'rsuite';
 
-// Global CSS frameworks should be imported here to ensure availability regardless of route lazy-loading
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { queryClient } from './app/queryClient';
 import 'rsuite/Dropdown/styles/index.css';
 import "./App.scss"
 
 import App from './components/App';
 import reportWebVitals from './reportWebVitals';
-import store from './store'
+import { NotificationsProvider } from './state/notifications/NotificationsContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
@@ -21,13 +18,13 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <Provider store={store}>
+      <NotificationsProvider>
         <BrowserRouter>
           <CustomProvider theme="dark">
             <App />
           </CustomProvider>
         </BrowserRouter>
-      </Provider>
+      </NotificationsProvider>
     </QueryClientProvider>
   </React.StrictMode>
 );

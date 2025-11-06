@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
 import style from './ClientSettingsWrap.module.css';
-import { selectUser } from '../../slices/user.slice';
 import { useLanguage } from '../../state/language';
 import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
 
@@ -19,17 +17,10 @@ const listLinks = [
 
 function ClientSettingsWrap() {
   const text = useLanguage();
-  const user = useSelector(selectUser);
   const navigate = useNavigate();
 
   // const [succeeded, setSucceeded] = useState(false)
   // const [error, setError] = useState("")
-  const [form, setForm] = useState({
-    name: '',
-    lastname: '',
-    phone: '',
-    email: '',
-  });
 
   // const getFormAttrs = (field) => {
   //      const attrs = { }
@@ -48,15 +39,6 @@ function ClientSettingsWrap() {
   //         .catch((err) => { setSucceeded(false); setError(err.message) })
   // }
 
-  useEffect(() => {
-    if (user.name) {
-      const obj = {};
-
-      for (const key of Object.keys(form)) obj[key] = user[key];
-
-      setForm(obj);
-    }
-  }, [user, form]);
   useEffect(() => {
     document.title = text('Settings');
   }, [text]);
