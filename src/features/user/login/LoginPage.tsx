@@ -3,19 +3,19 @@ import {useQueryClient} from '@tanstack/react-query';
 import {Link, useNavigate} from "react-router-dom";
 
 import styles from './LoginPage.module.scss';
-import { Modal } from '../../shared/ui/Modal';
-import { useLanguage } from '../../state/language';
+import { Modal } from '../../../shared/ui/Modal';
+import { useLanguage } from '../../../state/language';
 import modalStyles from './PasswordRecoveryModal.module.scss';
-import {login} from "../../services/auth.service";
-import { setToken } from "../../services/token.service";
-import appFetch from "../../utilities/appFetch";
+import {login} from "../../../services/auth.service";
+import { setToken } from "../../../services/token.service";
+import appFetch from "../../../utilities/appFetch";
 import {
   keepUserAuthorized,
   recoverPassword,
   recoverPasswordSend,
   recoverPasswordVerify
-} from "../../services/user.service";
-import {userKeys} from '../../queries';
+} from "../../../services/user.service";
+import {userKeys} from '../../../queries';
 
 const correctPhoneNumber = (value: string) => {
   if (!value) {

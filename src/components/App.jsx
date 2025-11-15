@@ -33,7 +33,7 @@ import AddDevices from './addDevices/AddDevices';
 import AddedDevices from './addDevices/AddedDevices';
 import TitleService from './addDevices/TitleService';
 import Applications from './Applications/applications';
-import AuthLogin from './Registration/AuthLogin';
+import LoginPage from '../features/user/login/LoginPage';
 import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './Settings/Finance';
 import Balance from './Settings/Balance';
@@ -166,7 +166,7 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
             <Route path="contact" element={<MapMaster />} />
-            <Route path="login" element={<AuthLogin />} />
+            <Route path="login" element={<LoginPage />} />
             <Route path="register">
               <Route index element={<PickLog />} />
               <Route path="master" element={<RegistrationMasterPage />} />
