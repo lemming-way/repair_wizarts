@@ -1,12 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import {useQueryClient} from '@tanstack/react-query';
 import {Link, useNavigate} from "react-router-dom";
-import Popup from "reactjs-popup";
 
 import styles from './LoginPage.module.scss';
-import Error from "../../components/Error/Error";
+import { Modal } from '../../shared/ui/Modal';
 import { useLanguage } from '../../state/language';
+import modalStyles from './PasswordRecoveryModal.module.scss';
 import {login} from "../../services/auth.service";
+import { setToken } from "../../services/token.service";
+import appFetch from "../../utilities/appFetch";
 import {
   keepUserAuthorized,
   recoverPassword,
@@ -14,6 +16,22 @@ import {
   recoverPasswordVerify
 } from "../../services/user.service";
 import {userKeys} from '../../queries';
+
+const correctPhoneNumber = (value: string) => {
+  if (!value) {
+    return "";
+  }
+  let correctValue = value.replace(/[^+\d]/g, "");
+  if (correctValue[0] !== "+") {
+    correctValue = "+" + correctValue;
+  }
+  if (correctValue.length > 2) {
+    if (correctValue[0] === "+" && correctValue[1] === "7") {
+      return `+7(${correctValue.slice(2, 5)}) ${correctValue.slice(5, 8)}-${correctValue.slice(8, 10)}-${correctValue.slice(10, 12)}`;
+    }
+  }
+  return correctValue;
+};
 
 const RecoveryState = {
   IDLE: 0,
@@ -23,8 +41,6 @@ const RecoveryState = {
 
 const LoginPage = () => {
   const text = useLanguage();
-
-  // Оставила без изменений
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -41,7 +57,7 @@ const LoginPage = () => {
   const [recoveryCode, setRecoveryCode] = useState("");
 
   useEffect(() => {
-    document.title = text("Login");
+    document.title = text("Sign in");
   }, [text]);
 
   const onSendPhone = (e) => {
@@ -86,40 +102,57 @@ const LoginPage = () => {
   };
 
   const onSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      await login(phone, password)
+      const loginType = phone.includes("@") ? "email" : "phone";
+      const response = await login(phone, password, loginType);
 
       if (keep) {
-        keepUserAuthorized(true)
+        keepUserAuthorized(true);
       } else {
-        keepUserAuthorized(false)
+        keepUserAuthorized(false);
       }
 
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
+      const carData = await appFetch("user/authorized/car", {
+        method: "POST",
+        body: {
+          u_hash: response.data.u_hash,
+          token: response.data.token,
+        },
+      });
+
+      setToken({
+        hash: response.data.u_hash,
+        token: response.data.token,
+        user: {
+          ...response.auth_user,
+          c_id: ( Object.values(carData.data.car || {})[0] as any )?.c_id,
+        },
+      });
+
+      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
       navigate("/");
     } catch (err) {
-      setError(text("Incorrect data"));
+      setError(text("Incorrect phone number or password"));
     }
   };
 
   return (
-    // Изменила блок с формой
     <div className={`${styles.loginPage} appContainer`}>
       <h1 className={styles.loginPage_title}>{text("Login")}</h1>
       <form className={styles.loginPage_form} onSubmit={onSubmit}>
         {error && (
-          // В старом коде className="auth-err"
-          // Вынесла в отдельный компонент, т.к. переиспользуется
-          <Error error={error} />
+          <div className="auth-err">
+            {text(error)}
+          </div>
         )}
         <input
           className={styles.loginPage_form_input}
           type="text"
           name="phone"
           placeholder={text("Phone")}
-          onChange={(e) => setPhone(e.target.value)}
+          onChange={(e) => setPhone(correctPhoneNumber(e.target.value))}
           value={phone}
           required
         />
@@ -137,13 +170,12 @@ const LoginPage = () => {
           <input
             className={styles.loginPage_form_loginKeep_input}
             type="checkbox"
-            // value={keep}
             onChange={(e) => setKeep(e.target.checked)}
           />
           {text("Stay logged in")}
         </label>
 
-        <button className={styles.loginPage_form_button} type="submit">{text("Login")}</button>
+        <button className={styles.loginPage_form_button} type="submit">{text("Sign in")}</button>
       </form>
 
       <div className={styles.loginPage_options}>
@@ -157,74 +189,71 @@ const LoginPage = () => {
         </span>
       </div>
 
-      {/*Оставила Popup без изменений*/}
-      <Popup
-        className="password-recovery__modal"
+      <Modal
+        className={modalStyles.modal}
         open={recoveryState !== RecoveryState.IDLE}
         onClose={() => setRecoveryState(RecoveryState.IDLE)}
+        closeButton={true}
       >
-        <button
-          className="password-recovery__close"
-          type="button"
-          onClick={() => setRecoveryState(RecoveryState.IDLE)}
-        >
-          ×
-        </button>
-        <h2 className="password-recovery__title">
-          {text("Password recovery")}
-        </h2>
-        <p className="password-recovery__info">
+        <h2 className={modalStyles.title}>{text("Password recovery")}</h2>
+        <p className={modalStyles.info}>
           {text("Enter your phone number, then a confirmation email will be sent to the email associated with your account.")}
         </p>
         {recoveryState === RecoveryState.CODE ? (
           <form
-            className="password-recovery-form password-recovery-form--extended"
+            className={modalStyles.form}
             onSubmit={onSendCode}
           >
             {recoveryError && (
-              <div className="password-recovery-form__error">
+              <div className={modalStyles.error}>
                 {recoveryError}
               </div>
             )}
             <input
-              className="password-recovery-form__input password-recovery-form__input--extended"
+              className={modalStyles.input}
               placeholder={text("Enter the code from email")}
               onChange={(e) => setRecoveryCode(e.target.value)}
               value={recoveryCode}
             />
             <input
-              className="password-recovery-form__input password-recovery-form__input--extended"
+              className={modalStyles.input}
               placeholder={text("New password")}
               onChange={(e) => setRecoveryPassword(e.target.value)}
               value={recoveryPassword}
             />
-            <button className="password-recovery-form__button">
+            <button className={modalStyles.button}>
               {text("Send")}
             </button>
 
           </form>
         ) : (
           <form
-            className="password-recovery-form"
+            className={modalStyles.form}
             onSubmit={onSendPhone}
           >
             {recoveryError && (
-              <div className="password-recovery-form__error">
+              <div className={modalStyles.error}>
                 {recoveryError}
               </div>
             )}
-            <input
-              className="password-recovery-form__input"
-              placeholder={text("Phone number")}
-              onChange={(e) => setRecoveryPhone(e.target.value)}
-              value={recoveryPhone}
-            />
-            <button className="password-recovery-form__button" type="submit">
+            <div className="input_phone_wrap_recovery">
+              <input
+                className={`${modalStyles.input} ${
+                  recoveryPhone.length > 4
+                    ? 'phone_input_accent'
+                    : 'phone_input_lite'
+                }`}
+                placeholder={text("Phone number")}
+                onChange={(e) => setRecoveryPhone(correctPhoneNumber(e.target.value))}
+                value={recoveryPhone}
+              />
+            </div>
+            <button className={modalStyles.button} type="submit">
               {text("Send")}
             </button>
           </form>
         )}
-      </Popup>
+      </Modal>
     </div>
   );
 };
