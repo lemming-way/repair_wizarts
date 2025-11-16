@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { getGlobal, setGlobal, resetGlobal, isGlobalExists, useGlobalState } from './global';
-import { queryClient } from '../app/queryClient';
+import { queryClient } from './queryClient';
 
 jest.mock('../constants', () => ({
   __esModule: true,

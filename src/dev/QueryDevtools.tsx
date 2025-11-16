@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { Query } from '@tanstack/react-query';
-import { queryClient } from '../queryClient';
+import { queryClient } from '../state/queryClient';
 
 const panelStyles: CSSProperties = {
   position: 'fixed',

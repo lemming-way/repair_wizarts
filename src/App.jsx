@@ -1,76 +1,73 @@
 import { useEffect } from 'react';
-
-import '../scss/swiper.css';
 import { Routes, Route, useLocation } from 'react-router-dom';
 
-import WalletHistoryClient from './ChoiceOfReplenishmentMethod/WalletHistoryClient';
-import ClientSettingsWrap from './pages/ClientSettingsWrap';
-import MasterSettingsWrap from './pages/MasterSettingsWrap';
+import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
+import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
+import MasterSettingsWrap from './components/pages/MasterSettingsWrap';
 
-import RegistrationMasterPage from '../features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
+import RegistrationMasterPage from './features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
 
 // Order imports
-import AllOrders from './Orders/Allorders';
+import AllOrders from './components/Orders/Allorders';
 
-import SettingsAll from './Settings/Settings-all';
-import Profile from './Settings/Profile';
-import Services from './Settings/services';
-import Reviews from './Reviews';
+import SettingsAll from './components/Settings/Settings-all';
+import Profile from './components/Settings/Profile';
+import Services from './components/Settings/services';
+import Reviews from './components/Reviews';
 
-import Orders from './Orders/Orders';
-import Offer from './Orders/Offer';
+import Orders from './components/Orders/Orders';
+import Offer from './components/Orders/Offer';
 
 // after login
-import ProfileFH from './full-height/ProfileFH';
-import WalletFH from './full-height/WalletFH';
+import ProfileFH from './components/full-height/ProfileFH';
+import WalletFH from './components/full-height/WalletFH';
 
 // after login end
 
-import MapMaster from './Pick-master/masters';
-import ProfileNumber from './Chat/profileNumber';
-import OfferAService from './Orders/OfferAService';
-import AddDevices from './addDevices/AddDevices';
-import AddedDevices from './addDevices/AddedDevices';
-import TitleService from './addDevices/TitleService';
-import Applications from './Applications/applications';
-import LoginPage from '../features/user/login/LoginPage';
-import WalletConfirm from './ChoiceOfReplenishmentMethod/WalletConfirm';
-import Finance from './Settings/Finance';
-import Balance from './Settings/Balance';
-import Article from './Article';
-import { getLocation } from '../services/location.service';
-import { getToken } from '../services/token.service';
-import { updateUser } from '../services/user.service';
-import { useUserQuery } from '../hooks/useUserQuery';
-import PersonalRequests from './Orders/PersonalRequests';
-import Articles from './Article/Articles';
-import ChoiceOfReplenishmentMethod from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
-import ChoiceOfReplenishmentMethodClient from './ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import MyOrdersMaster from './Orders/MyOrdersMaster';
-import WalletHistory from './ChoiceOfReplenishmentMethod/WalletHistory';
-// import AddedDevicesPage from './Orders/AddedDevicesPage';
-import FChatKirill from './full-chat/fakeChat/Kirill';
-import Home from './Home';
-import FinanceClient from './Settings/FinanceClient';
-import SettingsMaster from './Settings/SettingsMaster';
-import MasterChatWrap from './pages/MasterChatWrap';
-import Mysuggest from './mysuggest';
-import MyOrder from './Orders/MyOrder';
-import ProfileFeedbackMaster from './profileNumberClient/ProfileFeedbackMaster';
-import PickLog from './Registration/pick-log';
-import Register from './Registration/register';
-import Remont from './remont';
-import { ServiceDetail } from './Service';
-import BalanceClient from './Settings/BalanceClient';
-import Footer from '../UI/Footer/FooterDesktop';
-import Toolbar from '../UI/Toolbar/Toolbar';
-import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
-import { useServicesQuery } from '../hooks/useServicesQuery';
-import { setGlobal } from '../state/global';
-import { useNotifications } from '../state/notifications/NotificationsContext';
-import { QueryDevtools } from '../app/providers/QueryDevtools';
+import MapMaster from './components/Pick-master/masters';
+import ProfileNumber from './components/Chat/profileNumber';
+import OfferAService from './components/Orders/OfferAService';
+import AddDevices from './components/addDevices/AddDevices';
+import AddedDevices from './components/addDevices/AddedDevices';
+import TitleService from './components/addDevices/TitleService';
+import Applications from './components/Applications/applications';
+import LoginPage from './features/user/login/LoginPage';
+import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfirm';
+import Finance from './components/Settings/Finance';
+import Balance from './components/Settings/Balance';
+import Article from './components/Article';
+import { getLocation } from './services/location.service';
+import { getToken } from './services/token.service';
+import { updateUser } from './services/user.service';
+import { useUserQuery } from './hooks/useUserQuery';
+import PersonalRequests from './components/Orders/PersonalRequests';
+import Articles from './components/Article/Articles';
+import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
+import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
+import MyOrdersMaster from './components/Orders/MyOrdersMaster';
+import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistory';
+// import AddedDevicesPage from './components/Orders/AddedDevicesPage';
+import FChatKirill from './components/full-chat/fakeChat/Kirill';
+import Home from './components/Home';
+import FinanceClient from './components/Settings/FinanceClient';
+import SettingsMaster from './components/Settings/SettingsMaster';
+import MasterChatWrap from './components/pages/MasterChatWrap';
+import Mysuggest from './components/mysuggest';
+import MyOrder from './components/Orders/MyOrder';
+import ProfileFeedbackMaster from './components/profileNumberClient/ProfileFeedbackMaster';
+import PickLog from './components/Registration/pick-log';
+import Register from './components/Registration/register';
+import Remont from './components/remont';
+import { ServiceDetail } from './components/Service';
+import BalanceClient from './components/Settings/BalanceClient';
+import Footer from './UI/Footer/FooterDesktop';
+import Toolbar from './UI/Toolbar/Toolbar';
+import { useCategoriesQuery } from './hooks/useCategoriesQuery';
+import { useServicesQuery } from './hooks/useServicesQuery';
+import { setGlobal } from './state/global';
+import { useNotifications } from './state/notifications/NotificationsContext';
 
-const isDevelopment = process.env.NODE_ENV === 'development';  // todo: Перенести в /index
+import './scss/swiper.css';
 
 function App() {
   const { user, status } = useUserQuery();
@@ -149,7 +146,6 @@ function App() {
     <>
       {/* <Notifications /> */}
       <Toolbar />
-      {isDevelopment ? <QueryDevtools /> : null}
       <main>
         <Routes>
           <Route>

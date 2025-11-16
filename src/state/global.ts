@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { queryClient } from '../app/queryClient';
+import { queryClient } from './queryClient';
 import CONFIG from '../constants';
 
 // Тип глобального состояния

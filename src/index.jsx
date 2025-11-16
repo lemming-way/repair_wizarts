@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import {CustomProvider} from 'rsuite';
-
-import { queryClient } from './app/queryClient';
 import 'rsuite/Dropdown/styles/index.css';
+
+import { queryClient } from './state/queryClient';
+import { QueryDevtools } from './dev/QueryDevtools';
 import "./App.scss"
 
-import App from './components/App';
+import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { NotificationsProvider } from './state/notifications/NotificationsContext';
+
+const isDevelopment = process.env.NODE_ENV === 'development';  // todo: Перенести в /index
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
@@ -21,6 +24,7 @@ root.render(
       <NotificationsProvider>
         <BrowserRouter>
           <CustomProvider theme="dark">
+            {isDevelopment ? <QueryDevtools /> : null}
             <App />
           </CustomProvider>
         </BrowserRouter>
