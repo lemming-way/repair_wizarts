@@ -5,7 +5,7 @@ import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/Wallet
 import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
 import MasterSettingsWrap from './components/pages/MasterSettingsWrap';
 
-import RegistrationMasterPage from './features/RegistrationPage/RegistrationMasterPage/RegistrationMasterPage';
+import RegistrationMasterPage from './features/user/registration/RegistrationMasterPage';
 
 // Order imports
 import AllOrders from './components/Orders/Allorders';
@@ -55,8 +55,8 @@ import MasterChatWrap from './components/pages/MasterChatWrap';
 import Mysuggest from './components/mysuggest';
 import MyOrder from './components/Orders/MyOrder';
 import ProfileFeedbackMaster from './components/profileNumberClient/ProfileFeedbackMaster';
-import PickLog from './components/Registration/pick-log';
-import Register from './components/Registration/register';
+import RegistrationPickPage from './features/user/registration/RegistrationPickPage';
+import RegistrationUserPage from './features/user/registration/RegistrationUserPage';
 import Remont from './components/remont';
 import { ServiceDetail } from './components/Service';
 import BalanceClient from './components/Settings/BalanceClient';
@@ -164,9 +164,9 @@ function App() {
             <Route path="contact" element={<MapMaster />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register">
-              <Route index element={<PickLog />} />
+              <Route index element={<RegistrationPickPage />} />
               <Route path="master" element={<RegistrationMasterPage />} />
-              <Route path="client" element={<Register />} />
+              <Route path="client" element={<RegistrationUserPage />} />
             </Route>
           </Route>
           <Route path="client">

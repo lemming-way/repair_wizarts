@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 import { Modal } from '../../../shared/ui/Modal';
-import { PhoneNumber } from './PhoneNumber';
+import { PhoneNumber } from '../PhoneNumber';
 import { useLanguage } from '../../../state/language';
 import modalStyles from './PasswordRecoveryModal.module.scss';
 import {

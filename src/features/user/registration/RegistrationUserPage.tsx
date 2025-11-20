@@ -6,10 +6,11 @@ import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 // import Error from "../../../components/Error/Error";
 import { useLanguage } from '../../../state/language';
-import {registerAsClient} from "../../../services/auth.service";
+import { registerAsClient } from "../../../services/auth.service";
+import { PhoneNumber } from '../PhoneNumber';
 
 const RegistrationUserPage = () => {
-  const text = useLanguage(); // функция для перевода
+  const text = useLanguage();
 
   useEffect(() => {
     document.title = text('Registration');
@@ -17,21 +18,44 @@ const RegistrationUserPage = () => {
 
   const navigate = useNavigate();
 
-  const [error, setError] = useState();
+  const [error, setError] = useState<string | undefined>(undefined);
   const [name, setName] = useState("");
   const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState("+7(9"); // Инициализация с +7(9 для соответствия
   const [password, setPassword] = useState("");
   const [passwordVerification, setPasswordVerification] = useState("");
   const [accept, setAccept] = useState(false);
 
-  const onSubmit = (e) => {
-    e.preventDefault()
+  // Сброс ошибки телефона при изменении номера (для соответствия RegistrationMasterPage)
+  useEffect(() => {
+    if (phone.replace(/\D/g, '').length === 11) {
+      setError(undefined);
+    }
+  }, [phone]);
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(undefined); // Сброс предыдущих ошибок
 
     if (!accept) {
-      // @ts-ignore
-      return setError(text("To continue, you must accept the privacy policy."));
+      return setError('Чтобы продолжить необходимо принять политику конфиденциальности.');
+    }
+
+    if (password !== passwordVerification) {
+      setError('Пароли не совпадают.');
+      return;
+    }
+
+    const uName = `${name.trim()} ${lastname.trim()}`.trim();
+    if (!uName) {
+      setError('Имя и Фамилия должны быть заполнены.');
+      return;
+    }
+
+    if (phone.replace(/\D/g, '').length < 11) {
+      setError('Номер телефона введен не полностью.');
+      return;
     }
 
     return registerAsClient({
@@ -42,19 +66,26 @@ const RegistrationUserPage = () => {
       password1: password,
       password2: passwordVerification,
     })
-      .then(() => navigate("/login"))
-      .catch((err) => setError(err.message))
+      .then(() => navigate("/"))
+      .catch((err) => setError(err.message));
   };
 
   return (
     <ConfirmPoliticsContext.Provider value={{accept, setAccept}}>
       <div className={`${styles.registrationUserPage} appContainer`}>
-        <h1 className={styles.registrationUserPage_title}>{text('Registration')}</h1>
+        <h1 className={styles.registrationUserPage_title}>Регистрация</h1>
          <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
            {error && (
-             <p className={styles.registrationUserPage_form_error} role="alert">
+             <div
+               className="auth-err"
+               style={{
+                 marginBottom: '10px',
+                 color: 'red',
+                 textAlign: 'center',
+               }}
+             >
                {error}
-             </p>
+             </div>
            )}
            <input
              className={styles.registrationUserPage_form_input}
@@ -83,15 +114,16 @@ const RegistrationUserPage = () => {
              onChange={(e) => setEmail(e.target.value)}
              required
            />
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="text"
-             name="phone"
-             placeholder={text("Phone")}
-             value={phone}
-             onChange={(e) => setPhone(e.target.value)}
-             required
-           />
+           <div className={styles.registrationUserPage_input_phone_wrap}>
+             <PhoneNumber
+               placeholder={text("Phone")}
+               className={`${styles.registrationUserPage_form_input} ${
+                 phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
+               }`}
+               value={phone}
+               onChange={setPhone}
+             />
+           </div>
            <input
              className={styles.registrationUserPage_form_input}
              type="password"

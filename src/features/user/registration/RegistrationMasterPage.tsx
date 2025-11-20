@@ -1,20 +1,20 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import styles from './RegistrationMasterPage.module.scss';
 import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
 import { ConfirmPoliticsContext } from '../../../components/ConfirmPolitics/ConfirmPoliticsContext';
-import type {
-  Option,
-} from '../../../components/MultiSelect/MultiSelect';
+import type { Option } from '../../../components/MultiSelect/MultiSelect';
 import MultiSelect from '../../../components/MultiSelect/MultiSelect';
+import { PhoneNumber } from '../PhoneNumber';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
-
 
 import appFetch from '../../../utilities/appFetch';
 import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
 
 const RegistrationMasterPage = () => {
   const { categories } = useCategoriesQuery();
+  const navigate = useNavigate();
 
   const [login, setLogin] = useState('');
   const [city, setCity] = useState('');
@@ -31,6 +31,13 @@ const RegistrationMasterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { accept, setAccept } = useContext(ConfirmPoliticsContext);
+
+  // Сброс ошибки телефона при изменении номера
+  useEffect(() => {
+    if (phone.replace(/\D/g, '').length === 11) {
+      setError('');
+    }
+  }, [phone]);
 
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState<
     Option[] | null
@@ -137,6 +144,7 @@ const RegistrationMasterPage = () => {
         if (typeof setAccept === 'function') {
           setAccept(false);
         }
+        navigate('/');
       } else {
         let apiError = 'Ошибка регистрации.';
         if (response.message) {
@@ -164,53 +172,6 @@ const RegistrationMasterPage = () => {
     }
   };
 
-  const setPhoneHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = event.target.value;
-    let formattedInput = inputValue.replace(/\D/g, ''); // Remove all non-digits first
-
-    if (formattedInput.startsWith('79') || formattedInput.startsWith('89')) {
-      if (formattedInput.startsWith('89')) {
-        formattedInput = '79' + formattedInput.substring(2);
-      }
-    } else if (formattedInput.startsWith('9')) {
-      formattedInput = '79' + formattedInput.substring(1);
-    } else {
-      // Allow user to clear or type freely if it doesn't match common patterns initially
-    }
-
-    let new_text = '+';
-    if (formattedInput.length > 0) new_text += formattedInput[0]; // Country code (e.g., 7)
-    if (formattedInput.length > 1)
-      new_text += '(' + formattedInput.substring(1, 4);
-    if (formattedInput.length >= 5)
-      new_text += ')-' + formattedInput.substring(4, 7);
-    if (formattedInput.length >= 8)
-      new_text += '-' + formattedInput.substring(7, 9);
-    if (formattedInput.length >= 10)
-      new_text += '-' + formattedInput.substring(9, 11);
-
-    if (
-      new_text.length <= 3 &&
-      inputValue !== '+7(9' &&
-      inputValue !== '+7(' &&
-      inputValue !== '+7' &&
-      inputValue !== '+'
-    ) {
-      // If user deletes and it becomes too short
-      setPhone('+7(9');
-    } else if (new_text.length > 17) {
-      setPhone(new_text.substring(0, 17));
-    } else {
-      setPhone(new_text);
-    }
-
-    if (/[^0-9()+-]/.test(inputValue.substring(1)) && inputValue !== '+7(9') {
-      // Check after initial '+'
-      setError('В номере, пожалуйста, введите только цифры, скобки и дефисы.');
-    } else {
-      setError('');
-    }
-  };
   console.log(categories);
   const categoriesMainOptions: Option[] = categories.map((item) => ({
     label: item.name,
@@ -351,17 +312,13 @@ const RegistrationMasterPage = () => {
             required
           />
           <div className={styles.registrationMasterPage_input_phone_wrap}>
-            <input
+            <PhoneNumber
               placeholder="Телефон"
               className={`${styles.registrationMasterPage_form_input} ${
                 phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
               }`}
-              type="tel" // Changed to type="tel" for better mobile UX
-              name="phone_form"
               value={phone}
-              onChange={setPhoneHandler}
-              required
-              maxLength={17} // +7(XXX)-XXX-XX-XX
+              onChange={setPhone}
             />
           </div>
           <input
@@ -486,5 +443,5 @@ const RegistrationMasterPageWithContext = () => {
   );
 };
 
-export default RegistrationMasterPageWithContext; // Exporting the version with context provider
-// export default RegistrationMasterPage; // Or export this if context is always provided by a parent
+// export default RegistrationMasterPageWithContext; // Exporting the version with context provider
+export default RegistrationMasterPage; // Or export this if context is always provided by a parent

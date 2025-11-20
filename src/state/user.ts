@@ -304,28 +304,37 @@ export interface UserUpdatePayload {
  * @returns Промис, который разрешается после успешного обновления.
  */
 export async function updateUser(queryClient: QueryClient, payload: UserUpdatePayload): Promise<void> {
+  // todo: Может быть, добавить полную проверку для phone, email, language, currency
   const apiUserData: UserUpdateData = {};
 
   if (payload.name !== undefined) {
-    apiUserData.u_name = payload.name;
+    const name = payload.name.trim();
+    [ apiUserData.u_name, apiUserData.u_middle ] = name.split(/\s+(.*)/, 2);
+    apiUserData.u_middle ||= '';
   }
   if (payload.lastname !== undefined) {
-    apiUserData.u_family = payload.lastname;
+    const lastname = payload.lastname.trim();
+    apiUserData.u_family = lastname;
   }
   if (payload.phone !== undefined) {
-    apiUserData.u_phone = payload.phone;
+    const phone = payload.phone.trim();
+    apiUserData.u_phone = phone;
   }
   if (payload.email !== undefined) {
-    apiUserData.u_email = payload.email;
+    const email = payload.email.trim();
+    apiUserData.u_email = email;
   }
   if (payload.language !== undefined) {
-    apiUserData.u_lang = payload.language;
+    const language = payload.language.trim();
+    apiUserData.u_lang = language;
   }
   if (payload.currency !== undefined) {
-    apiUserData.u_currency = payload.currency;
+    const currency = payload.currency.trim();
+    apiUserData.u_currency = currency;
   }
   if (payload.description !== undefined) {
-    apiUserData.u_description = payload.description;
+    const description = payload.description.trim();
+    apiUserData.u_description = description;
   }
 
   await apiUpdateUser(apiUserData);
