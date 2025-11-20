@@ -18,8 +18,9 @@ const CONFIG = {
 	API: {
 		url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
 		categoriesUrl: 'https://profiback.itest24.com/api/full-data',
-		// queryStaleTime,
-		// queryRetry
+		userDataStaleTime: 15 * 60000
+		// queryDefaultStaleTime,
+		// queryDefaultRetry
 	},
 
 	YMAPS: {

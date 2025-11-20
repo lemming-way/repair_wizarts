@@ -1,8 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 import CONFIG from '../constants';
 
-const defaultStaleTime = CONFIG.API?.queryStaleTime ?? 30 * 60 * 1000;
-const defaultRetry = CONFIG.API?.queryRetry ?? 3;
+const defaultStaleTime = CONFIG.API?.queryDefaultStaleTime ?? 30 * 60 * 1000;
+const defaultRetry = CONFIG.API?.queryDefaultRetry ?? 3;
 
 export const queryClient = new QueryClient({
   defaultOptions: {

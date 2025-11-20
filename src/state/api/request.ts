@@ -1,5 +1,5 @@
 import CONFIG from '../../constants';
-import { getToken, removeToken } from '../../services/token.service';
+import { AuthToken, getToken } from '../auth';
 
 const serverURL = process.env.REACT_APP_API_URL || CONFIG.API.url || '';
 const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
@@ -35,14 +35,42 @@ export type AuthUser = {
 };
 
 /**
+ * Класс для возврата ошибки вместе с исходным результатом запроса.
+ * Стандартный Error.cause не использую для совместимости со старыми браузерами.
+ */
+export class FetchError extends Error {
+  cause: Response | ErrorResponse | null;
+  
+  constructor(message, fetchResult: Response | ErrorResponse | null = null) {
+    super(message);
+    this.name = 'FetchError';
+    this.cause = fetchResult;
+  }
+}
+
+/**
  * Формат ответа сервера при ошибке.
  */
-type ErrorResponse = {
+export type ErrorResponse = {
     code: string;
     status: "error";
     message: string;
-    data: any;
+    data?: unknown;
 };
+
+/**
+ * Преобразует объект File в строку base64 (Data URL).
+ * @param file Объект File для преобразования.
+ * @returns Промис, который разрешается со строкой base64 или отклоняется с ошибкой.
+ */
+export function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+}
 
 /**
  * Формат ответа сервера при успехе.
@@ -51,7 +79,8 @@ type SuccessResponse = {
     code: "200";
     status: "success";
     auth_user?: AuthUser;
-    data: any;
+    auth_hash?: string;  // при запросе авторизации
+    data?: unknown;
 };
 
 /**
@@ -78,7 +107,7 @@ function appendFormValue(formData: FormData, key: string, value: unknown) {
  */
 function prepareFormDataBody(
   data: RequestOptions['data'],
-  includeAuth?: { token: string; u_hash: string }
+  includeAuth?: AuthToken | null
 ): FormData {
   const formData = new FormData();
 
@@ -119,7 +148,8 @@ export type RequestOptions = {
  * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
  */
 export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?: AuthUser }> {
-  const correlationId = Math.random().toString(36).slice(2);
+  const isDebug = process.env.NODE_ENV !== 'production';
+  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
   const method = opts.method || 'GET';
 
   const url = `${API_BASE_URL}${opts.path}`;
@@ -128,14 +158,14 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
 
   if (method === 'POST') {
     const token = getToken();
-    const includeAuth = opts.noAuth !== true && !!token?.token && !!token?.u_hash ? token : undefined;
+    const includeAuth = opts.noAuth !== true && !!token?.token && !!token?.u_hash ? token : null;
     formDataBody = prepareFormDataBody(opts.data, includeAuth);
   } else if (method !== 'GET') {
     throw new Error(`Unsupported HTTP method: ${method}. Only GET and POST are supported.`);
   }
 
   try {
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDebug) {
       console.debug('[api]', correlationId, method, url);
     }
 
@@ -145,24 +175,33 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
     if (!contentType.includes('application/json')) {
       const rawText = await resp.text();
       const errorMessage = `Invalid response content type: ${contentType}. Expected application/json. Raw response: ${rawText}`;
-      console.error('[api] content type error', correlationId, errorMessage);
-      throw new Error('Invalid response content type.');
+      if (isDebug) {
+        console.error('[api] content type error', correlationId, errorMessage);
+      }
+      throw new FetchError('Invalid response content type.', resp);
     }
 
     if (resp.ok) {
       const responseData: SuccessResponse | ErrorResponse = await resp.json();
 
-      if (process.env.NODE_ENV !== 'production') {
+      if (isDebug) {
         console.debug('[api] response', correlationId, responseData);
       }
 
       const successResponse = responseData as SuccessResponse;
       if (successResponse.status !== 'success' || successResponse.code !== '200') {
         const errorResponse = responseData as ErrorResponse;
-        console.error('[api] server logical error', correlationId, errorResponse);
-        throw new Error(errorResponse.message);
+        if (isDebug) {
+          console.error('[api] server logical error', correlationId, errorResponse);
+        }
+        throw new FetchError(errorResponse.message, errorResponse);
       }
-      const result = { ...successResponse.data };
+      const result =
+        successResponse.auth_hash ?
+          { auth_hash: successResponse.auth_hash } :
+        'object' === typeof successResponse.data && successResponse.data !== null ?
+          successResponse.data :
+          { data: successResponse.data };
       if (opts.withAuthUser === true && successResponse.auth_user) {
         Object.assign(result, { auth_user: successResponse.auth_user });
       }
@@ -170,18 +209,15 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
     } else {
       const errorMessage = `${resp.status}: ${resp.statusText || 'HTTP Error'}`;
 
-      if (process.env.NODE_ENV !== 'production') {
+      if (isDebug) {
         console.error('[api] http error', correlationId, errorMessage);
       }
 
-      if (resp.status === 401) {
-        removeToken();
-      }
-      throw new Error(errorMessage);
+      throw new FetchError(errorMessage, resp);
     }
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    if (process.env.NODE_ENV !== 'production') {
+    if (isDebug) {
       console.error('[api] request failed', correlationId, error);
     }
     throw error;
@@ -191,43 +227,57 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
 /**
  * Упрощенный API клиент.
  */
-export const api = {
-  /**
-   * Отправляет GET запрос (без авторизации).
-   * @template T Тип ожидаемых данных.
-   * @param path Путь к API.
-   * @returns {Promise<T>} Промис с данными ответа.
-   */
-  get: <T>(path: string) =>
-    request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>,
 
-  /**
-   * Отправляет POST запрос с авторизацией (если токен доступен).
-   * @template T Тип ожидаемых данных.
-   * @param path Путь к API.
-   * @param data Данные запроса.
-   * @returns {Promise<T>} Промис с данными ответа.
-   */
-  post: <T>(path: string, data?: RequestOptions['data']) =>
-    request<T>({ method: 'POST', path, data }) as Promise<T>,
+/**
+ * Отправляет GET запрос (без авторизации).
+ * @template T Тип ожидаемых данных.
+ * @param path Путь к API.
+ * @returns {Promise<T>} Промис с данными ответа.
+ */
+export function get<T>(path: string) {
+  return request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>;
+}
 
-  /**
-   * Отправляет POST запрос с получением данных авторизованного пользователя.
-   * @template T Тип ожидаемых данных.
-   * @param path Путь к API.
-   * @param data Данные запроса.
-   * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа.
-   */
-  postWithAuthUser: <T>(path: string, data?: RequestOptions['data']) =>
-    request<T>({ method: 'POST', path, data, withAuthUser: true }),
+/**
+ * Отправляет POST запрос с авторизацией (если токен доступен).
+ * @template T Тип ожидаемых данных.
+ * @param path Путь к API.
+ * @param data Данные запроса.
+ * @returns {Promise<T>} Промис с данными ответа.
+ */
+export function post<T>(path: string, data?: RequestOptions['data']) {
+  return request<T>({ method: 'POST', path, data }) as Promise<T>
+}
 
-  /**
-   * Отправляет POST запрос без авторизации.
-   * @template T Тип ожидаемых данных.
-   * @param {string} path Путь к API.
-   * @param {RequestOptions['data']} [data] Данные запроса.
-   * @returns {Promise<T>} Промис с данными ответа.
-   */
-  postNoAuth: <T>(path: string, data?: RequestOptions['data']) =>
-    request<T>({ method: 'POST', path, data, noAuth: true }) as Promise<T>,
-};
+/**
+ * Отправляет POST запрос без авторизации с получением данных авторизованного пользователя.
+ * (Имеет смысл только для запросов авторизации)
+ * @template T Тип ожидаемых данных.
+ * @param path Путь к API.
+ * @param data Данные запроса.
+ * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа.
+ */
+export function authWithAuthUser<T>(path: string, data?: RequestOptions['data']) {
+  return request<T>({ method: 'POST', path, data, noAuth: true, withAuthUser: true });
+}
+/**
+ * Отправляет POST запрос с получением данных авторизованного пользователя.
+ * @template T Тип ожидаемых данных.
+ * @param path Путь к API.
+ * @param data Данные запроса.
+ * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа.
+ */
+export function postWithAuthUser<T>(path: string, data?: RequestOptions['data']) {
+  return request<T>({ method: 'POST', path, data, withAuthUser: true });
+}
+
+/**
+ * Отправляет POST запрос без авторизации.
+ * @template T Тип ожидаемых данных.
+ * @param {string} path Путь к API.
+ * @param {RequestOptions['data']} [data] Данные запроса.
+ * @returns {Promise<T>} Промис с данными ответа.
+ */
+export function postNoAuth<T>(path: string, data?: RequestOptions['data']) {
+  return request<T>({ method: 'POST', path, data, noAuth: true }) as Promise<T>;
+}
