@@ -9,14 +9,14 @@ import MultiSelect from '../../../components/MultiSelect/MultiSelect';
 import { PhoneNumber } from '../PhoneNumber';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
-import appFetch from '../../../utilities/appFetch';
 import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
+import { useRegisterMaster } from '../../../state/user';
 
 const RegistrationMasterPage = () => {
   const { categories } = useCategoriesQuery();
   const navigate = useNavigate();
+  const registerMasterMutation = useRegisterMaster();
 
-  const [login, setLogin] = useState('');
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
   const [name, setName] = useState('');
@@ -27,8 +27,7 @@ const RegistrationMasterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [keep, setKeep] = useState(false);
 
   const { accept, setAccept } = useContext(ConfirmPoliticsContext);
 
@@ -59,7 +58,6 @@ const RegistrationMasterPage = () => {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
-    setSuccessMessage('');
 
     if (!accept) {
       setError(
@@ -79,96 +77,32 @@ const RegistrationMasterPage = () => {
     }
 
     const uName = `${name.trim()} ${lastname.trim()}`.trim();
-    if (!uName) {
+    if (!uName) { // Используем uName для проверки наличия имени и фамилии
       setError('Имя и Фамилия должны быть заполнены.');
       return;
     }
 
-    setIsLoading(true);
-
-    const formattedPhone = phone.replace(/\D/g, '');
-
-    const uDetails = {
-      address,
-      city,
-      login,
-      section: categoryMainOptionSelected || [],
-      subsection: categoryOptionSelected || [],
-      service: modelPhoneOptionSelected || [],
-      subservice: subModelOptionSelected || [],
-    };
-
-    const dataForApi = {
-      password,
-      u_details: uDetails,
-    };
-
-    const bodyParams = {
-      u_name: uName,
-      u_phone: formattedPhone,
-      u_email: email,
-      u_role: '2',
-      data: JSON.stringify(dataForApi),
-    };
-
     try {
-      console.log(dataForApi);
-      const response = await appFetch('register/', {
-        body: bodyParams,
+      await registerMasterMutation.mutateAsync({
+        name: name.trim(),
+        lastname: lastname.trim(),
+        phone: phone.replace(/\D/g, ''),
+        email: email.trim(),
+        password,
+        details: {
+          address: address.trim(),
+          city: city.trim(),
+          section: categoryMainOptionSelected?.map(opt => opt.value) || [],
+          subsection: categoryOptionSelected?.map(opt => opt.value) || [],
+          service: modelPhoneOptionSelected?.map(opt => opt.value) || [],
+          subservice: subModelOptionSelected?.map(opt => opt.value) || [],
+        },
+        keepAuthorized: keep,
       });
-      if (response.code === '200' && response.status === 'success') {
-        setSuccessMessage('Регистрация прошла успешно! ');
-        if (response.data?.string) {
-          setSuccessMessage(
-            (prev) => prev + `Ваш пароль: ${response.data.string}. `,
-          );
-        }
-        if (response.data?.['email status'] === true) {
-          setSuccessMessage(
-            (prev) => prev + 'Пароль отправлен на указанный E-mail. ',
-          );
-        }
-
-        setLogin('');
-        setAddress('');
-        setCity('');
-        setName('');
-        setLastname('');
-        setPhone('+7(9');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setCategoryMainOptionSelected([]);
-        setCategoryOptionSelected([]);
-        setModelPhoneOptionSelected([]);
-        if (typeof setAccept === 'function') {
-          setAccept(false);
-        }
-        navigate('/');
-      } else {
-        let apiError = 'Ошибка регистрации.';
-        if (response.message) {
-          apiError = response.message;
-        } else if (
-          typeof response.data === 'string' &&
-          response.data.startsWith('busy user data:')
-        ) {
-          apiError = `Данные заняты: ${response.data.replace(
-            'busy user data: ',
-            '',
-          )}`;
-        } else if (response.code && response.status) {
-          apiError = `Ошибка ${response.code}: ${response.status}`;
-        }
-        setError(apiError);
-      }
+      navigate("/");
     } catch (err: any) {
       console.error('Registration API error:', err);
-      setError(
-        err?.message || 'Не удалось связаться с сервером. Попробуйте позже.',
-      );
-    } finally {
-      setIsLoading(false);
+      setError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -253,27 +187,7 @@ const RegistrationMasterPage = () => {
               {error}
             </div>
           )}
-          {successMessage && (
-            <div
-              style={{
-                marginBottom: '10px',
-                color: 'green',
-                textAlign: 'center',
-              }}
-            >
-              {successMessage}
-            </div>
-          )}
 
-          <input
-            className={styles.registrationMasterPage_form_input}
-            type="text"
-            name="login_form" // Changed name to avoid conflict with 'login' state
-            placeholder="Логин (для входа на сайт)"
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            required
-          />
           <input
             className={styles.registrationMasterPage_form_input}
             type="text"
@@ -418,14 +332,23 @@ const RegistrationMasterPage = () => {
             />
           )}
 
+          <label className={styles.registrationMasterPage_form_loginKeep}>
+             <input
+               className={styles.registrationMasterPage_form_loginKeep_input}
+               type="checkbox"
+               onChange={(e) => setKeep(e.target.checked)}
+             />
+             Оставаться в системе
+          </label>
+
           <ConfirmPolitics />
 
           <button
             className={styles.registrationMasterPage_form_button}
             type="submit"
-            disabled={isLoading}
+            disabled={registerMasterMutation.isPending}
           >
-            {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
+            {registerMasterMutation.isPending ? 'Регистрация...' : 'Зарегистрироваться'}
           </button>
         </form>
       </div>

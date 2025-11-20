@@ -6,7 +6,7 @@ import { AuthUser, fileToBase64 } from './api/request';
 import {
   LoginType, UserDetails, UserUpdateData, RegisterUserData, RegisterResult,  // типы
   login as apiLogin, logout as apiLogout, loginByVerificationCode,  // функции
-  registerAsClient, registerAsMaster,
+  registerAsClient as apiRegisterAsClient, registerAsMaster as apiRegisterAsMaster,
   getUserDetails, updateUser as apiUpdateUser, updateUserDetails as apiUpdateUserDetails,
   updatePassword as apiUpdatePassword, recoverPassword as apiRecoverPassword
 } from './api/user';
@@ -279,6 +279,106 @@ export function useLogin() {
   return useMutation({
     mutationFn: ({ loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean }) =>
       login(queryClient, loginValue, password, keepAuthorized),
+  });
+}
+
+/**
+ * Данные для регистрации нового пользователя.
+ */
+export interface RegisterPayload {
+  name: string;
+  lastname: string;
+  phone: string;
+  email: string;
+  password: string;
+  details?: Record<string, unknown>; // Дополнительные детали, только для мастера
+  keepAuthorized: boolean;
+}
+
+/**
+ * Регистрирует нового пользователя как клиента.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param payload Объект с данными для регистрации.
+ * @returns Промис, который разрешается после успешной регистрации.
+ */
+/**
+ * Вспомогательная функция для регистрации нового пользователя.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param payload Объект с данными для регистрации.
+ * @param registerApiFn Функция API для регистрации (клиента или мастера).
+ * @param role Роль пользователя (клиент или мастер).
+ * @returns Промис, который разрешается после успешной регистрации.
+ */
+async function _registerUser(
+  queryClient: QueryClient,
+  payload: RegisterPayload,
+  registerApiFn: (userData: RegisterUserData) => Promise<RegisterResult>,
+  role: UserRole
+): Promise<void> {
+  const { name, lastname, phone, email, password, details, keepAuthorized } = payload;
+  const u_name = `${name.trim()} ${lastname.trim()}`.trim();
+  const u_phone = phone.trim();
+  const u_email = email.trim();
+
+  if (!u_phone && !u_email) {
+    throw new Error("Phone number or email address must be specified.");
+  }
+
+  const registerData: RegisterUserData = {
+    u_name,
+    u_phone,
+    u_email,
+    password,
+  };
+  if (role === UserRole.Master && details) {
+    registerData.u_details = details;
+  }
+
+  const result = await registerApiFn(registerData);
+  if (!result.token || !result.u_hash) {
+    throw new Error('Registration failed: token or user hash is missing.');
+  }
+  setToken({ token: result.token, u_hash: result.u_hash }, keepAuthorized);
+  queryClient.invalidateQueries({ queryKey: ['user'] });
+}
+
+/**
+ * Регистрирует нового пользователя как клиента.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param payload Объект с данными для регистрации.
+ * @returns Промис, который разрешается после успешной регистрации.
+ */
+export async function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
+  return _registerUser(queryClient, payload, apiRegisterAsClient, UserRole.Client);
+}
+
+/**
+ * Хук для регистрации нового пользователя как клиента.
+ */
+export function useRegisterClient() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RegisterPayload) => registerClient(queryClient, payload),
+  });
+}
+
+/**
+ * Регистрирует нового пользователя как мастера.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param payload Объект с данными для регистрации.
+ * @returns Промис, который разрешается после успешной регистрации.
+ */
+export async function registerMaster(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
+  return _registerUser(queryClient, payload, apiRegisterAsMaster, UserRole.Master);
+}
+
+/**
+ * Хук для регистрации нового пользователя как мастера.
+ */
+export function useRegisterMaster() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: RegisterPayload) => registerMaster(queryClient, payload),
   });
 }
 

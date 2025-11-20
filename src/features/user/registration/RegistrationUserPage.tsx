@@ -6,7 +6,7 @@ import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics
 import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 // import Error from "../../../components/Error/Error";
 import { useLanguage } from '../../../state/language';
-import { registerAsClient } from "../../../services/auth.service";
+import { useRegisterClient } from '../../../state/user';
 import { PhoneNumber } from '../PhoneNumber';
 
 const RegistrationUserPage = () => {
@@ -17,15 +17,17 @@ const RegistrationUserPage = () => {
   }, [text]);
 
   const navigate = useNavigate();
+  const registerClientMutation = useRegisterClient();
 
   const [error, setError] = useState<string | undefined>(undefined);
   const [name, setName] = useState("");
   const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("+7(9"); // Инициализация с +7(9 для соответствия
+  const [phone, setPhone] = useState("+7(9");
   const [password, setPassword] = useState("");
   const [passwordVerification, setPasswordVerification] = useState("");
   const [accept, setAccept] = useState(false);
+  const [keep, setKeep] = useState(false);
 
   // Сброс ошибки телефона при изменении номера (для соответствия RegistrationMasterPage)
   useEffect(() => {
@@ -34,7 +36,7 @@ const RegistrationUserPage = () => {
     }
   }, [phone]);
 
-  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(undefined); // Сброс предыдущих ошибок
 
@@ -58,16 +60,19 @@ const RegistrationUserPage = () => {
       return;
     }
 
-    return registerAsClient({
-      name,
-      lastname,
-      email,
-      phone,
-      password1: password,
-      password2: passwordVerification,
-    })
-      .then(() => navigate("/"))
-      .catch((err) => setError(err.message));
+    try {
+      await registerClientMutation.mutateAsync({
+        name,
+        lastname,
+        email,
+        phone,
+        password,
+        keepAuthorized: keep,
+      });
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   return (
@@ -142,10 +147,25 @@ const RegistrationUserPage = () => {
              required
            />
 
+           <label className={styles.registrationUserPage_form_loginKeep}>
+             <input
+               className={styles.registrationUserPage_form_loginKeep_input}
+               type="checkbox"
+               onChange={(e) => setKeep(e.target.checked)}
+             />
+             {text("Stay logged in")}
+           </label>
+
            {/*Вынесла в отдельный компонент, т.к. будет переиспользован*/}
            <ConfirmPolitics />
 
-           <button className={styles.registrationUserPage_form_button} type="submit">{text("Register")}</button>
+           <button
+             className={styles.registrationUserPage_form_button}
+             type="submit"
+             disabled={registerClientMutation.isPending}
+           >
+             {registerClientMutation.isPending ? text("Registering...") : text("Register")}
+           </button>
          </form>
       </div>
     </ConfirmPoliticsContext.Provider>
