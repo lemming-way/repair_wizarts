@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import ModalDelete from './ModalDelete';
 import style from './OrderRow.module.css';
 // --- 1. Импортируем нашу API-функцию ---
-import { cancelMasterResponse } from '../../services/order.service';
+import { cancelContractorResponse } from '../../services/order.service';
 import { useLanguage } from '../../state/language';
 
 export default function OrderRow({
@@ -47,7 +47,7 @@ export default function OrderRow({
     }
 
     try {
-      await cancelMasterResponse(b_id);
+      await cancelContractorResponse(b_id);
       alert(text('Your offer has been successfully deleted.'));
       // Вызываем колбэк, переданный из родителя, для обновления списка
       if (onResponseCancelled) {

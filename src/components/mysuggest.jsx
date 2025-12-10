@@ -244,7 +244,7 @@ function MySuggest() {
       </div>
       <div className="sentence-2 font_abel">
         <div className="sentaince_text mobile-sentaince_text">
-          {offers.length > 0 && <h2>{text('Master proposals')}</h2>}
+          {offers.length > 0 && <h2>{text('Contractor proposals')}</h2>}
         </div>
       </div>
       {offers.map((v) => (

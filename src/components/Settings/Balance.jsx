@@ -12,12 +12,12 @@ const Balance = (props) => {
 
 
     //~ const user = useSelector(selectUser)
-    //~ const userPictures = user.master?.[0]?.pictures
+    //~ const userPictures = user.contractor?.[0]?.pictures
         //~ .filter((v) => v !== "")
     //~ const [pics, setPics] = useState([])
 
     //~ useEffect(() => {
-        //~ if (user.master) {
+        //~ if (user.contractor) {
             //~ setPics(userPictures)
         //~ }
     //~ }, [user])
@@ -30,7 +30,7 @@ const Balance = (props) => {
     //         ...pictureInputRef.current.files,
     //         ...pics
     //     ]
-    //     return updateMasterPictures(user.id, files).then((v) => {
+    //     return updateContractorPictures(user.id, files).then((v) => {
     //         const filename = pictureInputRef.current.files[0]?.name
 
     //         console.log(v)
@@ -44,7 +44,7 @@ const Balance = (props) => {
 
     // const getDeleteHandle = (name) => (e) => {
     //     e.preventDefault()
-    //     return updateMasterPictures(
+    //     return updateContractorPictures(
     //         user.id,
     //         pics.filter((v) => v !== name),
     //     ).then(() => {

@@ -1,6 +1,6 @@
 import appFetch from '../utilities/appFetch';
 
-const getMasterOrders = () =>
+const getContractorOrders = () =>
   Promise.all([
     appFetch('/drive', {
       body: {
@@ -13,7 +13,7 @@ const getMasterOrders = () =>
     }),
   ]);
 
-//~ const getMasterOrdersTestData = () => {
+//~ const getContractorOrdersTestData = () => {
   //~ return new Promise((resolve) => {
     //~ const mockOrders = [
       //~ {
@@ -92,7 +92,7 @@ const updateOrderStatusFromClient = (id, payload) =>
  * @param {string | number} bookingId - Идентификатор заявки (b_id).
  * @returns {Promise<any>} Ответ от API.
  */
-const cancelMasterResponse = (bookingId) => {
+const cancelContractorResponse = (bookingId) => {
   return appFetch(`/drive/get/${bookingId}`, {
     method: 'POST',
     body: {
@@ -103,9 +103,9 @@ const cancelMasterResponse = (bookingId) => {
 };
 
 export {
-  getMasterOrders,
+  getContractorOrders,
   createOrder,
   updateOrderStatus,
   updateOrderStatusFromClient,
-  cancelMasterResponse,
+  cancelContractorResponse,
 };

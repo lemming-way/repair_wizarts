@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 
-import style from './MasterProfileNavigator.module.css';
+import style from './ContractorProfileNavigator.module.css';
 // import { useNavigate, useParams } from 'react-router-dom'
 // import "./ClientProfileNavigator.css"
 
-export default function MasterProfileNavigator({
+export default function ContractorProfileNavigator({
   numberElementMenu,
   offsetMenu,
 }) {
@@ -17,9 +17,9 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings' ? 'active2' : null
+            window.location.pathname === '/contractor/settings' ? 'active2' : null
           }`}
-          to="/master/settings"
+          to="/contractor/settings"
         >
           Общие
         </Link>
@@ -29,11 +29,11 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings/profile'
+            window.location.pathname === '/contractor/settings/profile'
               ? 'active2'
               : null
           }`}
-          to="/master/settings/profile"
+          to="/contractor/settings/profile"
         >
           Профиль
         </Link>
@@ -43,11 +43,11 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings/services'
+            window.location.pathname === '/contractor/settings/services'
               ? 'active2'
               : null
           }`}
-          to="/master/settings/services"
+          to="/contractor/settings/services"
         >
           Прайс
         </Link>
@@ -57,11 +57,11 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings/finance'
+            window.location.pathname === '/contractor/settings/finance'
               ? 'active2'
               : null
           }`}
-          to="/master/settings/finance"
+          to="/contractor/settings/finance"
         >
           Финансы
         </Link>
@@ -71,11 +71,11 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings/balance'
+            window.location.pathname === '/contractor/settings/balance'
               ? 'active2'
               : null
           }`}
-          to="/master/settings/balance"
+          to="/contractor/settings/balance"
         >
           Баланс
         </Link>
@@ -85,11 +85,11 @@ export default function MasterProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/master/settings/photo'
+            window.location.pathname === '/contractor/settings/photo'
               ? 'active2'
               : null
           }`}
-          to="/master/settings/photo"
+          to="/contractor/settings/photo"
         >
           Фотография
         </Link>
@@ -121,49 +121,49 @@ export default function MasterProfileNavigator({
         {[
           <Link
             className={`${style.link} ${
-              window.location.pathname == '/master/settings' ? 'active2' : null
+              window.location.pathname == '/contractor/settings' ? 'active2' : null
             }`}
-            to="/master/settings"
+            to="/contractor/settings"
           >
             Профиль
           </Link>,
           <Link
             className={`${style.link} ${
-              window.location.pathname == '/master/settings/picture'
+              window.location.pathname == '/contractor/settings/picture'
                 ? 'active2'
                 : null
             }`}
-            to="/master/settings/picture"
+            to="/contractor/settings/picture"
           >
             Фотография
           </Link>,
           <Link
             className={`${style.link} ${
-              window.location.pathname == '/master/settings/wallet'
+              window.location.pathname == '/contractor/settings/wallet'
                 ? 'active2'
                 : null
             }`}
-            to="/master/settings/wallet"
+            to="/contractor/settings/wallet"
           >
             Кошелёк
           </Link>,
           <Link
             className={`${style.link} ${
-              window.location.pathname == '/master/settings/finance'
+              window.location.pathname == '/contractor/settings/finance'
                 ? 'active2'
                 : null
             }`}
-            to="/master/settings/finance"
+            to="/contractor/settings/finance"
           >
             Финансы
           </Link>,
           <Link
             className={`${style.link} ${
-              window.location.pathname == '/master/settings/balance'
+              window.location.pathname == '/contractor/settings/balance'
                 ? 'active2'
                 : null
             }`}
-            to="/master/settings/balance"
+            to="/contractor/settings/balance"
           >
             Баланс
           </Link>,

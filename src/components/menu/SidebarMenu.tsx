@@ -32,7 +32,7 @@ const Menu = ({ active, setActive }) => {
                             <h3>Алексей Иванов</h3>
                            </div>
                         {/* <div className="stars">
-                            <p>{user.master?.[0]?.rating} <Rating readonly initialValue={user.master?.[0]?.rating} size="22" /> {user.master?.[0]?.number_of_feedbacks}</p>
+                            <p>{user.contractor?.[0]?.rating} <Rating readonly initialValue={user.contractor?.[0]?.rating} size="22" /> {user.contractor?.[0]?.number_of_feedbacks}</p>
                         </div> */}
                     </div>
 
@@ -41,7 +41,7 @@ const Menu = ({ active, setActive }) => {
                         <li className={location.pathname.includes("/settings") ? "active imawe" : "imawe"} ><img src="/img/img-contact.png" alt="" /><Link to="/settings"> Настройки</Link></li>
                         <li className={location.pathname.includes("/16854163") || location.pathname.includes("/168789461") ? "active imawe" : "imawe"} ><img src="/img/img-massage.png" alt="" /><Link to="/chat/16854163">Чат</Link></li>
                         <li className={location.pathname.includes("/applications/my") ? "active imawe" : " imawe"}><img src="/img/img-list.png" alt="" /><Link to='/applications/my'> Мои заявки</Link></li>
-                        <li className={location.pathname.includes("/pick-master/14325664") ? "active imawe" : "imawe"}><img src="/img/img-white-star.png" alt="" /><Link to="/pick-master/14325664"> Мои отзывы</Link></li>
+                        <li className={location.pathname.includes("/pick-contractor/14325664") ? "active imawe" : "imawe"}><img src="/img/img-white-star.png" alt="" /><Link to="/pick-contractor/14325664"> Мои отзывы</Link></li>
                         <li className={location.pathname.includes("/orders/my") ? "active imawe" : "imawe"}><img src="/img/img-list-2.png " alt="" /><Link to="/orders/my"> Мои заказы</Link></li>
                         
                         

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import style from './SettingsMaster.module.css';
+import style from './SettingsContractor.module.css';
 import { useUser, updateUserAvatar } from '../../state/user';
 
 const Photo = () => {

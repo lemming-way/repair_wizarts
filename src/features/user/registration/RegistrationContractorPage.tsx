@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import styles from './RegistrationMasterPage.module.scss';
+import styles from './RegistrationContractorPage.module.scss';
 import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
 import { ConfirmPoliticsContext } from '../../../components/ConfirmPolitics/ConfirmPoliticsContext';
 import type { Option } from '../../../components/MultiSelect/MultiSelect';
@@ -10,12 +10,12 @@ import { PhoneNumber } from '../PhoneNumber';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
 import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
-import { useRegisterMaster } from '../../../state/user';
+import { useRegisterContractor } from '../../../state/user';
 
-const RegistrationMasterPage = () => {
+const RegistrationContractorPage = () => {
   const { categories } = useCategoriesQuery();
   const navigate = useNavigate();
-  const registerMasterMutation = useRegisterMaster();
+  const registerContractorMutation = useRegisterContractor();
 
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
@@ -83,7 +83,7 @@ const RegistrationMasterPage = () => {
     }
 
     try {
-      await registerMasterMutation.mutateAsync({
+      await registerContractorMutation.mutateAsync({
         name: name.trim(),
         lastname: lastname.trim(),
         phone: phone.replace(/\D/g, ''),
@@ -169,10 +169,10 @@ const RegistrationMasterPage = () => {
 
   return (
     <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
-      <div className={`${styles.registrationMasterPage}`}>
-        <h1 className={styles.registrationMasterPage_title}>Регистрация</h1>
+      <div className={`${styles.registrationContractorPage}`}>
+        <h1 className={styles.registrationContractorPage_title}>Регистрация</h1>
         <form
-          className={styles.registrationMasterPage_form}
+          className={styles.registrationContractorPage_form}
           onSubmit={onSubmit}
         >
           {error && (
@@ -189,7 +189,7 @@ const RegistrationMasterPage = () => {
           )}
 
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="text"
             name="city"
             placeholder="Город"
@@ -198,7 +198,7 @@ const RegistrationMasterPage = () => {
             required
           />
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="text"
             name="address_form"
             placeholder="Адрес (улица, дом)"
@@ -208,7 +208,7 @@ const RegistrationMasterPage = () => {
           />
 
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="text"
             name="name_form"
             placeholder="Имя"
@@ -217,7 +217,7 @@ const RegistrationMasterPage = () => {
             required
           />
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="text"
             name="lastname_form"
             placeholder="Фамилия"
@@ -225,10 +225,10 @@ const RegistrationMasterPage = () => {
             onChange={(e) => setLastname(e.target.value)}
             required
           />
-          <div className={styles.registrationMasterPage_input_phone_wrap}>
+          <div className={styles.registrationContractorPage_input_phone_wrap}>
             <PhoneNumber
               placeholder="Телефон"
-              className={`${styles.registrationMasterPage_form_input} ${
+              className={`${styles.registrationContractorPage_form_input} ${
                 phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
               }`}
               value={phone}
@@ -236,7 +236,7 @@ const RegistrationMasterPage = () => {
             />
           </div>
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="email"
             name="email_form"
             placeholder="Электронная почта"
@@ -245,7 +245,7 @@ const RegistrationMasterPage = () => {
             required
           />
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="password"
             name="password_form"
             placeholder="Пароль"
@@ -254,7 +254,7 @@ const RegistrationMasterPage = () => {
             required
           />
           <input
-            className={styles.registrationMasterPage_form_input}
+            className={styles.registrationContractorPage_form_input}
             type="password"
             name="confirm_password_form"
             placeholder="Подтвердите пароль"
@@ -332,9 +332,9 @@ const RegistrationMasterPage = () => {
             />
           )}
 
-          <label className={styles.registrationMasterPage_form_loginKeep}>
+          <label className={styles.registrationContractorPage_form_loginKeep}>
              <input
-               className={styles.registrationMasterPage_form_loginKeep_input}
+               className={styles.registrationContractorPage_form_loginKeep_input}
                type="checkbox"
                onChange={(e) => setKeep(e.target.checked)}
              />
@@ -344,11 +344,11 @@ const RegistrationMasterPage = () => {
           <ConfirmPolitics />
 
           <button
-            className={styles.registrationMasterPage_form_button}
+            className={styles.registrationContractorPage_form_button}
             type="submit"
-            disabled={registerMasterMutation.isPending}
+            disabled={registerContractorMutation.isPending}
           >
-            {registerMasterMutation.isPending ? 'Регистрация...' : 'Зарегистрироваться'}
+            {registerContractorMutation.isPending ? 'Регистрация...' : 'Зарегистрироваться'}
           </button>
         </form>
       </div>
@@ -358,14 +358,14 @@ const RegistrationMasterPage = () => {
 
 // todo: удалить ненужный код
 //~ // Wrapper component to provide ConfirmPoliticsContext if it's not already provided by a parent
-//~ const RegistrationMasterPageWithContext = () => {
+//~ const RegistrationContractorPageWithContext = () => {
   //~ const [accept, setAccept] = useState(false);
   //~ return (
     //~ <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
-      //~ <RegistrationMasterPage />
+      //~ <RegistrationContractorPage />
     //~ </ConfirmPoliticsContext.Provider>
   //~ );
 //~ };
 
-// export default RegistrationMasterPageWithContext; // Exporting the version with context provider
-export default RegistrationMasterPage; // Or export this if context is always provided by a parent
+// export default RegistrationContractorPageWithContext; // Exporting the version with context provider
+export default RegistrationContractorPage; // Or export this if context is always provided by a parent

@@ -6,13 +6,13 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import Popup from 'reactjs-popup';
 
-import style from './SettingsMaster.module.css';
+import style from './SettingsContractor.module.css';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';
 import { fileToBase64 } from '../../shared/lib/utilities';
 import { useUserExtended, updateUser, updateUserAvatar, updateUserDetails, updateUserPassword } from '../../state/user';
 
-export default function SettingsMaster() {
+export default function SettingsContractor() {
   const text = useLanguage();
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
@@ -40,17 +40,17 @@ export default function SettingsMaster() {
 
   useEffect(() => {
     if (userEx.id) {
-      const master = userEx.details || {};
+      const contractor = userEx.details || {};
       const obj = {
         phone: userEx.phone || '',
         email: userEx.email || '',
         details: {
-          availability_from: master.availability_from || '00:00:00',
-          availability_to: master.availability_to || '00:00:00',
-          status: master.status || '',
-          mailing: master.mailing || false,
-          is_active: master.is_active || false,
-          login: master.login || '',
+          availability_from: contractor.availability_from || '00:00:00',
+          availability_to: contractor.availability_to || '00:00:00',
+          status: contractor.status || '',
+          mailing: contractor.mailing || false,
+          is_active: contractor.is_active || false,
+          login: contractor.login || '',
         },
       };
       setForm(obj);

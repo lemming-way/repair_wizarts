@@ -7,7 +7,7 @@ import { fileToBase64 } from '../shared/lib/utilities';
 import {
   LoginType, UserUpdateData, RegisterUserData, RegisterResult,  // типы
   login as apiLogin, logout as apiLogout, // loginByVerificationCode,  // функции
-  registerAsClient as apiRegisterAsClient, registerAsMaster as apiRegisterAsMaster,
+  registerAsClient as apiRegisterAsClient, registerAsContractor as apiRegisterAsContractor,
   getUserData, updateUser as apiUpdateUser, updateUserDetails as apiUpdateUserDetails,
   updatePassword as apiUpdatePassword, recoverPassword as apiRecoverPassword
 } from './api/user';
@@ -34,7 +34,7 @@ export enum UserRole {
   /** Клиент */
   Client = 1,
   /** Мастер */
-  Master = 2
+  Contractor = 2
 };
 
 /**
@@ -117,7 +117,7 @@ function fetchUser({ client }): Promise<UserProfile | {}> {
         lastname: String(result.u_family || ''),
         email: String(result.u_email || ''),
         phone: String(result.u_phone || ''),
-        role: result.u_role === '2' ? UserRole.Master : UserRole.Client,
+        role: result.u_role === '2' ? UserRole.Contractor : UserRole.Client,
         avatar: String(result.u_photo || ''),
         language: String(result.u_lang || CONFIG.APP.language || ''),
         currency: String(result.u_currency || '')
@@ -257,7 +257,7 @@ export async function login(
         lastname: String(authResult.auth_user.u_family || ''),
         email: String(authResult.auth_user.u_email || ''),
         phone: String(authResult.auth_user.u_phone || ''),
-        role: authResult.auth_user.u_role === '2' ? UserRole.Master : UserRole.Client,
+        role: authResult.auth_user.u_role === '2' ? UserRole.Contractor : UserRole.Client,
         avatar: String(authResult.auth_user.u_photo || ''),
         language: String(authResult.auth_user.u_lang || CONFIG.APP.language || ''),
         currency: String(authResult.auth_user.u_currency || '')
@@ -355,7 +355,7 @@ async function _registerUser(
     u_email,
     password,
   };
-  if (role === UserRole.Master && details) {
+  if (role === UserRole.Contractor && details) {
     registerData.u_details = details;
   }
 
@@ -393,17 +393,17 @@ export function useRegisterClient() {
  * @param payload Объект с данными для регистрации.
  * @returns Промис, который разрешается после успешной регистрации.
  */
-export async function registerMaster(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  return _registerUser(queryClient, payload, apiRegisterAsMaster, UserRole.Master);
+export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
+  return _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
 }
 
 /**
  * Хук для регистрации нового пользователя как мастера.
  */
-export function useRegisterMaster() {
+export function useRegisterContractor() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: RegisterPayload) => registerMaster(queryClient, payload),
+    mutationFn: (payload: RegisterPayload) => registerContractor(queryClient, payload),
   });
 }
 

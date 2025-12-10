@@ -26,12 +26,12 @@ function App() {
 
                     <div className="huge-fasfdsoiXC df df">
                         <div className="two-input">
-                            <Link to='/master/requests'>
+                            <Link to='/contractor/requests'>
                                 <div className="myorders">
                                     <p>Мои заказы</p>
                                 </div>
                             </Link>
-                            <Link to='/master/requests'>
+                            <Link to='/contractor/requests'>
                                 <div className="myorders">
                                     <p>Все заказы </p>
                                 </div>
@@ -93,7 +93,7 @@ function App() {
 
                         </div>
                         <div>
-                            <Link to={'/master/offers/create/' + id}>
+                            <Link to={'/contractor/offers/create/' + id}>
                                 <button>Предложить услугу</button>
                             </Link>
                         </div>

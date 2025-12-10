@@ -60,24 +60,24 @@ function Sidebar() {
           <ul className="ul-wrap" style={{ paddingLeft: 0 }}>
             <li
               className={
-                location.pathname.includes('/master/wallet') ? 'active' : ''
+                location.pathname.includes('/contractor/wallet') ? 'active' : ''
               }
             >
               <img src="/img/img-exit.png" alt="" />
-              <Link to="/master/wallet"> {text('Wallet')}</Link>
+              <Link to="/contractor/wallet"> {text('Wallet')}</Link>
             </li>
             <li
               className={
-                location.pathname.includes('/master/settings') ? 'active' : ''
+                location.pathname.includes('/contractor/settings') ? 'active' : ''
               }
             >
               <img src="/img/img-contact.png" alt="" />
-              <Link to="/master/settings"> {text('Settings')}</Link>
+              <Link to="/contractor/settings"> {text('Settings')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
               className={
-                location.pathname.includes('/master/chat') ||
+                location.pathname.includes('/contractor/chat') ||
                 location.pathname.includes('/168789461')
                   ? 'active'
                   : ''
@@ -85,36 +85,36 @@ function Sidebar() {
             >
               <img src="/img/img-massage.png" alt="" />
               <AlertMessage />
-              <Link to="/master/chat">{text('Chat')}</Link>
+              <Link to="/contractor/chat">{text('Chat')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
               className={
-                location.pathname.includes('/master/orders') ? 'active' : ''
+                location.pathname.includes('/contractor/orders') ? 'active' : ''
               }
             >
               <img src="/img/img-list.png" alt="" />
               <AlertMessage />
-              <Link to="/master/orders"> {text('My applications')}</Link>
+              <Link to="/contractor/orders"> {text('My applications')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
               className={
-                location.pathname.includes('/master/feedback') ? 'active' : ''
+                location.pathname.includes('/contractor/feedback') ? 'active' : ''
               }
             >
               <img src="/img/img-white-star.png" alt="" />
               <AlertMessage />
-              <Link to="/master/feedback"> {text('My reviews')}</Link>
+              <Link to="/contractor/feedback"> {text('My reviews')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}
               className={
-                location.pathname.includes('/master/requests') ? 'active' : ''
+                location.pathname.includes('/contractor/requests') ? 'active' : ''
               }
             >
               <img src="/img/img-list-2.png " alt="" />
-              <Link to="/master/requests"> {text('Order exchange')}</Link>
+              <Link to="/contractor/requests"> {text('Order exchange')}</Link>
             </li>
           </ul>
 

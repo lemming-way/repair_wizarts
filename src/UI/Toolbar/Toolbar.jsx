@@ -24,7 +24,7 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const { user } = useUser();
-  const isMaster = user.role === UserRole.Master;
+  const isContractor = user.role === UserRole.Contractor;
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -87,7 +87,7 @@ const Toolbar = () => {
         <div className="header__profile">
           {!!user.id ? (
             <div className="header__profile">
-              {isMaster ? (
+              {isContractor ? (
                 <Link
                   to={'/client/requests/create/title'}
                   className="header__button"
@@ -107,7 +107,7 @@ const Toolbar = () => {
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
                 <Link
-                  to={isMaster ? '/master/chat' : '/client/chat'}
+                  to={isContractor ? '/contractor/chat' : '/client/chat'}
                 className="header__icons"
                 style={{ display: 'flex', position: 'relative' }}
                 onClick={() => {
@@ -153,15 +153,15 @@ const Toolbar = () => {
                 {/* </Link> */}
               </div>
               <>
-                {/* <p className="master__moneys">
+                {/* <p className="contractor__moneys">
                   <>
-                    {ui.isMaster ? (
-                      <>parseFloat(user.master[0].balance).toFixed(2)₽</>
+                    {ui.isContractor ? (
+                      <>parseFloat(user.contractor[0].balance).toFixed(2)₽</>
                     ) : null}
                   </>
                 </p> */}
-                <div className="master__moneys__full">
-                  <Link to="/master/wallet">{text('replenish_balance')}</Link>
+                <div className="contractor__moneys__full">
+                  <Link to="/contractor/wallet">{text('replenish_balance')}</Link>
                 </div>
               </>
             </div>

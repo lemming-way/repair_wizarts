@@ -75,7 +75,7 @@ function ChoiceOfReplenishmentMethodClient() {
             >
               {text('Next')}{' '}
             </button>
-            {/* <a className={style.button}  href="/master/settings/balance">Вывести средства </a> */}
+            {/* <a className={style.button}  href="/contractor/settings/balance">Вывести средства </a> */}
           </div>
         </div>
       ) : null}

@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Rating } from "react-simple-star-rating";
 import { Link } from "react-router-dom";
 
-import './master.css'
+import './contractor.css'
 import { useSearchParams } from "react-router-dom";
 import Popup from "reactjs-popup";
 import { Navigation, Pagination } from "swiper";
@@ -12,8 +12,8 @@ import InfoBlock from "./InfoBlock";
 import SERVER_PATH from "../../constants/SERVER_PATH";
 import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
 import { useService } from "../../hooks/useService";
-import { getMasterRepairs } from "../../services/service.service";
-import { getMasterByUsername } from "../../services/user.service";
+import { getContractorRepairs } from "../../services/service.service";
+import { getContractorByUsername } from "../../services/user.service";
 import YMap from '../Map'
 import { useLanguage } from "../../state/language";
 
@@ -21,8 +21,8 @@ import { useLanguage } from "../../state/language";
 function App() {
     const text = useLanguage();
     const [params] = useSearchParams()
-    const [master, setMaster] = useState({ })
-    const repairs = useService(getMasterRepairs, [])
+    const [contractor, setContractor] = useState({ })
+    const repairs = useService(getContractorRepairs, [])
     // const counters = useService(getCounters, { })
     // const covers = useService(getCovers, [])
     const [picture, setPicture] = useState("")
@@ -44,23 +44,23 @@ function App() {
         setIsModalOpen(false); // Закрываем модальное окно
     };
 
-    const masterId = params.get('id')
+    const contractorId = params.get('id')
     const pics = params.get('pics')
 
-    const masters = useMemo(() => repairs.data.reduce((state, repair) => {
-        if (state.find((v) => v.id === repair.master_id)) {
+    const contractors = useMemo(() => repairs.data.reduce((state, repair) => {
+        if (state.find((v) => v.id === repair.contractor_id)) {
             return state
         }
 
         return [...state, {
-            id: repair.master_id,
+            id: repair.contractor_id,
             latitude: repair.address_latitude,
             longitude: repair.address_longitude
         }]
     }, []), [repairs.data])
 
-    const onMasterSelect = (e, data) => {
-        getMasterByUsername(data).then(setMaster)
+    const onContractorSelect = (e, data) => {
+        getContractorByUsername(data).then(setContractor)
     }
 
     useEffect(() => {
@@ -73,12 +73,12 @@ function App() {
     }, [pics])
 
     useEffect(() => {
-        if (masterId) {
-            getMasterByUsername(masterId).then(setMaster)
+        if (contractorId) {
+            getContractorByUsername(contractorId).then(setContractor)
         }
 
         document.title = text('Contacts');
-    }, [masterId, text])
+    }, [contractorId, text])
 
     // тестовые данные - услуги
     const test_price = [
@@ -153,7 +153,7 @@ function App() {
                             <div className="home-counters__top">
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Количество участников на сайте: {counters.data.masters}
+                                    Количество участников на сайте: {counters.data.contractors}
                                 </div>
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
@@ -188,70 +188,70 @@ function App() {
             </section> */}
 
             <HeroSection />
-            <section className="master__map">
-                <h1 className="master__map__title">{text('Map of our masters')}</h1>
+            <section className="contractor__map">
+                <h1 className="contractor__map__title">{text('Map of our contractors')}</h1>
                 <YMap
-                    masters={masters}
-                    selectedMaster={master}
-                    selectMaster={onMasterSelect}
+                    contractors={contractors}
+                    selectedContractor={contractor}
+                    selectContractor={onContractorSelect}
                 />
             </section>
-            <h2 className="master__h2">{text('Server information')}</h2>
+            <h2 className="contractor__h2">{text('Server information')}</h2>
             <div className="section__blocks-row">
 
-            <div className="info_master">
-                <div className="info_master__row1">
+            <div className="info_contractor">
+                <div className="info_contractor__row1">
                     <img src="/img/profile__image.png" alt="" />
-                    <div className="info_master__about">
+                    <div className="info_contractor__about">
                         <p>Алексей Михеев</p>
                         <p>{text('Independent technician')}</p>
-                        <div className="info_master__stars">
+                        <div className="info_contractor__stars">
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
                             <img src="/img/star.png" alt="" />
                         </div>
-                        <div className="info_master__row-links">
+                        <div className="info_contractor__row-links">
                             <Link to="/client/feedback/1">23 {text('reviews')}</Link>
-                            <button className="info_master__row-link" href="#" onClick={()=> setVisibleInfo(true)}>
+                            <button className="info_contractor__row-link" href="#" onClick={()=> setVisibleInfo(true)}>
                                 {text('More details')}
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <p className="info_master__info">Санкт-Петербург, Каховского 7</p>
-                <p className="info_master__info">{text('Open from 9 to 21')}</p>
-                <p className="info_master__text-about">
-                    <span className="info_master__text-about-light">{text('On the platform')}</span>
+                <p className="info_contractor__info">Санкт-Петербург, Каховского 7</p>
+                <p className="info_contractor__info">{text('Open from 9 to 21')}</p>
+                <p className="info_contractor__text-about">
+                    <span className="info_contractor__text-about-light">{text('On the platform')}</span>
                     {' '}
                     {text('since 2022')}
                 </p>
-                <p className="info_master__text-about">
-                    <span className="info_master__text-about-light">{text('Status')}</span>
+                <p className="info_contractor__text-about">
+                    <span className="info_contractor__text-about-light">{text('Status')}</span>
                     {text('Online')}
                 </p>
-                <p className="info_master__text-about--accent">
-                    <span className="info_master__text-about-light">{text('Rating')}</span>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Rating')}</span>
                     5.0
                 </p>
-                <p className="info_master__text-about--accent">
-                    <span className="info_master__text-about-light">{text('Orders completed')}</span>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Orders completed')}</span>
                     40
                 </p>
-                <p className="info_master__text-about--accent">
-                    <span className="info_master__text-about-light">{text('Orders delivered successfully')}</span>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Orders delivered successfully')}</span>
                     100%
                 </p>
-                <p className="info_master__text-about--accent">
-                    <span className="info_master__text-about-light">{text('Two repeat orders')}</span>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Two repeat orders')}</span>
                     54%
                 </p>
 
             </div>
 
-            <div className="info_master_big flex_right_block">
+            <div className="info_contractor_big flex_right_block">
                 
                 <div className="contact__swiper" >
                     <Swiper
@@ -259,7 +259,7 @@ function App() {
                         spaceBetween={30}
                         navigation={true}
                         modules={[Navigation]}
-                        className="info_master_big_swiper"
+                        className="info_contractor_big_swiper"
                         breakpoints={{
                             0: {
                                 slidesPerView: 1
@@ -277,16 +277,16 @@ function App() {
                             <SwiperSlide key={index} className="">
                                 <div
                                     onClick={() => openModal('/img/sentence_img/iphone-x.png')}
-                                    className="info_master_big__slide"></div>
+                                    className="info_contractor_big__slide"></div>
                             </SwiperSlide>
                         )}
                     </Swiper>
                 </div>
             </div>
 
-                {master.username && (
+                {contractor.username && (
                     <React.Fragment>
-                        <h1 className="info__service">{text('Master information')}</h1>
+                        <h1 className="info__service">{text('Contractor information')}</h1>
                         <div className="content__info">
                             <div className="oeeqwhfpihaepPUihf">
                                 <section className="page_qrwewq9DXP79fg1">
@@ -295,7 +295,7 @@ function App() {
                                             <div className="card_iphone df">
                                                 <div className="card_iphone-img">
                                                     <img
-                                                        src={SERVER_PATH + master.avatar}
+                                                        src={SERVER_PATH + contractor.avatar}
                                                         alt=""
                                                         style={{
                                                             width: "100px",
@@ -308,24 +308,24 @@ function App() {
                                                 <div className="big_card-phon_text">
                                                     <div className="card_iphone-text">
                                                         <h2>
-                                                            {master.name} {master.lastname}
+                                                            {contractor.name} {contractor.lastname}
                                                         </h2>
 
                                                         <h3>
-                                                            {master.business_model}
+                                                            {contractor.business_model}
                                                         </h3>
                                                     </div>
                                                     <div className="card_iphone-img_2">
                                                         <Rating
-                                                            initialValue={master.rating}
+                                                            initialValue={contractor.rating}
                                                             allowFraction
                                                             readonly
                                                             size="28"
                                                         />
                                                     </div>
                                                     <div className="card_iphone-text_3">
-                                                        <Link to={"/client/feedback/" + master.username}>
-                                                            {master.number_of_feedbacks} {text('reviews')}
+                                                        <Link to={"/client/feedback/" + contractor.username}>
+                                                            {contractor.number_of_feedbacks} {text('reviews')}
                                                         </Link>
                                                     </div>
                                                 </div>
@@ -333,7 +333,7 @@ function App() {
                                             <div className="organization_names">
                                                 <div className="organization_text">
                                                     <h2>
-                                                        {master.address}
+                                                        {contractor.address}
                                                     </h2>
                                                 </div>
                                             </div>
@@ -349,7 +349,7 @@ function App() {
                                                         <div className="infoo_text-2">
                                                             <h2>{text('since 2023')}</h2>
                                                             <h3>{text('Offline')}</h3>
-                                                            <h3>{master.rating}</h3>
+                                                            <h3>{contractor.rating}</h3>
                                                         </div>
                                                     </div>
                                                     <div className="infoo_button">
@@ -380,16 +380,16 @@ function App() {
                                         className="mySwipetr qrpeqw9grfuilbdsjn"
                                         slidesPerView="auto"
                                     >
-                                        {master.pictures.map((v) => (
+                                        {contractor.pictures.map((v) => (
                                             <SwiperSlide key={v} className="swiper-slidetr asfpwruwegiahbdfls sliderr">
                                                 <img
-                                                    className="contact-master__picture"
+                                                    className="contact-contractor__picture"
                                                     src={SERVER_PATH + v}
                                                     alt=""
                                                     onClick={() => setPicture(SERVER_PATH + v)}
                                                 />
                                                 <button
-                                                    className="contact-master__open-button"
+                                                    className="contact-contractor__open-button"
                                                     onClick={() => setPicture(SERVER_PATH + v)}
                                                 >
                                                     {text('Open image')}
@@ -400,9 +400,9 @@ function App() {
                                     <Popup
                                         open={picture !== ""}
                                         onClose={() => setPicture("")}
-                                        className="contact-master__modal"
+                                        className="contact-contractor__modal"
                                     >
-                                        <img src={picture} className="contact-master-modal__picture" alt="absent" />
+                                        <img src={picture} className="contact-contractor-modal__picture" alt="absent" />
                                     </Popup>
                                 </div>
                             </div>
@@ -424,7 +424,7 @@ function App() {
                         >
                             {test_price.map((obj, index) =>
                                 <SwiperSlide key={index} className="sliderr">
-                                    <div className="info_master_big__slide info_master_big__slide-block"></div>
+                                    <div className="info_contractor_big__slide info_contractor_big__slide-block"></div>
                                 </SwiperSlide>
                             )}
                         </Swiper>
@@ -435,7 +435,7 @@ function App() {
             {/* Добавим стили для модального окна */}
             {/* todo: перенести стили в css/scss */}
             <style jsx>{`
-.info_master_big__slide-block {
+.info_contractor_big__slide-block {
     width: 80%;
     height: 100%;
 }

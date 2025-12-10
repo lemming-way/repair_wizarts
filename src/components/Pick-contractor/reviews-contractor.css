@@ -51,15 +51,15 @@ li {
 
 /* page_3 start */
 
-.master {
+.contractor {
     width: 25%;
 }
 
-.master_information-text h2 {
+.contractor_information-text h2 {
     margin: 0 10px 0 0;
 }
 
-.master_information {
+.contractor_information {
     justify-content: start;
     width: 55%;
 }
@@ -69,7 +69,7 @@ li {
     margin: 0 2px 0 0;
 }
 
-.stars_master h3 {
+.stars_contractor h3 {
     margin: 8px 0 20px 0;
     font-weight: 500;
     font-size: 16px;
@@ -78,7 +78,7 @@ li {
     letter-spacing: 0.1px;
 }
 
-.master_information-text h2 {
+.contractor_information-text h2 {
     font-weight: 600;
     font-size: 20px;
     line-height: 24px;
@@ -120,7 +120,7 @@ li {
     text-align: end;
 }
 
-.level_master {
+.level_contractor {
     margin: 5px 0;
     justify-content: start;
     width: 100%;
@@ -156,7 +156,7 @@ li {
 
 
 
-.master_button {
+.contractor_button {
     margin-top: 40px;
     margin-bottom: 48px;
     justify-content: end;
@@ -298,7 +298,7 @@ li {
         width: 50%;
         margin-right: 20px !important;
     }
-    .mobile-master {
+    .mobile-contractor {
         width: 40%;
     }
     .mobile-long_text p {
@@ -318,7 +318,7 @@ li {
     .mobile-answers-kiril {
         margin-left: 0 !important;
     }
-    .mobile-master {
+    .mobile-contractor {
         width: 100%;
         margin-top: 0px !important;
     }
@@ -330,13 +330,13 @@ li {
     .mobile-client {
         padding: 0 20px;
     }
-    .mobile-master {
+    .mobile-contractor {
         margin: 0 !important;
     }
     .mobile-nav-prof {
         padding: 0;
     }
-    .mobile-master_button {
+    .mobile-contractor_button {
         display: flex;
         gap: unset;
     }

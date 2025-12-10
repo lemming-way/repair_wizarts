@@ -6,15 +6,15 @@ import { useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
 import style from './settings_all.module.css';
-import MasterProfileNavigator from '../full-height/MasterProfileNavigator';
+import ContractorProfileNavigator from '../full-height/ContractorProfileNavigator';
 // import { useNavigate } from "react-router-dom";
 
 const listLinks = [
-  '/master/settings',
-  '/master/settings/profile',
-  '/master/settings/services',
-  '/master/settings/finance',
-  '/master/settings/balance',
+  '/contractor/settings',
+  '/contractor/settings/profile',
+  '/contractor/settings/services',
+  '/contractor/settings/finance',
+  '/contractor/settings/balance',
 ];
 
 function App() {
@@ -84,7 +84,7 @@ function App() {
       </div>
 
       {/* <Navigation /> */}
-      <MasterProfileNavigator
+      <ContractorProfileNavigator
         numberElementMenu={numberElementMenu}
         offsetMenu={offsetMenu}
       />

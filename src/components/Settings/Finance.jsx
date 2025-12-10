@@ -11,7 +11,7 @@ const Finance = (props) => {
   //~ const [pics, setPics] = useState([]);
 
   //   useEffect(() => {
-  //     if (user.master) {
+  //     if (user.contractor) {
   //       setPics(userPictures);
   //     }
   //   }, [user]);
@@ -24,7 +24,7 @@ const Finance = (props) => {
   //         ...pictureInputRef.current.files,
   //         ...pics
   //     ]
-  //     return updateMasterPictures(user.id, files).then((v) => {
+  //     return updateContractorPictures(user.id, files).then((v) => {
   //         const filename = pictureInputRef.current.files[0]?.name
 
   //         console.log(v)
@@ -38,7 +38,7 @@ const Finance = (props) => {
 
   // const getDeleteHandle = (name) => (e) => {
   //     e.preventDefault()
-  //     return updateMasterPictures(
+  //     return updateContractorPictures(
   //         user.id,
   //         pics.filter((v) => v !== name),
   //     ).then(() => {
@@ -123,7 +123,7 @@ const Finance = (props) => {
         </div>
       </div>
       <button
-        className="master-settings-pics__button"
+        className="contractor-settings-pics__button"
         onClick={() => setVisibleConfirm(true)}
       >
         Сохранить кошельки

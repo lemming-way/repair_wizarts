@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 
 import '../../scss/detail.scss';
 import '../../scss/media.css';
-//~ import { getMasterRepairs } from '../../services/service.service';
+//~ import { getContractorRepairs } from '../../services/service.service';
 import { Link } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
 import { Navigation } from 'swiper';
@@ -104,7 +104,7 @@ function ServiceDetail() {
 
     return [];
   }, [services]);
-  //~ const repairMasters = getMasterRepairs();
+  //~ const repairContractors = getContractorRepairs();
   const { sectionId, subsectionId } = useParams();
   const normalizedSectionId = sectionId ? String(sectionId) : '';
   const normalizedSubsectionId = subsectionId ? String(subsectionId) : '';
@@ -129,12 +129,12 @@ function ServiceDetail() {
   const [selected, setSelected] = useState([]);
   const selectedValue = useMemo(() => ({ selected, setSelected }), [selected]);
 
-  const [selectedMaster, setSelectedMaster] = useState({});
+  const [selectedContractor, setSelectedContractor] = useState({});
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
-  const [mastersList, setMastersList] = useState([]);
-  const [masterCarData, setMasterCarData] = useState(null);
+  const [contractorsList, setContractorsList] = useState([]);
+  const [contractorCarData, setContractorCarData] = useState(null);
 
   // todo: вынести загрузку пользователя в глобальное состояние
   useEffect(() => {
@@ -143,7 +143,7 @@ function ServiceDetail() {
         if (response && response.data && response.data.user) {
           const allUsers = Object.values(response.data.user);
 
-          const filteredMasters = allUsers
+          const filteredContractors = allUsers
             .filter((user) => user.u_details && user.u_details.business_model)
             .map((user) => {
               const details = user.u_details || {};
@@ -184,7 +184,7 @@ function ServiceDetail() {
               };
             });
 
-          setMastersList(filteredMasters);
+          setContractorsList(filteredContractors);
         }
       })
       .catch((error) => {
@@ -197,19 +197,19 @@ function ServiceDetail() {
     setName(user.name);
   }, [user.phone, user.name]);
 
-  const onSelectMaster = async (masterData) => {
-    setSelectedMaster(masterData);
+  const onSelectContractor = async (contractorData) => {
+    setSelectedContractor(contractorData);
     setShowSmallModal(true);
     setShowBigModal(false);
-    setMasterCarData(null);
+    setContractorCarData(null);
 
     try {
-      console.log(`Загрузка данных о машине для мастера ID: ${masterData.id}`);
+      console.log(`Загрузка данных о машине для мастера ID: ${contractorData.id}`);
       const carResponse = await appFetch(
         'user/authorized/car',
         {
           method: 'POST',
-          body: { u_a_id: masterData.id },
+          body: { u_a_id: contractorData.id },
         }
       );
       console.log(carResponse);
@@ -217,28 +217,28 @@ function ServiceDetail() {
       if (carResponse && carResponse.data && carResponse.data.car) {
         const cars = Object.values(carResponse.data.car);
         if (cars.length > 0) {
-          setMasterCarData(cars[0]);
+          setContractorCarData(cars[0]);
           console.log('Данные о машине успешно загружены:', cars[0]);
         } else {
           console.warn(
-            `У мастера ID: ${masterData.id} нет зарегистрированных машин.`,
+            `У мастера ID: ${contractorData.id} нет зарегистрированных машин.`,
           );
         }
       }
     } catch (error) {
       console.error(
-        `Ошибка при загрузке данных о машине для мастера ID: ${masterData.id}`,
+        `Ошибка при загрузке данных о машине для мастера ID: ${contractorData.id}`,
         error,
       );
-      setFormError('Failed to load master car data.');
+      setFormError('Failed to load contractor car data.');
     }
   };
 
   const handleCloseModals = () => {
     setShowSmallModal(false);
     setShowBigModal(false);
-    setSelectedMaster({});
-    setMasterCarData(null);
+    setSelectedContractor({});
+    setContractorCarData(null);
   };
 
   const handleShowBigModal = () => {
@@ -252,12 +252,12 @@ function ServiceDetail() {
   //~ });
   const [description, setDescription] = useState('');
 
-  const masters = useMemo(() => mastersList, [mastersList]);
+  const contractors = useMemo(() => contractorsList, [contractorsList]);
 
   //~ // непонятный код, основанный на побочных эффектах. привести в понятный вид
   //~ const repairFiltered = useMemo(
-    //~ () => repairMasters,
-    //~ [selectedMaster.username],
+    //~ () => repairContractors,
+    //~ [selectedContractor.username],
   //~ );
 
   //~ useEffect(() => {
@@ -286,22 +286,22 @@ function ServiceDetail() {
   /**
    * Асинхронная функция для назначения мастера на заказ в качестве КАНДИДАТА.
    * @param {string} orderId - ID только что созданного заказа.
-   * @param {object} master - Объект выбранного мастера.
+   * @param {object} contractor - Объект выбранного мастера.
    */
-  const assignMasterToOrder = async (orderId, master) => {
-    if (!orderId || !master.id) {
+  const assignContractorToOrder = async (orderId, contractor) => {
+    if (!orderId || !contractor.id) {
       console.error('ID заказа или ID мастера отсутствуют. Назначение невозможно.');
-      throw new Error('Order or master ID is undefined.');
+      throw new Error('Order or contractor ID is undefined.');
     }
-    if (!masterCarData) {
+    if (!contractorCarData) {
       console.error('Данные о машине мастера не загружены. Назначение невозможно.');
     }
     const assignmentPayload = {
-      c_id: masterCarData?.c_id || '1',
+      c_id: contractorCarData?.c_id || '1',
       c_payment_way: 2,
       c_options: {
         author: {
-          ...master,
+          ...contractor,
         },
         bind_amount: getSumPrice(),
         comment: text('I will handle it'),
@@ -312,14 +312,14 @@ function ServiceDetail() {
       action: 'set_performer',
       performer: 0,
       u_a_role: 2,
-      u_a_id: master.id,
+      u_a_id: contractor.id,
       data: JSON.stringify(assignmentPayload),
     };
 
     try {
       const url = `drive/get/${orderId}`;
       console.log(
-        `Попытка назначения мастера ${master.id} КАНДИДАТОМ на заказ ${orderId}. URL: ${url}`,
+        `Попытка назначения мастера ${contractor.id} КАНДИДАТОМ на заказ ${orderId}. URL: ${url}`,
       );
       console.log('Тело запроса:', requestBody);
 
@@ -332,7 +332,7 @@ function ServiceDetail() {
       ).then((v) => console.log('trueble', v));
 
       console.log(
-        `Мастер ${master.name} (ID: ${master.id}) успешно добавлен в поездку (ID: ${orderId}) как кандидат.`,
+        `Мастер ${contractor.name} (ID: ${contractor.id}) успешно добавлен в поездку (ID: ${orderId}) как кандидат.`,
       );
     } catch (error) {
       console.error(`Ошибка при назначении мастера на заказ ${orderId}:`, error);
@@ -346,8 +346,8 @@ function ServiceDetail() {
       setFormError('Select services');
       return;
     }
-    if (!selectedMaster.id) {
-      setFormError('Select a master on the map first');
+    if (!selectedContractor.id) {
+      setFormError('Select a contractor on the map first');
       return;
     }
 
@@ -359,7 +359,7 @@ function ServiceDetail() {
       subsection: subsectionId,
       service: servicesList[0],
       orderType: 'request',
-      winnerMaster: selectedMaster.id,
+      winnerContractor: selectedContractor.id,
       type: 'order',
     };
 
@@ -373,7 +373,7 @@ function ServiceDetail() {
       }
       console.log(`Заказ успешно создан. ID: ${newOrderId}`);
 
-      await assignMasterToOrder(newOrderId, selectedMaster);
+      await assignContractorToOrder(newOrderId, selectedContractor);
 
       setShow(false);
       setVisibleBlockPayment(true);
@@ -458,7 +458,7 @@ function ServiceDetail() {
           ) : null}
 
           {errorCash ? (
-            <div className={style.error}>{text('Pay the master in person')}</div>
+            <div className={style.error}>{text('Pay the contractor in person')}</div>
           ) : null}
 
           {errorSumm ? (
@@ -653,7 +653,7 @@ function ServiceDetail() {
             </div>
 
             {/* Условный рендеринг кнопки "Оформить заказ" */}
-            {selectedMaster.id && (
+            {selectedContractor.id && (
               <div className={style.button_wrap}>
                 <button
                   className={style.button_services}
@@ -870,15 +870,15 @@ function ServiceDetail() {
 
         <section className="map">
           <YMap
-            masters={masters}
-            selectedMaster={selectedMaster}
-            selectMaster={onSelectMaster}
+            contractors={contractors}
+            selectedContractor={selectedContractor}
+            selectContractor={onSelectContractor}
           />
         </section>
       </div>
 
       {/* Условный рендеринг модальных окон */}
-      {selectedMaster.id && (
+      {selectedContractor.id && (
         <div style={{ display: 'flex', position: 'absolute' }}>
           <div
             style={{
@@ -891,37 +891,37 @@ function ServiceDetail() {
             }}
           >
             {showSmallModal && (
-              <div className="info_master">
+              <div className="info_contractor">
                 <div
-                  className="info_master__close"
+                  className="info_contractor__close"
                   onClick={handleCloseModals}
                   style={{ cursor: 'pointer' }}
                 >
                   <img src="/img/close.svg" alt="" />
                 </div>
 
-                <div className="info_master__row1">
+                <div className="info_contractor__row1">
                   <img src="/img/profile__image.png" alt="" />
-                  <div className="info_master__about">
-                    <p>{selectedMaster.name}</p>
-                    <p>{selectedMaster.info}</p>
-                    <div className="info_master__stars">
+                  <div className="info_contractor__about">
+                    <p>{selectedContractor.name}</p>
+                    <p>{selectedContractor.info}</p>
+                    <div className="info_contractor__stars">
                       <Rating
                         size={18}
                         readonly
-                        initialValue={selectedMaster.rating}
+                        initialValue={selectedContractor.rating}
                         allowFraction
                         fillColor="#FFC107"
                         emptyColor="#E4E5E9"
                       />
                     </div>
-                    <div className="info_master__row-links">
-                      <Link to={`/client/feedback/${selectedMaster.id}`}>
-                        {selectedMaster.reviews} {text('reviews received')}
+                    <div className="info_contractor__row-links">
+                      <Link to={`/client/feedback/${selectedContractor.id}`}>
+                        {selectedContractor.reviews} {text('reviews received')}
                       </Link>
                       <button
                         type="button"
-                        className="info_master__row-link"
+                        className="info_contractor__row-link"
                         onClick={handleShowBigModal}
                       >
                         {text('Learn more')}
@@ -930,113 +930,113 @@ function ServiceDetail() {
                   </div>
                 </div>
 
-                <p className="info_master__info">{selectedMaster.address}</p>
-                <p className="info_master__info">{text('Open: from 9 to 21')}</p>
-                <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__info">{selectedContractor.address}</p>
+                <p className="info_contractor__info">{text('Open: from 9 to 21')}</p>
+                <p className="info_contractor__text-about">
+                  <span className="info_contractor__text-about-light">
                     {text('Organization name')}
                   </span>
-                  {selectedMaster.orgName}
+                  {selectedContractor.orgName}
                 </p>
-                <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about">
+                  <span className="info_contractor__text-about-light">
                     {text('Experience')}
                   </span>
-                  {selectedMaster.experience}
+                  {selectedContractor.experience}
                 </p>
-                <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about">
+                  <span className="info_contractor__text-about-light">
                     {text('On the platform')}
                   </span>
-                  {text('since')} {selectedMaster.onSiteSince}
+                  {text('since')} {selectedContractor.onSiteSince}
                 </p>
-                <p className="info_master__text-about">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about">
+                  <span className="info_contractor__text-about-light">
                     {text('Status')}
                   </span>
-                  {text(selectedMaster.status)}
+                  {text(selectedContractor.status)}
                 </p>
-                <p className="info_master__text-about--accent">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about--accent">
+                  <span className="info_contractor__text-about-light">
                     {text('Rating')}
                   </span>
-                  {selectedMaster.rating}
+                  {selectedContractor.rating}
                 </p>
-                <p className="info_master__text-about--accent">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about--accent">
+                  <span className="info_contractor__text-about-light">
                     {text('Orders completed')}
                   </span>
-                  {selectedMaster.ordersCompleted}
+                  {selectedContractor.ordersCompleted}
                 </p>
-                <p className="info_master__text-about--accent">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about--accent">
+                  <span className="info_contractor__text-about-light">
                     {text('Orders delivered successfully')}
                   </span>
-                  {selectedMaster.successRate}
+                  {selectedContractor.successRate}
                 </p>
-                <p className="info_master__text-about--accent">
-                  <span className="info_master__text-about-light">
+                <p className="info_contractor__text-about--accent">
+                  <span className="info_contractor__text-about-light">
                     {text('Repeat orders')}
                   </span>
-                  {selectedMaster.repeatOrders}
+                  {selectedContractor.repeatOrders}
                 </p>
               </div>
             )}
             {showBigModal && (
-              <div className="info_master_big">
+              <div className="info_contractor_big">
                 <div>
                   <div
-                    className="info_master__close"
+                    className="info_contractor__close"
                     onClick={handleCloseModals}
                     style={{ cursor: 'pointer' }}
                   >
                     <img src="/img/close.svg" alt="" />
                   </div>
 
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Category type')}
                     </span>
-                    {selectedMaster.categoryView}
+                    {selectedContractor.categoryView}
                   </p>
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Category')}
                     </span>
-                    {selectedMaster.categories}
+                    {selectedContractor.categories}
                   </p>
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Brands')}
                     </span>
-                    {selectedMaster.brands}
+                    {selectedContractor.brands}
                   </p>
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Your activity')}
                     </span>
-                    {selectedMaster.activity}
+                    {selectedContractor.activity}
                   </p>
 
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Main focus')}
                     </span>
-                    {selectedMaster.mainFocus}
+                    {selectedContractor.mainFocus}
                   </p>
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('Main business')}
                     </span>
-                    {text(selectedMaster.businessType)}
+                    {text(selectedContractor.businessType)}
                   </p>
-                  <p className="info_master_big__text-about">
-                    <span className="info_master_big__text-about-light">
+                  <p className="info_contractor_big__text-about">
+                    <span className="info_contractor_big__text-about-light">
                       {text('About the organization:')}{' '}
                     </span>
                   </p>
-                  <p className="info_master_big__text">
-                    {selectedMaster.aboutOrg}
+                  <p className="info_contractor_big__text">
+                    {selectedContractor.aboutOrg}
                   </p>
 
                   <div>

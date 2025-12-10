@@ -75,7 +75,7 @@ function WalletHistory() {
 
                         <div className={style.buttons} >
                             {/* <button className={style.button}>Далее </button> */}
-                            <Link className={style.button}  to="/master/wallet">Назад</Link>
+                            <Link className={style.button}  to="/contractor/wallet">Назад</Link>
                         </div>
                     </div>
                 </div>

@@ -14,7 +14,7 @@ export default function NavigationOrders({ setStatusOrder }) {
               ? 'active2'
               : null
           }`}
-          to="/master/requests/orders#active"
+          to="/contractor/requests/orders#active"
           onClick={() => setStatusOrder('Active')}
         >
           {text('Active Orders')}
@@ -23,7 +23,7 @@ export default function NavigationOrders({ setStatusOrder }) {
           className={`${style.link} ${
             window.location.hash === '#success' ? 'active2' : null
           }`}
-          to="/master/requests/orders#success"
+          to="/contractor/requests/orders#success"
           onClick={() => setStatusOrder('Completed')}
         >
           {text('Completed Orders')}
@@ -32,7 +32,7 @@ export default function NavigationOrders({ setStatusOrder }) {
           className={`${style.link} ${
             window.location.hash === '#cancel' ? 'active2' : null
           }`}
-          to="/master/requests/orders#cancel"
+          to="/contractor/requests/orders#cancel"
           onClick={() => setStatusOrder('Canceled')}
         >
           {text('Canceled Orders')}

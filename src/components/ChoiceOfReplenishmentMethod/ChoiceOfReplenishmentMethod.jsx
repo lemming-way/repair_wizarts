@@ -65,7 +65,7 @@ function ChoiceOfReplenishmentMethod() {
 
                         <div className={style.buttons} >
                             <button className={style.button}  href="/refill" onClick={()=>setStage(1)}>{text('Next')} </button>
-                            {/* <a className={style.button}  href="/master/settings/balance">Вывести средства </a> */}
+                            {/* <a className={style.button}  href="/contractor/settings/balance">Вывести средства </a> */}
                         </div>
                     </div>
                     : null}
@@ -144,7 +144,7 @@ function ChoiceOfReplenishmentMethod() {
                             <input type="text" name="" id="sum_stage3" className={style.input_stage3} placeholder={text('Enter amount placeholder')} />
                             <div className={style.buttons} >
                                 <button className={style.button}  onClick={()=>setStage(2)}>{text('Top up')} </button>
-                                <button className={style.button}  onClick={()=>navigator("/master/settings/balance")}>{text('Withdraw funds')} </button>
+                                <button className={style.button}  onClick={()=>navigator("/contractor/settings/balance")}>{text('Withdraw funds')} </button>
                             </div>
                         </div>
                     : null}

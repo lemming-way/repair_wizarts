@@ -22,7 +22,7 @@ const correctPhoneNumber = (value: string) => {
   }
 
   /*
-    // Дополнительная логика форматирования из RegistrationMasterPage (для будущей переработки)
+    // Дополнительная логика форматирования из RegistrationContractorPage (для будущей переработки)
     let formattedInput = value.replace(/\D/g, ''); // Удаляем все нецифровые символы
 
     if (formattedInput.startsWith('79') || formattedInput.startsWith('89')) {

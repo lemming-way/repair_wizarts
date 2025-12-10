@@ -77,7 +77,7 @@ function Remont() {
                 >
                   <div className="remont__card__image">
                     <img
-                      src={'/img/master-profile_img/phon.png'}
+                      src={'/img/contractor-profile_img/phon.png'}
                       alt=""
                       style={{
                         width: '130px',

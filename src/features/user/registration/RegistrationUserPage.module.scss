@@ -1,11 +1,11 @@
 @use '../../../styles/mixins';
 
 .registrationUserPage {
-  margin-top: 120px; /* Приведено в соответствие с RegistrationMasterPage */
+  margin-top: 120px; /* Приведено в соответствие с RegistrationContractorPage */
   margin-bottom: 100px;
 
   @include mixins.md {
-    margin-top: 80px; /* Приведено в соответствие с RegistrationMasterPage */
+    margin-top: 80px; /* Приведено в соответствие с RegistrationContractorPage */
     margin-bottom: 30px;
   }
 

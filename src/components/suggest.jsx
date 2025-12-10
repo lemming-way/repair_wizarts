@@ -9,8 +9,8 @@ import { createDialog } from "../services/dialog.service";
 import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
 import { useUser } from "../state/user";
-import { useMasterByUsernameQuery } from "../hooks/useMasterByUsernameQuery";
-import { useMasterServicesQuery } from "../hooks/useMasterServicesQuery";
+import { useContractorByUsernameQuery } from "../hooks/useContractorByUsernameQuery";
+import { useContractorServicesQuery } from "../hooks/useContractorServicesQuery";
 import { messageKeys, offerKeys, requestKeys, normalizeOptionalOfferRequestId } from "../queries";
 
 const Suggest = (props) => {
@@ -18,7 +18,7 @@ const Suggest = (props) => {
     const {
         id: offerId,
         request_id,
-        master_username,
+        contractor_username,
         price,
         message,
         time,
@@ -29,10 +29,10 @@ const Suggest = (props) => {
     const { user } = useUser()
 
     const [error, setError] = useState("")
-    const { data: masterData } = useMasterByUsernameQuery(master_username)
-    const { data: servicesData } = useMasterServicesQuery(master_username)
+    const { data: contractorData } = useContractorByUsernameQuery(contractor_username)
+    const { data: servicesData } = useContractorServicesQuery(contractor_username)
 
-    const master = masterData || {}
+    const contractor = contractorData || {}
     const services = servicesData || {}
 
     const acceptOfferMutation = useMutation({  // todo: перенести всё в state, и без useMutation
@@ -43,7 +43,7 @@ const Suggest = (props) => {
             const invalidations = [
                 queryClient.invalidateQueries({ queryKey: requestKeys.client() }),
                 queryClient.invalidateQueries({ queryKey: requestKeys.clientAll() }),
-                queryClient.invalidateQueries({ queryKey: requestKeys.masterOrders() }),
+                queryClient.invalidateQueries({ queryKey: requestKeys.contractorOrders() }),
                 queryClient.invalidateQueries({ queryKey: messageKeys.unread() }),
             ];
 
@@ -75,20 +75,20 @@ const Suggest = (props) => {
             const res = await acceptOfferMutation.mutateAsync(offerId)
             const payload = {
                 sender1_id: user.id,
-                sender2_id: res.master_id,
+                sender2_id: res.contractor_id,
                 request_id
             }
 
             const dialog = await createDialogMutation.mutateAsync(payload)
-            sendOfferAccept(res.master_id, offerId)
+            sendOfferAccept(res.contractor_id, offerId)
             navigate("/client/chat/" + dialog.id)
         } catch (err) {
             if (err?.status === 402) {
-                setError(text("Master has insufficient funds"))
+                setError(text("Contractor has insufficient funds"))
                 return
             }
 
-            setError(text("This master is unavailable"))
+            setError(text("This contractor is unavailable"))
         }
     }
 
@@ -100,7 +100,7 @@ const Suggest = (props) => {
                         <div className="nav_left-alecsandr_2 df font_abel align">
                             <div className="alecsandr_img-4-afdsda">
                                 <img
-                                    src={SERVER_PATH + master.avatar}
+                                    src={SERVER_PATH + contractor.avatar}
                                     width="96px"
                                     height="96px"
                                     style={{ borderRadius: "48px", objectFit: "cover" }}
@@ -110,8 +110,8 @@ const Suggest = (props) => {
 
                             <div className="alecsandr_info align">
                                 <div className="alecsandr_text-2">
-                                    <h2><i>{master.name} {master.lastname}</i></h2>
-                                    <h2>{master.business_model}</h2>
+                                    <h2><i>{contractor.name} {contractor.lastname}</i></h2>
+                                    <h2>{contractor.business_model}</h2>
                                 </div>
 
                                 <div className="grade_text df align mobile-grade_text">
@@ -119,7 +119,7 @@ const Suggest = (props) => {
                                         readonly
                                         size="32"
                                         allowFraction
-                                        initialValue={master.rating}
+                                        initialValue={contractor.rating}
                                     />
                                 </div>
                             </div>
@@ -133,28 +133,28 @@ const Suggest = (props) => {
                                     </div>
 
                                     <div className="info_cards-text_2">
-                                        <h2>{master.address}</h2>
-                                        <h2>{master.rating}</h2>
+                                        <h2>{contractor.address}</h2>
+                                        <h2>{contractor.rating}</h2>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div className="frame_3">
-                        <div className="offer-master__bar">
+                        <div className="offer-contractor__bar">
                             <div className="nav_bottom-text_active df align">
                                 <div className="nav_bottom-text_img">
                                     <img src="/img/my_suggestion_img/Star 1.png" alt="no img" />
                                 </div>
-                                <h2><span>{master.rating}</span></h2>
+                                <h2><span>{contractor.rating}</span></h2>
                             </div>
 
                             <div className="nav_bottom-text">
-                                <h2><span>{master.number_of_feedbacks}</span>{text("reviews received")}</h2>
+                                <h2><span>{contractor.number_of_feedbacks}</span>{text("reviews received")}</h2>
                             </div>
                             
                             <div className="nav_bottom-text">
-                                <h2><span>{master.number_of_submissions}</span>{text("number of orders")}</h2>
+                                <h2><span>{contractor.number_of_submissions}</span>{text("number of orders")}</h2>
                             </div>
                         </div>
                     </div>
@@ -169,7 +169,7 @@ const Suggest = (props) => {
                                 <tr>
                                     <td><span>{text("Organization name")}:</span></td>
                                     <td>
-                                        <p>{master.organization_name}</p>
+                                        <p>{contractor.organization_name}</p>
                                     </td>
                                 </tr>
                                 <tr>
@@ -194,25 +194,25 @@ const Suggest = (props) => {
                                 <tr>
                                     <td><span>{text("Your activity")}:</span></td>
                                     <td>
-                                        <p>{master.specialty}</p>
+                                        <p>{contractor.specialty}</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><span>{text("Main direction")}:</span></td>
                                     <td>
-                                        <p>{master.main_business}</p>
+                                        <p>{contractor.main_business}</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><span>{text("Main business")}:</span></td>
                                     <td>
-                                        <p>{master.business_model}</p>
+                                        <p>{contractor.business_model}</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><span>{text("Status:")}:</span></td>
                                     <td>
-                                        <p>{master.status}</p>
+                                        <p>{contractor.status}</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -288,10 +288,10 @@ const Suggest = (props) => {
                         className="btn"
                         disabled={acceptOfferMutation.isPending || createDialogMutation.isPending}
                     >
-                        {acceptOfferMutation.isPending || createDialogMutation.isPending ? text("Processing...") : text("Choose a master")}
+                        {acceptOfferMutation.isPending || createDialogMutation.isPending ? text("Processing...") : text("Choose a contractor")}
                     </button>
-                    <Link to={"/client/feedback/" + master_username}>
-                        <button className="btnn">{text("Reviews about the master")}</button>
+                    <Link to={"/client/feedback/" + contractor_username}>
+                        <button className="btnn">{text("Reviews about the contractor")}</button>
                     </Link>
                 </div>
             </div>

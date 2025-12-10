@@ -38,8 +38,8 @@ const replyToFeedback = (payload) =>
                     //~ name: "John",
                     //~ lastname: "Doe"
                 //~ },
-                //~ master_username: "master1",
-                //~ master: {
+                //~ contractor_username: "contractor1",
+                //~ contractor: {
                     //~ name: "Alice",
                     //~ lastname: "Smith"
                 //~ },
@@ -47,7 +47,7 @@ const replyToFeedback = (payload) =>
                 //~ description: "Excellent service!",
                 //~ pictures: ["pic1.jpg", "pic2.jpg"],
                 //~ created_at: "2025-03-01T12:00:00Z",
-                //~ master_response: "Thank you for your feedback!"
+                //~ contractor_response: "Thank you for your feedback!"
             //~ };
             //~ resolve(mockFeedback);
         //~ }, 500); // Имитация задержки сети
@@ -66,8 +66,8 @@ const replyToFeedback = (payload) =>
                     //~ name: "John",
                     //~ lastname: "Doe"
                 //~ },
-                //~ master_username: payload.master_username,
-                //~ master: {
+                //~ contractor_username: payload.contractor_username,
+                //~ contractor: {
                     //~ name: "Alice",
                     //~ lastname: "Smith"
                 //~ },
@@ -75,7 +75,7 @@ const replyToFeedback = (payload) =>
                 //~ description: payload.data.description,
                 //~ pictures: payload.files ? Array.from(payload.files).map(f => f.name) : [],
                 //~ created_at: new Date().toISOString(),
-                //~ master_response: null
+                //~ contractor_response: null
             //~ };
             //~ resolve(mockCreatedFeedback);
         //~ }, 500); // Имитация задержки сети
@@ -90,12 +90,12 @@ const replyToFeedback = (payload) =>
             //~ const mockReply = {
                 //~ id: payload.id,
                 //~ client_id: 1,
-                //~ master_username: "master1",
+                //~ contractor_username: "contractor1",
                 //~ rating: 5,
                 //~ description: "Excellent service!",
                 //~ pictures: ["pic1.jpg", "pic2.jpg"],
                 //~ created_at: "2025-03-01T12:00:00Z",
-                //~ master_response: payload.master_response
+                //~ contractor_response: payload.contractor_response
             //~ };
             //~ resolve(mockReply);
         //~ }, 500); // Имитация задержки сети

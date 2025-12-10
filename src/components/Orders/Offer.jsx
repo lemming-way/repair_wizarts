@@ -51,7 +51,7 @@ function Offer() {
     };
     fetchData();
   }, [id]);
-  // const requests = useService(getMasterRequests, [])
+  // const requests = useService(getContractorRequests, [])
   // тестовые данные
   // const requests = {
   //     "data": [
@@ -78,12 +78,12 @@ function Offer() {
 
           {/* <div className="huge-fasfdsoiXC df" style={{paddingBottom: 0}}>
                             <div className="two-input">
-                                <Link to='/master/requests/personal'>
+                                <Link to='/contractor/requests/personal'>
                                     <div className="myorders">
                                         <p>Мои заказы <span>1</span></p>
                                     </div>
                                 </Link>
-                                <Link to='/master/requests'>
+                                <Link to='/contractor/requests'>
                                     <div className="myorders">
                                         <p>Все заказы </p>
                                     </div>
@@ -93,7 +93,7 @@ function Offer() {
 
           <button
             className={style.button_back_v2}
-            onClick={() => navigator('/master/requests')}
+            onClick={() => navigator('/contractor/requests')}
           >
             {text('Back')}
           </button>

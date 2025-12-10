@@ -147,7 +147,7 @@ const getServiceRepairsTestData = () => {
         price: 10000.0,
         device_id: 1,
         is_custom: false,
-        master: null,
+        contractor: null,
         devices: [
           {
             id: 1,
@@ -181,7 +181,7 @@ const getServiceRepairsTestData = () => {
         //~ price: 10000.0,
         //~ device_id: deviceId,
         //~ is_custom: false,
-        //~ master: null,
+        //~ contractor: null,
       //~ },
     //~ ];
 
@@ -190,9 +190,9 @@ const getServiceRepairsTestData = () => {
   //~ });
 //~ };
 
-const getMasterRepairs = () => [
+const getContractorRepairs = () => [
   {
-    master_id: 'master1',
+    contractor_id: 'contractor1',
     repair_id: 1,
     price: 1200,
     time: 45,
@@ -200,7 +200,7 @@ const getMasterRepairs = () => [
     address_longitude: 30.3609,
   },
   {
-    master_id: 'master1',
+    contractor_id: 'contractor1',
     repair_id: 2,
     price: 1800,
     time: 60,
@@ -208,7 +208,7 @@ const getMasterRepairs = () => [
     address_longitude: 30.3609,
   },
   {
-    master_id: 'master2',
+    contractor_id: 'contractor2',
     repair_id: 1,
     price: 1500,
     time: 50,
@@ -216,7 +216,7 @@ const getMasterRepairs = () => [
     address_longitude: 30.3141,
   },
   {
-    master_id: 'master3',
+    contractor_id: 'contractor3',
     repair_id: 3,
     price: 2000,
     time: 70,
@@ -224,25 +224,25 @@ const getMasterRepairs = () => [
     address_longitude: 30.32,
   },
 ];
-const getMasterRepairsByUsername = (username) =>
-  appFetch('service/master-repairs?master_username=' + username);
+const getContractorRepairsByUsername = (username) =>
+  appFetch('service/contractor-repairs?contractor_username=' + username);
 
-const getMasterServices = (id) => appFetch('service/master-services/' + id);
+const getContractorServices = (id) => appFetch('service/contractor-services/' + id);
 
-const updateMasterRepair = (repairId, payload) =>
-  appFetch('service/master-repair/' + repairId, {
+const updateContractorRepair = (repairId, payload) =>
+  appFetch('service/contractor-repair/' + repairId, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
 
-const updateMasterCustomRepair = (repairId, payload) =>
+const updateContractorCustomRepair = (repairId, payload) =>
   appFetch('service/repair_type/' + repairId, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   });
 
-const removeMasterRepair = (repairId) =>
-  appFetch('service/master-repair/' + repairId, {
+const removeContractorRepair = (repairId) =>
+  appFetch('service/contractor-repair/' + repairId, {
     method: 'DELETE',
   });
 
@@ -255,11 +255,11 @@ export {
   getServiceDevicesByTypeId,
   getServiceRepairs,
   getServiceRepairsByDeviceId,
-  getMasterRepairs,
-  getMasterRepairsByUsername,
-  getMasterServices,
-  updateMasterRepair,
-  updateMasterCustomRepair,
-  removeMasterRepair,
+  getContractorRepairs,
+  getContractorRepairsByUsername,
+  getContractorServices,
+  updateContractorRepair,
+  updateContractorCustomRepair,
+  removeContractorRepair,
   getServiceRepairsTestData,
 };

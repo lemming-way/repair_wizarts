@@ -5,41 +5,41 @@ import {
 } from '@tanstack/react-query';
 
 import { requestKeys } from '../queries';
-import { getMasterOrders } from '../services/order.service';
+import { getContractorOrders } from '../services/order.service';
 import { getToken } from '../services/token.service';
 
-type QueryFnData = Awaited<ReturnType<typeof getMasterOrders>>;
+type QueryFnData = Awaited<ReturnType<typeof getContractorOrders>>;
 type QueryError = unknown;
 
 type Options = Omit<
-  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof requestKeys.masterOrders>>,
+  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof requestKeys.contractorOrders>>,
   'queryKey' | 'queryFn'
 >;
 
 type Result = UseQueryResult<QueryFnData, QueryError> & {
-  masterOrders: any[];
+  contractorOrders: any[];
 };
 
 const EMPTY_ARRAY: any[] = [];
 
-export function useMasterOrdersQuery(options?: Options): Result {
+export function useContractorOrdersQuery(options?: Options): Result {
   const token = getToken();
   const { enabled: optionsEnabled, ...restOptions } = options ?? {};
   const enabled = Boolean(token) && (optionsEnabled ?? true);
 
   const queryResult = useQuery({
-    queryKey: requestKeys.masterOrders(),
-    queryFn: getMasterOrders,
+    queryKey: requestKeys.contractorOrders(),
+    queryFn: getContractorOrders,
     enabled,
     ...restOptions,
   });
 
-  const masterOrders = Array.isArray(queryResult.data)
+  const contractorOrders = Array.isArray(queryResult.data)
     ? queryResult.data
     : EMPTY_ARRAY;
 
   return {
     ...queryResult,
-    masterOrders,
+    contractorOrders,
   } as Result;
 }

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation } from 'swiper'
 import { Link, useParams } from "react-router-dom";
-import './pick-master.css'
+import './pick-contractor.css'
 import Popup from "reactjs-popup";
-import './reviews-master.css'
+import './reviews-contractor.css'
 import { Rating } from "react-simple-star-rating";
 
 import SERVER_PATH from "../../constants/SERVER_PATH";
@@ -56,7 +56,7 @@ function Sidebar() {
         
         return createFeedback({
             data: {
-                master_username: username,
+                contractor_username: username,
                 rating,
                 description: fbtext
             },
@@ -68,7 +68,7 @@ function Sidebar() {
         <>
             <section className="page_3">
                 <div className="hun mobile-hun">
-                    <div className="master_button font_abel df mobile-master_button">
+                    <div className="contractor_button font_abel df mobile-contractor_button">
                         <div className="btnasfd mobile-btnasfd">
                             <Popup
                                 trigger={<p>Оставить отзыв</p>}
@@ -124,24 +124,24 @@ function Sidebar() {
                     </div>
                 </div>
                 <div className="client df mobile-client jsbfa">
-                    <div className="master font_inter mobile-master">
+                    <div className="contractor font_inter mobile-contractor">
                         <div className="fasdfXY">
-                            <div className="stars_master">
-                                <div className="master_information df align">
-                                    <div className="master_information-text">
+                            <div className="stars_contractor">
+                                <div className="contractor_information df align">
+                                    <div className="contractor_information-text">
                                         <h2>{feedbackMean}</h2>
                                     </div>
                                 </div>
                                 <h3>На основании {feedback.length} отзывов</h3>
                             </div>
                             <div className="grade-level">
-                                <div className="level_master df align">
+                                <div className="level_contractor df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1">
                                     </div>
@@ -150,13 +150,13 @@ function Sidebar() {
                                     </div>
                                 </div>
 
-                                <div className="level_master df align">
+                                <div className="level_contractor df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -164,13 +164,13 @@ function Sidebar() {
                                     </div>
                                 </div>
 
-                                <div className="level_master df align">
+                                <div className="level_contractor df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -178,13 +178,13 @@ function Sidebar() {
                                     </div>
                                 </div>
 
-                                <div className="level_master df align">
+                                <div className="level_contractor df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1"></div>
                                     <div className="level_text">
@@ -192,13 +192,13 @@ function Sidebar() {
                                     </div>
                                 </div>
 
-                                <div className="level_master df align">
+                                <div className="level_contractor df align">
                                     <div className="level_img">
-                                        <img src="/img/master-profile_img/Stars.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
-                                        <img src="/img/master-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/Stars.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
+                                        <img src="/img/contractor-profile_img/empty_star.png" alt="no img" />
                                     </div>
                                     <div className="level_line-1 mobile-level_line-1">
                                     </div>
@@ -272,30 +272,30 @@ function Sidebar() {
                                             <Popup
                                                 open={picture !== ""}
                                                 onClose={() => setPicture("")}
-                                                className="contact-master__modal"
+                                                className="contact-contractor__modal"
                                             >
-                                                <img src={picture} className="contact-master-modal__picture" alt="contact master img" />
+                                                <img src={picture} className="contact-contractor-modal__picture" alt="contact contractor img" />
                                             </Popup>
                                         </div>
                                     </div>
-                                    {v.master_response && (
+                                    {v.contractor_response && (
                                         <div className="comment-reply">
                                             <div className="comment-reply__header">
                                                 <div className="comment-reply-avatar">
                                                     <img
                                                         className="comment-reply-avatar__image"
-                                                        alt="master avatar"
-                                                        src={SERVER_PATH + v.master_avatar}
+                                                        alt="contractor avatar"
+                                                        src={SERVER_PATH + v.contractor_avatar}
                                                     />
                                                 </div>
                                                 <div className="comment-reply-info">
-                                                    <h2 className="comment-reply-info__name">{v.master_name} {v.master_lastname}</h2>
+                                                    <h2 className="comment-reply-info__name">{v.contractor_name} {v.contractor_lastname}</h2>
                                                     <div className="comment-reply-info__date">{formatDate(v.created_at)}</div>
                                                 </div>
                                             </div>
                                             <div className="comment-reply__content">
                                                 <h4 className="comment-reply-title">Ответ</h4>
-                                                <p className="comment-reply-text">{v.master_response}</p>
+                                                <p className="comment-reply-text">{v.contractor_response}</p>
                                             </div>
                                         </div>
                                     )}

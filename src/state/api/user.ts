@@ -7,7 +7,7 @@
  * 
  * **Функции, влияющие на глобальное состояние:**
  * login, logout, getUserData, updateUser, updateUserDetails, loginByVerificationCode,
- * registerAsClient, registerAsMaster
+ * registerAsClient, registerAsContractor
  * 
  * **Функции, не влияющие на глобальное состояние:**
  * updatePassword, recoverPassword, sendVerification
@@ -282,7 +282,7 @@ export function registerAsClient(userData: RegisterUserData): Promise<RegisterRe
  * @param userData Объект с данными для регистрации.
  * @returns Промис, который разрешается с результатом регистрации.
  */
-export function registerAsMaster(userData: RegisterUserData): Promise<RegisterResult> {
+export function registerAsContractor(userData: RegisterUserData): Promise<RegisterResult> {
   if (!userData.u_phone && !userData.u_email) {
     return Promise.reject(
       new Error("The user's email address OR phone number should be specified.")

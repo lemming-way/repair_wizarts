@@ -17,7 +17,7 @@ const updateBalance = (id) => appFetch("user/confirm-payment/" + id)
         //~ setTimeout(() => {
             //~ const mockHistory = [
                 //~ {
-                    //~ master_username: "master123",
+                    //~ contractor_username: "contractor123",
                     //~ id: "uuid-1",
                     //~ payment_id: "payment-uuid-1",
                     //~ status: "completed",
@@ -28,7 +28,7 @@ const updateBalance = (id) => appFetch("user/confirm-payment/" + id)
                     //~ is_confirmed: true
                 //~ },
                 //~ {
-                    //~ master_username: "master456",
+                    //~ contractor_username: "contractor456",
                     //~ id: "uuid-2",
                     //~ payment_id: "payment-uuid-2",
                     //~ status: "pending",

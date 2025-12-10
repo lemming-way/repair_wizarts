@@ -2,10 +2,10 @@ import { Link } from "react-router-dom"
 
 import SERVER_PATH from "../../constants/SERVER_PATH"
 import { useService } from "../../hooks/useService"
-import { getMasterPersonalRequests } from "../../services/request.service"
+import { getContractorPersonalRequests } from "../../services/request.service"
 
 const PersonalRequests = (props) => {
-    const requests = useService(getMasterPersonalRequests, [])
+    const requests = useService(getContractorPersonalRequests, [])
 
     const getEndingOfDigit = (digit) => {
         if (digit % 100 > 10 && digit % 100 < 20) {
@@ -30,12 +30,12 @@ const PersonalRequests = (props) => {
 
                     <div className="huge-fasfdsoiXC df">
                         <div className="two-input">
-                            <Link to='/master/requests/personal'>
+                            <Link to='/contractor/requests/personal'>
                                 <div className="myorders">
                                     <p>Мои заказы</p>
                                 </div>
                             </Link>
-                            <Link to='/master/requests'>
+                            <Link to='/contractor/requests'>
                                 <div className="myorders">
                                     <p>Все заказы </p>
                                 </div>
@@ -56,7 +56,7 @@ const PersonalRequests = (props) => {
                                 </div>
                             </div>
                             {requests.data.map((v) => (
-                                <Link to={"/master/requests/" + v.id} key={v.id}>
+                                <Link to={"/contractor/requests/" + v.id} key={v.id}>
                                     <div className="archive-hee sewreqwreqw">
                                         <div className="nav_applications-3 fasfXf nav_applications-3-gee fsdfsaooo big_nav-device df align mobile-nav_applications-3">
                                             <div className="all-requests-title-container">

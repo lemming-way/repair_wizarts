@@ -4,9 +4,9 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
 import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
-import MasterSettingsWrap from './components/pages/MasterSettingsWrap';
+import ContractorSettingsWrap from './components/pages/ContractorSettingsWrap';
 
-import RegistrationMasterPage from './features/user/registration/RegistrationMasterPage';
+import RegistrationContractorPage from './features/user/registration/RegistrationContractorPage';
 
 // Order imports
 import AllOrders from './components/Orders/Allorders';
@@ -25,7 +25,7 @@ import WalletFH from './components/full-height/WalletFH';
 
 // after login end
 
-import MapMaster from './components/Pick-master/masters';
+import MapContractor from './components/Pick-contractor/contractors';
 import ProfileNumber from './components/Chat/profileNumber';
 import OfferAService from './components/Orders/OfferAService';
 import AddDevices from './components/addDevices/AddDevices';
@@ -43,17 +43,17 @@ import PersonalRequests from './components/Orders/PersonalRequests';
 import Articles from './components/Article/Articles';
 import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
 import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import MyOrdersMaster from './components/Orders/MyOrdersMaster';
+import MyOrdersContractor from './components/Orders/MyOrdersContractor';
 import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './components/Orders/AddedDevicesPage';
 import FChatKirill from './components/full-chat/fakeChat/Kirill';
 import Home from './components/Home';
 import FinanceClient from './components/Settings/FinanceClient';
-import SettingsMaster from './components/Settings/SettingsMaster';
-import MasterChatWrap from './components/pages/MasterChatWrap';
+import SettingsContractor from './components/Settings/SettingsContractor';
+import ContractorChatWrap from './components/pages/ContractorChatWrap';
 import Mysuggest from './components/mysuggest';
 import MyOrder from './components/Orders/MyOrder';
-import ProfileFeedbackMaster from './components/profileNumberClient/ProfileFeedbackMaster';
+import ProfileFeedbackContractor from './components/profileNumberClient/ProfileFeedbackContractor';
 import RegistrationPickPage from './features/user/registration/RegistrationPickPage';
 import RegistrationUserPage from './features/user/registration/RegistrationUserPage';
 import Remont from './components/remont';
@@ -156,11 +156,11 @@ function App() {
             <Route path="articles/:id" element={<Article />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
-            <Route path="contact" element={<MapMaster />} />
+            <Route path="contact" element={<MapContractor />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register">
               <Route index element={<RegistrationPickPage />} />
-              <Route path="master" element={<RegistrationMasterPage />} />
+              <Route path="contractor" element={<RegistrationContractorPage />} />
               <Route path="client" element={<RegistrationUserPage />} />
             </Route>
           </Route>
@@ -183,7 +183,7 @@ function App() {
             <Route path="requests">
               <Route index element={<AddedDevices />} />
               {/* <Route path="archived" element={<Archive />} /> */}
-              <Route path="my_orders" element={<MyOrdersMaster />} />
+              <Route path="my_orders" element={<MyOrdersContractor />} />
               <Route path="my_order/:id" element={<MyOrder />} />
               <Route path="create">
                 <Route path="title" element={<TitleService />} />
@@ -194,7 +194,7 @@ function App() {
             {/* клиент на странице мастера может оставить отзыв */}
             <Route
               path="feedback/:id"
-              element={<ProfileFeedbackMaster />}
+              element={<ProfileFeedbackContractor />}
             />
             {/* чат связан с бэком */}
             {/* <Route path="chat" element={<FChat />} /> */}
@@ -204,19 +204,19 @@ function App() {
             <Route path="chat/:id" element={<FChatKirill />} />
 
             {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
-            {/* <Route path="feedback/:username" element={<ReviewsMaster />} /> */}
+            {/* <Route path="feedback/:username" element={<ReviewsContractor />} /> */}
           </Route>
 
-          <Route basename="master" path="master">
+          <Route basename="contractor" path="contractor">
             {/* Чат без связи с бэком, только заготовка */}
-            <Route element={<MasterChatWrap />}>
+            <Route element={<ContractorChatWrap />}>
               <Route path="chat" element={<FChatKirill />} />
               <Route path="chat/:id" element={<FChatKirill />} />
               {/* прежний чат, был связана с бэком */}
-              {/* <Route path="chat/" element={<FChat baseRoute="/master/chat/" showSidebar />} />
-                        <Route path="chat/:id" element={<FChat baseRoute="/master/chat/" showSidebar />} /> */}
+              {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
+                        <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
             </Route>
-            <Route element={<MasterSettingsWrap />}>
+            <Route element={<ContractorSettingsWrap />}>
               <Route
                 path="wallet"
                 element={<ChoiceOfReplenishmentMethod />}
@@ -224,7 +224,7 @@ function App() {
               <Route path="wallet_history" element={<WalletHistory />} />
               <Route path="wallet/:id" element={<WalletConfirm />} />
               <Route path="settings" element={<SettingsAll />}>
-                <Route index element={<SettingsMaster />} />
+                <Route index element={<SettingsContractor />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="services" element={<Services />} />
                 <Route path="finance" element={<Finance />} />

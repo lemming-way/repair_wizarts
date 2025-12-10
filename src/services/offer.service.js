@@ -22,7 +22,7 @@ const acceptOffer = (id) =>
             //~ const mockOffers = [
                 //~ {
                     //~ id: 1,
-                    //~ master_username: "master1",
+                    //~ contractor_username: "contractor1",
                     //~ message: "Предложение для заказа 1",
                     //~ request_id: id,
                     //~ price: 5000,
@@ -32,7 +32,7 @@ const acceptOffer = (id) =>
                 //~ },
                 //~ {
                     //~ id: 2,
-                    //~ master_username: "master2",
+                    //~ contractor_username: "contractor2",
                     //~ message: "Предложение для заказа 1",
                     //~ request_id: id,
                     //~ price: 6000,
@@ -53,7 +53,7 @@ const acceptOffer = (id) =>
         //~ setTimeout(() => {
             //~ const mockOffer = {
                 //~ id: 3,
-                //~ master_username: payload.master_username,
+                //~ contractor_username: payload.contractor_username,
                 //~ message: payload.message,
                 //~ request_id: payload.request_id,
                 //~ price: payload.price,

@@ -103,7 +103,7 @@ const FinanceClient = () => {
         </div>
 
         {/* <button
-          className="master-settings-pics__button"
+          className="contractor-settings-pics__button"
           onClick={() => {
             if (!card && !webmoney) {
               alert('Введите хотя бы один способ оплаты');
@@ -118,7 +118,7 @@ const FinanceClient = () => {
         {/* Кнопка подтверждения */}
         {/* {isVisibleConfirm && ( */}
         <button
-          className="master-settings-pics__button"
+          className="contractor-settings-pics__button"
           onClick={onSubmitWallets}
         >
           Подтвердить отправку

@@ -3,17 +3,17 @@ import '../../../scss/chat.css';
 import { Link } from 'react-router-dom';
 
 import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
-import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
+import { useContractorOrdersQuery } from '../../../hooks/useContractorOrdersQuery';
 import { useUser, UserRole } from '../../../state/user';
 
 function App() {
   const { user } = useUser();
   const isUserAuthorized = 'id' in user && !!user.id;
   const userRole = isUserAuthorized ? user.role : 0;
-  const masterOrdersQuery = useMasterOrdersQuery({ enabled: userRole === UserRole.Master });  // todo: Сделать отдельный параметр вместо enabled
-  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: userRole !== UserRole.Master });  // todo: Сделать отдельный параметр вместо enabled
-  const userRequests = userRole === UserRole.Master
-    ? masterOrdersQuery.masterOrders
+  const contractorOrdersQuery = useContractorOrdersQuery({ enabled: userRole === UserRole.Contractor });  // todo: Сделать отдельный параметр вместо enabled
+  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: userRole !== UserRole.Contractor });  // todo: Сделать отдельный параметр вместо enabled
+  const userRequests = userRole === UserRole.Contractor
+    ? contractorOrdersQuery.contractorOrders
     : allClientRequestsQuery.clientRequests;
 
   // утилита: получить последнее сообщение по всем заказам чата
@@ -61,29 +61,29 @@ function App() {
     );
     const filteredRequests = rawRequests.filter(
       (item: any) =>
-        item.b_options?.winnerMaster && item.drivers && item.drivers.length > 0,
+        item.b_options?.winnerContractor && item.drivers && item.drivers.length > 0,
     );
-    const chatsByMaster: any = filteredRequests.reduce(
+    const chatsByContractor: any = filteredRequests.reduce(
       (acc: any, request: any) => {
-        const masterId = request.b_options.winnerMaster;
-        if (!acc[masterId]) {
-          acc[masterId] = [];
+        const contractorId = request.b_options.winnerContractor;
+        if (!acc[contractorId]) {
+          acc[contractorId] = [];
         }
-        acc[masterId].push(request);
+        acc[contractorId].push(request);
         return acc;
       },
       {},
     );
-    return Object.values(chatsByMaster).map((orders: any) => {
+    return Object.values(chatsByContractor).map((orders: any) => {
       const firstOrder = orders[0];
       const winnerDriver = firstOrder.drivers.find(
-        (d) => d.u_id === firstOrder.b_options.winnerMaster,
+        (d) => d.u_id === firstOrder.b_options.winnerContractor,
       );
       return {
         isOwner: 'id' in user && firstOrder.u_id === user.id,
-        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
+        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerContractor}`,
         clientInfo: firstOrder.b_options.author || {},
-        masterInfo: winnerDriver.c_options.author || {},
+        contractorInfo: winnerDriver.c_options.author || {},
         orders: orders,
       };
     });
@@ -113,21 +113,21 @@ function App() {
         {groupedChats.length === 0
           ? 'Пусто'
           : groupedChats.map(
-              ({ chatId, masterInfo, isOwner, clientInfo, orders }) => {
+              ({ chatId, contractorInfo, isOwner, clientInfo, orders }) => {
                 const lastMsg = getLastMessageFromOrders(orders);
                 return (
                   <div className="big_messages" key={chatId}>
                     <Link
                       to={
-                        window.location.href.includes('master')
-                          ? `/master/chat/${chatId}`
+                        window.location.href.includes('contractor')
+                          ? `/contractor/chat/${chatId}`
                           : `/client/chat/${chatId}`
                       }
                     >
                       <div className="ilya df font_inter align">
                         <div className="ilya_img">
                           <img
-                            src={masterInfo.u_photo || '/img/img-camera.png'}
+                            src={contractorInfo.u_photo || '/img/img-camera.png'}
                             style={{ height: 65, width: 66, borderRadius: 30 }}
                             alt="chat icon"
                           />
@@ -136,7 +136,7 @@ function App() {
                         <div className="ilya_text">
                           <h2>
                             {isOwner
-                              ? masterInfo.u_name || 'Мастер'
+                              ? contractorInfo.u_name || 'Мастер'
                               : clientInfo.name || 'Мастер'}
                           </h2>
 
@@ -160,7 +160,7 @@ function App() {
                                   },
                                 )
                               : new Date(
-                                  masterInfo.u_details?.lastTimeBeenOnline ||
+                                  contractorInfo.u_details?.lastTimeBeenOnline ||
                                     new Date().toISOString(),
                                 ).toLocaleTimeString('ru-RU', {
                                   hour: '2-digit',

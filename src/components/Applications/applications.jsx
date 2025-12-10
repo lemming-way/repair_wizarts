@@ -7,7 +7,7 @@ import { useLanguage } from '../../state/language';
 import style from './applications.module.css';
 import NavApplication from './NavApplication';
 import { useService } from '../../hooks/useService';
-import { getMasterOrders } from '../../services/order.service';
+import { getContractorOrders } from '../../services/order.service';
 import { useUser } from '../../state/user';
 
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
@@ -26,7 +26,7 @@ function MyApplications() {
   const text = useLanguage();
   const { user } = useUser();
   const navigator = useNavigate();
-  const orders = useService(getMasterOrders, []);
+  const orders = useService(getContractorOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];
   const filteredRequests = rawRequests.filter(
     (item) => item.b_options.type === 'order' && item.u_id !== user.id,
@@ -195,7 +195,7 @@ function MyApplications() {
                   <div className={style.buttons}>
                     <button
                       className={style.button}
-                      onClick={() => navigator('/master/chat/168789461')}
+                      onClick={() => navigator('/contractor/chat/168789461')}
                     >
                       {text('Agree')}
                     </button>

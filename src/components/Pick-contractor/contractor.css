@@ -1,4 +1,4 @@
-.master__map__title {
+.contractor__map__title {
     font-family: 'SF UI Display';
     font-style: normal;
     font-weight: 400;
@@ -13,7 +13,7 @@
     padding: 40px 0px;
 }
 
-.info_master__row-link {
+.info_contractor__row-link {
     outline: none;
     border: none;
     color: #59A4E9;
@@ -21,14 +21,14 @@
     background-color: unset;
 }
 
-.contact-master__picture {
+.contact-contractor__picture {
     object-fit: contain;
     border-radius: 10px;
     width: 600px;
     height: 300px;
 }
 
-.master__h2 {
+.contractor__h2 {
     text-align: center;
     margin: 20px 0;
 }
@@ -86,7 +86,7 @@
     }
 }
 
-.contact-master-modal__picture {
+.contact-contractor-modal__picture {
     animation: 150ms 1 pop forwards;
     border-radius: 10px;
     object-fit: contain;
@@ -254,7 +254,7 @@
     position: relative;
 }
 
-.contact-master__open-button {
+.contact-contractor__open-button {
     position: absolute;
     border: none;
     border-radius: 8px;

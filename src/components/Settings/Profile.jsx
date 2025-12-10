@@ -222,17 +222,17 @@ function Profile() {
   useEffect(() => {
     if (!userEx.id) return;
 
-    const masterDetails = userEx.details || {};
+    const contractorDetails = userEx.details || {};
 
     const fetchAllData = async () => {
       if (
-        masterDetails.section &&
-        masterDetails.subsection &&
-        masterDetails.service
+        contractorDetails.section &&
+        contractorDetails.subsection &&
+        contractorDetails.service
       ) {
         setSubsections(
           categories.flatMap((item) => {
-            const isSelectedSectionId = masterDetails.section.find(
+            const isSelectedSectionId = contractorDetails.section.find(
               (selec) => selec.value === item.id,
             );
             return isSelectedSectionId
@@ -245,12 +245,12 @@ function Profile() {
         );
         setServices(
           categories.flatMap((item) => {
-            const isSelectedSectionId = masterDetails.section.find(
+            const isSelectedSectionId = contractorDetails.section.find(
               (selec) => String(selec.value) === String(item.id),
             );
             return isSelectedSectionId
               ? item.subsections.flatMap((item) => {
-                  const isSelectedSubsection = masterDetails.subsection.find(
+                  const isSelectedSubsection = contractorDetails.subsection.find(
                     (subSelec) => String(subSelec.value) === String(item.id),
                   );
                   return isSelectedSubsection
@@ -264,39 +264,39 @@ function Profile() {
           }),
         );
         setCategoryMainOptionSelected(
-          Array.isArray(masterDetails.section)
-            ? masterDetails.section
+          Array.isArray(contractorDetails.section)
+            ? contractorDetails.section
             : [],
         );
         setSelectedSubsections(
-          Array.isArray(masterDetails.subsection)
-            ? masterDetails.subsection
+          Array.isArray(contractorDetails.subsection)
+            ? contractorDetails.subsection
             : [],
         );
         setSelectedServices(
-          Array.isArray(masterDetails.service)
-            ? masterDetails.service
+          Array.isArray(contractorDetails.service)
+            ? contractorDetails.service
             : [],
         );
       }
-      // await getData('section', '', '', master.u_details);
+      // await getData('section', '', '', contractor.u_details);
       // await getData(
       //   'subsection',
-      //   master.u_details?.section,
+      //   contractor.u_details?.section,
       //   '',
-      //   master.u_details,
+      //   contractor.u_details,
       // );
       // await getData(
       //   'service',
-      //   master.u_details?.section,
-      //   master.u_details?.subsection,
-      //   master.u_details,
+      //   contractor.u_details?.section,
+      //   contractor.u_details?.subsection,
+      //   contractor.u_details,
       // );
       setExperience(
-        masterDetails.experience
+        contractorDetails.experience
           ? [
               experienceOptions.find(
-                (opt) => opt.value === masterDetails.experience,
+                (opt) => opt.value === contractorDetails.experience,
               ),
             ]
           : null,
@@ -307,21 +307,21 @@ function Profile() {
         lastname: userEx.lastname,
         description: userEx.description || '',
         details: {
-          organization_name: masterDetails.organization_name || '',
-          address: masterDetails.address || '',
-          city: masterDetails.city || '',
-          specialty: masterDetails.specialty || '',
-          main_business: masterDetails.main_business || '',
-          experience: masterDetails.experience || '',
+          organization_name: contractorDetails.organization_name || '',
+          address: contractorDetails.address || '',
+          city: contractorDetails.city || '',
+          specialty: contractorDetails.specialty || '',
+          main_business: contractorDetails.main_business || '',
+          experience: contractorDetails.experience || '',
         },
       });
 
-      setBusiness(masterDetails.business_model || 'Independent technician');
+      setBusiness(contractorDetails.business_model || 'Independent technician');
     };
     if (
-      masterDetails.section &&
-      masterDetails.subsection &&
-      masterDetails.service
+      contractorDetails.section &&
+      contractorDetails.subsection &&
+      contractorDetails.service
     ) {
       fetchAllData();
     }

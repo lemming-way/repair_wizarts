@@ -17,7 +17,7 @@ export default function ModalOfferGo({ setVisibleModalGo }) {
                     <p className={style.message}>Ваше индивидуальное предложение отправлено</p>
 
                     <div className={style.buttons}>
-                        <div className={style.button} onClick={()=>{setVisibleModalGo(false); navigator("/master/requests")}}>Хорошо</div>
+                        <div className={style.button} onClick={()=>{setVisibleModalGo(false); navigator("/contractor/requests")}}>Хорошо</div>
                     </div>
                 </div>
             </div>

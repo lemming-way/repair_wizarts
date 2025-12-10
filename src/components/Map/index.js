@@ -35,9 +35,9 @@ function queryYMaps() {
 
 function Map(props) {
   const {
-    masters,
-    // selectedMaster, // Больше не нужен внутри этого компонента
-    selectMaster, // Функция из родителя для выбора мастера
+    contractors,
+    // selectedContractor, // Больше не нужен внутри этого компонента
+    selectContractor, // Функция из родителя для выбора мастера
   } = props;
   const text = useLanguage();
   const YMaps = useQuery( { queryKey: [ 'YMaps' ], queryFn: queryYMaps, placeholderData: null } ).data;
@@ -65,15 +65,15 @@ function Map(props) {
           color='red'
         />
       {/* Перебираем мастеров и создаем для каждого метку */}
-      {masters?.map((v) => (
+      {contractors?.map((v) => (
         <YMaps.YMapDefaultMarker
           key={v.id}
           coordinates={[v.longitude, v.latitude]}
           iconName='auto-parts'
           size='normal'
           color='red'
-          // --- ИЗМЕНЕНИЕ: Передаем весь объект мастера в функцию selectMaster ---
-          onClick={() => selectMaster(v)}
+          // --- ИЗМЕНЕНИЕ: Передаем весь объект мастера в функцию selectContractor ---
+          onClick={() => selectContractor(v)}
         />
       ))}
       </YMaps.YMap>

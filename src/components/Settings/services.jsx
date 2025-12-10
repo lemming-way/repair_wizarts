@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import '../../scss/service.css';
-import '../../scss/register-master.scss';
+import '../../scss/register-contractor.scss';
 import style from './services.module.css';
-//~ import { getMasterRepairsByUsername } from '../../services/service.service';
+//~ import { getContractorRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import { useUserExtended, updateUserDetails } from '../../state/user';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
@@ -53,7 +53,7 @@ function Services() {
       );
       setServicesBlocks({ ...userEx.details.servicesBlocks });
     }
-    //~ getMasterRepairsByUsername(username).then(setRepairs);
+    //~ getContractorRepairsByUsername(username).then(setRepairs);
   }, [userEx.id, userEx.details]);
   useEffect(() => {
     var obj = {};

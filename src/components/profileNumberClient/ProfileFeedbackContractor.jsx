@@ -1,12 +1,12 @@
 import { useState} from "react";
 import { useNavigate } from "react-router-dom";
 
-import style from "./ProfileFeedbackMaster.module.css"
+import style from "./ProfileFeedbackContractor.module.css"
 import ProfileSlider  from "./ProfileSlider";
 import ModalAddComment from "../Chat/ModalAddComment";
 import ModalDelete from "../Chat/ModalDelete";
 
-export default function ProfileFeedbackMaster() {
+export default function ProfileFeedbackContractor() {
 
     const navigate = useNavigate();
     const [visibleModalDelete, setVisibleModalDelete] = useState(false)

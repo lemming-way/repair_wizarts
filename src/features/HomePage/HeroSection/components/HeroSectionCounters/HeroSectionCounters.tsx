@@ -18,7 +18,7 @@ const HeroSectionCounters = () => {
       {/*На данный момент сервер не работает, поэтому закомментировала данные из сервера*/}
       <div className={styles.heroSectionCounters_item}>{text("Number of users on the site")}:
         100
-        {/*{counters.data.masters}*/}
+        {/*{counters.data.contractors}*/}
       </div>
       <div className={styles.heroSectionCounters_item}>{text("Orders completed on the site")}: 
         300

@@ -22,7 +22,7 @@ import BlackListModal from './BlackListModal';
 import styles from './Chat.module.css';
 import { useService } from '../../../hooks/useService';
 import { getAllClientRequests } from '../../../services/request.service';
-import { getMasterOrders } from '../../../services/order.service';
+import { getContractorOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
@@ -45,7 +45,7 @@ const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 // TODO: Модуль не функционален, надо всё переделать
 
 // ====== ЧАТ: типы и утилиты ===============================================
-type ChatAuthor = 'client' | 'master' | 'admin';
+type ChatAuthor = 'client' | 'contractor' | 'admin';
 
 interface ChatMessage {
   id: string; // uuid
@@ -78,11 +78,11 @@ type TimelineKind =
   | 'order_created'
   | 'chat'
   | 'cancel_requested'
-  | 'cancel_master_accepted'
-  | 'cancel_master_rejected'
+  | 'cancel_contractor_accepted'
+  | 'cancel_contractor_rejected'
   | 'dispute_opened'
-  | 'dispute_master_accepted'
-  | 'dispute_master_rejected'
+  | 'dispute_contractor_accepted'
+  | 'dispute_contractor_rejected'
   | 'order_completed';
 
 interface TimelineItemBase {
@@ -99,11 +99,11 @@ interface TimelineSimpleItem extends TimelineItemBase {
   kind:
     | 'order_created'
     | 'cancel_requested'
-    | 'cancel_master_accepted'
-    | 'cancel_master_rejected'
+    | 'cancel_contractor_accepted'
+    | 'cancel_contractor_rejected'
     | 'dispute_opened'
-    | 'dispute_master_accepted'
-    | 'dispute_master_rejected'
+    | 'dispute_contractor_accepted'
+    | 'dispute_contractor_rejected'
     | 'order_completed';
 }
 
@@ -533,14 +533,14 @@ const DropboxFilePreview: FC<{
   );
 };
 
-interface MasterInfo {
+interface ContractorInfo {
   u_photo?: string;
   u_name?: string;
 }
 
 interface GroupedChat {
   chatId: string;
-  masterInfo: MasterInfo;
+  contractorInfo: ContractorInfo;
   orders: any[];
 }
 
@@ -549,24 +549,24 @@ interface OrderDetailsBlockProps {
   setOrderId: Dispatch<SetStateAction<number>>;
   setIsOpenDisput: Dispatch<SetStateAction<boolean>>;
   currentUser: any;
-  masterUser: any;
+  contractorUser: any;
   setIsBalanceError: Dispatch<SetStateAction<boolean>>;
   setBalanceErrorNum: Dispatch<SetStateAction<number>>;
   refetchRequests: () => void; // Используем refetch
   // НОВОЕ: кто смотрит чат (мастер или клиент)
-  viewerIsMaster: boolean;
+  viewerIsContractor: boolean;
 }
 
 const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   order,
   currentUser,
-  masterUser,
+  contractorUser,
   refetchRequests,
   setOrderId,
   setIsOpenDisput,
   setIsBalanceError,
   setBalanceErrorNum,
-  viewerIsMaster, // НОВОЕ
+  viewerIsContractor, // НОВОЕ
 }) => {
   const text = useLanguage();
   const isRequestType = order?.b_options?.orderType === 'request';
@@ -607,14 +607,14 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
     // 3.3 Решение мастера по отмене
     if (
-      typeof order?.b_options?.is_master_agree_with_cancel === 'boolean' &&
-      order?.b_options?.cancel_master_decision_ts
+      typeof order?.b_options?.is_contractor_agree_with_cancel === 'boolean' &&
+      order?.b_options?.cancel_contractor_decision_ts
     ) {
       items.push({
-        kind: order.b_options.is_master_agree_with_cancel
-          ? 'cancel_master_accepted'
-          : 'cancel_master_rejected',
-        ts: order.b_options.cancel_master_decision_ts,
+        kind: order.b_options.is_contractor_agree_with_cancel
+          ? 'cancel_contractor_accepted'
+          : 'cancel_contractor_rejected',
+        ts: order.b_options.cancel_contractor_decision_ts,
       } as TimelineSimpleItem);
     }
 
@@ -631,14 +631,14 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
     // 3.5 Решение мастера по спору
     if (
-      typeof order?.b_options?.is_master_agree_with_dispute === 'boolean' &&
-      order?.b_options?.dispute_master_decision_ts
+      typeof order?.b_options?.is_contractor_agree_with_dispute === 'boolean' &&
+      order?.b_options?.dispute_contractor_decision_ts
     ) {
       items.push({
-        kind: order.b_options.is_master_agree_with_dispute
-          ? 'dispute_master_accepted'
-          : 'dispute_master_rejected',
-        ts: order.b_options.dispute_master_decision_ts,
+        kind: order.b_options.is_contractor_agree_with_dispute
+          ? 'dispute_contractor_accepted'
+          : 'dispute_contractor_rejected',
+        ts: order.b_options.dispute_contractor_decision_ts,
       } as TimelineSimpleItem);
     }
 
@@ -669,12 +669,12 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     order?.b_state,
     order?.b_options?.is_request_for_cancel_exist,
     order?.b_options?.cancel_requested_ts,
-    order?.b_options?.is_master_agree_with_cancel,
-    order?.b_options?.cancel_master_decision_ts,
+    order?.b_options?.is_contractor_agree_with_cancel,
+    order?.b_options?.cancel_contractor_decision_ts,
     order?.b_options?.is_open_dispute,
     order?.b_options?.dispute_opened_ts,
-    order?.b_options?.is_master_agree_with_dispute,
-    order?.b_options?.dispute_master_decision_ts,
+    order?.b_options?.is_contractor_agree_with_dispute,
+    order?.b_options?.dispute_contractor_decision_ts,
     order?.b_options?.complete_ts,
     chatHistory,
   ]);
@@ -688,14 +688,14 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
   // Add balance check
   useEffect(() => {
-    const masterReqData =
-      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
+    const contractorReqData =
+      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerContractor)
         ?.c_options || {};
 
-    if (masterReqData?.bind_amount > currentUser.details?.balance) {
+    if (contractorReqData?.bind_amount > currentUser.details?.balance) {
       setIsBalanceError(true);
       setBalanceErrorNum(
-        Number(masterReqData.bind_amount) -
+        Number(contractorReqData.bind_amount) -
           Number(currentUser.details?.balance || 0),
       );
     } else {
@@ -705,16 +705,16 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   }, [order, currentUser.details?.balance, setIsBalanceError, setBalanceErrorNum]);
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
   //~ const handleConfirmOrder = async () => {
-    //~ const masterReqData =
-      //~ order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
+    //~ const contractorReqData =
+      //~ order.drivers?.find((d: any) => d.u_id === order.b_options.winnerContractor)
         //~ ?.c_options || {};
 
     //~ // Calculate total amount with 9% commission
-    //~ const commission = Number(masterReqData.bind_amount) * 0.09;
-    //~ const totalAmount = Number(masterReqData.bind_amount) + commission;
+    //~ const commission = Number(contractorReqData.bind_amount) * 0.09;
+    //~ const totalAmount = Number(contractorReqData.bind_amount) + commission;
 
     //~ if (totalAmount > Number(user?.u_details?.balance || 0)) {
-      //~ console.log(masterUser);
+      //~ console.log(contractorUser);
       //~ setIsBalanceError(true);
       //~ setBalanceErrorNum(totalAmount - Number(user?.u_details?.balance || 0));
       //~ return;
@@ -725,7 +725,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       //~ await appFetch(`/drive/get/${order.b_id}`, {
         //~ body: {
           //~ u_a_role: 1,
-          //~ u_id: masterUser.u_id,
+          //~ u_id: contractorUser.u_id,
           //~ action: 'set_performer',
         //~ },
       //~ });
@@ -738,16 +738,16 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
         //~ },
       //~ }).then((v) => console.log(v));
 
-      //~ // Update master's balance (full amount)
+      //~ // Update contractor's balance (full amount)
       //~ updateUser(
         //~ {
           //~ details: {
             //~ balance:
-              //~ Number(masterReqData.bind_amount) +
-              //~ Number(masterUser.u_details.balance),
+              //~ Number(contractorReqData.bind_amount) +
+              //~ Number(contractorUser.u_details.balance),
           //~ },
         //~ },
-        //~ masterUser.u_id,
+        //~ contractorUser.u_id,
         //~ true,
       //~ );
 
@@ -836,17 +836,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   //~ }
 
   const driverData = order.drivers?.find(
-    (d: any) => d.u_id === order.b_options.winnerMaster,
+    (d: any) => d.u_id === order.b_options.winnerContractor,
   );
-  const masterReqData = driverData?.c_options || {};
+  const contractorReqData = driverData?.c_options || {};
   //~ const isOrderCompleted = order.b_state === '4';
   //~ const isCancelRequested =
     //~ !!order.b_options?.is_request_for_cancel_exist || order.b_state == '3';
   //~ const isOwner = order.u_id === user?.u_id;
-  //~ const isMasterAgreeWithCancelRequest =
-    //~ order.b_options.is_master_agree_with_cancel || order.b_state == '3';
+  //~ const isContractorAgreeWithCancelRequest =
+    //~ order.b_options.is_contractor_agree_with_cancel || order.b_state == '3';
   //~ const isOpenDispute = order.b_options.is_open_dispute;
-  //~ const isMasterAgreeWithDispute = order.b_options.is_master_agree_with_dispute;
+  //~ const isContractorAgreeWithDispute = order.b_options.is_contractor_agree_with_dispute;
   // Получаем массив ссылок на фото
   const photoUrls: string[] =
     (order.b_options?.client_feedback_photo_urls as string[]) ||
@@ -901,7 +901,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       ? text('Selected device model')
                       : text('Order published on the exchange')}{' '}
                     <Link
-                      to={'/master/requests'}
+                      to={'/contractor/requests'}
                       className={styles.block_bid__link}
                     >
                       {order?.b_options?.title}
@@ -917,11 +917,11 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                     {text('Client description:')} {order?.b_options?.description}
                   </p>
                   <p>
-                    {text('Master responded with an offer of')}{' '}
-                    {masterReqData?.bind_amount} {text('rubles')}.
+                    {text('Contractor responded with an offer of')}{' '}
+                    {contractorReqData?.bind_amount} {text('rubles')}.
                   </p>
                   <p>
-                    {text('Master message from')}{' '}
+                    {text('Contractor message from')}{' '}
                     {isRequestType
                       ? text('the request')
                       : text('the marketplace order!')}{' '}
@@ -974,14 +974,14 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                 if (item.kind === 'chat') {
                   const m = (item as TimelineChatItem).msg;
                   // кто сейчас смотрит чат: мастер или клиент
-                  const viewerIsMaster =
+                  const viewerIsContractor =
                     typeof window !== 'undefined' &&
-                    window.location.pathname.includes('/master/');
+                    window.location.pathname.includes('/contractor/');
 
-                  // у нас в истории авторы: 'client' и иногда 'master' или 'admin' (мастерские сообщения шлём как 'admin')
+                  // у нас в истории авторы: 'client' и иногда 'contractor' или 'admin' (мастерские сообщения шлём как 'admin')
                   // считаем "моё" по роли зрителя
-                  const isMine = viewerIsMaster
-                    ? m.author === 'master' || m.author === 'admin'
+                  const isMine = viewerIsContractor
+                    ? m.author === 'contractor' || m.author === 'admin'
                     : m.author === 'client';
                   const bubbleSide = isMine
                     ? styles.text_right
@@ -1034,18 +1034,18 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                   // показываем "Вы" только на своих сообщениях
                   const authorName = isMine
                     ? text('You')
-                    : viewerIsMaster
+                    : viewerIsContractor
                     ? currentUser.name || text('Client')
-                    : masterUser?.name || text('Master');
+                    : contractorUser?.name || text('Contractor');
 
                   // аватар показываем у собеседника (слева), у своих можно не показывать
-                  const avatarSrc = viewerIsMaster
+                  const avatarSrc = viewerIsContractor
                     ? isMine
-                      ? masterUser?.avatar || '/img/img-camera.png'
+                      ? contractorUser?.avatar || '/img/img-camera.png'
                       : currentUser.avatar || '/img/img-camera.png'
                     : isMine
                     ? currentUser.avatar || '/img/img-camera.png'
-                    : masterUser?.avatar || '/img/img-camera.png';
+                    : contractorUser?.avatar || '/img/img-camera.png';
 
                   return (
                     <div
@@ -1156,7 +1156,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         )}
                       </div>
                     );
-                  case 'cancel_master_accepted':
+                  case 'cancel_contractor_accepted':
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1164,13 +1164,13 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       >
                         {sys(
                           isRequestType
-                            ? text('Master accepted cancellation of the request')
-                            : text('Master accepted cancellation of the order'),
+                            ? text('Contractor accepted cancellation of the request')
+                            : text('Contractor accepted cancellation of the order'),
                           '/img/message_green.png',
                         )}
                       </div>
                     );
-                  case 'cancel_master_rejected':
+                  case 'cancel_contractor_rejected':
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1178,8 +1178,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       >
                         {sys(
                           isRequestType
-                            ? text('Master declined cancellation of the request')
-                            : text('Master declined cancellation of the order'),
+                            ? text('Contractor declined cancellation of the request')
+                            : text('Contractor declined cancellation of the order'),
                           '/img/message_cancel.png',
                         )}
                       </div>
@@ -1198,7 +1198,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                         )}
                       </div>
                     );
-                  case 'dispute_master_accepted':
+                  case 'dispute_contractor_accepted':
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1206,13 +1206,13 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       >
                         {sys(
                           isRequestType
-                            ? text('Master accepted the dispute for the request')
-                            : text('Master accepted the dispute for the order'),
+                            ? text('Contractor accepted the dispute for the request')
+                            : text('Contractor accepted the dispute for the order'),
                           '/img/message_green.png',
                         )}
                       </div>
                     );
-                  case 'dispute_master_rejected':
+                  case 'dispute_contractor_rejected':
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1220,8 +1220,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       >
                         {sys(
                           isRequestType
-                            ? text('Master rejected the dispute for the request')
-                            : text('Master rejected the dispute for the order'),
+                            ? text('Contractor rejected the dispute for the request')
+                            : text('Contractor rejected the dispute for the order'),
                           '/img/message_cancel.png',
                         )}
                       </div>
@@ -1258,7 +1258,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const { userEx } = useUserExtended();
   const isUserAuthorized = 'id' in userEx && !!userEx.id;
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [masterUser, setMasterUser] = useState<any>(null);
+  const [contractorUser, setContractorUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
   const [isVisibleAddOrder, setVisibleAddOrder] = useState(false);
   const [isVisibleEmoji, setIsVisibleEmoji] = useState(false);
@@ -1274,7 +1274,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
   const userRequests = useService(
-    isUserAuthorized && userEx.role === UserRole.Master ? getMasterOrders : getAllClientRequests,
+    isUserAuthorized && userEx.role === UserRole.Contractor ? getContractorOrders : getAllClientRequests,
     [],
   );
 
@@ -1290,25 +1290,25 @@ function ChoiceOfReplenishmentMethodCard() {
         ) || [];
     const filteredRequests = rawRequests.filter(
       (item: any) =>
-        item.b_options?.winnerMaster && item.drivers && item.drivers.length > 0,
+        item.b_options?.winnerContractor && item.drivers && item.drivers.length > 0,
     );
-    const chatsByMaster = filteredRequests.reduce((acc: any, request: any) => {
-      const masterId = request.b_options.winnerMaster;
-      if (!acc[masterId]) {
-        acc[masterId] = [];
+    const chatsByContractor = filteredRequests.reduce((acc: any, request: any) => {
+      const contractorId = request.b_options.winnerContractor;
+      if (!acc[contractorId]) {
+        acc[contractorId] = [];
       }
-      acc[masterId].push(request);
+      acc[contractorId].push(request);
       return acc;
     }, {});
 
-    return Object.values(chatsByMaster).map((orders: any): GroupedChat => {
+    return Object.values(chatsByContractor).map((orders: any): GroupedChat => {
       const firstOrder = orders[0];
       const winnerDriver = firstOrder.drivers.find(
-        (d: any) => d.u_id === firstOrder.b_options.winnerMaster,
+        (d: any) => d.u_id === firstOrder.b_options.winnerContractor,
       );
       return {
-        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
-        masterInfo: winnerDriver?.c_options?.author || {},
+        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerContractor}`,
+        contractorInfo: winnerDriver?.c_options?.author || {},
         orders: orders,
       };
     });
@@ -1323,13 +1323,13 @@ function ChoiceOfReplenishmentMethodCard() {
     async function fetchChatParticipants() {
       if (!currentChat) return;
       const client_id = currentChat.chatId.split('_')[0];
-      const master_id = currentChat.chatId.split('_')[1];
+      const contractor_id = currentChat.chatId.split('_')[1];
 
       appFetch(`user/${client_id}`, {}).then((v) =>
         setCurrentUser(Object.values(v.data.user || {})[0] as object),
       );
-      appFetch(`user/${master_id}`, {}).then((v) =>
-        setMasterUser(Object.values(v.data.user || {})[0] as object),
+      appFetch(`user/${contractor_id}`, {}).then((v) =>
+        setContractorUser(Object.values(v.data.user || {})[0] as object),
       );
     }
     fetchChatParticipants();
@@ -1521,7 +1521,7 @@ function ChoiceOfReplenishmentMethodCard() {
   // ===== ЧАТ: отправка сообщения =====
   async function sendChatMessage(
     order: any,
-    who: 'client' | 'master',
+    who: 'client' | 'contractor',
     messageText: string,
     files?: string[],
   ) {
@@ -1559,7 +1559,7 @@ function ChoiceOfReplenishmentMethodCard() {
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'master' = isUserAuthorized && userEx.role === UserRole.Master ? 'master' : 'client';
+    const role: 'client' | 'contractor' = isUserAuthorized && userEx.role === UserRole.Contractor ? 'contractor' : 'client';
 
     // 1) загружаем все файлы → получаем постоянные URL
     const uploadedUrls: string[] = [];
@@ -1673,7 +1673,7 @@ function ChoiceOfReplenishmentMethodCard() {
     return text('days');
   };
 
-  if ((!currentUser || !masterUser) && id) return <>{text('Loading...')}</>;
+  if ((!currentUser || !contractorUser) && id) return <>{text('Loading...')}</>;
 
   return (
     <>
@@ -1711,7 +1711,7 @@ function ChoiceOfReplenishmentMethodCard() {
       <section className={styles.container}>
         {id ? (
           <>
-            {window.location.href.includes('master') ? (
+            {window.location.href.includes('contractor') ? (
               <MediaQuery query="(min-device-width: 1615px)">
                 <FrameMessages />
               </MediaQuery>
@@ -1757,13 +1757,13 @@ function ChoiceOfReplenishmentMethodCard() {
                   >
                     <Link
                       to={
-                        window.location.href.includes('master')
-                          ? '/master/chat/'
+                        window.location.href.includes('contractor')
+                          ? '/contractor/chat/'
                           : '/client/chat/'
                       }
                       className={`backtoframemessagesLink ${
-                        window.location.href.includes('master')
-                          ? styles.master__arrow_back
+                        window.location.href.includes('contractor')
+                          ? styles.contractor__arrow_back
                           : ''
                       }`}
                     >
@@ -1772,11 +1772,11 @@ function ChoiceOfReplenishmentMethodCard() {
                     <div style={{ position: 'relative' }}>
                       <div className={styles.dotted_wrap}>
                         <OnlineDotted
-                          isVisible={masterUser?.u_details?.isOnline}
+                          isVisible={contractorUser?.u_details?.isOnline}
                         />
                       </div>
                       <img
-                        src={masterUser?.avatar || '/img/img-camera.png'}
+                        src={contractorUser?.avatar || '/img/img-camera.png'}
                         alt="img absent"
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                       />
@@ -1784,14 +1784,14 @@ function ChoiceOfReplenishmentMethodCard() {
                   </div>
 
                   <div className="nik">
-                    <h2 className="eyrqwe">{masterUser?.name}</h2>
+                    <h2 className="eyrqwe">{contractorUser?.name}</h2>
                     <div className="info_nik df">
                       <div className="kiril_info">
                         <h3>
-                          {masterUser?.u_details?.isOnline
+                          {contractorUser?.u_details?.isOnline
                             ? text('Online')
                             : `${text('Offline')} ${getTimeSinceLastOnline(
-                                masterUser?.u_details?.lastTimeBeenOnline ||
+                                contractorUser?.u_details?.lastTimeBeenOnline ||
                                   new Date().toISOString(),
                               )}`}
                         </h3>
@@ -1817,7 +1817,7 @@ function ChoiceOfReplenishmentMethodCard() {
                 menuClassName={styles.drop_menu}
               >
                 <div>
-                  {window.location.pathname.includes('/master/chat') ? null : (
+                  {window.location.pathname.includes('/contractor/chat') ? null : (
                     <Dropdown.Item
                       className={styles.item_modile}
                       onClick={() => setVisibleAddOrder(true)}
@@ -1826,7 +1826,7 @@ function ChoiceOfReplenishmentMethodCard() {
                       {text('Order again')}
                     </Dropdown.Item>
                   )}
-                  {window.location.pathname.includes('/master/chat') ? null : (
+                  {window.location.pathname.includes('/contractor/chat') ? null : (
                     <Dropdown.Item className={styles.item}>
                       <img src="/img/icons/review.png" alt="" />
                       {text('Leave a review')}
@@ -1859,7 +1859,7 @@ function ChoiceOfReplenishmentMethodCard() {
                 </div>
               </Dropdown>
 
-              {window.location.pathname.includes('/master/chat') ? null : (
+              {window.location.pathname.includes('/contractor/chat') ? null : (
                 <button
                   className={`ordermore inter ${styles.button_more}`}
                   onClick={() => setVisibleAddOrder(true)}
@@ -1882,9 +1882,9 @@ function ChoiceOfReplenishmentMethodCard() {
                   key={order.b_id}
                   order={order}
                   currentUser={currentUser}
-                  masterUser={masterUser}
+                  contractorUser={contractorUser}
                   refetchRequests={userRequests.refetch}
-                  viewerIsMaster={isUserAuthorized && userEx.role === UserRole.Master} // НОВОЕ
+                  viewerIsContractor={isUserAuthorized && userEx.role === UserRole.Contractor} // НОВОЕ
                 />
               ))}
             </div>

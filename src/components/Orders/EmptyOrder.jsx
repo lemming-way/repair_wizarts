@@ -10,7 +10,7 @@ export default function EmptyOrder () {
                 <img src="/img/meeting.png" alt="" />
                 <p className={style.large_text}>У вас пока нет откликов </p>
                 <p className={style.empty__text}>Отслеживайте новые проекты от заказчиков на Бирже и откликайтесь на те, которые готовы выполнить. Ваши отклики будут отображаться на этой странице.</p>
-                <Link className={style.button} to="/master/requests">Смотрите предложение</Link>
+                <Link className={style.button} to="/contractor/requests">Смотрите предложение</Link>
             </div>
         </>
     )

@@ -37,7 +37,7 @@ function App() {
                             <div className="home-counters__top">
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">
-                                    Количество участников на сайте: {counters.data.masters}
+                                    Количество участников на сайте: {counters.data.contractors}
                                 </div>
                                 <div className="header-counters__dot"></div>
                                 <div className="header-counters__item">

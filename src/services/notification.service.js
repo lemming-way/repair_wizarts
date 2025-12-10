@@ -62,7 +62,7 @@ const disconnect = () => {}
             //~ handlersRef.onNotification?.({
                 //~ title: 'Ваше предложение было принято!',
                 //~ description: 'Чтобы пройти в чат нажмите на это сообщение',
-                //~ url: '/master/chat',
+                //~ url: '/contractor/chat',
             //~ })
             //~ playAudio(audio)
             //~ break

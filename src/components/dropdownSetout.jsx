@@ -12,8 +12,8 @@ function DropdownService() {
   const text = useLanguage();
 
   //~ const switchMode = () => {
-    //~ const isMaster = user.role === UserRole.Master;
-    //~ if (!isMaster) {
+    //~ const isContractor = user.role === UserRole.Contractor;
+    //~ if (!isContractor) {
       //~ setUserMode(true);
       //~ return;
     //~ }
@@ -29,7 +29,7 @@ function DropdownService() {
   return (
     <div className="bldropdownfff-content">
       <div className="fix_hover_drop"></div>
-      {user.role === UserRole.Master ? (
+      {user.role === UserRole.Contractor ? (
         <div className="client__dropdown">
           <div className="recent">
             <Link
@@ -41,7 +41,7 @@ function DropdownService() {
             </Link>
           </div>
           <div className="recent">
-            <Link to="/master/wallet" className="repair__phone">
+            <Link to="/contractor/wallet" className="repair__phone">
               <h4>{text("Personal account")}</h4>
             </Link>
           </div>
@@ -56,14 +56,14 @@ function DropdownService() {
           </div>
         </div>
       ) : (
-        <div className="master__dropdown">
+        <div className="contractor__dropdown">
           <div className="recent">
             <Link
-              to="/master/wallet"
+              to="/contractor/wallet"
               onClick={/*switchMode*/null}
               className="repair__phone"
             >
-              <h4>{text("Become a master")}</h4>
+              <h4>{text("Become a contractor")}</h4>
             </Link>
           </div>
           <div className="recent">

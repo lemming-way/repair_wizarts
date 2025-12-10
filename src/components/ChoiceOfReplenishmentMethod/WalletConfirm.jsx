@@ -11,7 +11,7 @@ const WalletConfirm = () => {
     const nav = useNavigate()
 
     useEffect(() => {
-        updateBalance(id).then(() => nav('/master/wallet'))
+        updateBalance(id).then(() => nav('/contractor/wallet'))
     }, [id, nav])
 }
 

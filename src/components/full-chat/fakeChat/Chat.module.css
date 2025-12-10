@@ -7,7 +7,7 @@
 }
 
 @media (max-width: 1750px) {
-  .master__arrow_back img {
+  .contractor__arrow_back img {
     display: unset;
     margin-right: 10px;
   }

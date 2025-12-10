@@ -40,7 +40,7 @@ html {
  }
 
 
- .master__moneys__full:hover {
+ .contractor__moneys__full:hover {
      display: block;
  }
 
@@ -68,7 +68,7 @@ html {
  }
 
 
- .master__moneys__full {
+ .contractor__moneys__full {
     display: none;
     position: absolute;
     padding-top: 150px;
@@ -77,7 +77,7 @@ html {
     transition: all 0.5s ease;
  }
 
- .master__moneys__full>a {
+ .contractor__moneys__full>a {
     transition: all 0.5s ease;
     background: #DF2D2D;
     border-radius: 10px;
@@ -101,7 +101,7 @@ html {
 }
 
 
- .master__moneys:hover+.master__moneys__full {
+ .contractor__moneys:hover+.contractor__moneys__full {
      display: block;
  }
 
@@ -604,14 +604,14 @@ button {
     margin-right: 5px;
 }
 
-.master-settings-pics__list {
+.contractor-settings-pics__list {
     margin-top: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 20px 2%;
 }
 
-.master-settings-pics__item {
+.contractor-settings-pics__item {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -625,7 +625,7 @@ button {
     transition-duration: 100ms;
 }
 
-.master-settings-pics__item::after {
+.contractor-settings-pics__item::after {
     position: absolute;
     content: '';
     width: 100%;
@@ -637,12 +637,12 @@ button {
     transition-duration: 100ms;
 }
 
-.master-settings-pics__item:hover::after {
+.contractor-settings-pics__item:hover::after {
     visibility: visible;
     opacity: 0.3;
 }
 
-.master-settings-pics__img {
+.contractor-settings-pics__img {
     position: absolute;
     pointer-events: none;
     width: 100%;
@@ -651,7 +651,7 @@ button {
     object-fit: cover;
 }
 
-.master-settings-pics__delete {
+.contractor-settings-pics__delete {
     z-index: 1;
     user-select: none;
     background: #FFFFFF;
@@ -669,24 +669,24 @@ button {
     transition-duration: 100ms;
 }
 
-.master-settings-pics__item:hover .master-settings-pics__delete {
+.contractor-settings-pics__item:hover .contractor-settings-pics__delete {
     opacity: 1;
     visibility: visible;
 }
 
-.master-settings-pics__delete:hover {
+.contractor-settings-pics__delete:hover {
     opacity: 0.9!important;
 }
 
-.master-settings-pics__item:active, .master-settings-pics__delete:active {
+.contractor-settings-pics__item:active, .contractor-settings-pics__delete:active {
     transform: scale(0.95);
 }
 
-.master-settings-pics__form {
+.contractor-settings-pics__form {
     margin-top: 20px;
 }
 
-.master-settings-pics__button {
+.contractor-settings-pics__button {
     background: #d9573b;
     color: #ffffff;
     border: none;
@@ -698,7 +698,7 @@ button {
     transition: 150ms opacity;
 }
 
-.master-settings-pics__button:hover {
+.contractor-settings-pics__button:hover {
     opacity: 0.8;
 }
 
@@ -759,7 +759,7 @@ button {
     background: #D93F3F;
 }
 
-.offer-master__bar {
+.offer-contractor__bar {
     display: flex;
     padding: 0 50px;
     gap: 70px;

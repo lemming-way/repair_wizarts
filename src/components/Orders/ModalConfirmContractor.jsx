@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 
-import style from './ModalConfirmMaster.module.css';
+import style from './ModalConfirmContractor.module.css';
 
-export default function ModalConfirmMaster({
-  setVisibleModalConfirmMaster,
+export default function ModalConfirmContractor({
+  setVisibleModalConfirmContractor,
   id,
 }) {
   const navigator = useNavigate();
@@ -13,7 +13,7 @@ export default function ModalConfirmMaster({
         <div className={style.block}>
           <div
             className={style.close}
-            onClick={() => setVisibleModalConfirmMaster(false)}
+            onClick={() => setVisibleModalConfirmContractor(false)}
           >
             <img src="/img/close.svg" alt="" />
           </div>
@@ -26,7 +26,7 @@ export default function ModalConfirmMaster({
             <div
               className={style.button}
               onClick={() => {
-                setVisibleModalConfirmMaster(false);
+                setVisibleModalConfirmContractor(false);
                 navigator('/client/chat/' + id);
               }}
             >

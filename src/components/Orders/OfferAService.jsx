@@ -35,7 +35,7 @@ function App() {
         request_id: id
     }).then((res) => {
         sendOfferCreate(request.data.client_id, +id)
-        navigate('/master/requests')
+        navigate('/contractor/requests')
     }).catch((err) => {
         if (typeof err.message === "string") {
             return setError(err.message)
@@ -52,7 +52,7 @@ function App() {
                     <div className="two-content df">
                         <h1 className="roboto">{text('Offer a service')}</h1>
                         <div>
-                            <Link to="/master/requests"><button className="abel">{text('Back')}</button></Link>
+                            <Link to="/contractor/requests"><button className="abel">{text('Back')}</button></Link>
                         </div>
                     </div>
                 </div>

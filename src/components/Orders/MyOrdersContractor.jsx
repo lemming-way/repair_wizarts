@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 
 // import { Navigation } from "swiper";
 import ModalEditOrder from './ModalEditOrder';
-import style from './MyOrdersMaster.module.css';
+import style from './MyOrdersContractor.module.css';
 import { useService } from '../../hooks/useService';
 import {
   getClientRequests,
@@ -21,7 +21,7 @@ const statusEnum = {
   '#cancel': 'Отменено',
 };
 
-function MyOrdersMaster() {
+function MyOrdersContractor() {
   const userRequests = useService(getClientRequests, []);
   const [contendCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -40,7 +40,7 @@ function MyOrdersMaster() {
           .includes(searchFilter.toLowerCase()) &&
         item.drivers &&
         item.b_state !== '2' &&
-        !item.b_options.winnerMaster,
+        !item.b_options.winnerContractor,
     )
     .flatMap((item) => {
       if (!Array.isArray(item.drivers) || item.drivers.length === 0) {
@@ -133,8 +133,8 @@ function MyOrdersMaster() {
                           />
                           <Link
                             to={
-                              window.location.pathname.includes('/master')
-                                ? '/master/requests/my_order/' + item.b_id
+                              window.location.pathname.includes('/contractor')
+                                ? '/contractor/requests/my_order/' + item.b_id
                                 : '/client/requests/my_order/' + item.b_id
                             }
                           >
@@ -192,8 +192,8 @@ function MyOrdersMaster() {
                   <div className={style.card_block} key={item.b_id}>
                     <Link
                       to={
-                        window.location.pathname.includes('/master')
-                          ? `/master/requests/my_order/${item.b_id}`
+                        window.location.pathname.includes('/contractor')
+                          ? `/contractor/requests/my_order/${item.b_id}`
                           : `/client/requests/my_order/${item.b_id}`
                       }
                     >
@@ -264,4 +264,4 @@ function MyOrdersMaster() {
   );
 }
 
-export default MyOrdersMaster;
+export default MyOrdersContractor;

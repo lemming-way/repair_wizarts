@@ -204,14 +204,14 @@ function App() {
       <div className={style.top_row}>
         <div>
           <div className="two-input" style={{ marginRight: 0 }}>
-            <Link to="/master/requests/orders#active">
+            <Link to="/contractor/requests/orders#active">
               <div className="myorders">
                 <p>
                   {text('My responses')} <span>{userOrderReqs}</span>
                 </p>
               </div>
             </Link>
-            <Link to="/master/requests">
+            <Link to="/contractor/requests">
               <div className="myorders">
                 <p>{text('All orders')}</p>
               </div>
@@ -314,7 +314,7 @@ function App() {
                     className={`${style.row_order} ${style.first_row}`}
                   >
                     <div className={style.block_title}>
-                      <Link to={`/master/requests/offer/${order.b_id}`}>
+                      <Link to={`/contractor/requests/offer/${order.b_id}`}>
                         <h3 className={style.heading}>
                           {order.b_options?.title || text('Untitled')}
                         </h3>

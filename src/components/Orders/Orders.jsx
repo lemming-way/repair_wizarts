@@ -99,14 +99,14 @@ function Orders() {
           <h1 className={style.heading}>{text('Exchange orders')}</h1>
           <div className="df" style={{ paddingBottom: 0 }}>
             <div className="two-input">
-              <Link to="/master/requests">
+              <Link to="/contractor/requests">
                 <div className="myorders">
                   <p>
                     {text('My responses')}<span>{orders.length}</span>
                   </p>
                 </div>
               </Link>
-              <Link to="/master/requests">
+              <Link to="/contractor/requests">
                 <div className="myorders">
                   <p>{text('All orders')} </p>
                 </div>

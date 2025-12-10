@@ -1,9 +1,9 @@
 import { Outlet } from "react-router-dom";
 
-import style from "./MasterChatWrap.module.css"
+import style from "./ContractorChatWrap.module.css"
 import Sidebar from "../sidebar";
 
-function MasterChatWrap() {
+function ContractorChatWrap() {
    
     return (
         <div className={style.main_block}>
@@ -20,4 +20,4 @@ function MasterChatWrap() {
 }
 
 
-export default MasterChatWrap;
+export default ContractorChatWrap;

@@ -16,7 +16,7 @@ const getUser = () => appFetch('user/authorized');
 //             is_email_verified: true,
 //             is_phone_verified: true,
 //             number_of_submissions: 4,
-//             master: null
+//             contractor: null
 //         };
 
 //         // Simulate network delay
@@ -26,9 +26,9 @@ const getUser = () => appFetch('user/authorized');
 
 const getUserUnreadMessages = () => appFetch('user/unread-messages');
 
-const getMasterByUsername = (username) => appFetch('user/master/' + username);
+const getContractorByUsername = (username) => appFetch('user/contractor/' + username);
 
-const getMasterRepairs = () => appFetch('service/master-repairs');
+const getContractorRepairs = () => appFetch('service/contractor-repairs');
 
 const getClientById = (id) => appFetch('user/client/' + id);
 
@@ -86,7 +86,7 @@ const updateUserPhoto = (photo, id) =>
     },
   });
 
-const updateMasterPictures = (userId, payload) => {
+const updateContractorPictures = (userId, payload) => {
   const form = new FormData();
   form.append('data', JSON.stringify({}));
 
@@ -134,14 +134,14 @@ const createUserCustomService = (data) =>
   });
 
 const updateUserService = (data, id) =>
-  appFetch('service/master-repair/' + id, {
+  appFetch('service/contractor-repair/' + id, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 
-//~ const getUserMode = () => JSON.parse(localStorage.getItem('isMaster'));
+//~ const getUserMode = () => JSON.parse(localStorage.getItem('isContractor'));
 
-//~ const setUserMode = (mode) => localStorage.setItem('isMaster', mode);
+//~ const setUserMode = (mode) => localStorage.setItem('isContractor', mode);
 
 const recoverPassword = (payload) =>
   appFetch('user/recover-password', {
@@ -167,14 +167,14 @@ export {
   getUser,
   getUserUnreadMessages,
   getClientById,
-  getMasterRepairs,
+  getContractorRepairs,
   updateUser,
   updateUserService,
-  updateMasterPictures,
+  updateContractorPictures,
   deleteUser,
   createUserCustomService,
   updateUserPhoto,
-  getMasterByUsername,
+  getContractorByUsername,
   //~ getUserMode,
   //~ setUserMode,
   recoverPassword,

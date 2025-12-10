@@ -29,7 +29,7 @@ const RegistrationUserPage = () => {
   const [accept, setAccept] = useState(false);
   const [keep, setKeep] = useState(false);
 
-  // Сброс ошибки телефона при изменении номера (для соответствия RegistrationMasterPage)
+  // Сброс ошибки телефона при изменении номера (для соответствия RegistrationContractorPage)
   useEffect(() => {
     if (phone.replace(/\D/g, '').length === 11) {
       setError(undefined);

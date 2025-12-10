@@ -5,7 +5,7 @@ import Popup from 'reactjs-popup';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import ModalConfirmMaster from './ModalConfirmMaster';
+import ModalConfirmContractor from './ModalConfirmContractor';
 import ModalDelete from './ModalDelete';
 import ModalEditOrder from './ModalEditOrder';
 import styles from './MyOrder.module.css';
@@ -21,7 +21,7 @@ function MyOrder() {
   const { userEx } = useUserExtended();
   const navigate = useNavigate();
   const { id } = useParams();
-  const [visibleModalConfirmMaster, setVisibleModalConfirmMaster] =
+  const [visibleModalConfirmContractor, setVisibleModalConfirmContractor] =
     useState(false);
   const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
@@ -169,7 +169,7 @@ function MyOrder() {
   const onSubmit = async (winnerId, orderId, selectedBudget) => {
     try {
       updateRequest(orderId, {
-        winnerMaster: winnerId,
+        winnerContractor: winnerId,
         selectedBudget,
         status: 'in progress',
       });
@@ -211,9 +211,9 @@ function MyOrder() {
   //~ };
   return (
     <>
-      {visibleModalConfirmMaster ? (
-        <ModalConfirmMaster
-          setVisibleModalConfirmMaster={setVisibleModalConfirmMaster}
+      {visibleModalConfirmContractor ? (
+        <ModalConfirmContractor
+          setVisibleModalConfirmContractor={setVisibleModalConfirmContractor}
           id={currentOrder.b_id}
         />
       ) : null}
@@ -295,7 +295,7 @@ function MyOrder() {
                   pay_type: selectedIdx === 0 ? 'card' : 'cash',
                 });
                 setVisibleBlockPayment(false);
-                setVisibleModalConfirmMaster(true);
+                setVisibleModalConfirmContractor(true);
               }}
             >
               Перейти
@@ -795,10 +795,10 @@ function MyOrder() {
                     setVisibleBlockPayment(true);
                   }}
                 >
-                  {text('Select master')}
+                  {text('Select contractor')}
                 </button>
                 <Link to={`/client/feedback/${item.u_id}`}>
-                  <button className={styles.button}>{text('Reviews about the master')}</button>
+                  <button className={styles.button}>{text('Reviews about the contractor')}</button>
                 </Link>
               </div>
             </>

@@ -63,7 +63,7 @@ function Header() {
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={user.role === UserRole.Master ? "/master/chat" : "/client/chat"}
+                                <Link to={user.role === UserRole.Contractor ? "/contractor/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -96,13 +96,13 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {user.role === UserRole.Master && user.master?.[0] && (  // todo: Здесь баланс нужно получать по-другому
+                                {user.role === UserRole.Contractor && user.contractor?.[0] && (  // todo: Здесь баланс нужно получать по-другому
                                     <>
-                                        <p className='master__moneys'>
-                                            {parseFloat(user.master[0].balance).toFixed(2)}₽
+                                        <p className='contractor__moneys'>
+                                            {parseFloat(user.contractor[0].balance).toFixed(2)}₽
                                         </p>
-                                        <div className='master__moneys__full'>
-                                            <Link to="/master/wallet">{text("Top up balance")}</Link>
+                                        <div className='contractor__moneys__full'>
+                                            <Link to="/contractor/wallet">{text("Top up balance")}</Link>
                                         </div>
                                     </>
                                 )}

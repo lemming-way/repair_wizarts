@@ -57,7 +57,7 @@ const updateRequest = (id, payload, asAdmin, actingUserId) => {
 
 const updateRequestStatus = (id, status) => updateRequest(id, { status });
 
-const updateRequestStatusFromMaster = (id, payload) =>
+const updateRequestStatusFromContractor = (id, payload) =>
   appFetch(`submission/complete-request/${id}?status=${payload}`, {});
 
 const deleteRequest = (requestId) =>
@@ -121,20 +121,20 @@ const getAllClientRequests = () => {
   //~ });
 //~ };
 
-const getMasterRequests = () => appFetch('drive', { body: { u_a_role: 1 } });
+const getContractorRequests = () => appFetch('drive', { body: { u_a_role: 1 } });
 // appFetch('drive', { body: { u_a_role: 2 } }),
 
-const getMasterPersonalRequests = () => appFetch('submission/master-requests');
+const getContractorPersonalRequests = () => appFetch('submission/contractor-requests');
 
 export {
   createRequest,
   updateRequest,
   updateRequestStatus,
-  updateRequestStatusFromMaster,
+  updateRequestStatusFromContractor,
   deleteRequest,
   getClientRequests,
-  getMasterRequests,
-  getMasterPersonalRequests,
+  getContractorRequests,
+  getContractorPersonalRequests,
   getRequestById,
   getAllClientRequests,
 };

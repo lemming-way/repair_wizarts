@@ -8,7 +8,7 @@ function ChoiceOfReplenishmentMethodHistory(){
     return (
         <div className="middle-block-2 middle-block-2ffsdfas">
 
-            <Link to="/master/wallet_history" style={{textDecoration: "none"}}>
+            <Link to="/contractor/wallet_history" style={{textDecoration: "none"}}>
                 <h1>{text('Transaction history')} </h1>
             </Link>
 

@@ -21,7 +21,7 @@ function TitleService() {
 
                         <div className="other-text">
                             <p>
-                                {text('List your device on the exchange. Your device will become visible to thousands of masters, and some of them will make you offers. Study their rating, portfolio and choose the best of them. Confirm the order when you are 100% satisfied with the result. Only after that you can pay the master')}
+                                {text('List your device on the exchange. Your device will become visible to thousands of contractors, and some of them will make you offers. Study their rating, portfolio and choose the best of them. Confirm the order when you are 100% satisfied with the result. Only after that you can pay the contractor')}
                             </p>
                         </div>
                     </div>

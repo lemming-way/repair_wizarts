@@ -7,7 +7,7 @@ import { useLanguage } from '../../state/language';
 function App() {
   const text = useLanguage();
   return (
-    <footer className={`${styles.footer} ${window.location.pathname.includes("/master") ? styles.footer_master : null}`}>
+    <footer className={`${styles.footer} ${window.location.pathname.includes("/contractor") ? styles.footer_contractor : null}`}>
       <div className={styles.footer_footerContainer}>
         <div className={styles.footer_footerContainer_inner}>
           <FooterInfo/>

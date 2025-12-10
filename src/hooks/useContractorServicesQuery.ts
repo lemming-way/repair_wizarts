@@ -5,18 +5,18 @@ import {
 } from '@tanstack/react-query';
 
 import { serviceKeys } from '../queries';
-import { getMasterServices } from '../services/service.service';
+import { getContractorServices } from '../services/service.service';
 import { getToken } from '../services/token.service';
 
-type QueryFnData = Awaited<ReturnType<typeof getMasterServices>>;
+type QueryFnData = Awaited<ReturnType<typeof getContractorServices>>;
 type QueryError = unknown;
 
 type Options = Omit<
-  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof serviceKeys.master>>,
+  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof serviceKeys.contractor>>,
   'queryKey' | 'queryFn'
 >;
 
-export function useMasterServicesQuery(
+export function useContractorServicesQuery(
   username: string | undefined,
   options?: Options,
 ): UseQueryResult<QueryFnData, QueryError> {
@@ -25,8 +25,8 @@ export function useMasterServicesQuery(
   const enabled = Boolean(token) && Boolean(username) && (optionsEnabled ?? true);
 
   return useQuery({
-    queryKey: serviceKeys.master(String(username ?? 'unknown')),
-    queryFn: () => getMasterServices(username as string),
+    queryKey: serviceKeys.contractor(String(username ?? 'unknown')),
+    queryFn: () => getContractorServices(username as string),
     enabled,
     ...restOptions,
   });

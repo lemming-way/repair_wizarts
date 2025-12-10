@@ -3,7 +3,7 @@ import React, {useEffect} from 'react';
 
 import styles from './RegistrationPickPage.module.scss';
 import { useLanguage } from '../../../state/language';
-import registrationDefaultMasterImg from '../../../img/users/registrationPick/registration-master.svg';
+import registrationDefaultContractorImg from '../../../img/users/registrationPick/registration-contractor.svg';
 import registrationDefaultUserImg from '../../../img/users/registrationPick/registration-user.svg';
 
 const RegistrationPickPage = () => {
@@ -22,9 +22,9 @@ const RegistrationPickPage = () => {
           <p>{text("User registration")}</p>
           <p>{text("Registration type for users (clients only)")}</p>
         </Link>
-        <Link to="/register/master" className={styles.registrationPickCard}>
-          <img style={{width: "134px", height: "113px"}} src={registrationDefaultMasterImg} alt="" />
-          <p>{text("Service and master registration")}</p>
+        <Link to="/register/contractor" className={styles.registrationPickCard}>
+          <img style={{width: "134px", height: "113px"}} src={registrationDefaultContractorImg} alt="" />
+          <p>{text("Service and contractor registration")}</p>
         </Link>
       </div>
     </div>
