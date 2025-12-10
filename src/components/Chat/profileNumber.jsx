@@ -7,10 +7,10 @@ import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
 import appFetch from '../../utilities/appFetch';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUser } from '../../state/user';
 
 function App() {
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const [feedback, setFeedback] = useState([]);
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
@@ -64,14 +64,14 @@ function App() {
     };
 
     const fetchFeedback = async () => {
-      if (user.u_details?.login) {
-        const comments = await getUserCommentsFromBookings(user.u_id);
+      if (user.id) {
+        const comments = await getUserCommentsFromBookings(user.id);
         setFeedback(comments);
       }
     };
 
     fetchFeedback();
-  }, [user.u_id, user.u_details?.login]);
+  }, [user.id]);
 
   useEffect(() => {
     document.title = 'Отзывы';

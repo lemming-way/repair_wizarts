@@ -5,7 +5,7 @@ import style from './AddOrderModal.module.css';
 import { updateRequest } from '../../../services/request.service';
 import { getToken } from '../../../services/token.service';
 import { useLanguage } from '../../../state/language';
-import { useUserQuery } from '../../../hooks/useUserQuery';
+import { useUserExtended } from '../../../state/user';
 
 // Вспомогательная функция для преобразования файла в base64
 const fileToBase64 = (file) =>
@@ -47,7 +47,7 @@ export default function AddOrderModal({
   currentOrder,
 }) {
   const text = useLanguage();
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
   const { id } = useParams();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -98,7 +98,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>{text('Propose an order')}</h2>
-        {(user.u_details?.balance || 0) < 500 && (
+        {(userEx.details?.balance || 0) < 500 && (
           <p className={style.error}>
             {text('Please top up your balance by 500 rubles')}
           </p>
@@ -128,7 +128,7 @@ export default function AddOrderModal({
           <div>
             <p className={style.mini_heading}>{text('Budget')}</p>
             <p className={style.balance}>
-              {text('Balance')} {user.u_details?.balance || 0} ₽
+              {text('Balance')} {userEx.details?.balance || 0} ₽
             </p>
             <div className={style.icon}>
               <input

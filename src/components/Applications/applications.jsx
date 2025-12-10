@@ -8,7 +8,7 @@ import style from './applications.module.css';
 import NavApplication from './NavApplication';
 import { useService } from '../../hooks/useService';
 import { getMasterOrders } from '../../services/order.service';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUser } from '../../state/user';
 
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 //~ const statusEnum = {
@@ -24,12 +24,12 @@ const StylesStatusEnum = {
 };
 function MyApplications() {
   const text = useLanguage();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const navigator = useNavigate();
   const orders = useService(getMasterOrders, []);
   const rawRequests = [...Object.values(orders.data?.data?.booking || {})];
   const filteredRequests = rawRequests.filter(
-    (item) => item.b_options.type === 'order' && item.u_id !== user.u_id,
+    (item) => item.b_options.type === 'order' && item.u_id !== user.id,
   );
   //   // test
   //   // const filteredOrders = [

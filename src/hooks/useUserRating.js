@@ -1,12 +1,10 @@
-// src/hooks/useUserRating.js
-
 import { useState, useEffect } from 'react';
-import { useUserQuery } from './useUserQuery';
+import { useUser } from '../state/user';
 import appFetch from '../utilities/appFetch';
 
 export const useUserRating = () => {
-  // Получаем ID пользователя из Redux
-  const { user } = useUserQuery();
+  // Получаем ID пользователя
+  const { user } = useUser();
 
   const [ratingData, setRatingData] = useState({
     averageRating: 0,
@@ -16,7 +14,7 @@ export const useUserRating = () => {
 
   useEffect(() => {
     // Не делаем запрос, если нет ID пользователя
-    if (!user.u_id) {
+    if (!user.id) {
       setRatingData((prev) => ({ ...prev, isLoading: false }));
       return;
     }
@@ -33,7 +31,7 @@ export const useUserRating = () => {
         // Фильтруем поездки, где текущий пользователь был водителем и есть оценка
         const userFeedback = allBookings.filter(
           (booking) =>
-            booking.drivers?.some((driver) => driver.u_id === user.u_id) &&
+            booking.drivers?.some((driver) => driver.u_id === user.id) &&
             booking.b_rating &&
             booking.b_options.type === 'order',
         );
@@ -69,7 +67,7 @@ export const useUserRating = () => {
     };
 
     fetchAndCalculateRating();
-  }, [user.u_id]); // Хук будет перезапускаться только если изменится ID пользователя
+  }, [user.id]); // Хук будет перезапускаться только если изменится ID пользователя
 
   return ratingData;
 };

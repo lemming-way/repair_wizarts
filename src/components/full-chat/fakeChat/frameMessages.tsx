@@ -4,13 +4,15 @@ import { Link } from 'react-router-dom';
 
 import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
 import { useMasterOrdersQuery } from '../../../hooks/useMasterOrdersQuery';
-import { useUserQuery } from '../../../hooks/useUserQuery';
+import { useUser, UserRole } from '../../../state/user';
 
 function App() {
-  const { user } = useUserQuery();
-  const masterOrdersQuery = useMasterOrdersQuery({ enabled: user.u_role === '2' });  // todo: Сделать отдельный параметр вместо enabled
-  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: user.u_role !== '2' });  // todo: Сделать отдельный параметр вместо enabled
-  const userRequests = user.u_role === '2'
+  const { user } = useUser();
+  const isUserAuthorized = 'id' in user && !!user.id;
+  const userRole = isUserAuthorized ? user.role : 0;
+  const masterOrdersQuery = useMasterOrdersQuery({ enabled: userRole === UserRole.Master });  // todo: Сделать отдельный параметр вместо enabled
+  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: userRole !== UserRole.Master });  // todo: Сделать отдельный параметр вместо enabled
+  const userRequests = userRole === UserRole.Master
     ? masterOrdersQuery.masterOrders
     : allClientRequestsQuery.clientRequests;
 
@@ -78,14 +80,14 @@ function App() {
         (d) => d.u_id === firstOrder.b_options.winnerMaster,
       );
       return {
-        isOwner: firstOrder.u_id === user.u_id,
+        isOwner: 'id' in user && firstOrder.u_id === user.id,
         chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerMaster}`,
         clientInfo: firstOrder.b_options.author || {},
         masterInfo: winnerDriver.c_options.author || {},
         orders: orders,
       };
     });
-  }, [userRequests, user.u_id]);
+  }, [userRequests, user]);
 
   useEffect(() => {
     document.title = 'Чат';

@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { updateUser } from '../../services/user.service';
 import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import MultiSelect from '../MultiSelect/MultiSelect';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
+import { useUserExtended, updateUser, updateUserDetails } from '../../state/user';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 // {
 //   "address": "csklncjksdncklsdncklsd",
@@ -56,7 +54,7 @@ function Profile() {
 
   const { categories } = useCategoriesQuery();
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
   const [Sections, setSections] = useState([]);
   const [Subsections, setSubsections] = useState([]);
   const [Services, setServices] = useState([]);
@@ -65,7 +63,7 @@ function Profile() {
   const [form, setForm] = useState({
     name: '',
     lastname: '',
-    u_description: '',
+    description: '',
     details: {
       organization_name: '',
       address: '',
@@ -222,19 +220,19 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (!user.u_id) return;
+    if (!userEx.id) return;
 
-    const master = user;
+    const masterDetails = userEx.details || {};
 
     const fetchAllData = async () => {
       if (
-        master.u_details.section &&
-        master.u_details.subsection &&
-        master.u_details.service
+        masterDetails.section &&
+        masterDetails.subsection &&
+        masterDetails.service
       ) {
         setSubsections(
           categories.flatMap((item) => {
-            const isSelectedSectionId = master.u_details.section.find(
+            const isSelectedSectionId = masterDetails.section.find(
               (selec) => selec.value === item.id,
             );
             return isSelectedSectionId
@@ -247,12 +245,12 @@ function Profile() {
         );
         setServices(
           categories.flatMap((item) => {
-            const isSelectedSectionId = master.u_details.section.find(
+            const isSelectedSectionId = masterDetails.section.find(
               (selec) => String(selec.value) === String(item.id),
             );
             return isSelectedSectionId
               ? item.subsections.flatMap((item) => {
-                  const isSelectedSubsection = master.u_details.subsection.find(
+                  const isSelectedSubsection = masterDetails.subsection.find(
                     (subSelec) => String(subSelec.value) === String(item.id),
                   );
                   return isSelectedSubsection
@@ -266,18 +264,18 @@ function Profile() {
           }),
         );
         setCategoryMainOptionSelected(
-          Array.isArray(master.u_details.section)
-            ? master.u_details.section
+          Array.isArray(masterDetails.section)
+            ? masterDetails.section
             : [],
         );
         setSelectedSubsections(
-          Array.isArray(master.u_details.subsection)
-            ? master.u_details.subsection
+          Array.isArray(masterDetails.subsection)
+            ? masterDetails.subsection
             : [],
         );
         setSelectedServices(
-          Array.isArray(master.u_details.service)
-            ? master.u_details.service
+          Array.isArray(masterDetails.service)
+            ? masterDetails.service
             : [],
         );
       }
@@ -295,39 +293,39 @@ function Profile() {
       //   master.u_details,
       // );
       setExperience(
-        master.u_details?.experience
+        masterDetails.experience
           ? [
               experienceOptions.find(
-                (opt) => opt.value === master.u_details.experience,
+                (opt) => opt.value === masterDetails.experience,
               ),
             ]
           : null,
       );
 
       setForm({
-        name: master.u_name,
-        lastname: master.u_family,
-        u_description: master.u_desc || '',
+        name: userEx.name,
+        lastname: userEx.lastname,
+        description: userEx.description || '',
         details: {
-          organization_name: master.u_details?.organization_name || '',
-          address: master.u_details?.address || '',
-          city: master.u_details?.city || '',
-          specialty: master.u_details?.specialty || '',
-          main_business: master.u_details?.main_business || '',
-          experience: master.u_details?.experience || '',
+          organization_name: masterDetails.organization_name || '',
+          address: masterDetails.address || '',
+          city: masterDetails.city || '',
+          specialty: masterDetails.specialty || '',
+          main_business: masterDetails.main_business || '',
+          experience: masterDetails.experience || '',
         },
       });
 
-      setBusiness(master.u_details?.business_model || 'Independent technician');
+      setBusiness(masterDetails.business_model || 'Independent technician');
     };
     if (
-      master.u_details?.section &&
-      master.u_details?.subsection &&
-      master.u_details?.service
+      masterDetails.section &&
+      masterDetails.subsection &&
+      masterDetails.service
     ) {
       fetchAllData();
     }
-  }, [categories, user]);
+  }, [categories, userEx]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -337,7 +335,7 @@ function Profile() {
   }, [categories, text]);
 
   // Early return if no user ID
-  if (!user.u_id) {
+  if (!userEx.id) {
     return null;
   }
 
@@ -347,23 +345,19 @@ function Profile() {
     // const [address_latitude, address_longitude] = geo.geoObjects
     //   .get(0)
     //   .geometry.getCoordinates();
-    const payload = {
-      ...form,
-      //~ gender,
-      details: {
-        ...form.details,
-        business_model,
-        section: categoryMainOptionSelected,
-        subsection: selectedSubsections,
-        service: selectedServices,
-      },
+    const details = {
+      ...form.details,
+      business_model,
+      section: categoryMainOptionSelected,
+      subsection: selectedSubsections,
+      service: selectedServices,
     };
 
     try {
-      await updateUser(payload, user.u_id);
+      await updateUser(queryClient, form);
+      await updateUserDetails(queryClient, details);
       setError('');
       setSuceeded(true);
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
     } catch (err) {
       setError(err.message);
       setSuceeded(false);
@@ -534,7 +528,7 @@ function Profile() {
             placeholder={
               business_model === 'Independent technician' ? text('About me') : text('About organization')
             }
-            {...getFormAttrs('u_description')}
+            {...getFormAttrs('description')}
           />
 
           <div>

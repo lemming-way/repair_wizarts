@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
 import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
@@ -37,9 +38,7 @@ import Finance from './components/Settings/Finance';
 import Balance from './components/Settings/Balance';
 import Article from './components/Article';
 import { getLocation } from './services/location.service';
-import { getToken } from './services/token.service';
-import { updateUser } from './services/user.service';
-import { useUserQuery } from './hooks/useUserQuery';
+import { useUser, updateUserDetails } from './state/user';
 import PersonalRequests from './components/Orders/PersonalRequests';
 import Articles from './components/Article/Articles';
 import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
@@ -70,43 +69,40 @@ import { useNotifications } from './state/notifications/NotificationsContext';
 import './scss/swiper.css';
 
 function App() {
-  const { user, status } = useUserQuery();
+  const { user, status } = useUser();
   const location = useLocation();
   const { connect: connectNotifications } = useNotifications();
+  const queryClient = useQueryClient();
 
   const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
   useServicesQuery();
 
   // Add visibility change tracking
   useEffect(() => {
-    if (!user.u_id) {
+    if (!user.id) {
       return undefined;
     }
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       const isVisible = document.visibilityState === 'visible';
 
-      updateUser(
+      await updateUserDetails(
+        queryClient,
         {
-          details: {
-            isOnline: isVisible,
-            lastTimeBeenOnline: new Date().toISOString(),
-          },
-        },
-        user.u_id,
+          isOnline: isVisible,
+          lastTimeBeenOnline: new Date().toISOString(),
+        }
       );
     };
 
     // Add page unload tracking
-    const handleBeforeUnload = () => {
-      updateUser(
+    const handleBeforeUnload = async () => {
+      await updateUserDetails(
+        queryClient,
         {
-          details: {
-            isOnline: false,
-            lastTimeBeenOnline: new Date().toISOString(),
-          },
-        },
-        user.u_id,
+          isOnline: false,
+          lastTimeBeenOnline: new Date().toISOString(),
+        }
       );
     };
 
@@ -117,7 +113,7 @@ function App() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [user.u_id]);
+  }, [user.id, queryClient]);
 
   useEffect(() => {
     const mapLocation = getLocation();
@@ -128,15 +124,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const token = getToken();
-    if (!token) {
+    if (!user.id) {
       return;
     }
 
     if (status === 'success') {
       connectNotifications();
     }
-  }, [connectNotifications, status]);
+  }, [connectNotifications, status, user.id]);
 
   if (!categories.length && areCategoriesLoading) {
     return 'Loading...';

@@ -15,7 +15,7 @@ import { createRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
 import YMap from '../Map';
 import { useLanguage } from '../../state/language';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUser } from '../../state/user';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 import { useServicesQuery } from '../../hooks/useServicesQuery';
 
@@ -87,7 +87,7 @@ function ServiceDetail() {
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
   const { categories } = useCategoriesQuery();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const { services } = useServicesQuery();
   const servicesList = useMemo(() => {
     if (Array.isArray(services)) {
@@ -193,9 +193,9 @@ function ServiceDetail() {
   }, [text]);
 
   useEffect(() => {
-    setPhone(user.u_phone);
-    setName(user.u_name);
-  }, [user.u_phone, user.u_name]);
+    setPhone(user.phone);
+    setName(user.name);
+  }, [user.phone, user.name]);
 
   const onSelectMaster = async (masterData) => {
     setSelectedMaster(masterData);
@@ -694,7 +694,7 @@ function ServiceDetail() {
                   </h1>
                   <p style={{ marginBottom: '10px' }}>{text('Official prices')}</p>
 
-                  {!user.u_id ? (
+                  {!user.id ? (
                     <div
                       className="modfdfsdafasal-error"
                       style={{ marginBottom: '10px' }}
@@ -714,7 +714,7 @@ function ServiceDetail() {
                       <input
                         type="text"
                         placeholder={text('Your name')}
-                        defaultValue={user.u_name}
+                        defaultValue={user.name}
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         // disabled
@@ -723,7 +723,7 @@ function ServiceDetail() {
                         className="ismrf"
                         type="text"
                         placeholder={text('Phone number')}
-                        defaultValue={user.u_phone}
+                        defaultValue={user.phone}
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         // disabled

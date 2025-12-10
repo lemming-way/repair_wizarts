@@ -14,17 +14,15 @@ import Suggest from './suggest';
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { useClientRequestsQuery } from '../hooks/useClientRequestsQuery';
 import { useOffersQuery } from '../hooks/useOffersQuery';
-import { useUserQuery } from '../hooks/useUserQuery';
+import { useUser } from '../state/user';
 
 function MySuggest() {
   const text = useLanguage();
   const { id } = useParams();
   const { clientRequests } = useClientRequestsQuery();
   const { offers } = useOffersQuery(id);
-  const { user } = useUserQuery();
-  const name = user.u_name || '';
-  const lastname = user.u_family || '';
-  const phone = user.u_phone || '';
+  const { user } = useUser();
+  const { name = '', lastname = '', phone = '' } = user;
   const req = useMemo(
     () =>
       Object.values(clientRequests?.data?.booking || []).find(
@@ -160,7 +158,7 @@ function MySuggest() {
           <div className="bloc-1 df">
             <div className="bloc_img">
               <img
-                src={user.u_photo || '/img/blank.png'}
+                src={user.avatar || '/img/blank.png'}
                 width="120px"
                 height="120px"
                 style={{ borderRadius: '60px', objectFit: 'cover' }}

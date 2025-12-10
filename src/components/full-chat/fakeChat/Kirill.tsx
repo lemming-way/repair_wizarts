@@ -26,7 +26,7 @@ import { getMasterOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
-import { useUserQuery } from '../../../hooks/useUserQuery';
+import { useUserExtended, UserRole } from '../../../state/user';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
@@ -41,6 +41,8 @@ import { useLanguage } from '../../../state/language';
 const LazySwiper = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
+
+// TODO: Модуль не функционален, надо всё переделать
 
 // ====== ЧАТ: типы и утилиты ===============================================
 type ChatAuthor = 'client' | 'master' | 'admin';
@@ -567,7 +569,6 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   viewerIsMaster, // НОВОЕ
 }) => {
   const text = useLanguage();
-  const user = currentUser || ({} as any);
   const isRequestType = order?.b_options?.orderType === 'request';
 
   // ===== ЧАТ: история для этого заказа =====
@@ -691,17 +692,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       order.drivers?.find((d: any) => d.u_id === order.b_options.winnerMaster)
         ?.c_options || {};
 
-    if (masterReqData?.bind_amount > user?.u_details?.balance) {
+    if (masterReqData?.bind_amount > currentUser.details?.balance) {
       setIsBalanceError(true);
       setBalanceErrorNum(
         Number(masterReqData.bind_amount) -
-          Number(user?.u_details?.balance || 0),
+          Number(currentUser.details?.balance || 0),
       );
     } else {
       setIsBalanceError(false);
       setBalanceErrorNum(0);
     }
-  }, [order, user?.u_details?.balance, setIsBalanceError, setBalanceErrorNum]);
+  }, [order, currentUser.details?.balance, setIsBalanceError, setBalanceErrorNum]);
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
   //~ const handleConfirmOrder = async () => {
     //~ const masterReqData =
@@ -889,7 +890,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                     <h2>{text('You')}</h2>
                   </div>
                   <img
-                    src={currentUser.u_photo || '/img/img-camera.png'}
+                    src={currentUser.avatar || '/img/img-camera.png'}
                     style={{ width: '58px', height: '58px', borderRadius: 30 }}
                     alt="img absent"
                   />
@@ -1034,17 +1035,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                   const authorName = isMine
                     ? text('You')
                     : viewerIsMaster
-                    ? currentUser?.u_name || text('Client')
-                    : masterUser?.u_name || text('Master');
+                    ? currentUser.name || text('Client')
+                    : masterUser?.name || text('Master');
 
                   // аватар показываем у собеседника (слева), у своих можно не показывать
                   const avatarSrc = viewerIsMaster
                     ? isMine
-                      ? masterUser?.u_photo || '/img/img-camera.png'
-                      : currentUser?.u_photo || '/img/img-camera.png'
+                      ? masterUser?.avatar || '/img/img-camera.png'
+                      : currentUser.avatar || '/img/img-camera.png'
                     : isMine
-                    ? currentUser?.u_photo || '/img/img-camera.png'
-                    : masterUser?.u_photo || '/img/img-camera.png';
+                    ? currentUser.avatar || '/img/img-camera.png'
+                    : masterUser?.avatar || '/img/img-camera.png';
 
                   return (
                     <div
@@ -1254,7 +1255,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
 function ChoiceOfReplenishmentMethodCard() {
   const text = useLanguage();
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
+  const isUserAuthorized = 'id' in userEx && !!userEx.id;
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [masterUser, setMasterUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1272,7 +1274,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
   const userRequests = useService(
-    user.u_role === '2' ? getMasterOrders : getAllClientRequests,
+    isUserAuthorized && userEx.role === UserRole.Master ? getMasterOrders : getAllClientRequests,
     [],
   );
 
@@ -1557,7 +1559,7 @@ function ChoiceOfReplenishmentMethodCard() {
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'master' = user.u_role === '2' ? 'master' : 'client';
+    const role: 'client' | 'master' = isUserAuthorized && userEx.role === UserRole.Master ? 'master' : 'client';
 
     // 1) загружаем все файлы → получаем постоянные URL
     const uploadedUrls: string[] = [];
@@ -1774,7 +1776,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         />
                       </div>
                       <img
-                        src={masterUser?.u_photo || '/img/img-camera.png'}
+                        src={masterUser?.avatar || '/img/img-camera.png'}
                         alt="img absent"
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                       />
@@ -1782,7 +1784,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   </div>
 
                   <div className="nik">
-                    <h2 className="eyrqwe">{masterUser?.u_name}</h2>
+                    <h2 className="eyrqwe">{masterUser?.name}</h2>
                     <div className="info_nik df">
                       <div className="kiril_info">
                         <h3>
@@ -1882,7 +1884,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   currentUser={currentUser}
                   masterUser={masterUser}
                   refetchRequests={userRequests.refetch}
-                  viewerIsMaster={user.u_role === '2'} // НОВОЕ
+                  viewerIsMaster={isUserAuthorized && userEx.role === UserRole.Master} // НОВОЕ
                 />
               ))}
             </div>
@@ -1915,8 +1917,8 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {currentUser?.u_details?.black_list?.find(
-                  (item: any) => item.id?.toString() === user.u_id?.toString(),
+                {'details' in userEx && Array.isArray(userEx.details?.black_list) && userEx.details.black_list.find(
+                  (item: any) => isUserAuthorized && item.id?.toString() === String(userEx.id),
                 ) ? (
                   <div className={styles.chat_block_wrap}>
                     <img src="/img/icons/chat_block.png" alt="" />

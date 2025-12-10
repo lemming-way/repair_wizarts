@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 
-import { updatePassword, updateUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import style from './ProfileFH.module.css';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
+import { useUser, updateUser, updateUserPassword } from '../../state/user';
 
 function ProfileFH() {
-  const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   // const listLinks = [
   //     "/client/settings",
   //     "/client/settings/picture",
@@ -20,10 +16,10 @@ function ProfileFH() {
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    name: user.u_name || '',
-    lastname: user.u_family || '',
-    phone: user.u_phone || '',
-    email: user.u_email || '',
+    name: user.name || '',
+    lastname: user.lastname || '',
+    phone: user.phone || '',
+    email: user.email || '',
     password: '',
     new_password: '',
   });
@@ -33,26 +29,26 @@ function ProfileFH() {
   const [mask_value, setMask_value] = useState('+7(9');
 
   useEffect(() => {
-    if (!user.u_id || form.name) {
+    if (!user.id || form.name) {
       return;
     }
 
     setForm((prev) => ({
       ...prev,
-      name: user.u_name || '',
-      lastname: user.u_family || '',
-      phone: user.u_phone || '',
-      email: user.u_email || '',
+      name: user.name || '',
+      lastname: user.lastname || '',
+      phone: user.phone || '',
+      email: user.email || '',
     }));
-    if (user.u_phone) {
-      setMask_value(user.u_phone);
+    if (user.phone) {
+      setMask_value(user.phone);
     }
   }, [
-    user.u_id,
-    user.u_name,
-    user.u_family,
-    user.u_phone,
-    user.u_email,
+    user.id,
+    user.name,
+    user.lastname,
+    user.phone,
+    user.email,
     form.name,
   ]);
 
@@ -60,7 +56,7 @@ function ProfileFH() {
     document.title = 'Настройки';
   }, []);
 
-  if (!user.u_id) {
+  if (!user.id) {
     return null;
   }
 
@@ -77,12 +73,9 @@ function ProfileFH() {
   const onSubmit = (e) => {
     e.preventDefault();
 
-    const promises = [
-      updateUser(form, user.u_id)
-        .then( () => queryClient.invalidateQueries({ queryKey: userKeys.all }) )  // todo: Перенести в state/user
-    ];
+    const promises = [ updateUser(form, user.id) ];
     if (form.password?.length > 0 && form.new_password?.length > 0) {
-      promises.push( updatePassword(form) );
+      promises.push( updateUserPassword(form) );
     }
     Promise.all( promises )
       .then(([ v1, v2 ]) => {
@@ -97,6 +90,7 @@ function ProfileFH() {
       });
   };
 
+  // todo: заменить на компонент для ввода номера
   function correctPhoneNumder(e) {
     var text = e.target.value;
     let new_text = text;
@@ -159,14 +153,14 @@ function ProfileFH() {
             {...getFormAttrs('lastname')}
           />
           <VerificationInput
-            isConfirmed={user.u_phone_checked === '1'}
+            isConfirmed={user.isPhoneVerified}
             {...getFormAttrs('phone')}
             mask_value={mask_value}
             onChangeMask={correctPhoneNumder}
           />
           <VerificationInput
             isEmail
-            isConfirmed={user.u_email_checked === '1'}
+            isConfirmed={user.isEmailVerified}
             value={form.email || ''}
             {...getFormAttrs('email')}
           />

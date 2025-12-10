@@ -4,8 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import Article from './Article';
 import * as articleService from '../../services/article.service';
 
-jest.mock('../../hooks/useUserQuery', () => ({
-  useUserQuery: () => ({ user: {} }),
+jest.mock('../../state/user', () => ({
+  useUser: () => ({ user: {} }),
 }));
 
 jest.mock('../../services/article.service');

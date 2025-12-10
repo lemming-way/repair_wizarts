@@ -5,13 +5,11 @@ import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
-import { updateUser } from '../../services/user.service';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
+import { useUserExtended, updateUserDetails } from '../../state/user';
 
 const FinanceClient = () => {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -20,19 +18,19 @@ const FinanceClient = () => {
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
   useEffect(() => {
-    const cardWallet = user.u_details?.wallets?.find(
+    const cardWallet = userEx.details?.wallets?.find(
       (w) => w.type === 'card',
     );
-    const wmWallet = user.u_details?.wallets?.find(
+    const wmWallet = userEx.details?.wallets?.find(
       (w) => w.type === 'webmoney',
     );
 
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
-  }, [user.u_details?.wallets]);
+  }, [userEx.details?.wallets]);
 
   // Early return if no user ID
-  if (!user.u_id) {
+  if (!userEx.id) {
     return null;
   }
 
@@ -47,12 +45,9 @@ const FinanceClient = () => {
         wallets,
       };
 
-      const res = await updateUser({ details: payload }, user.u_id);
-      console.log(res);
-      if (!res?.code === '200') throw new Error('Ошибка при сохранении');
+      await updateUserDetails(queryClient, payload);
       setVisibleSuccess(true);
       setSuccess(true);
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
     } catch (err) {
       console.error(err);
       alert('Ошибка при сохранении кошельков');

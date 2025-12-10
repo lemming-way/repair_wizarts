@@ -1,15 +1,20 @@
+/**
+ * Модуль для работы с пользователями и аутентификацией
+ * 
+ * @summary
+ * **Типы:**
+ * LoginType, UserData, UserUpdateData, RegisterUserData, RegisterResult
+ * 
+ * **Функции, влияющие на глобальное состояние:**
+ * login, logout, getUserData, updateUser, updateUserDetails, loginByVerificationCode,
+ * registerAsClient, registerAsMaster
+ * 
+ * **Функции, не влияющие на глобальное состояние:**
+ * updatePassword, recoverPassword, sendVerification
+ */
+
 import { post, postNoAuth, authWithAuthUser, AuthUser } from './request';
 import { AuthToken } from '../auth';
-
-// Types:
-// LoginType, UserDetails, UserUpdateData, RegisterUserData, RegisterResult
-
-// Functions:
-// login, logout, getUserDetails, updateUser, updateUserDetails
-// loginByVerificationCode, registerAsClient, registerAsMaster
-
-// Не влияют на state:
-// updatePassword, recoverPassword, sendVerification
 
 /**
  * Тип логина: по телефону или по e-mail.
@@ -75,7 +80,7 @@ export function logout(): Promise<void> {
 /**
  * Расширенная информация о пользователе.
  */
-export interface UserDetails extends AuthUser {
+export interface UserData extends AuthUser {
   /** Проверен ли номер телефона (0 - нет, 1 - да). */
   u_phone_checked: 0 | 1;
   /** Проверен ли e-mail (0 - нет, 1 - да). */
@@ -85,7 +90,7 @@ export interface UserDetails extends AuthUser {
   /** Описание пользователя. */
   u_description: string;
   /** Дополнительные детали пользователя. */
-  u_details: unknown;
+  u_details: Record<string, unknown> | null;
   /** Комментарии к заказам из списка data.booking_comments. */
   b_comments: string[] | null;
   /** Дополнительные услуги из data.services. */
@@ -98,10 +103,10 @@ export interface UserDetails extends AuthUser {
 
 /**
  * Получает подробную информацию об авторизованном пользователе.
- * @returns Промис, который разрешается с объектом UserDetails или undefined, если данные не найдены.
+ * @returns Промис, который разрешается с объектом UserData или undefined, если данные не найдены.
  */
-export async function getUserDetails(): Promise<UserDetails | undefined> {
-  const result = await post<{ user?: Record<string, UserDetails>; auth_user?: AuthUser }>('user/authorized');
+export async function getUserData(): Promise<UserData | undefined> {
+  const result = await post<{ user?: Record<string, UserData>; auth_user?: AuthUser }>('user/authorized');
   return result.user?.[result.auth_user?.u_id ?? ''];
 }
 
@@ -259,16 +264,16 @@ export function registerAsClient(userData: RegisterUserData): Promise<RegisterRe
   if (!userData.password) {
     return Promise.reject(new Error('The password should be specified.'));
   }
-  const data: Record<string, unknown> = {
+  const payload: Record<string, unknown> = {
     u_name: userData.u_name,
     data: { password: userData.password },
     u_role: 1,
     st: true,
   };
-  if (userData.u_phone) data.u_phone = userData.u_phone;
-  if (userData.u_email) data.u_email = userData.u_email;
+  if (userData.u_phone) payload.u_phone = userData.u_phone;
+  if (userData.u_email) payload.u_email = userData.u_email;
 
-  return postNoAuth<RegisterResult>('register', data);
+  return postNoAuth<RegisterResult>('register', payload);
 }
 
 /**
@@ -286,18 +291,18 @@ export function registerAsMaster(userData: RegisterUserData): Promise<RegisterRe
   if (!userData.password) {
     return Promise.reject(new Error('The password should be specified.'));
   }
-  const details: Record<string, unknown> = { password: userData.password };
+  const data: Record<string, unknown> = { password: userData.password };
   if ('object' === typeof userData.u_details && userData.u_details !== null) {
-    details.u_details = userData.u_details;
+    data.u_details = userData.u_details;
   }
-  const data: Record<string, unknown> = {
+  const payload: Record<string, unknown> = {
     u_name: userData.u_name,
-    data: details,
+    data,
     u_role: 2,
     st: true,
   };
-  if (userData.u_phone) data.u_phone = userData.u_phone;
-  if (userData.u_email) data.u_email = userData.u_email;
+  if (userData.u_phone) payload.u_phone = userData.u_phone;
+  if (userData.u_email) payload.u_email = userData.u_email;
 
-  return postNoAuth<RegisterResult>('register', data);
+  return postNoAuth<RegisterResult>('register', payload);
 }

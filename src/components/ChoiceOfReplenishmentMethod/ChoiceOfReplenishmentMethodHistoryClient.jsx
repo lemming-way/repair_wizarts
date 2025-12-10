@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
 
 import { useLanguage } from '../../state/language';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUserExtended } from '../../state/user';
 
 function ChoiceOfReplenishmentMethodHistoryClient() {
   const text = useLanguage();
-  const { user } = useUserQuery();
-  const history = user.u_details?.history_of_pay || [];
+  const { userEx } = useUserExtended();
+  const history = userEx.details?.history_of_pay || [];
 
   const historyOfPaymentsItems = history.map((item) => (
     <div className="blocks">

@@ -5,14 +5,14 @@ import { Popup } from 'reactjs-popup'
 import styles from './Reviews.module.css'
 import { createReview } from '../../services/reviews.service'
 import { useLanguage } from '../../state/language'
-import { useUserQuery } from '../../hooks/useUserQuery'
+import { useUser } from '../../state/user'
 
 const ReviewsForm = (props) => {
     const text = useLanguage()
-    const { user } = useUserQuery()
+    const { user } = useUser()
     const senderName = [
-        user.u_name ?? '',
-        user.u_family ?? '',
+        user.name ?? '',
+        user.lastname ?? '',
     ].filter(Boolean).join(' ').trim()
 
     const [modalOpen, setModalOpen] = useState(false)

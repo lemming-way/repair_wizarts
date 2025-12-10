@@ -1,28 +1,19 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import {
-  updateUserPhoto,
-  updateUser,
-  updatePassword,
-} from '../../services/user.service';
-
 import '../../scss/settings-all.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { useNavigate } from 'react-router-dom';
 import Popup from 'reactjs-popup';
 
 import style from './SettingsMaster.module.css';
-import { deleteUser } from '../../services/user.service';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
+import { fileToBase64 } from '../../shared/lib/utilities';
+import { useUserExtended, updateUser, updateUserAvatar, updateUserDetails, updateUserPassword } from '../../state/user';
 
 export default function SettingsMaster() {
   const text = useLanguage();
-  const navigate = useNavigate();
   const inputRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -30,7 +21,7 @@ export default function SettingsMaster() {
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('data saved');
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
 
   const [mask_value, setMask_value] = useState('+7(9');
 
@@ -48,33 +39,33 @@ export default function SettingsMaster() {
   });
 
   useEffect(() => {
-    if (user.u_id) {
-      const master = user;
+    if (userEx.id) {
+      const master = userEx.details || {};
       const obj = {
-        phone: user.u_phone || '',
-        email: user.u_email || '',
+        phone: userEx.phone || '',
+        email: userEx.email || '',
         details: {
-          availability_from: master.u_details?.availability_from || '00:00:00',
-          availability_to: master.u_details?.availability_to || '00:00:00',
-          status: master.u_details?.status || '',
-          mailing: master.u_details?.mailing || false,
-          is_active: master.u_details?.is_active || false,
-          login: master.u_details?.login || '',
+          availability_from: master.availability_from || '00:00:00',
+          availability_to: master.availability_to || '00:00:00',
+          status: master.status || '',
+          mailing: master.mailing || false,
+          is_active: master.is_active || false,
+          login: master.login || '',
         },
       };
       setForm(obj);
     }
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
+    if (userEx.avatar) {
+      setPreviewUrl(userEx.avatar);
     }
-  }, [user]);
+  }, [userEx]);
 
   useEffect(() => {
     document.title = text('Settings');
   }, [text]);
 
   // Early return if no user ID
-  if (!user.u_id) {
+  if (!userEx.id) {
     return null;
   }
 
@@ -125,13 +116,11 @@ export default function SettingsMaster() {
     e.preventDefault();
 
     const promises = [
-      updateUser(form, user.u_id)
-        .then( () => {
-          queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
-        } )
+      updateUser(queryClient, form),
+      updateUserDetails(queryClient, form.details)
     ];
     if (form.password?.length > 0 && form.new_password?.length > 0) {
-      promises.push( updatePassword(form) );
+      promises.push( updateUserPassword(queryClient, form) );
     }
 
     Promise.all( promises )
@@ -145,6 +134,11 @@ export default function SettingsMaster() {
         setSuceeded(false);
       } );
   };
+  
+  const onDelete = (e) => {
+    // todo: Сделать не полное удаление профиля, а удаление с биржи как мастера.
+    return;
+  }
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -155,39 +149,22 @@ export default function SettingsMaster() {
       return;
     }
     try {
-      const base64 = await convertToBase64(file);
-      await updateUserPhoto(base64, user.u_id);
+      await updateUserAvatar(queryClient, file);
 
       setSuceeded(true);
       setError('');
-      setPreviewUrl(base64);
       inputRef.current.value = '';
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSuceeded(false);
       setError(err.message || text('An error occurred while uploading'));
     }
   };
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
-  };
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const base64 = await convertToBase64(file);
+      const base64 = await fileToBase64(file);
       setPreviewUrl(base64); // 👈 показываем новое фото сразу
     }
-  };
-  const onDelete = (e) => {
-    e.preventDefault();
-    return deleteUser().then(() => {
-      navigate('/');
-    });
   };
 
   return (
@@ -212,7 +189,7 @@ export default function SettingsMaster() {
             />
             <div className="height">
               <VerificationInput
-                isConfirmed={user.is_phone_verified}
+                isConfirmed={userEx.isPhoneVerified}
                 {...getFormAttrs('phone')}
                 value={form.phone || ''}
                 onChangeMask={correctPhoneNumder}
@@ -220,7 +197,7 @@ export default function SettingsMaster() {
             </div>
             <VerificationInput
               isEmail
-              isConfirmed={user.is_email_verified}
+              isConfirmed={userEx.isEmailVerified}
               value={form.email || ''}
               onChangeMask={(e) =>
                 setForm((prev) => ({ ...prev, email: e.target.value }))

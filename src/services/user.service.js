@@ -163,12 +163,6 @@ const recoverPasswordSend = (payload) =>
     body: JSON.stringify(payload),
   });
 
-const keepUserAuthorized = (v) =>
-  localStorage.setItem('keepAuthorized', JSON.stringify(v));
-
-const getKeepUserAuthorized = () =>
-  JSON.parse(localStorage.getItem('keepAuthorized'));
-
 export {
   getUser,
   getUserUnreadMessages,
@@ -186,7 +180,5 @@ export {
   recoverPassword,
   recoverPasswordVerify,
   recoverPasswordSend,
-  keepUserAuthorized,
-  getKeepUserAuthorized,
   updatePassword,
 };

@@ -14,12 +14,12 @@ import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUser } from '../../state/user';
 
 // Переименовал App в AllOrders для большей ясности
 function App() {
   const text = useLanguage();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [serviceInPage, setServiceInPage] = useState(10);
@@ -38,7 +38,7 @@ function App() {
   });
 
   const fetchUserOrderReqs = useCallback(async () => {
-    if (!user.u_id) {
+    if (!user.id) {
       console.warn('User ID not found, skipping fetch.');
       return;
     }
@@ -60,7 +60,7 @@ function App() {
       ).filter(
         (order) =>
           order.b_options?.type === 'order' &&
-          order.drivers?.some((driver) => driver.u_id === user.u_id),
+          order.drivers?.some((driver) => driver.u_id === user.id),
       );
 
       // Форматируем данные, чтобы в `drivers` был только объект текущего мастера
@@ -69,7 +69,7 @@ function App() {
           ...item,
           // Находим и сохраняем только данные нашего мастера для этого заказа
           driverData: item.drivers.find(
-            (driver) => driver.u_id === user.u_id,
+            (driver) => driver.u_id === user.id,
           ),
         };
       });
@@ -83,7 +83,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [user.u_id]);
+  }, [user.id]);
   // Загрузка данных при монтировании компонента
   useEffect(() => {
     const fetchOrders = async () => {
@@ -150,7 +150,7 @@ function App() {
       order.b_options?.author?.id ||
       order.b_options?.author?.u_id ||
       order.b_options?.u_id;
-    if (ownerId && String(ownerId) === String(user.u_id)) return false;
+    if (ownerId && String(ownerId) === String(user.id)) return false;
 
     // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'New' && !order.isNew) return false;

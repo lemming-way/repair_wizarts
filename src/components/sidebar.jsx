@@ -5,13 +5,13 @@ import { useLanguage } from '../state/language';
 
 import AlertMessage from './AlertMessage/AlertMessage';
 import { useUserRating } from '../hooks/useUserRating';
-import { useUserQuery } from '../hooks/useUserQuery';
+import { useUser } from '../state/user';
 function Sidebar() {
   const text = useLanguage();
   const location = useLocation();
 
   // Получаем основные данные пользователя
-  const { user } = useUserQuery();
+  const { user } = useUser();
 
   // 2. Вызываем хук для получения данных о рейтинге
   const { averageRating, feedbackCount, isLoading } = useUserRating();
@@ -25,9 +25,9 @@ function Sidebar() {
   }
 
   // Формируем имя и аватар
-  const userAvatar = user.u_photo || '/img/profil_img/1.png';
+  const userAvatar = user.avatar || '/img/profil_img/1.png';
   const userName =
-    `${user.u_name || ''} ${user.u_family || ''}`.trim() ||
+    `${user.name || ''} ${user.lastname || ''}`.trim() ||
     text('First Last');
 
   return (

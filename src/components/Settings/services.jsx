@@ -4,16 +4,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import '../../scss/service.css';
 import '../../scss/register-master.scss';
 import style from './services.module.css';
-import { updateUser } from '../../services/user.service';
 //~ import { getMasterRepairsByUsername } from '../../services/service.service';
 import MultiSelect from '../MultiSelect/MultiSelect';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
+import { useUserExtended, updateUserDetails } from '../../state/user';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 
 function Services() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { userEx } = useUserExtended();
   const [categoryMainOptionSelected, setCategoryMainOptionSelected] =
     useState(null);
   const [categoryOptionSelected, setCategoryOptionSelected] = useState(null);
@@ -26,37 +24,37 @@ function Services() {
   const { categories } = useCategoriesQuery();
 
   useEffect(() => {
-    if (!user.u_id) return;
+    if (!userEx.id) return;
     if (
-      user.u_details?.section &&
-      user.u_details?.subsection &&
-      user.u_details?.service &&
-      user.u_details?.servicesBlocks
+      userEx.details?.section &&
+      userEx.details?.subsection &&
+      userEx.details?.service &&
+      userEx.details?.servicesBlocks
     ) {
       setCategoryMainOptionSelected(
-        Array.isArray(user.u_details.section)
-          ? user.u_details.section
+        Array.isArray(userEx.details.section)
+          ? userEx.details.section
           : [],
       );
       setCategoryOptionSelected(
-        Array.isArray(user.u_details.subsection)
-          ? user.u_details.subsection
+        Array.isArray(userEx.details.subsection)
+          ? userEx.details.subsection
           : [],
       );
       setModelPhoneOptionSelected(
-        Array.isArray(user.u_details.service)
-          ? user.u_details.service
+        Array.isArray(userEx.details.service)
+          ? userEx.details.service
           : [],
       );
       setBrandOptionSelected(
-        Array.isArray(user.u_details.question)
-          ? user.u_details.question
+        Array.isArray(userEx.details.question)
+          ? userEx.details.question
           : [],
       );
-      setServicesBlocks({ ...user.u_details.servicesBlocks });
+      setServicesBlocks({ ...userEx.details.servicesBlocks });
     }
     //~ getMasterRepairsByUsername(username).then(setRepairs);
-  }, [user]);
+  }, [userEx.id, userEx.details]);
   useEffect(() => {
     var obj = {};
     if (!brandOptionSelected) {
@@ -101,7 +99,7 @@ function Services() {
   }, [brandOptionSelected, servicesBlocks]);
 
   // Early return if no user ID
-  if (!user.u_id) {
+  if (!userEx.id) {
     return null;
   }
 
@@ -195,20 +193,16 @@ function Services() {
   function onSubmit(e) {
     e.preventDefault();
 
-    updateUser(
+    updateUserDetails(
+      queryClient,
       {
-        details: {
-          section: categoryMainOptionSelected || [],
-          subsection: categoryOptionSelected || [],
-          service: modelPhoneOptionSelected || [],
-          question: brandOptionSelected || [],
-          servicesBlocks: [],
-        },
-      },
-      user.u_id,
-    ).then( () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
-    } ).catch( err => {
+        section: categoryMainOptionSelected || [],
+        subsection: categoryOptionSelected || [],
+        service: modelPhoneOptionSelected || [],
+        question: brandOptionSelected || [],
+        servicesBlocks: []
+      }
+    ).catch( err => {
       console.error(err);
     } );
   }

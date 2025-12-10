@@ -8,7 +8,7 @@ import SERVER_PATH from "../constants/SERVER_PATH";
 import { createDialog } from "../services/dialog.service";
 import { sendOfferAccept } from "../services/notification.service";
 import { acceptOffer } from "../services/offer.service"
-import { useUserQuery } from "../hooks/useUserQuery";
+import { useUser } from "../state/user";
 import { useMasterByUsernameQuery } from "../hooks/useMasterByUsernameQuery";
 import { useMasterServicesQuery } from "../hooks/useMasterServicesQuery";
 import { messageKeys, offerKeys, requestKeys, normalizeOptionalOfferRequestId } from "../queries";
@@ -26,7 +26,7 @@ const Suggest = (props) => {
 
     const navigate = useNavigate()
     const queryClient = useQueryClient()
-    const { user } = useUserQuery()
+    const { user } = useUser()
 
     const [error, setError] = useState("")
     const { data: masterData } = useMasterByUsernameQuery(master_username)
@@ -68,13 +68,13 @@ const Suggest = (props) => {
         setError("")
 
         try {
-            if (!user.u_id) {
+            if (!user.id) {
                 setError("Пользователь не авторизован")
                 return
             }
             const res = await acceptOfferMutation.mutateAsync(offerId)
             const payload = {
-                sender1_id: user.u_id,
+                sender1_id: user.id,
                 sender2_id: res.master_id,
                 request_id
             }

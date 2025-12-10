@@ -1,21 +1,18 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { removeToken } from '../services/token.service';
 import '../scss/setout.css';
-//~ import { setUserMode } from '../services/user.service';
 import { useLanguage } from '../state/language';
-import { userKeys } from '../queries';
-import { useUserQuery } from '../hooks/useUserQuery';
+import { useUser, logout, UserRole } from '../state/user';
 
 function DropdownService() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const text = useLanguage();
 
   //~ const switchMode = () => {
-    //~ const isMaster = user.u_role === "2";
+    //~ const isMaster = user.role === UserRole.Master;
     //~ if (!isMaster) {
       //~ setUserMode(true);
       //~ return;
@@ -23,16 +20,16 @@ function DropdownService() {
     //~ setUserMode(false);
   //~ };
 
-  const logout = (e) => {
-    queryClient.removeQueries({ queryKey: userKeys.all });
-    removeToken();
+  const handleLogout = (e) => {
+    e.preventDefault(); // Предотвращаем дефолтное поведение ссылки
+    logout(queryClient); // Используем функцию logout из state/user.ts
     navigate('/');
   };
 
   return (
     <div className="bldropdownfff-content">
       <div className="fix_hover_drop"></div>
-      {user.u_role === "2" ? (
+      {user.role === UserRole.Master ? (
         <div className="client__dropdown">
           <div className="recent">
             <Link
@@ -51,7 +48,7 @@ function DropdownService() {
           <div className="recent ">
             <span
               className="repair__phonffe dropdown_menu_toolbar_fix"
-              onClick={logout}
+              onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>
@@ -87,7 +84,7 @@ function DropdownService() {
           <div className="recent ">
             <span
               className="repair__phonffe dropdown_menu_toolbar_fix"
-              onClick={logout}
+              onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>

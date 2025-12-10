@@ -5,15 +5,8 @@ import {Link, useNavigate} from "react-router-dom";
 import styles from './LoginPage.module.scss';
 import { PhoneNumber } from '../PhoneNumber';
 import { useLanguage } from '../../../state/language';
-import {login} from "../../../services/auth.service";
-import { setToken } from "../../../services/token.service";
-import appFetch from "../../../utilities/appFetch";
-import {
-  keepUserAuthorized,
-} from "../../../services/user.service";
-import {userKeys} from '../../../queries';
+import { login } from "../../../state/user";
 import PasswordRecoveryModal from './PasswordRecoveryModal';
-
 
 const LoginPage = () => {
   const text = useLanguage();
@@ -36,36 +29,11 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const loginType = phone.includes("@") ? "email" : "phone";
-      const response = await login(phone, password, loginType);
-
-      if (keep) {
-        keepUserAuthorized(true);
-      } else {
-        keepUserAuthorized(false);
-      }
-
-      const carData = await appFetch("user/authorized/car", {
-        method: "POST",
-        body: {
-          u_hash: response.data.u_hash,
-          token: response.data.token,
-        },
-      });
-
-      setToken({
-        hash: response.data.u_hash,
-        token: response.data.token,
-        user: {
-          ...response.auth_user,
-          c_id: ( Object.values(carData.data.car || {})[0] as any )?.c_id,
-        },
-      });
-
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: перенести в state/user
+      await login(queryClient, phone, password, keep);
       navigate("/");
     } catch (err) {
-      setError(text("Incorrect phone number or password"));
+      const message = err instanceof Error ? err.message : String(err);
+      setError(text(message));
     }
   };
 

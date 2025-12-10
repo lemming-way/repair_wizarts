@@ -11,7 +11,7 @@ import ListItem from '../../components/ListItem/ListItem';
 import './header.scss';
 import { useLanguage } from '../../state/language';
 import logo from '../../img/header/new-logotype.svg';
-import { useUserQuery } from '../../hooks/useUserQuery';
+import { useUser, UserRole } from '../../state/user';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -23,8 +23,8 @@ const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
-  const { user } = useUserQuery();
-  const isMaster = user.u_role === '2';
+  const { user } = useUser();
+  const isMaster = user.role === UserRole.Master;
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -85,7 +85,7 @@ const Toolbar = () => {
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
         <div className="header__profile">
-          {!!user.u_id ? (
+          {!!user.id ? (
             <div className="header__profile">
               {isMaster ? (
                 <Link
@@ -126,7 +126,7 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={user.u_photo || '/img/icons/avatar.png'}
+                  src={user.avatar || '/img/icons/avatar.png'}
                   width="40px"
                   height="40px"
                   alt=""
@@ -198,7 +198,7 @@ const Toolbar = () => {
       <div
         className={[
           styles.toolbar_burger2,
-          !!user.u_id
+          !!user.id
             ? styles.toolbar_burger2_visibility_none
             : styles.toolbar_burger2_visibility_block,
         ].join(' ')}

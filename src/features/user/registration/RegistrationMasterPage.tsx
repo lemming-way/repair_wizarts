@@ -356,15 +356,16 @@ const RegistrationMasterPage = () => {
   );
 };
 
-// Wrapper component to provide ConfirmPoliticsContext if it's not already provided by a parent
-const RegistrationMasterPageWithContext = () => {
-  const [accept, setAccept] = useState(false);
-  return (
-    <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
-      <RegistrationMasterPage />
-    </ConfirmPoliticsContext.Provider>
-  );
-};
+// todo: удалить ненужный код
+//~ // Wrapper component to provide ConfirmPoliticsContext if it's not already provided by a parent
+//~ const RegistrationMasterPageWithContext = () => {
+  //~ const [accept, setAccept] = useState(false);
+  //~ return (
+    //~ <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
+      //~ <RegistrationMasterPage />
+    //~ </ConfirmPoliticsContext.Provider>
+  //~ );
+//~ };
 
 // export default RegistrationMasterPageWithContext; // Exporting the version with context provider
 export default RegistrationMasterPage; // Or export this if context is always provided by a parent

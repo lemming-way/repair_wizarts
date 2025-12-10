@@ -1,39 +1,10 @@
 import { useMemo } from 'react';
-import {
-  useQuery,
-  UseQueryOptions,
-  UseQueryResult,
-} from '@tanstack/react-query';
 
-import { getToken } from '../services/token.service';
-import { getUserUnreadMessages } from '../services/user.service';
-import { messageKeys } from '../queries';
+// todo: В настоящий момент здесь просто заглушка. Нужно переписать или избавиться от этого хука
 
-type QueryFnData = Awaited<ReturnType<typeof getUserUnreadMessages>>;
-type QueryError = unknown;
+const queryResult = { data: [] };
 
-type Options = Omit<
-  UseQueryOptions<QueryFnData, QueryError, QueryFnData, ReturnType<typeof messageKeys.unread>>,
-  'queryKey' | 'queryFn'
->;
-
-type Result = UseQueryResult<QueryFnData, QueryError> & {
-  unreadMessages: QueryFnData | undefined;
-  unreadCount: number;
-};
-
-export function useUnreadMessagesQuery(options?: Options): Result {
-  const token = getToken();
-  const { enabled: optionsEnabled, ...restOptions } = options ?? {};
-  const enabled = Boolean(token) && (optionsEnabled ?? true);
-
-  const queryResult = useQuery({
-    queryKey: messageKeys.unread(),
-    queryFn: getUserUnreadMessages,
-    enabled,
-    ...restOptions,
-  });
-
+export function useUnreadMessagesQuery() {
   const { unreadMessages, unreadCount } = useMemo(() => {  // todo: перенести это в queryFn
     const dialogs = queryResult.data;
 
@@ -50,7 +21,7 @@ export function useUnreadMessagesQuery(options?: Options): Result {
     }, 0);
 
     return { unreadMessages: dialogs, unreadCount: count };
-  }, [queryResult.data]);
+  }, []);
 
   return {
     ...queryResult,

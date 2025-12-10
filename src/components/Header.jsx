@@ -6,14 +6,14 @@ import DropdownService from "./dropdownService";
 import DropdownSetout from "./dropdownSetout";
 import Menu from "./menu/Menu";
 import { useLanguage } from '../state/language';
-import { useUserQuery } from '../hooks/useUserQuery';
+import { useUser, UserRole } from '../state/user';
 import { useUnreadMessagesQuery } from '../hooks/useUnreadMessagesQuery';
 
 function Header() {
     const [visibleCountry, setVisibleCountry] = useState(false)
     const [visibleSetout, setVisibleSetout] = useState(false)
     const [menuActive, setMenuActive] = useState(false)
-    const { user } = useUserQuery()
+    const { user } = useUser()
     const { unreadCount } = useUnreadMessagesQuery()
     const text = useLanguage();
 
@@ -57,13 +57,13 @@ function Header() {
                         </li>
                     </ul>
                     <div className="header__profile">
-                        {!!user.u_id ? (
+                        {!!user.id ? (
                             <div className="header__profile">
                                 <Link to={"/client/requests/create/title"} className="header__button">{text("Give task")}</Link>
                                 <a href="tel:+79697148750" style={{height: "26px", width: "26px", marginRight: "12px"}}>
                                     <img className="" src="/img/ellipsewqrew.png" alt="" />
                                 </a>
-                                <Link to={user.u_role === '2' ? "/master/chat" : "/client/chat"}
+                                <Link to={user.role === UserRole.Master ? "/master/chat" : "/client/chat"}
                                     className='header__chat-link'
                                     style={{display: 'flex'}}
                                     onClick={() => {
@@ -83,7 +83,7 @@ function Header() {
                                     }}
                                 >
                                     <img
-                                        src={user.u_photo || '/img/icons/avatar.png'}
+                                        src={user.avatar || '/img/icons/avatar.png'}
                                         width="40px"
                                         height="40px"
                                         alt=""
@@ -96,7 +96,7 @@ function Header() {
                                     </div>
                                     {/* </Link> */}
                                 </div>
-                                {user.u_role === '2' && user.master?.[0] && (
+                                {user.role === UserRole.Master && user.master?.[0] && (  // todo: Здесь баланс нужно получать по-другому
                                     <>
                                         <p className='master__moneys'>
                                             {parseFloat(user.master[0].balance).toFixed(2)}₽

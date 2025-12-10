@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import { updateUserPhoto } from '../../services/user.service';
+import { fileToBase64 } from '../../shared/lib/utilities';
+import { useUser, updateUserAvatar } from '../../state/user';
 import './startff.css';
-import { useUserQuery } from '../../hooks/useUserQuery';
-import { userKeys } from '../../queries';
 
 function App() {
   const queryClient = useQueryClient();
-  const { user } = useUserQuery();
+  const { user } = useUser();
   const [succeeded, setSucceeded] = useState(false);
   const [error, setError] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
@@ -16,10 +15,10 @@ function App() {
 
   useEffect(() => {
     document.title = 'Настройки';
-    if (user.u_photo) {
-      setPreviewUrl(user.u_photo);
+    if (user.avatar) {
+      setPreviewUrl(user.avatar);
     }
-  }, [user.u_photo]);
+  }, [user.avatar]);
 
   const onProfilePicUpdate = async (e) => {
     e.preventDefault();
@@ -29,19 +28,17 @@ function App() {
       setError('Файл не выбран');
       return;
     }
-    if (!user.u_id) {
+    if (!user.id) {
       setError('Пользователь не найден');
       return;
     }
     try {
-      const base64 = await convertToBase64(file);
-      const answer = await updateUserPhoto(base64, user.u_id);
+      const answer = await updateUserAvatar(queryClient, file);
       console.log(answer);
       setSucceeded(true);
       setError('');
-      setPreviewUrl(base64);
+      setPreviewUrl(await fileToBase64(file));
       inputRef.current.value = '';
-      queryClient.invalidateQueries({ queryKey: userKeys.all });  // todo: Перенести в state/user
     } catch (err) {
       setSucceeded(false);
       setError(err.message || 'Произошла ошибка при загрузке');
@@ -50,17 +47,9 @@ function App() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const base64 = await convertToBase64(file);
+      const base64 = await fileToBase64(file);
       setPreviewUrl(base64); // 👈 показываем новое фото сразу
     }
-  };
-  const convertToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   return (

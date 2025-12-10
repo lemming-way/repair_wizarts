@@ -1,6 +1,5 @@
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { getToken, removeToken, setToken } from '../services/token.service';
-import { getKeepUserAuthorized } from '../services/user.service';
 
 export const BASE_URL = SERVER_PATH;
 
@@ -85,7 +84,7 @@ const appFetch = async (location, init = {}) => {
     if (response.ok) {
       return data;
     }
-    if (response.status === 401 && token && getKeepUserAuthorized()) {
+    if (response.status === 401 && token) {
       const refresh = await refreshAccessToken();
 
       if (refresh) {
