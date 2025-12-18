@@ -8,30 +8,30 @@ const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
  * Информация о блокировке пользователя.
  */
 export type UserBanInfo = {
-    auth: string | null;
-    order: string | null;
-    blog_topic: string | null;
-    blog_post: string | null;
+    auth?: string | null | unknown;
+    order?: string | null | unknown;
+    blog_topic?: string | null | unknown;
+    blog_post?: string | null | unknown;
 };
 
 /**
  * Информация об авторизованном пользователе.
  */
 export type AuthUser = {
-  u_id: string;
-  u_name: string;
-  u_family: string;
-  u_middle: string;
-  u_email: string;
-  u_phone: string | null;
-  u_role: string;
-  u_check_state: string | null;
-  u_ban: UserBanInfo;
-  u_active: 0 | 1;
-  u_photo: string;
-  u_birthday: string | null;
-  u_lang: string | null;
-  u_currency: string | null;
+  u_id?: string | unknown;
+  u_name?: string | unknown;
+  u_family?: string | unknown;
+  u_middle?: string | unknown;
+  u_email?: string | unknown;
+  u_phone?: string | null | unknown;
+  u_role?: string | unknown;
+  u_check_state?: string | null | unknown;
+  u_ban?: UserBanInfo | unknown;
+  u_active?: 0 | 1 | unknown;
+  u_photo?: string | unknown;
+  u_birthday?: string | null | unknown;
+  u_lang?: string | null | unknown;
+  u_currency?: string | null | unknown;
 };
 
 /**
@@ -54,7 +54,7 @@ export class FetchError extends Error {
 export type ErrorResponse = {
     code: string;
     status: "error";
-    message: string;
+    message: string | unknown;
     data?: unknown;
 };
 
@@ -64,8 +64,8 @@ export type ErrorResponse = {
 type SuccessResponse = {
     code: "200";
     status: "success";
-    auth_user?: AuthUser;
-    auth_hash?: string;  // при запросе авторизации
+    auth_user?: AuthUser | unknown;
+    auth_hash?: string | unknown;  // при запросе авторизации
     data?: unknown;
 };
 
@@ -127,17 +127,16 @@ export type RequestOptions = {
 };
 
 /**
- * Отправляет HTTP запрос.
- * @template T Тип ожидаемых данных в ответе.
+ * Отправляет HTTP запрос и возвращает необработанный JSON ответ.
  * @param {RequestOptions} [opts={}] Опции запроса.
- * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа и опциональной информацией о пользователе.
+ * @returns {Promise<unknown>} Промис с данными ответа.
  * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
  */
-export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?: AuthUser }> {
+export async function requestRaw(opts: RequestOptions, correlationId?: string): Promise<unknown> {
   const isDebug = process.env.NODE_ENV !== 'production';
-  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
-  const method = opts.method || 'GET';
+  correlationId = isDebug ? correlationId || Math.random().toString(36).slice(2) : undefined;
 
+  const method = opts.method || 'GET';
   const url = `${API_BASE_URL}${opts.path}`;
 
   let formDataBody: FormData | undefined;
@@ -168,30 +167,13 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
     }
 
     if (resp.ok) {
-      const responseData: SuccessResponse | ErrorResponse = await resp.json();
+      const responseData: unknown = await resp.json();
 
       if (isDebug) {
         console.debug('[api] response', correlationId, responseData);
       }
-
-      const successResponse = responseData as SuccessResponse;
-      if (successResponse.status !== 'success' || successResponse.code !== '200') {
-        const errorResponse = responseData as ErrorResponse;
-        if (isDebug) {
-          console.error('[api] server logical error', correlationId, errorResponse);
-        }
-        throw new FetchError(errorResponse.message, errorResponse);
-      }
-      const result =
-        successResponse.auth_hash ?
-          { auth_hash: successResponse.auth_hash } :
-        'object' === typeof successResponse.data && successResponse.data !== null ?
-          successResponse.data :
-          { data: successResponse.data };
-      if (opts.withAuthUser === true && successResponse.auth_user) {
-        Object.assign(result, { auth_user: successResponse.auth_user });
-      }
-      return result as T & { auth_user?: AuthUser };
+      
+      return responseData;
     } else {
       const errorMessage = `${resp.status}: ${resp.statusText || 'HTTP Error'}`;
 
@@ -201,6 +183,46 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
 
       throw new FetchError(errorMessage, resp);
     }
+  } catch (e) {
+    const error = e instanceof Error ? e : new Error(String(e));
+    if (isDebug) {
+      console.error('[api] request failed', correlationId, error);
+    }
+    throw error;
+  }
+}
+
+/**
+ * Отправляет HTTP запрос и проверяет статус ответа.
+ * @template T Тип ожидаемых данных в ответе (допускается Array или любой Object).
+ * @param {RequestOptions} [opts={}] Опции запроса.
+ * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа и опциональной информацией о пользователе.
+ * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
+ */
+export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?: AuthUser }> {
+  const isDebug = process.env.NODE_ENV !== 'production';
+  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
+
+  try {
+    const responseData = await requestRaw(opts, correlationId);
+    const successResponse = responseData as SuccessResponse;
+    if (successResponse.status !== 'success' || successResponse.code !== '200') {
+      const errorResponse = responseData as ErrorResponse;
+      if (isDebug) {
+        console.error('[api] server logical error', correlationId, errorResponse);
+      }
+      throw new FetchError(errorResponse.message, errorResponse);
+    }
+    const result =
+      successResponse.auth_hash ?
+        { auth_hash: successResponse.auth_hash } :
+      'object' === typeof successResponse.data && successResponse.data !== null ?
+        successResponse.data :
+        { data: successResponse.data };
+    if (opts.withAuthUser === true && 'object' === typeof successResponse.auth_user) {
+      Object.assign(result, { auth_user: successResponse.auth_user });
+    }
+    return result as T & { auth_user?: AuthUser };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     if (isDebug) {
@@ -222,6 +244,16 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
  */
 export function get<T>(path: string) {
   return request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>;
+}
+
+/**
+ * Отправляет GET запрос (без авторизации).
+ * Возвращает сырые данные ответа, без предварительного разбора.
+ * @param path Путь к API.
+ * @returns {Promise<unknown>} Промис с данными ответа.
+ */
+export function getRaw(path: string) {
+  return requestRaw({ method: 'GET', path, noAuth: true });
 }
 
 /**

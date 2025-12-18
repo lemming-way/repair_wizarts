@@ -61,6 +61,7 @@ export interface UserBaseData {
   currency: string;
 }
 
+// todo: Уточнить тип details
 /**
  * Дополнительные данные пользователя.
  */
@@ -72,7 +73,7 @@ interface UserExtraData {
   /** Описание пользователя. */
   description: string;
   /** Местоположение (город) пользователя. */
-  locality: string;
+  locality: number;
   /** Произвольные дополнительные детали пользователя. */
   details: Record<string, unknown>;
 }
@@ -126,8 +127,11 @@ function fetchUser({ client }): Promise<UserProfile | {}> {
         isPhoneVerified: Number( result.u_phone_checked ) === 1,
         isEmailVerified: Number( result.u_email_checked) === 1,
         description: String(result.u_description || ''),
-        locality: String(result.u_city || ''),
-        details: result.u_details && result.u_details instanceof Object ? result.u_details : {}
+        locality: Number(result.u_city) || 0,
+        details:
+          'object' === typeof result.u_details && result.u_details !== null && !Array.isArray(result.u_details) ?
+          result.u_details as Record<string, unknown> :
+          {}
       };
       resolve({ baseData, extraData });
     }
@@ -300,11 +304,15 @@ export async function logout(queryClient: QueryClient): Promise<void> {
  */
 export function useLogin() {
   const queryClient = useQueryClient();
-
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean }) =>
       login(queryClient, loginValue, password, keepAuthorized),
   });
+
+  return {
+    ...mutation,
+    login: mutation.mutateAsync
+  }
 }
 
 /**
@@ -315,6 +323,7 @@ export interface RegisterPayload {
   lastname: string;
   phone: string;
   email: string;
+  locality?: number;
   password: string;
   details?: Record<string, unknown>; // Дополнительные детали, только для мастера
   keepAuthorized: boolean;
@@ -373,7 +382,7 @@ async function _registerUser(
  * @param payload Объект с данными для регистрации.
  * @returns Промис, который разрешается после успешной регистрации.
  */
-export async function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
+export function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
   return _registerUser(queryClient, payload, apiRegisterAsClient, UserRole.Client);
 }
 
@@ -382,9 +391,14 @@ export async function registerClient(queryClient: QueryClient, payload: Register
  */
 export function useRegisterClient() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (payload: RegisterPayload) => registerClient(queryClient, payload),
   });
+
+  return {
+    ...mutation,
+    register: mutation.mutateAsync
+  }
 }
 
 /**
@@ -394,7 +408,10 @@ export function useRegisterClient() {
  * @returns Промис, который разрешается после успешной регистрации.
  */
 export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  return _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
+  await _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
+  if (payload.locality) {
+    await apiUpdateUser({ u_city: payload.locality });
+  }
 }
 
 /**
@@ -402,9 +419,14 @@ export async function registerContractor(queryClient: QueryClient, payload: Regi
  */
 export function useRegisterContractor() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (payload: RegisterPayload) => registerContractor(queryClient, payload),
   });
+
+  return {
+    ...mutation,
+    register: mutation.mutateAsync
+  }
 }
 
 /**
@@ -419,6 +441,7 @@ export interface UserUpdatePayload {
   email?: string;
   language?: string;
   currency?: string;
+  locality?: number;
   description?: string;
 }
 
@@ -429,7 +452,7 @@ export interface UserUpdatePayload {
  * @returns Промис, который разрешается после успешного обновления.
  */
 export async function updateUser(queryClient: QueryClient, payload: UserUpdatePayload): Promise<void> {
-  // todo: Может быть, добавить полную проверку для phone, email, language, currency
+  // todo: Может быть, добавить полную проверку для phone, email, language, currency, locality
   const apiUserData: UserUpdateData = {};
 
   if (payload.name !== undefined) {
@@ -457,6 +480,9 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
     const currency = payload.currency.trim();
     apiUserData.u_currency = currency;
   }
+  if (payload.locality !== undefined) {
+    apiUserData.u_city = payload.locality || null;  // Сработает только для мастера
+  }
   if (payload.description !== undefined) {
     const description = payload.description.trim();
     apiUserData.u_description = description;
@@ -471,9 +497,14 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
  */
 export function useUpdateUser() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (payload: UserUpdatePayload) => updateUser(queryClient, payload),
   });
+
+  return {
+    ...mutation,
+    save: mutation.mutateAsync
+  }
 }
 
 /**
@@ -493,9 +524,14 @@ export async function updateUserAvatar(queryClient: QueryClient, photoFile: File
  */
 export function useUpdateUserAvatar() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (photoFile: File) => updateUserAvatar(queryClient, photoFile),
   });
+
+  return {
+    ...mutation,
+    save: mutation.mutateAsync
+  }
 }
 
 /**
@@ -514,9 +550,14 @@ export async function updateUserDetails(queryClient: QueryClient, details: Recor
  */
 export function useUpdateUserDetails() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (details: Record<string, unknown>) => updateUserDetails(queryClient, details),
   });
+
+  return {
+    ...mutation,
+    save: mutation.mutateAsync
+  }
 }
 
 /**
@@ -533,10 +574,14 @@ export async function updateUserPassword(oldPassword: string, newPassword: strin
  * Хук для обновления пароля пользователя.
  */
 export function useUpdateUserPassword() {
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) =>
       updateUserPassword(oldPassword, newPassword),
   });
+  return {
+    ...mutation,
+    update: mutation.mutateAsync
+  }
 }
 
 /**
@@ -553,7 +598,12 @@ export async function recoverPassword(loginValue: string): Promise<void> {
  * Хук для инициирования процесса восстановления пароля.
  */
 export function usePasswordRecovery() {
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: (loginValue: string) => recoverPassword(loginValue),
   });
+
+  return {
+    ...mutation,
+    recover: mutation.mutateAsync
+  }
 }

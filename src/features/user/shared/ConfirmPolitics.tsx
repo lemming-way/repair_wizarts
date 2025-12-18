@@ -1,22 +1,20 @@
 import React from 'react';
 
-import styles from './ConfirmPolitics.module.scss';
-import {useConfirmPolitics} from "./ConfirmPoliticsContext";
-import SERVER_PATH from "../../constants/SERVER_PATH";
-import { useLanguage } from '../../state/language';
+import styles from './RegistrationPage.module.scss';
+import SERVER_PATH from "../../../constants/SERVER_PATH";
+import { useLanguage } from '../../../state/language';
 
-const ConfirmPolitics = () => {
+export const ConfirmPolitics = ({ accept, onChange }) => {
   const text = useLanguage();
-  const { accept, setAccept } = useConfirmPolitics();
 
   return (
-    <div className={styles.confirmPolitics}>
+    <div className={styles.registrationPage_checkbox_container}>
       {/*В старом коде className="rel"*/}
       <input
         type="checkbox"
         id="confirm"
         checked={accept}
-        onChange={(e) => setAccept(e.target.checked)}
+        onChange={(e) => onChange(e.target.checked)}
       />
 
       <label htmlFor="confirm">
@@ -37,5 +35,3 @@ const ConfirmPolitics = () => {
     </div>
   );
 };
-
-export default ConfirmPolitics;

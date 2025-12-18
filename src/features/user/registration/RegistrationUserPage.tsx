@@ -1,13 +1,13 @@
 import React, {useEffect, useState} from 'react';
 import {useNavigate} from "react-router-dom";
 
-import styles from './RegistrationUserPage.module.scss';
-import ConfirmPolitics from "../../../components/ConfirmPolitics/ConfirmPolitics";
-import {ConfirmPoliticsContext} from "../../../components/ConfirmPolitics/ConfirmPoliticsContext";
 // import Error from "../../../components/Error/Error";
 import { useLanguage } from '../../../state/language';
 import { useRegisterClient } from '../../../state/user';
-import { PhoneNumber } from '../PhoneNumber';
+import { PhoneNumber } from '../shared/PhoneNumber';
+import { ConfirmPolitics } from "../shared/ConfirmPolitics";
+import styles from './RegistrationUserPage.module.scss';
+import sharedStyles from '../shared/RegistrationPage.module.scss';
 
 const RegistrationUserPage = () => {
   const text = useLanguage();
@@ -61,7 +61,7 @@ const RegistrationUserPage = () => {
     }
 
     try {
-      await registerClientMutation.mutateAsync({
+      await registerClientMutation.register({
         name,
         lastname,
         email,
@@ -76,99 +76,98 @@ const RegistrationUserPage = () => {
   };
 
   return (
-    <ConfirmPoliticsContext.Provider value={{accept, setAccept}}>
-      <div className={`${styles.registrationUserPage} appContainer`}>
-        <h1 className={styles.registrationUserPage_title}>Регистрация</h1>
-         <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
-           {error && (
-             <div
-               className="auth-err"
-               style={{
-                 marginBottom: '10px',
-                 color: 'red',
-                 textAlign: 'center',
-               }}
-             >
-               {error}
-             </div>
-           )}
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="text"
-             name="name"
-             placeholder={text("First Name")}
-             value={name}
-             onChange={(e) => setName(e.target.value)}
-             required
-           />
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="text"
-             name="lastname"
-             placeholder={text("Last Name")}
-             value={lastname}
-             onChange={(e) => setLastname(e.target.value)}
-             required
-           />
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="email"
-             name="email"
-             placeholder={text("Email")}
-             value={email}
-             onChange={(e) => setEmail(e.target.value)}
-             required
-           />
-           <div className={styles.registrationUserPage_input_phone_wrap}>
-             <PhoneNumber
-               placeholder={text("Phone")}
-               className={`${styles.registrationUserPage_form_input} ${
-                 phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
-               }`}
-               value={phone}
-               onChange={setPhone}
-             />
+    <div className={`${styles.registrationUserPage} appContainer`}>
+      <h1 className={styles.registrationUserPage_title}>Регистрация</h1>
+       <form className={styles.registrationUserPage_form} onSubmit={onSubmit}>
+         {error && (
+           <div
+             className="auth-err"
+             style={{
+               marginBottom: '10px',
+               color: 'red',
+               textAlign: 'center',
+             }}
+           >
+             {error}
            </div>
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="password"
-             name="password"
-             placeholder={text("Password")}
-             value={password}
-             onChange={(e) => setPassword(e.target.value)}
-             required
+         )}
+         <input
+           className={styles.registrationUserPage_form_input}
+           type="text"
+           name="name"
+           placeholder={text("First Name")}
+           value={name}
+           onChange={(e) => setName(e.target.value)}
+           required
+         />
+         <input
+           className={styles.registrationUserPage_form_input}
+           type="text"
+           name="lastname"
+           placeholder={text("Last Name")}
+           value={lastname}
+           onChange={(e) => setLastname(e.target.value)}
+           required
+         />
+         <input
+           className={styles.registrationUserPage_form_input}
+           type="email"
+           name="email"
+           placeholder={text("Email")}
+           value={email}
+           onChange={(e) => setEmail(e.target.value)}
+           required
+         />
+         <div className={styles.registrationUserPage_input_phone_wrap}>
+           <PhoneNumber
+             placeholder={text("Phone")}
+             className={`${styles.registrationUserPage_form_input} ${
+               phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
+             }`}
+             value={phone}
+             onChange={setPhone}
            />
-           <input
-             className={styles.registrationUserPage_form_input}
-             type="password"
-             placeholder={text("Confirm Password")}
-             value={passwordVerification}
-             onChange={(e) => setPasswordVerification(e.target.value)}
-             required
-           />
+         </div>
+         <input
+           className={styles.registrationUserPage_form_input}
+           type="password"
+           name="password"
+           placeholder={text("Password")}
+           value={password}
+           onChange={(e) => setPassword(e.target.value)}
+           required
+         />
+         <input
+           className={styles.registrationUserPage_form_input}
+           type="password"
+           placeholder={text("Confirm Password")}
+           value={passwordVerification}
+           onChange={(e) => setPasswordVerification(e.target.value)}
+           required
+         />
 
-           <label className={styles.registrationUserPage_form_loginKeep}>
-             <input
-               className={styles.registrationUserPage_form_loginKeep_input}
-               type="checkbox"
-               onChange={(e) => setKeep(e.target.checked)}
-             />
+         <div className={sharedStyles.registrationPage_checkbox_container}>
+           <input
+             id="keep-authorized"
+             type="checkbox"
+             onChange={(e) => setKeep(e.target.checked)}
+           />
+           <label htmlFor="keep-authorized">
              {text("Stay logged in")}
            </label>
+         </div>
 
-           {/*Вынесла в отдельный компонент, т.к. будет переиспользован*/}
-           <ConfirmPolitics />
+         <ConfirmPolitics accept={accept} onChange={setAccept}/>
 
-           <button
-             className={styles.registrationUserPage_form_button}
-             type="submit"
-             disabled={registerClientMutation.isPending}
-           >
-             {registerClientMutation.isPending ? text("Registering...") : text("Register")}
-           </button>
-         </form>
-      </div>
-    </ConfirmPoliticsContext.Provider>
+         <button
+           className={styles.registrationUserPage_form_button}
+           type="submit"
+           disabled={registerClientMutation.isPending}
+         >
+           {registerClientMutation.isPending ? text("Registering...") : text("Register")}
+         </button>
+       </form>
+    </div>
   );
 };
 

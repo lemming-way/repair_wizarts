@@ -1,14 +1,14 @@
 /**
  * Модуль для работы с пользователями и аутентификацией
- * 
+ *
  * @summary
  * **Типы:**
  * LoginType, UserData, UserUpdateData, RegisterUserData, RegisterResult
- * 
+ *
  * **Функции, влияющие на глобальное состояние:**
  * login, logout, getUserData, updateUser, updateUserDetails, loginByVerificationCode,
  * registerAsClient, registerAsContractor
- * 
+ *
  * **Функции, не влияющие на глобальное состояние:**
  * updatePassword, recoverPassword, sendVerification
  */
@@ -82,32 +82,34 @@ export function logout(): Promise<void> {
  */
 export interface UserData extends AuthUser {
   /** Проверен ли номер телефона (0 - нет, 1 - да). */
-  u_phone_checked: 0 | 1;
+  u_phone_checked?: 0 | 1 | unknown;
   /** Проверен ли e-mail (0 - нет, 1 - да). */
-  u_email_checked: '0' | '1';
+  u_email_checked?: '0' | '1' | unknown;
   /** Город пользователя. */
-  u_city: string | null;
+  u_city?: string | null | unknown;
   /** Описание пользователя. */
-  u_description: string;
+  u_description?: string | unknown;
   /** Дополнительные детали пользователя. */
-  u_details: Record<string, unknown> | null;
+  u_details?: Record<string, unknown> | null | unknown;
   /** Комментарии к заказам из списка data.booking_comments. */
-  b_comments: string[] | null;
+  b_comments?: string[] | null | unknown;
   /** Дополнительные услуги из data.services. */
-  b_services: string[] | null;
+  b_services?: string[] | null | unknown;
   /** Типы дальности поездки из data.booking_location_classes. */
-  b_location_classes: Array<{ b_location_class: string; basic: '0' | '1' }> | null;
+  b_location_classes?: Array<{ b_location_class: string; basic: '0' | '1' }> | null | unknown;
   /** Дополнительные свойства. */
-  props?: Record<string, Array<unknown>>;
+  props?: Record<string, Array<unknown>> | unknown;
 }
 
 /**
  * Получает подробную информацию об авторизованном пользователе.
- * @returns Промис, который разрешается с объектом UserData или undefined, если данные не найдены.
+ * @returns Промис, который разрешается с объектом UserData или пустой объект, если данные не найдены.
  */
-export async function getUserData(): Promise<UserData | undefined> {
+export async function getUserData(): Promise<UserData> {
   const result = await post<{ user?: Record<string, UserData>; auth_user?: AuthUser }>('user/authorized');
-  return result.user?.[result.auth_user?.u_id ?? ''];
+  const uid = 'string' === typeof result.auth_user?.u_id || 'number' === typeof result.auth_user?.u_id ? result.auth_user.u_id : undefined;
+  if (uid && result.user?.[uid]) return result.user[uid];
+  else return {};
 }
 
 /**
@@ -130,6 +132,8 @@ export interface UserUpdateData {
   u_photo?: string;
   /** Валюта пользователя. */
   u_currency?: string;
+  /** Город пользователя. */
+  u_city?: number | null;
   /** Описание пользователя. */
   u_description?: string;
 }

@@ -5,7 +5,7 @@ import '../../scss/service.css';
 import '../../scss/register-contractor.scss';
 import style from './services.module.css';
 //~ import { getContractorRepairsByUsername } from '../../services/service.service';
-import MultiSelect from '../MultiSelect/MultiSelect';
+import { MultiSelect } from '../../shared/ui';
 import { useUserExtended, updateUserDetails } from '../../state/user';
 import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
 

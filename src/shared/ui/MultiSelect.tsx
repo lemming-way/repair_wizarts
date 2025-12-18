@@ -3,23 +3,23 @@ import type { InputAction } from 'react-select';
 import { default as ReactSelect, components } from 'react-select';
 import './MultiSelect.scss';
 
-export type Option = {
+export type MultiSelectOption = {
   value: number | string;
   label: string;
 };
 
-const MultiSelect = (props: any) => {
+export const MultiSelect = (props: any) => {
   const [selectInput, setSelectInput] = useState<string>('');
   const isAllSelected = useRef<boolean>(false);
   const selectAllLabel = useRef<string>('Выбрать все');
   const allOption = { value: '*', label: selectAllLabel.current };
-  const filterOptions = (options: Option[], input: string) => {
-    return options?.filter(({ label }: Option) =>
+  const filterOptions = (options: MultiSelectOption[], input: string) => {
+    return options?.filter(({ label }: MultiSelectOption) =>
       label?.toLowerCase()?.includes(input?.toLowerCase()),
     );
   };
 
-  const comparator = (v1: Option, v2: Option) =>
+  const comparator = (v1: MultiSelectOption, v2: MultiSelectOption) =>
     (v1.value as number) - (v2.value as number);
 
   const filteredOptions = filterOptions(props.options, selectInput);
@@ -65,7 +65,7 @@ const MultiSelect = (props: any) => {
     </>
   );
 
-  const customFilterOption = ({ value, label }: Option, input: string) =>
+  const customFilterOption = ({ value, label }: MultiSelectOption, input: string) =>
     (value !== '*' && label.toLowerCase().includes(input.toLowerCase())) ||
     (value === '*' && filteredOptions?.length > 0);
 
@@ -83,7 +83,7 @@ const MultiSelect = (props: any) => {
       e.preventDefault();
   };
 
-  const handleChange = (selected: Option[]) => {
+  const handleChange = (selected: MultiSelectOption[]) => {
     if (
       selected.length > 0 &&
       !isAllSelected.current &&
@@ -95,9 +95,9 @@ const MultiSelect = (props: any) => {
         [
           ...(props.value ?? []),
           ...props.options?.filter(
-            ({ label }: Option) =>
+            ({ label }: MultiSelectOption) =>
               label.toLowerCase().includes(selectInput?.toLowerCase()) &&
-              (props.value ?? [])?.filter((opt: Option) => opt.label === label)
+              (props.value ?? [])?.filter((opt: MultiSelectOption) => opt.label === label)
                 .length === 0,
           ),
         ].sort(comparator),
@@ -112,7 +112,7 @@ const MultiSelect = (props: any) => {
     else
       return props.onChange([
         ...props.value?.filter(
-          ({ label }: Option) =>
+          ({ label }: MultiSelectOption) =>
             !label.toLowerCase().includes(selectInput?.toLowerCase()),
         ),
       ]);
@@ -173,8 +173,8 @@ const MultiSelect = (props: any) => {
         options={[allOption, ...props.options]}
         onChange={handleChange}
         components={{
-          Option: Option,
-          Input: Input,
+          Option,
+          Input,
           ...props.components,
         }}
         filterOption={customFilterOption}
@@ -209,5 +209,3 @@ const MultiSelect = (props: any) => {
     />
   );
 };
-
-export default MultiSelect;

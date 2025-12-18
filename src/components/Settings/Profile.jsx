@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import MultiSelect from '../MultiSelect/MultiSelect';
+import { MultiSelect } from '../../shared/ui/';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
 import { useUserExtended, updateUser, updateUserDetails } from '../../state/user';

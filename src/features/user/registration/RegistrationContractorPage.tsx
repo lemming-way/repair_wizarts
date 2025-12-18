@@ -1,19 +1,22 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import styles from './RegistrationContractorPage.module.scss';
-import ConfirmPolitics from '../../../components/ConfirmPolitics/ConfirmPolitics';
-import { ConfirmPoliticsContext } from '../../../components/ConfirmPolitics/ConfirmPoliticsContext';
-import type { Option } from '../../../components/MultiSelect/MultiSelect';
-import MultiSelect from '../../../components/MultiSelect/MultiSelect';
-import { PhoneNumber } from '../PhoneNumber';
+import { useLanguage } from '../../../state/language';
+import { MultiSelect, MultiSelectOption } from '../../../shared/ui';
+import { ConfirmPolitics } from '../shared/ConfirmPolitics';
+import { PhoneNumber } from '../shared/PhoneNumber';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
 import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
+import { useCities } from '../../../state/site-data';
 import { useRegisterContractor } from '../../../state/user';
+import styles from './RegistrationContractorPage.module.scss';
+import sharedStyles from '../shared/RegistrationPage.module.scss';
 
 const RegistrationContractorPage = () => {
+  const text = useLanguage();
   const { categories } = useCategoriesQuery();
+  const cities = useCities();
   const navigate = useNavigate();
   const registerContractorMutation = useRegisterContractor();
 
@@ -28,8 +31,7 @@ const RegistrationContractorPage = () => {
 
   const [error, setError] = useState('');
   const [keep, setKeep] = useState(false);
-
-  const { accept, setAccept } = useContext(ConfirmPoliticsContext);
+  const [accept, setAccept] = useState(false);
 
   // Сброс ошибки телефона при изменении номера
   useEffect(() => {
@@ -38,18 +40,9 @@ const RegistrationContractorPage = () => {
     }
   }, [phone]);
 
-  const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState<
-    Option[] | null
-  >([]);
-  const [categoryOptionSelected, setCategoryOptionSelected] = useState<
-    Option[] | null
-  >([]);
-  const [modelPhoneOptionSelected, setModelPhoneOptionSelected] = useState<
-    Option[] | null
-  >([]);
-  const [subModelOptionSelected, setSubModelOptionSelected] = useState<
-    Option[] | null
-  >([]);
+  const [sectionOptionSelected, setSectionOptionSelected] = useState<MultiSelectOption[] | null>([]);
+  const [subSectionOptionSelected, setSubSectionOptionSelected] = useState<MultiSelectOption[] | null>([]);
+  const [serviceOptionSelected, setServiceOptionSelected] = useState<MultiSelectOption[] | null>([]);
 
   useEffect(() => {
     document.title = 'Регистрация мастера';
@@ -83,19 +76,19 @@ const RegistrationContractorPage = () => {
     }
 
     try {
-      await registerContractorMutation.mutateAsync({
+      await registerContractorMutation.register({
         name: name.trim(),
         lastname: lastname.trim(),
         phone: phone.replace(/\D/g, ''),
         email: email.trim(),
+        locality: Number(city || 0),
         password,
         details: {
           address: address.trim(),
-          city: city.trim(),
-          section: categoryMainOptionSelected?.map(opt => opt.value) || [],
-          subsection: categoryOptionSelected?.map(opt => opt.value) || [],
-          service: modelPhoneOptionSelected?.map(opt => opt.value) || [],
-          subservice: subModelOptionSelected?.map(opt => opt.value) || [],
+          //~ section: sectionOptionSelected?.map(opt => opt.value) || [],
+          //~ subsection: subSectionOptionSelected?.map(opt => opt.value) || [],
+          services: serviceOptionSelected?.map(opt => opt.value) || [],
+          //~ subservice: subModelOptionSelected?.map(opt => opt.value) || [],
         },
         keepAuthorized: keep,
       });
@@ -106,69 +99,38 @@ const RegistrationContractorPage = () => {
     }
   };
 
-  console.log(categories);
-  const categoriesMainOptions: Option[] = categories.map((item) => ({
+  const sectionOptions: MultiSelectOption[] = categories.map((item) => ({
     label: item.name,
     value: item.id,
   }));
 
-  const categoriesOptions: Option[] = categories.flatMap((i) => {
-    const isSelectedCategoryId = categoryMainOptionSelected?.find(
+  const subSectionOptions: MultiSelectOption[] = categories.flatMap((i) => {
+    const isSelectedSectionId = sectionOptionSelected?.find(
       (item) => item.value === i.id,
     );
-    return isSelectedCategoryId
+    return isSelectedSectionId
       ? i.subsections.map((j) => ({ label: j.name, value: j.id }))
       : [];
   });
 
-  const modelPhoneOptions = categories.flatMap((i) => {
-    const isSelectedCategoryId = categoryMainOptionSelected?.find(
+  const serviceOptions = categories.flatMap((i) => {
+    const isSelectedSectionId = sectionOptionSelected?.find(
       (item) => item.value === i.id,
     );
-    return isSelectedCategoryId
+    return isSelectedSectionId
       ? i.subsections.flatMap((j) => {
-          const isSelectedSubCategoryId = categoryOptionSelected?.find(
+          const isSelectedSubSectionId = subSectionOptionSelected?.find(
             (item) => item.value === j.id,
           );
           const services = Array.isArray(j.services) ? j.services : [];
-          return isSelectedSubCategoryId
+          return isSelectedSubSectionId
             ? services.map((c) => ({ label: c.name, value: c.id }))
-            : [];
-        })
-      : [];
-  });
-  const subModelOptions = categories.flatMap((i) => {
-    const isSelectedCategoryId = categoryMainOptionSelected?.find(
-      (item) => item.value === i.id,
-    );
-    return isSelectedCategoryId
-      ? i.subsections.flatMap((j) => {
-          const isSelectedSubCategoryId = categoryOptionSelected?.find(
-            (item) => item.value === j.id,
-          );
-          const services = Array.isArray(j.services) ? j.services : [];
-          return isSelectedSubCategoryId
-            ? services.flatMap((s) => {
-                const serviceQuestions = Array.isArray((s as any)?.questions)
-                  ? ((s as any).questions as Array<any>)
-                  : [];
-                const isSelectedService = modelPhoneOptionSelected?.find(
-                  (item) => item.value === s.id,
-                );
-                return isSelectedService
-                  ? serviceQuestions.map((sub) => ({
-                      label: sub?.text,
-                      value: sub?.number,
-                    }))
-                  : [];
-              })
             : [];
         })
       : [];
   });
 
   return (
-    <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
       <div className={`${styles.registrationContractorPage}`}>
         <h1 className={styles.registrationContractorPage_title}>Регистрация</h1>
         <form
@@ -188,15 +150,20 @@ const RegistrationContractorPage = () => {
             </div>
           )}
 
-          <input
+          <select
             className={styles.registrationContractorPage_form_input}
-            type="text"
             name="city"
-            placeholder="Город"
             value={city}
             onChange={(e) => setCity(e.target.value)}
             required
-          />
+          >
+            <option value='' disabled>{text('Choose city...')}</option>
+            {
+              Object.entries(cities).map(([ id, name ]) =>
+                <option key={id} value={id}>{name}</option>
+              )
+            }
+          </select>
           <input
             className={styles.registrationContractorPage_form_input}
             type="text"
@@ -266,106 +233,77 @@ const RegistrationContractorPage = () => {
           <MultiSelect
             key="category_main_id"
             placeholder="Вид основной категории"
-            options={categoriesMainOptions}
-            onChange={(selected: Option[] | null) => {
-              setCategoryMainOptionSelected(selected);
-              setCategoryOptionSelected([]); // Reset sub-categories
-              setModelPhoneOptionSelected([]); // Reset models
+            options={sectionOptions}
+            onChange={(selected: MultiSelectOption[] | null) => {
+              setSectionOptionSelected(selected);
+              setSubSectionOptionSelected([]); // Reset sub-categories
+              setServiceOptionSelected([]); // Reset models
             }}
-            value={categoryMainOptionSelected}
+            value={sectionOptionSelected}
             isMulti={true} // Allow multiple main categories if needed
             menuPlacement={'bottom'}
           />
-          {categoryMainOptionSelected &&
-            categoryMainOptionSelected.length > 0 && (
+          {sectionOptionSelected &&
+            sectionOptionSelected.length > 0 && (
               <MultiSelect
                 key="categories_sub_id"
                 placeholder="Подкатегории"
-                options={categoriesOptions}
-                onChange={(selected: Option[] | null) => {
-                  setCategoryOptionSelected(selected);
-                  setModelPhoneOptionSelected([]); // Reset models on sub-category change
+                options={subSectionOptions}
+                onChange={(selected: MultiSelectOption[] | null) => {
+                  setSubSectionOptionSelected(selected);
+                  setServiceOptionSelected([]); // Reset models on sub-category change
                 }}
-                value={categoryOptionSelected}
+                value={subSectionOptionSelected}
                 isSelectAll={true}
                 isMulti={true}
                 menuPlacement={'bottom'}
                 isDisabled={
-                  !categoryMainOptionSelected ||
-                  categoryMainOptionSelected.length === 0
+                  !sectionOptionSelected ||
+                  sectionOptionSelected.length === 0
                 }
               />
             )}
-          {categoryOptionSelected && categoryOptionSelected.length > 0 && (
+          {subSectionOptionSelected && subSectionOptionSelected.length > 0 && (
             <MultiSelect
               key="model_phone_id"
-              placeholder="Модель устройства/услуги"
-              options={modelPhoneOptions}
-              onChange={(selected: Option[] | null) =>
-                setModelPhoneOptionSelected(selected)
+              placeholder="Наименование услуги"
+              options={serviceOptions}
+              onChange={(selected: MultiSelectOption[] | null) =>
+                setServiceOptionSelected(selected)
               }
-              value={modelPhoneOptionSelected}
+              value={serviceOptionSelected}
               isSelectAll={true}
               isMulti={true}
               menuPlacement={'bottom'}
               isDisabled={
-                !categoryOptionSelected || categoryOptionSelected.length === 0
-              }
-            />
-          )}
-          {modelPhoneOptionSelected && modelPhoneOptionSelected.length > 0 && (
-            <MultiSelect
-              key="sub_model_phone_id"
-              placeholder="Детали модели / подуслуги"
-              options={subModelOptions}
-              onChange={(selected: Option[] | null) =>
-                setSubModelOptionSelected(selected)
-              }
-              value={subModelOptionSelected}
-              isSelectAll={true}
-              isMulti={true}
-              menuPlacement={'bottom'}
-              isDisabled={
-                !modelPhoneOptionSelected ||
-                modelPhoneOptionSelected.length === 0
+                !subSectionOptionSelected || subSectionOptionSelected.length === 0
               }
             />
           )}
 
-          <label className={styles.registrationContractorPage_form_loginKeep}>
-             <input
-               className={styles.registrationContractorPage_form_loginKeep_input}
-               type="checkbox"
-               onChange={(e) => setKeep(e.target.checked)}
-             />
-             Оставаться в системе
-          </label>
+          <div className={sharedStyles.registrationPage_checkbox_container}>
+            <input
+              id="keep-authorized"
+              type="checkbox"
+              onChange={(e) => setKeep(e.target.checked)}
+            />
+            <label htmlFor="keep-authorized">
+               Оставаться в системе
+            </label>
+          </div>
 
-          <ConfirmPolitics />
+          <ConfirmPolitics accept={accept} onChange={setAccept}/>
 
           <button
             className={styles.registrationContractorPage_form_button}
             type="submit"
             disabled={registerContractorMutation.isPending}
           >
-            {registerContractorMutation.isPending ? 'Регистрация...' : 'Зарегистрироваться'}
+            {registerContractorMutation.isPending ? text("Registering...") : text("Register")}
           </button>
         </form>
       </div>
-    </ConfirmPoliticsContext.Provider>
   );
 };
 
-// todo: удалить ненужный код
-//~ // Wrapper component to provide ConfirmPoliticsContext if it's not already provided by a parent
-//~ const RegistrationContractorPageWithContext = () => {
-  //~ const [accept, setAccept] = useState(false);
-  //~ return (
-    //~ <ConfirmPoliticsContext.Provider value={{ accept, setAccept }}>
-      //~ <RegistrationContractorPage />
-    //~ </ConfirmPoliticsContext.Provider>
-  //~ );
-//~ };
-
-// export default RegistrationContractorPageWithContext; // Exporting the version with context provider
-export default RegistrationContractorPage; // Or export this if context is always provided by a parent
+export default RegistrationContractorPage;
