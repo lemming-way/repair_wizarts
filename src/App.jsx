@@ -59,8 +59,8 @@ import RegistrationUserPage from './features/user/registration/RegistrationUserP
 import Remont from './components/remont';
 import { ServiceDetail } from './components/Service';
 import BalanceClient from './components/Settings/BalanceClient';
-import Footer from './UI/Footer/FooterDesktop';
-import Toolbar from './UI/Toolbar/Toolbar';
+import { Footer } from './app/footer';
+import { Toolbar } from './app/header';
 import { useServices } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
