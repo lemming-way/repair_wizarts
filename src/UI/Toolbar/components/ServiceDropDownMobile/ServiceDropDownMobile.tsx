@@ -3,40 +3,41 @@ import React, { useState } from 'react';
 import arrowRight from '../../../../img/header/icons/arrow-right-icon.svg';
 import styles from '../ServiceDropDownMobile/ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './components/ServiceCategoriesDropdown/ServiceCategoriesDropdown';
-import { useCategoriesQuery } from '../../../../hooks/useCategoriesQuery';
+import { useServices } from '../../../../state/site-data';
+
 const ServiceDropdownMobile = () => {
   
-  const { categories } = useCategoriesQuery();
-  const [openItem, setOpenItem] = useState<number | null>(null);
-
-  // Что бы отображался dropdown для подкатегории услуг и кнопка аниммировала только по клику на конкетный элемент
-  const toggleItem = (index: number) => {
-    setOpenItem(openItem === index ? null : index);
-  };
+  const { sections, subsections } = useServices();
+  const [openItem, setOpenItem] = useState<string | null>(null);
 
   return (
     <div className={styles.serviceDropdown}>
       <ul className={styles.serviceDropdown_list}>
-        {categories.map((category, index) => (
-          <li key={category.id}>
+        {Object.entries(sections).map(([id, section]) => (
+          <li key={id}>
             <div className={styles.serviceDropdown_list_item}>
-              <span>{category.name}</span>
+              <span>{section.name}</span>
               <img
                 className={styles.serviceDropdown_list_item_arrow}
                 src={arrowRight}
                 alt=""
                 style={{
                   transform:
-                    openItem === index ? 'rotate(90deg)' : 'rotate(0deg)',
+                    openItem === id ? 'rotate(90deg)' : 'rotate(0deg)',
                   transition: 'transform 0.3s ease',
                 }}
-                onClick={() => toggleItem(index)}
+                onClick={() => setOpenItem(openItem === id ? null : id)}
               />
             </div>
 
-            {openItem === index && category?.subsections?.length > 0 && (
+            {openItem === id && section.subsections.length > 0 && (
               <div className={styles.serviceDropdown_list_item_dropdown}>
-                <ServiceCategoriesDropdown subsections={category.subsections} />
+                <ServiceCategoriesDropdown subsections={section.subsections.map(
+                  subId => ({
+                    id: subId,
+                    name: subsections[subId].name,
+                  })
+                )} />
               </div>
             )}
           </li>

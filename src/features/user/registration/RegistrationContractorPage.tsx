@@ -7,16 +7,15 @@ import { ConfirmPolitics } from '../shared/ConfirmPolitics';
 import { PhoneNumber } from '../shared/PhoneNumber';
 // import Error from "../../../components/Error/Error"; // Assuming Error component exists for displaying errors
 
-import { useCategoriesQuery } from '../../../hooks/useCategoriesQuery';
-import { useCities } from '../../../state/site-data';
+import { useCities, useServices } from '../../../state/site-data';
 import { useRegisterContractor } from '../../../state/user';
 import styles from './RegistrationContractorPage.module.scss';
 import sharedStyles from '../shared/RegistrationPage.module.scss';
 
 const RegistrationContractorPage = () => {
   const text = useLanguage();
-  const { categories } = useCategoriesQuery();
-  const cities = useCities();
+  const { sections, subsections, services } = useServices();
+  const { cities } = useCities();
   const navigate = useNavigate();
   const registerContractorMutation = useRegisterContractor();
 
@@ -40,9 +39,9 @@ const RegistrationContractorPage = () => {
     }
   }, [phone]);
 
-  const [sectionOptionSelected, setSectionOptionSelected] = useState<MultiSelectOption[] | null>([]);
-  const [subSectionOptionSelected, setSubSectionOptionSelected] = useState<MultiSelectOption[] | null>([]);
-  const [serviceOptionSelected, setServiceOptionSelected] = useState<MultiSelectOption[] | null>([]);
+  const [sectionOptionSelected, setSectionOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [subsectionOptionSelected, setSubsectionOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [serviceOptionSelected, setServiceOptionSelected] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
     document.title = 'Регистрация мастера';
@@ -86,7 +85,7 @@ const RegistrationContractorPage = () => {
         details: {
           address: address.trim(),
           //~ section: sectionOptionSelected?.map(opt => opt.value) || [],
-          //~ subsection: subSectionOptionSelected?.map(opt => opt.value) || [],
+          //~ subsection: subsectionOptionSelected?.map(opt => opt.value) || [],
           services: serviceOptionSelected?.map(opt => opt.value) || [],
           //~ subservice: subModelOptionSelected?.map(opt => opt.value) || [],
         },
@@ -99,36 +98,26 @@ const RegistrationContractorPage = () => {
     }
   };
 
-  const sectionOptions: MultiSelectOption[] = categories.map((item) => ({
-    label: item.name,
-    value: item.id,
+  const sectionOptions: MultiSelectOption[] = Object.entries(sections).map(([id, { name }]) => ({
+    label: name,
+    value: id
   }));
 
-  const subSectionOptions: MultiSelectOption[] = categories.flatMap((i) => {
-    const isSelectedSectionId = sectionOptionSelected?.find(
-      (item) => item.value === i.id,
-    );
-    return isSelectedSectionId
-      ? i.subsections.map((j) => ({ label: j.name, value: j.id }))
-      : [];
-  });
+  const subsectionOptions: MultiSelectOption[] = [];
+  for (const { value: id } of sectionOptionSelected) {
+    subsectionOptions.push(...sections[id].subsections.map(id => ({
+      label: subsections[id].name,
+      value: id
+    })));
+  }
 
-  const serviceOptions = categories.flatMap((i) => {
-    const isSelectedSectionId = sectionOptionSelected?.find(
-      (item) => item.value === i.id,
-    );
-    return isSelectedSectionId
-      ? i.subsections.flatMap((j) => {
-          const isSelectedSubSectionId = subSectionOptionSelected?.find(
-            (item) => item.value === j.id,
-          );
-          const services = Array.isArray(j.services) ? j.services : [];
-          return isSelectedSubSectionId
-            ? services.map((c) => ({ label: c.name, value: c.id }))
-            : [];
-        })
-      : [];
-  });
+  const serviceOptions: MultiSelectOption[] = [];
+  for (const { value: id } of subsectionOptionSelected) {
+    serviceOptions.push(...subsections[id].services.map(id => ({
+      label: services[id].name,
+      value: id
+    })));
+  }
 
   return (
       <div className={`${styles.registrationContractorPage}`}>
@@ -235,25 +224,24 @@ const RegistrationContractorPage = () => {
             placeholder="Вид основной категории"
             options={sectionOptions}
             onChange={(selected: MultiSelectOption[] | null) => {
-              setSectionOptionSelected(selected);
-              setSubSectionOptionSelected([]); // Reset sub-categories
+              setSectionOptionSelected(selected || []);
+              setSubsectionOptionSelected([]); // Reset sub-categories
               setServiceOptionSelected([]); // Reset models
             }}
             value={sectionOptionSelected}
             isMulti={true} // Allow multiple main categories if needed
             menuPlacement={'bottom'}
           />
-          {sectionOptionSelected &&
-            sectionOptionSelected.length > 0 && (
+          {sectionOptionSelected.length > 0 && (
               <MultiSelect
                 key="categories_sub_id"
                 placeholder="Подкатегории"
-                options={subSectionOptions}
+                options={subsectionOptions}
                 onChange={(selected: MultiSelectOption[] | null) => {
-                  setSubSectionOptionSelected(selected);
+                  setSubsectionOptionSelected(selected || []);
                   setServiceOptionSelected([]); // Reset models on sub-category change
                 }}
-                value={subSectionOptionSelected}
+                value={subsectionOptionSelected}
                 isSelectAll={true}
                 isMulti={true}
                 menuPlacement={'bottom'}
@@ -263,20 +251,20 @@ const RegistrationContractorPage = () => {
                 }
               />
             )}
-          {subSectionOptionSelected && subSectionOptionSelected.length > 0 && (
+          {subsectionOptionSelected.length > 0 && (
             <MultiSelect
               key="model_phone_id"
               placeholder="Наименование услуги"
               options={serviceOptions}
               onChange={(selected: MultiSelectOption[] | null) =>
-                setServiceOptionSelected(selected)
+                setServiceOptionSelected(selected || [])
               }
               value={serviceOptionSelected}
               isSelectAll={true}
               isMulti={true}
               menuPlacement={'bottom'}
               isDisabled={
-                !subSectionOptionSelected || subSectionOptionSelected.length === 0
+                !subsectionOptionSelected || subsectionOptionSelected.length === 0
               }
             />
           )}

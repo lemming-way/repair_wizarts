@@ -1,5 +1,5 @@
 export const serviceKeys = {
-  all: ['services'] as const,
+  all: ['_services'] as const,
   contractor: (username: string) => [...serviceKeys.all, 'contractor', username] as const,
 };
 

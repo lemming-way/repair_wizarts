@@ -8,56 +8,27 @@ import { MultiSelect } from '../../shared/ui/';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
 import { useUserExtended, updateUser, updateUserDetails } from '../../state/user';
-import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
-// {
-//   "address": "csklncjksdncklsdncklsd",
-//   "login": "sdcsdcsdjkcnsdsdncklsd",
-//   "categories": {
-//       "main": [
-//           8
-//       ],
-//       "sub": [
-//           228
-//       ],
-//       "models": [
-//           13115,
-//           13116,
-//           13117,
-//           13118,
-//           13119
-//       ]
-//   }
-// }
+import { useServices } from '../../state/site-data';
+
 const experienceOptions = [
-{ value: 1, label: '1 year' },
-{ value: 2, label: '2 years' },
-{ value: 3, label: '3 years' },
-{ value: 5, label: '5 years' },
-{ value: 6, label: 'More than 5 years' },
+  { value: 1, label: '1 year' },
+  { value: 2, label: '2 years' },
+  { value: 3, label: '3 years' },
+  { value: 5, label: '5 years' },
+  { value: 6, label: 'More than 5 years' },
 ];
 
 function Profile() {
   const text = useLanguage();
-  const [categoryMainOptionSelected, setCategoryMainOptionSelected] = useState(
-    [],
-  );
+  const [sectionOptionSelected, setSectionOptionSelected] = useState([]);
+  const [subsectionOptionSelected, setSubsectionOptionSelected] = useState([]);
+  const [serviceOptionSelected, setServiceOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
 
-  //   const typeOfRepairOptions = [
-  //     { value: 0, label: "Ремонт экрана" },
-  //     { value: 1, label: "Замена батареи" },
-  //     { value: 2, label: "Ремонт от воды" },
-  //     { value: 3, label: "Прошивка устройства" },
-  //     { value: 4, label: "Ремонт разъемов и портов" },
-  //     { value: 5, label: "Восстановление программного обеспечения" },
-  //   ]; ###
-
-  const { categories } = useCategoriesQuery();
+  const { sections, subsections, services } = useServices();
   const queryClient = useQueryClient();
   const { userEx } = useUserExtended();
-  const [Sections, setSections] = useState([]);
-  const [Subsections, setSubsections] = useState([]);
-  const [Services, setServices] = useState([]);
+
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
@@ -70,134 +41,19 @@ function Profile() {
       specialty: '',
       main_business: '',
       experience: '',
-      model: '',
       city: '',
     },
   });
-  const [selectedSubsections, setSelectedSubsections] = useState(null);
-  const [selectedServices, setSelectedServices] = useState(null);
   const [business_model, setBusiness] = useState('Independent technician');
 
-  //~ const getData = async (type, sectionId, subsectionId, userDetails) => {
-    //~ try {
-      //~ switch (type) {
-        //~ case 'section': {
-          //~ const res = await fetch(
-            //~ 'https://profiback.itest24.com/api/sections',
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: 'Bearer 123',
-              //~ },
-            //~ },
-          //~ );
-          //~ const sections = await res.json();
-          //~ console.log(sections);
-          //~ setSections(
-            //~ sections?.map((section) => ({
-              //~ value: section.id,
-              //~ label: section.name,
-            //~ })),
-          //~ );
-          //~ if (userDetails) {
-            //~ const currentSection = sections?.find(
-              //~ (item) => item.id === userDetails?.section,
-            //~ );
-            //~ setCategoryMainOptionSelected(
-              //~ currentSection
-                //~ ? [{ value: currentSection.id, label: currentSection.name }]
-                //~ : null,
-            //~ );
-          //~ }
-          //~ break;
-        //~ }
-        //~ case 'subsection': {
-          //~ const res = await fetch(
-            //~ `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: 'Bearer 123',
-              //~ },
-            //~ },
-          //~ );
-          //~ const subsections = await res.json();
-          //~ console.log(subsections);
-
-          //~ setSubsections([
-            //~ ...subsections?.map((subsection) => ({
-              //~ value: subsection.id,
-              //~ label: subsection.name,
-            //~ })),
-          //~ ]);
-          //~ if (userDetails) {
-            //~ const currentSubsection = subsections?.find(
-              //~ (item) => item.id === userDetails.subsection,
-            //~ );
-            //~ setSelectedSubsections(
-              //~ currentSubsection
-                //~ ? [
-                    //~ {
-                      //~ value: currentSubsection.id,
-                      //~ label: currentSubsection.name,
-                    //~ },
-                  //~ ]
-                //~ : null,
-            //~ );
-          //~ }
-          //~ break;
-        //~ }
-        //~ case 'service': {
-          //~ const res = await fetch(
-            //~ `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
-            //~ {
-              //~ headers: {
-                //~ 'Content-Type': 'application/json',
-                //~ Authorization: 'Bearer 123',
-              //~ },
-            //~ },
-          //~ );
-          //~ console.log(subsectionId, sectionId);
-          //~ const services = await res.json();
-          //~ if (userDetails) {
-            //~ const currentServices = services?.find(
-              //~ (item) => item.id === userDetails.service,
-            //~ );
-            //~ setSelectedServices(
-              //~ currentServices
-                //~ ? [{ value: currentServices.id, label: currentServices.name }]
-                //~ : null,
-            //~ );
-          //~ }
-          //~ setServices([
-            //~ ...services.map((service) => ({
-              //~ value: service.id,
-              //~ label: service.name,
-            //~ })),
-          //~ ]);
-
-          //~ break;
-        //~ }
-        //~ default:
-          //~ break;
-      //~ }
-    //~ } catch (error) {
-      //~ console.error(error);
-    //~ }
-  //~ };
-
   const getFormAttrs = (field) => {
-    const isNested = field.includes('.');
-
-    const value = isNested
-      ? field.split('.').reduce((obj, key) => obj?.[key], form)
-      : form[field];
+    const value = field.split('.').reduce((obj, key) => obj?.[key], form);
 
     const onChange = (e) => {
       const newValue = e.target.value;
+      const [first, second] = field.split('.');
 
-      if (isNested) {
-        const [first, second] = field.split('.');
+      if (second) {
         setForm((prev) => ({
           ...prev,
           [first]: {
@@ -220,119 +76,74 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (!userEx.id) return;
+    if (!userEx.id || !userEx.details) return;
 
-    const contractorDetails = userEx.details || {};
+    const contractorDetails = userEx.details;
 
-    const fetchAllData = async () => {
-      if (
-        contractorDetails.section &&
-        contractorDetails.subsection &&
-        contractorDetails.service
-      ) {
-        setSubsections(
-          categories.flatMap((item) => {
-            const isSelectedSectionId = contractorDetails.section.find(
-              (selec) => selec.value === item.id,
-            );
-            return isSelectedSectionId
-              ? item.subsections.map((item) => ({
-                  label: item.name,
-                  value: item.id,
-                }))
-              : [];
-          }),
-        );
-        setServices(
-          categories.flatMap((item) => {
-            const isSelectedSectionId = contractorDetails.section.find(
-              (selec) => String(selec.value) === String(item.id),
-            );
-            return isSelectedSectionId
-              ? item.subsections.flatMap((item) => {
-                  const isSelectedSubsection = contractorDetails.subsection.find(
-                    (subSelec) => String(subSelec.value) === String(item.id),
-                  );
-                  return isSelectedSubsection
-                    ? item.services.map((item) => ({
-                        label: item.name,
-                        value: item.id,
-                      }))
-                    : [];
-                })
-              : [];
-          }),
-        );
-        setCategoryMainOptionSelected(
-          Array.isArray(contractorDetails.section)
-            ? contractorDetails.section
-            : [],
-        );
-        setSelectedSubsections(
-          Array.isArray(contractorDetails.subsection)
-            ? contractorDetails.subsection
-            : [],
-        );
-        setSelectedServices(
-          Array.isArray(contractorDetails.service)
-            ? contractorDetails.service
-            : [],
-        );
+    const selectedServiceIds = Array.isArray(contractorDetails.services)
+      ? contractorDetails.services
+      : [];
+
+    const initialServiceOptions = [];
+    const initialSubsectionOptions = [];
+    const initialSectionOptions = [];
+
+    const sectionIds = {};
+    const subsectionIds = {};
+
+    selectedServiceIds.forEach(serviceId => {
+      const serviceName = services[serviceId].name;
+      if (serviceName) {
+        initialServiceOptions.push({ label: serviceName, value: serviceId });
       }
-      // await getData('section', '', '', contractor.u_details);
-      // await getData(
-      //   'subsection',
-      //   contractor.u_details?.section,
-      //   '',
-      //   contractor.u_details,
-      // );
-      // await getData(
-      //   'service',
-      //   contractor.u_details?.section,
-      //   contractor.u_details?.subsection,
-      //   contractor.u_details,
-      // );
-      setExperience(
-        contractorDetails.experience
-          ? [
-              experienceOptions.find(
-                (opt) => opt.value === contractorDetails.experience,
-              ),
-            ]
-          : null,
-      );
 
-      setForm({
-        name: userEx.name,
-        lastname: userEx.lastname,
-        description: userEx.description || '',
-        details: {
-          organization_name: contractorDetails.organization_name || '',
-          address: contractorDetails.address || '',
-          city: contractorDetails.city || '',
-          specialty: contractorDetails.specialty || '',
-          main_business: contractorDetails.main_business || '',
-          experience: contractorDetails.experience || '',
-        },
-      });
+      const subId = services[serviceId].parent;
+      if (subId && !subsectionIds[subId]) {
+        initialSubsectionOptions.push({ label: subsections[subId].name, value: subId });
+        subsectionIds[subId] = true;
 
-      setBusiness(contractorDetails.business_model || 'Independent technician');
-    };
-    if (
-      contractorDetails.section &&
-      contractorDetails.subsection &&
-      contractorDetails.service
-    ) {
-      fetchAllData();
-    }
-  }, [categories, userEx]);
+        const secId = subsections[subId].parent;
+        if (secId && !sectionIds[secId]) {
+          initialSectionOptions.push({ label: sections[secId].name, value: secId });
+          sectionIds[secId] = true;
+        }
+      }
+    });
+
+    setSectionOptionSelected(initialSectionOptions);
+    setSubsectionOptionSelected(initialSubsectionOptions);
+    setServiceOptionSelected(initialServiceOptions);
+
+    setExperience(
+      contractorDetails.experience
+        ? [
+            experienceOptions.find(
+              (opt) => opt.value === contractorDetails.experience,
+            ),
+          ]
+        : null,
+    );
+
+    setForm({
+      name: userEx.name,
+      lastname: userEx.lastname,
+      description: userEx.description || '',
+      details: {
+        organization_name: contractorDetails.organization_name || '',
+        address: contractorDetails.address || '',
+        city: contractorDetails.city || '',
+        specialty: contractorDetails.specialty || '',
+        main_business: contractorDetails.main_business || '',
+        experience: contractorDetails.experience || '',
+      },
+    });
+
+    setBusiness(contractorDetails.business_model || 'Independent technician');
+  }, [userEx, sections, subsections, services]);
 
   useEffect(() => {
     document.title = text('Settings');
-    setSections(
-      categories.map((item) => ({ label: item.name, value: item.id })),
-    );
-  }, [categories, text]);
+  }, [text]);
 
   // Early return if no user ID
   if (!userEx.id) {
@@ -341,16 +152,11 @@ function Profile() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    // const geo = await ymaps.geocode(form.address, { results: 1 });
-    // const [address_latitude, address_longitude] = geo.geoObjects
-    //   .get(0)
-    //   .geometry.getCoordinates();
+
     const details = {
       ...form.details,
       business_model,
-      section: categoryMainOptionSelected,
-      subsection: selectedSubsections,
-      service: selectedServices,
+      services: serviceOptionSelected.map(opt => opt.value) || [],
     };
 
     try {
@@ -364,17 +170,33 @@ function Profile() {
     }
   };
 
-  //   useEffect(() => {
-  //     ymaps.ready(() => {
-  //       const suggestView = new ymaps.SuggestView('suggest-input');
-  //       suggestView.events.add('select', (e) => {
-  //         setForm((prev) => ({
-  //           ...prev,
-  //           address: e.get('item').value,
-  //         }));
-  //       });
-  //     });
-  //   }, [ymaps]);
+  const sectionOptions = Object.entries(sections).map(([id, { name }]) => ({
+    label: name,
+    value: id
+  }));
+
+  const subsectionOptions = [];
+  for (const { value: id } of sectionOptionSelected) {
+    const section = sections[id];
+    if (section) {
+      subsectionOptions.push(...section.subsections.map(subId => ({
+        label: subsections[subId].name,
+        value: subId
+      })));
+    }
+  }
+
+  const serviceOptions = [];
+  for (const { value: id } of subsectionOptionSelected) {
+    const subsection = subsections[id];
+    if (subsection) {
+      serviceOptions.push(...subsection.services.map(srvId => ({
+        label: services[srvId].name,
+        value: srvId
+      })));
+    }
+  }
+
   return (
     <>
       <div className={`mini-main-2 df ${style.wrap_flex}`}>
@@ -388,82 +210,43 @@ function Profile() {
             <MultiSelect
               key="category_id"
               placeholder={text('Type of category')}
-              options={Array.isArray(Sections) ? Sections : []}
+              options={sectionOptions}
               isMulti={true}
               isSelectAll={true}
               onChange={(selected) => {
-                setCategoryMainOptionSelected(selected);
-                setSelectedSubsections(null);
-                setSelectedServices(null);
-                setSubsections(
-                  categories.flatMap((item) => {
-                    const isSelectedSectionId = selected.find(
-                      (selec) => selec.value === item.id,
-                    );
-                    return isSelectedSectionId
-                      ? item.subsections.map((item) => ({
-                          label: item.name,
-                          value: item.id,
-                        }))
-                      : [];
-                  }),
-                );
+                setSectionOptionSelected(selected);
+                setSubsectionOptionSelected([]);
+                setServiceOptionSelected([]);
               }}
-              value={categoryMainOptionSelected}
+              value={sectionOptionSelected}
               menuPlacement="bottom"
             />
-
             <MultiSelect
               key="subsection_id"
               placeholder={text('Subcategories')}
               isMulti={true}
               isSelectAll={true}
-              options={Array.isArray(Subsections) ? Subsections : []}
+              options={subsectionOptions}
               onChange={(selected) => {
-                setSelectedSubsections(selected);
-                setSelectedServices(null);
-                setServices(
-                  categories.flatMap((item) => {
-                    const isSelectedSectionId = categoryMainOptionSelected.find(
-                      (selec) => selec.value === item.id,
-                    );
-                    return isSelectedSectionId
-                      ? item.subsections.flatMap((item) => {
-                          const isSelectedSubsection = selected.find(
-                            (subSelec) => subSelec.value === item.id,
-                          );
-                          return isSelectedSubsection
-                            ? item.services.map((item) => ({
-                                label: item.name,
-                                value: item.id,
-                              }))
-                            : [];
-                        })
-                      : [];
-                  }),
-                );
+                setSubsectionOptionSelected(selected);
+                setServiceOptionSelected([]);
               }}
-              value={selectedSubsections}
+              value={subsectionOptionSelected}
               menuPlacement="bottom"
+              isDisabled={!sectionOptionSelected.length}
             />
-
             <MultiSelect
               key="services"
               isSelectAll={true}
               isMulti={true}
               placeholder={text('Services')}
-              options={Array.isArray(Services) ? Services : []}
+              options={serviceOptions}
               onChange={(selected) =>
-                setSelectedServices(
-                  Array.isArray(selected)
-                    ? selected
-                    : selected
-                    ? [selected]
-                    : [],
-                )
+                setServiceOptionSelected(selected)
               }
-              value={selectedServices}
+              value={serviceOptionSelected}
               menuPlacement="bottom"
+              isDisabled={!subsectionOptionSelected.length}
             />
           </div>
           <input type="text" placeholder={text('Name')} {...getFormAttrs('name')} />
@@ -500,10 +283,10 @@ function Profile() {
               placeholder={text('Work experience')}
               options={experienceOptions}
               onChange={(selected) => {
-                setExperience([selected]);
+                setExperience(selected ? [selected] : null);
                 setForm((prev) => ({
                   ...prev,
-                  details: { ...prev.details, experience: selected.value },
+                  details: { ...prev.details, experience: selected?.value || '' },
                 }));
               }}
               value={experience}
@@ -539,31 +322,6 @@ function Profile() {
         </form>
 
         <div className={`check-input-content ${style.wrap_check}`}>
-          {/* <div className="first-check">
-                            <h4>Пол:</h4>
-                            <div className="first_check df">
-                                <input
-                                    type="radio"
-                                    name="select__man__woman"
-                                    id="inputmanradiobtn"
-                                    onChange={() => setGender("Мужской")}
-                                    checked={gender === "Мужской"}
-                                />
-                                <label htmlFor="inputmanradiobtn"><p>Мужской</p></label>
-                            </div>
-
-                            <div className="first_check df">
-                                <input
-                                    type="radio"
-                                    name="select__man__woman"
-                                    id="inputwomanradiobtn"
-                                    onChange={() => setGender("Женский")}
-                                    checked={gender === "Женский"}
-                                />
-                                <label htmlFor="inputwomanradiobtn"><p>Женский</p> </label>
-                            </div>
-                        </div> */}
-
           <div className="second-check">
             <h4>{text('Business model')}:</h4>
             <div className="first_check df" style={{ gap: '0' }}>

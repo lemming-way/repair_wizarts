@@ -30,7 +30,7 @@ function DropdownService({children}) {
             items: serviceTypes.filter(serviceType => serviceType.category_id === category.id).map(serviceType => ({
                 id: serviceType.id,
                 label: serviceType.name,
-                href: `/devices/${serviceType.id}`,
+                href: `/categories/${serviceType.id}`,
                 items: devices.filter(device => device.service_id === serviceType.id).map((device) => ({
                     id: device.id,
                     label: device.name,

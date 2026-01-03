@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { QueryClient, UseQueryResult, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, UseQueryResult, useQuery, UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import CONFIG from '../constants';
 import { getToken, setToken, clearToken } from './auth';
@@ -182,12 +182,14 @@ export function useUser():
   const queryResult = useQuery({
     queryKey: [ 'user', USER_QUERY_KEY.baseData ],
     queryFn: fetchUserBase,
-    staleTime: CONFIG.API.userDataStaleTime || Infinity
+    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
 
+  const user = queryResult.data || EMPTY_OBJECT;
+  delete queryResult.data;
   return {
     ...queryResult,
-    user: queryResult.data || EMPTY_OBJECT
+    user
   };
 }
 
@@ -202,7 +204,7 @@ export function useUserExtended():
   const queryResult = useQuery({
     queryKey: [ 'user', USER_QUERY_KEY.extraData ],
     queryFn: fetchUserExtra,
-    staleTime: CONFIG.API.userDataStaleTime || Infinity
+    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
   const queryClient = useQueryClient();
   const userBase =
@@ -216,6 +218,7 @@ export function useUserExtended():
     [userBase, queryResult.data]
   );
 
+  delete queryResult.data;
   return {
     ...queryResult,
     userEx
@@ -308,10 +311,13 @@ export function useLogin() {
     mutationFn: ({ loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean }) =>
       login(queryClient, loginValue, password, keepAuthorized),
   });
-
+  
+  const loginFn = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    login: mutation.mutateAsync
+    ...ret,
+    login: loginFn
   }
 }
 
@@ -395,9 +401,12 @@ export function useRegisterClient() {
     mutationFn: (payload: RegisterPayload) => registerClient(queryClient, payload),
   });
 
+  const register = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    register: mutation.mutateAsync
+    ...ret,
+    register
   }
 }
 
@@ -423,9 +432,12 @@ export function useRegisterContractor() {
     mutationFn: (payload: RegisterPayload) => registerContractor(queryClient, payload),
   });
 
+  const register = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    register: mutation.mutateAsync
+    ...ret,
+    register
   }
 }
 
@@ -501,9 +513,12 @@ export function useUpdateUser() {
     mutationFn: (payload: UserUpdatePayload) => updateUser(queryClient, payload),
   });
 
+  const save = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    save: mutation.mutateAsync
+    ...ret,
+    save
   }
 }
 
@@ -528,9 +543,12 @@ export function useUpdateUserAvatar() {
     mutationFn: (photoFile: File) => updateUserAvatar(queryClient, photoFile),
   });
 
+  const save = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    save: mutation.mutateAsync
+    ...ret,
+    save
   }
 }
 
@@ -554,9 +572,12 @@ export function useUpdateUserDetails() {
     mutationFn: (details: Record<string, unknown>) => updateUserDetails(queryClient, details),
   });
 
+  const save = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    save: mutation.mutateAsync
+    ...ret,
+    save
   }
 }
 
@@ -578,9 +599,13 @@ export function useUpdateUserPassword() {
     mutationFn: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) =>
       updateUserPassword(oldPassword, newPassword),
   });
+
+  const update = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    update: mutation.mutateAsync
+    ...ret,
+    update
   }
 }
 
@@ -602,8 +627,11 @@ export function usePasswordRecovery() {
     mutationFn: (loginValue: string) => recoverPassword(loginValue),
   });
 
+  const recover = mutation.mutateAsync;
+  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
+  delete ret.mutateAsync;
   return {
-    ...mutation,
-    recover: mutation.mutateAsync
+    ...ret,
+    recover
   }
 }

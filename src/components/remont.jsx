@@ -1,63 +1,40 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import style from './remont.module.css';
 import { useLanguage } from '../state/language';
 
 import '../scss/remont.css';
-import { useCategoriesQuery } from '../hooks/useCategoriesQuery';
+import { useServices } from '../state/site-data';
 
 function Remont() {
   const text = useLanguage();
-  const { sectionId, subsectionId } = useParams();
-  const normalizedSectionId = sectionId ? String(sectionId) : '';
-  const [currentServices, setCurrentServices] = useState([]);
-  console.log(sectionId, subsectionId);
-  const { categories } = useCategoriesQuery();
+
+  const { id } = useParams();
+  const subsectionId = isFinite(id) ? Number(id) : 0;
+  const [ searchParams ] = useSearchParams();
+  const search = searchParams.get('search');
+
+  const { subsections, services } = useServices();
+
+  const selectedSubsection = subsections[subsectionId];
+  const serviceIds = selectedSubsection?.services || [];
+  const subsectionServices = serviceIds.map( id => ({
+    id,
+    name: services[id].name
+  }) );
+  const currentServices = search ? subsectionServices.filter( item => item.name === search ) : subsectionServices;
 
   useEffect(() => {
-    const getData = async () => {
-      try {
-        const subsectionResponse = await fetch(
-          `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${'123'}`,
-            },
-          },
-        );
-        const subsections = await subsectionResponse.json();
-        console.log(subsections);
-        setCurrentServices(subsections);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    document.title = text('iPhone repair');  // todo: Изменить текст
+  }, [text]);
 
-    document.title = text('iPhone repair');
-    getData();
-  }, [sectionId, text]);
-  useEffect(() => {
-    const searchParam = new URLSearchParams(window.location.search).get(
-      'search',
-    );
-    if (searchParam) {
-      setCurrentServices(
-        currentServices.filter((item) => item.name === searchParam),
-      );
-    }
-  }, [currentServices]);
-  const selectedService = categories.find(
-    (item) => String(item.id) === normalizedSectionId,
-  );
-  const searchParam = new URLSearchParams(window.location.search).get('search');
   return (
     <section
       className={`container remont remont-container ${style.devices_block}`}
     >
-      <h1>{searchParam ? searchParam : selectedService?.name}</h1>
-      <p>{text('Select an iPhone model to find out the cost of repair.')}</p>
+      <h1>{search || selectedSubsection?.name || ''}</h1>
+      <p>{text('Select an iPhone model to find out the cost of repair.')  /* todo: Изменить текст */}</p>
       <Link
         to={'/client/requests/create/title'}
         className="header__button"
@@ -69,10 +46,10 @@ function Remont() {
       <div className="remont__card__list" style={{ marginTop: 100 }}>
         {currentServices.length === 0
           ? text('Nothing found')
-          : currentServices.map((dev) => (
-              <div className="remont__card" key={dev.id}>
+          : currentServices.map(service => (
+              <div className="remont__card" key={service.id}>
                 <Link
-                  to={`/services/${sectionId}/${subsectionId}/${dev.id}`}
+                  to={`/services/${service.id}`}
                   style={{ textDecoration: 'none' }}
                 >
                   <div className="remont__card__image">
@@ -86,7 +63,7 @@ function Remont() {
                       }}
                     />
                   </div>
-                  <p>{dev?.name}</p>
+                  <p>{service.name}</p>
                 </Link>
               </div>
             ))}

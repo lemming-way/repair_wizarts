@@ -1,23 +1,29 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import CONFIG from '../constants';
 import { useGlobalState } from './global';
-import { SiteData, getSiteData, getSiteDataVersion } from './api/site-data';
+import { SiteData, getSiteData, getSiteDataVersion, getServices } from './api/site-data';
 
 const SITE_DATA_LS_KEY = 'site_data';
 const SITE_DATA_QUERY_KEY = 'site_data';
+const SITE_DATA_FILTERED_QUERY_KEY = 'site_data_filtered';
+const SERVICES_LS_KEY = 'services';
+const SERVICES_QUERY_KEY = 'services';
 
-async function fetchSiteData() {
-  const cachedData = JSON.parse(localStorage.getItem(SITE_DATA_LS_KEY) ?? 'null');
-  if (cachedData) {
-    const siteVersion = await getSiteDataVersion();
-    if (siteVersion === cachedData.version) {
-      return cachedData;
+async function fetchSiteData({ client }) {
+  try {
+    const cachedData = JSON.parse(localStorage.getItem(SITE_DATA_LS_KEY)!);  // не проверяем null, потому что внутри try
+    if (cachedData.version) {
+      const siteVersion = await getSiteDataVersion();
+      if (siteVersion === cachedData.version) {
+        return cachedData;
+      }
     }
   }
+  catch {}
 
   const data = await getSiteData();
+  client.invalidateQueries({ queryKey: [ SITE_DATA_FILTERED_QUERY_KEY ], exact: false });
   if (data && 'object' === typeof data && !Array.isArray(data)) {
     const partialData = {
       version: data.version || '',
@@ -36,31 +42,141 @@ async function fetchSiteData() {
   }
 }
 
-function useSiteData() {
-  return useQuery<SiteData>({
-    queryKey: [ SITE_DATA_QUERY_KEY ],
-    queryFn: fetchSiteData,
-    staleTime: CONFIG.API.siteDataStaleTime || Infinity
-  });
+function filterCities(siteData: SiteData, language: string, country: string) {
+  if (!siteData) return {};
+  const defaultLanguageId = Number(siteData.default_lang || 0);
+  const defaultLanguage = String((defaultLanguageId && siteData.data?.langs?.[defaultLanguageId]?.iso) || 'en');
+  const cities = {};
+  if (siteData.data?.cities && 'object' === typeof siteData.data.cities && !Array.isArray(siteData.data.cities)) {
+    Object.entries(siteData.data.cities).forEach(([ key, city ]) => {
+      const cityName = city?.[language] || city?.[defaultLanguage];
+      const cityCountry = city?.country;
+      if (cityCountry === country && cityName && 'string' === typeof cityName) {
+        cities[ Number(key) ] = cityName;
+      }
+    });
+  }
+  return cities;
 }
 
-export function useCities(country: string = 'ru'): Record<number, string> {
-  const siteData = useSiteData().data;
+const EMPTY_OBJECT = {};
+
+export function useCities(country: string = 'ru') {
+  const queryClient = useQueryClient();
   const language = useGlobalState('language');
-  return useMemo(() => {
-    if (!siteData) return {};
-    const defaultLanguageId = Number(siteData.default_lang || 0);
-    const defaultLanguage = String((defaultLanguageId && siteData.data?.langs?.[defaultLanguageId]?.iso) || 'en');
-    const cities = {};
-    if (siteData.data?.cities && 'object' === typeof siteData.data.cities && !Array.isArray(siteData.data.cities)) {
-      Object.entries(siteData.data.cities).forEach(([ key, city ]) => {
-        const cityName = city?.[language] || city?.[defaultLanguage];
-        const cityCountry = city?.country;
-        if (cityCountry === country && cityName && 'string' === typeof cityName) {
-          cities[ Number(key) ] = cityName;
-        }
+  const queryResult = useQuery({
+    queryKey: [ SITE_DATA_FILTERED_QUERY_KEY, 'cities', country ],
+    queryFn: async () => {
+      const siteData = await queryClient.fetchQuery<SiteData>({
+        queryKey: [ SITE_DATA_QUERY_KEY ],
+        queryFn: fetchSiteData,
+        staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
       });
+      return filterCities(siteData, language, country);
+    },
+    staleTime: Infinity
+  });
+  const cities: Record<number, string> = queryResult.data || EMPTY_OBJECT;
+  delete queryResult.data;
+  return {
+    ...queryResult,
+    cities
+  }
+}
+
+export type Sections = Record<number, {
+  name: string;
+  subsections: number[];
+}>;
+
+export type SubSections = Record<number, {
+  name: string;
+  parent: number;
+  services: number[];
+}>;
+
+export type Services = Record<number, {
+  name: string;
+  parent: number;
+}>;
+
+export type ServicesData = {
+  sections: Sections;
+  subsections: SubSections;
+  services: Services;
+};
+
+async function fetchServices() {
+  try {
+    const cachedServices = JSON.parse(localStorage.getItem(SERVICES_LS_KEY) ?? 'null');
+    if (cachedServices && cachedServices.sections && cachedServices.subsections && cachedServices.services) {
+      return cachedServices;
     }
-    return cities;
-  }, [ siteData, language, country ]);
+  }
+  catch (e) {}
+
+  const data = await getServices();
+  const servicesData = {
+    sections: {},
+    subsections: {},
+    services: {}
+  };
+  if (data && Array.isArray(data)) {
+    for (const section of data) {
+      const secId = Number(section?.id);
+      const name = String(section?.name || '');
+      const subsections = section?.subsections;
+      if (Number.isFinite(secId) && secId > 0 && name && Array.isArray(subsections)) {
+        servicesData.sections[secId] = {
+          name,
+          subsections: []
+        };
+        for (const subsection of subsections) {
+          const subId = Number(subsection?.id);
+          const name = String(subsection?.name || '');
+          const services = subsection?.services;
+          if (Number.isFinite(subId) && subId > 0 && !servicesData.subsections[subId] && name && Array.isArray(services)) {
+            servicesData.sections[secId].subsections.push(subId);
+            servicesData.subsections[subId] = {
+              name,
+              parent: secId,
+              services: []
+            };
+            for (const service of services) {
+              const srvId = Number(service?.id);
+              const name = String(service?.name || '');
+              if (Number.isFinite(srvId) && srvId > 0 && !servicesData.services[srvId] && name) {
+                servicesData.subsections[subId].services.push(srvId);
+                servicesData.services[srvId] = {
+                  name,
+                  parent: subId
+                };
+              }
+            }
+          }
+        }
+      }
+    }
+    localStorage.setItem(SERVICES_LS_KEY, JSON.stringify(servicesData));
+  }
+  else {
+    localStorage.removeItem(SERVICES_LS_KEY);
+  }
+  return servicesData;
+}
+
+const emptyServicesData = { sections: {}, subsections: {}, services: {} };
+
+export function useServices() {
+  const queryResult = useQuery({
+    queryKey: [ SERVICES_QUERY_KEY ],
+    queryFn: fetchServices,
+    staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
+  });
+  const servicesData: ServicesData = queryResult.data || emptyServicesData;
+  delete queryResult.data;
+  return {
+    ...queryResult,
+    ...servicesData
+  }
 }

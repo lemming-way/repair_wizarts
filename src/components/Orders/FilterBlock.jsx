@@ -1,5 +1,5 @@
 import style from './Allorders.module.css'; // Убедитесь, что стили подключены правильно
-import { useCategoriesQuery } from '../../hooks/useCategoriesQuery';
+import { useServices } from '../../state/site-data';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
 export default function FilterBlock({
@@ -12,7 +12,7 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { categories } = useCategoriesQuery();
+  const { sections, subsections, services } = useServices();
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {
@@ -54,44 +54,46 @@ export default function FilterBlock({
         >
           Рубрики
         </p>
-        {categories?.map((category) => (
-          <details key={category.id} className={style.margin_btm}>
-            {/* 
+        {Object.entries(sections).map(([sectionId, section]) => (
+          <details key={sectionId} className={style.margin_btm}>
+            {/*
               По клику на summary устанавливается фильтр по этой категории.
               Добавляем класс для подсветки активной категории.
             */}
             <summary
               className={`${style.filter__summary} ${
-                categoryFilter === category.name ? style.active_category : ''
+                categoryFilter === sectionId ? style.active_category : ''
               }`}
               onClick={(e) => {
                 // Предотвращаем стандартное открытие/закрытие details, если нам это не нужно,
                 // или оставляем, если внутри есть полезный контент.
                 // e.preventDefault();
-                setCategoryFilter(category.name);
+                setCategoryFilter(sectionId);
               }}
             >
-              {category.name}
+              {section.name}
             </summary>
             {/* Вложенные детали, если они нужны для навигации, но не для фильтрации */}
             <div className={style.filter__details_data}>
-              {category.subsections?.map((sub) => (
-                <details key={sub.id}>
-                  <summary>{sub.name}</summary>
-                  <div className={style.filter__details_data}>
-                    {sub.services?.map((service) => (
-                      <details key={service.id}>
-                        <summary>{service.name}</summary>
-                        <div className={style.filter__details_data}>
-                          {service.questions?.map((q) => (
-                            <p key={q.number}>{q.text}</p>
-                          ))}
-                        </div>
-                      </details>
-                    ))}
-                  </div>
-                </details>
-              ))}
+              {section.subsections.map(subId => {
+                const sub = subsections[subId];
+                if (!sub) return null;
+
+                return (
+                  <details key={subId}>
+                    <summary>{sub.name}</summary>
+                    <div className={style.filter__details_data}>
+                      {sub.services.map(serviceId =>
+                        services[serviceId] ?
+                        <details key={serviceId}>
+                          <summary>{services[serviceId].name}</summary>
+                        </details> :
+                        null
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
             </div>
           </details>
         ))}

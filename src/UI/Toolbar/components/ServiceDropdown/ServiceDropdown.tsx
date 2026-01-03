@@ -107,12 +107,13 @@ import { Link } from 'react-router-dom';
 import styles from './ServiceDropdown.module.scss';
 import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
 import { useLanguage } from '../../../../state/language';
-import { useCategoriesQuery } from '../../../../hooks/useCategoriesQuery';
+import { useServices } from '../../../../state/site-data';
 
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const { categories } = useCategoriesQuery();
+  const { sections, subsections, services } = useServices();
+
   return (
     <Dropdown
       title={
@@ -138,11 +139,11 @@ const ServiceDropdown = () => {
       openOnHover={true}
     >
       {/* 1 lvl */}
-      {categories?.map((categoryContent, index) => (
-        <div key={index} className={styles.serviceDropdown_lvl1}>
+      {Object.entries(sections).map(([sectionId, section]) => (
+        <div key={sectionId} className={styles.serviceDropdown_lvl1}>
           <Dropdown.Item className={styles.serviceDropdown_item_lvl1}>
             <span className={styles.serviceDropdown_lvl1__span}>
-              <p>{categoryContent.name}</p>
+              <p>{section.name}</p>
             </span>
 
             {/* 2 lvl */}
@@ -150,38 +151,48 @@ const ServiceDropdown = () => {
               position="right-top"
               className={styles.Submenu_submenu}
             >
-              {categoryContent.subsections?.map(
-                (subCategoryContent, subIndex) => (
-                  <Dropdown.Item
-                    className={styles.serviceDropdown_item}
-                    key={subIndex}
-                  >
-                    <Link
-                      to={`/devices/${categoryContent.id}/${subCategoryContent.id}`}
+              {section.subsections.map(
+                subsectionId => {
+                  const subsection = subsections[subsectionId];
+                  if (!subsection) return null; // Ensure subsection exists
+
+                  return (
+                    <Dropdown.Item
+                      className={styles.serviceDropdown_item}
+                      key={subsectionId}
                     >
-                      <span>{subCategoryContent.name}</span>
-                    </Link>
-                    <Dropdown.Submenu
-                      position="right-top"
-                      className={styles.Submenu_submenu}
-                    >
-                      {((subCategoryContent.services ?? []) as Array<any>)
-                        .slice(0, 5)
-                        .map((service, serviceIndex) => (
-                          <Dropdown.Item
-                            className={`${styles.serviceDropdown_item} ${styles.serviceDropdown_item_lvl3}`}
-                            key={serviceIndex}
-                          >
-                            <Link
-                              to={`/devices/${categoryContent.id}/${subCategoryContent.id}`}
-                            >
-                              <span>{service?.name}</span>
-                            </Link>
-                          </Dropdown.Item>
-                        ))}
-                    </Dropdown.Submenu>
-                  </Dropdown.Item>
-                ),
+                      <Link
+                        to={`/categories/${subsectionId}`}
+                      >
+                        <span>{subsection.name}</span>
+                      </Link>
+                      <Dropdown.Submenu
+                        position="right-top"
+                        className={styles.Submenu_submenu}
+                      >
+                        {subsection.services
+                          .slice(0, 5)
+                          .map(serviceId =>
+                            services[serviceId] ?
+                            (
+                              <Dropdown.Item
+                                className={`${styles.serviceDropdown_item} ${styles.serviceDropdown_item_lvl3}`}
+                                key={serviceId}
+                              >
+                                <Link
+                                  to={`/services/${serviceId}`}
+                                >
+                                  <span>{services[serviceId].name}</span>
+                                </Link>
+                              </Dropdown.Item>
+                            ) :
+                            null
+                          )
+                        }
+                      </Dropdown.Submenu>
+                    </Dropdown.Item>
+                  );
+                },
               )}
             </Dropdown.Submenu>
           </Dropdown.Item>

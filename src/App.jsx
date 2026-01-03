@@ -13,7 +13,7 @@ import AllOrders from './components/Orders/Allorders';
 
 import SettingsAll from './components/Settings/Settings-all';
 import Profile from './components/Settings/Profile';
-import Services from './components/Settings/services';
+//~ import Services from './components/Settings/services';
 import Reviews from './components/Reviews';
 
 import Orders from './components/Orders/Orders';
@@ -61,8 +61,7 @@ import { ServiceDetail } from './components/Service';
 import BalanceClient from './components/Settings/BalanceClient';
 import Footer from './UI/Footer/FooterDesktop';
 import Toolbar from './UI/Toolbar/Toolbar';
-import { useCategoriesQuery } from './hooks/useCategoriesQuery';
-import { useServicesQuery } from './hooks/useServicesQuery';
+import { useServices } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
 
@@ -74,8 +73,7 @@ function App() {
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
 
-  const { categories, isLoading: areCategoriesLoading } = useCategoriesQuery();
-  useServicesQuery();
+  const { sections, isLoading: areServicesLoading } = useServices();
 
   // Add visibility change tracking
   useEffect(() => {
@@ -133,7 +131,7 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (!categories.length && areCategoriesLoading) {
+  if (Object.keys(sections).length === 0 && areServicesLoading) {
     return 'Loading...';
   }
 
@@ -146,11 +144,11 @@ function App() {
           <Route>
             <Route index element={<Home />} />
             <Route
-              path="devices/:sectionId/:subsectionId"
+              path="categories/:id"
               element={<Remont />}
             />
             <Route
-              path="services/:sectionId/:subsectionId/:serviceId"
+              path="services/:id"
               element={<ServiceDetail />}
             />
             <Route path="articles/:id" element={<Article />} />
@@ -226,7 +224,7 @@ function App() {
               <Route path="settings" element={<SettingsAll />}>
                 <Route index element={<SettingsContractor />} />
                 <Route path="profile" element={<Profile />} />
-                <Route path="services" element={<Services />} />
+                <Route path="prices" element={null/*<Services />*/} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="balance" element={<Balance />} />
                 <Route path="photo" element={<WalletFH />} />

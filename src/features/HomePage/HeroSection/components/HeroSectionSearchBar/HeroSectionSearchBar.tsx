@@ -11,7 +11,7 @@ const HeroSectionSearchBar = () => {
   const navigate = useNavigate();
   const submitFormHandler = (e: React.FormEvent) => {
     e.preventDefault();
-    navigate(`/devices/9/244?search=${service}`);
+    navigate(`/devices/244?search=${service}`);
   };
 
   return (

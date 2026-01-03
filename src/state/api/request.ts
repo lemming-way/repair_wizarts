@@ -1,7 +1,7 @@
 import CONFIG from '../../constants';
 import { AuthToken, getToken } from '../auth';
 
-const serverURL = process.env.REACT_APP_API_URL || CONFIG.API.url || '';
+const serverURL = process.env.REACT_APP_API_URL || CONFIG.API?.url || '';
 const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
 
 /**
@@ -156,17 +156,17 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
 
     const resp = await fetch(url, { method, body: formDataBody });
 
-    const contentType = resp.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      const rawText = await resp.text();
-      const errorMessage = `Invalid response content type: ${contentType}. Expected application/json. Raw response: ${rawText}`;
-      if (isDebug) {
-        console.error('[api] content type error', correlationId, errorMessage);
-      }
-      throw new FetchError('Invalid response content type.', resp);
-    }
-
     if (resp.ok) {
+      const contentType = resp.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        if (isDebug) {
+          const rawText = await resp.text();
+          const errorMessage = `Invalid response content type: ${contentType}. Expected application/json. Raw response: ${rawText}`;
+          console.error('[api] content type error', correlationId, errorMessage);
+        }
+        throw new FetchError('Invalid response content type.', resp);
+      }
+
       const responseData: unknown = await resp.json();
 
       if (isDebug) {
@@ -185,7 +185,7 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
     }
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
-    if (isDebug) {
+    if (isDebug && !(e instanceof FetchError)) {
       console.error('[api] request failed', correlationId, error);
     }
     throw error;

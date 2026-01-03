@@ -6,12 +6,12 @@ const ServiceCategoriesDropdown = ({ subsections }) => {
   return (
     <div className={styles.serviceCategoriesDropdown}>
       <ul className={styles.serviceCategoriesDropdown_list}>
-        {subsections.map((item, index) => (
+        {subsections.map(item => (
           <li
             className={styles.serviceCategoriesDropdown_list_item}
-            key={index}
+            key={item.id}
           >
-            {item}
+            {item.name}
           </li>
         ))}
       </ul>
