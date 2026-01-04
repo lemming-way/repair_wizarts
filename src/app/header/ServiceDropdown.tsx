@@ -112,7 +112,7 @@ import { useServices } from '../../state/site-data';
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const { sections, subsections, services } = useServices();
+  const { categories, subcategories, services } = useServices();
 
   return (
     <Dropdown
@@ -139,11 +139,11 @@ const ServiceDropdown = () => {
       openOnHover={true}
     >
       {/* 1 lvl */}
-      {Object.entries(sections).map(([sectionId, section]) => (
-        <div key={sectionId} className={styles.serviceDropdown_lvl1}>
+      {Object.entries(categories).map(([categoryId, category]) => (
+        <div key={categoryId} className={styles.serviceDropdown_lvl1}>
           <Dropdown.Item className={styles.serviceDropdown_item_lvl1}>
             <span className={styles.serviceDropdown_lvl1__span}>
-              <p>{section.name}</p>
+              <p>{category.name}</p>
             </span>
 
             {/* 2 lvl */}
@@ -151,26 +151,26 @@ const ServiceDropdown = () => {
               position="right-top"
               className={styles.Submenu_submenu}
             >
-              {section.subsections.map(
-                subsectionId => {
-                  const subsection = subsections[subsectionId];
-                  if (!subsection) return null; // Ensure subsection exists
+              {category.subcategories.map(
+                subcategoryId => {
+                  const subcategory = subcategories[subcategoryId];
+                  if (!subcategory) return null; // Ensure subcategory exists
 
                   return (
                     <Dropdown.Item
                       className={styles.serviceDropdown_item}
-                      key={subsectionId}
+                      key={subcategoryId}
                     >
                       <Link
-                        to={`/categories/${subsectionId}`}
+                        to={`/categories/${subcategoryId}`}
                       >
-                        <span>{subsection.name}</span>
+                        <span>{subcategory.name}</span>
                       </Link>
                       <Dropdown.Submenu
                         position="right-top"
                         className={styles.Submenu_submenu}
                       >
-                        {subsection.services
+                        {subcategory.services
                           .slice(0, 5)
                           .map(serviceId =>
                             services[serviceId] ?

@@ -7,16 +7,16 @@ import { useServices } from '../../state/site-data';
 
 const ServiceDropdownMobile = () => {
   
-  const { sections, subsections } = useServices();
+  const { categories, subcategories } = useServices();
   const [openItem, setOpenItem] = useState<string | null>(null);
 
   return (
     <div className={styles.serviceDropdown}>
       <ul className={styles.serviceDropdown_list}>
-        {Object.entries(sections).map(([id, section]) => (
+        {Object.entries(categories).map(([id, category]) => (
           <li key={id}>
             <div className={styles.serviceDropdown_list_item}>
-              <span>{section.name}</span>
+              <span>{category.name}</span>
               <img
                 className={styles.serviceDropdown_list_item_arrow}
                 src={arrowRight}
@@ -30,12 +30,12 @@ const ServiceDropdownMobile = () => {
               />
             </div>
 
-            {openItem === id && section.subsections.length > 0 && (
+            {openItem === id && category.subcategories.length > 0 && (
               <div className={styles.serviceDropdown_list_item_dropdown}>
-                <ServiceCategoriesDropdown subsections={section.subsections.map(
+                <ServiceCategoriesDropdown subcategories={category.subcategories.map(
                   subId => ({
                     id: subId,
-                    name: subsections[subId].name,
+                    name: subcategories[subId].name,
                   })
                 )} />
               </div>

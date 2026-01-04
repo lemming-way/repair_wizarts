@@ -84,12 +84,12 @@ export function useCities(country: string = 'ru') {
   }
 }
 
-export type Sections = Record<number, {
+export type Categories = Record<number, {
   name: string;
-  subsections: number[];
+  subcategories: number[];
 }>;
 
-export type SubSections = Record<number, {
+export type Subcategories = Record<number, {
   name: string;
   parent: number;
   services: number[];
@@ -101,15 +101,15 @@ export type Services = Record<number, {
 }>;
 
 export type ServicesData = {
-  sections: Sections;
-  subsections: SubSections;
+  categories: Categories;
+  subcategories: Subcategories;
   services: Services;
 };
 
 async function fetchServices() {
   try {
     const cachedServices = JSON.parse(localStorage.getItem(SERVICES_LS_KEY) ?? 'null');
-    if (cachedServices && cachedServices.sections && cachedServices.subsections && cachedServices.services) {
+    if (cachedServices && cachedServices.categories && cachedServices.subcategories && cachedServices.services) {
       return cachedServices;
     }
   }
@@ -117,8 +117,8 @@ async function fetchServices() {
 
   const data = await getServices();
   const servicesData = {
-    sections: {},
-    subsections: {},
+    categories: {},
+    subcategories: {},
     services: {}
   };
   if (data && Array.isArray(data)) {
@@ -127,17 +127,17 @@ async function fetchServices() {
       const name = String(section?.name || '');
       const subsections = section?.subsections;
       if (Number.isFinite(secId) && secId > 0 && name && Array.isArray(subsections)) {
-        servicesData.sections[secId] = {
+        servicesData.categories[secId] = {
           name,
-          subsections: []
+          subcategories: []
         };
         for (const subsection of subsections) {
           const subId = Number(subsection?.id);
           const name = String(subsection?.name || '');
           const services = subsection?.services;
-          if (Number.isFinite(subId) && subId > 0 && !servicesData.subsections[subId] && name && Array.isArray(services)) {
-            servicesData.sections[secId].subsections.push(subId);
-            servicesData.subsections[subId] = {
+          if (Number.isFinite(subId) && subId > 0 && !servicesData.subcategories[subId] && name && Array.isArray(services)) {
+            servicesData.categories[secId].subcategories.push(subId);
+            servicesData.subcategories[subId] = {
               name,
               parent: secId,
               services: []
@@ -146,7 +146,7 @@ async function fetchServices() {
               const srvId = Number(service?.id);
               const name = String(service?.name || '');
               if (Number.isFinite(srvId) && srvId > 0 && !servicesData.services[srvId] && name) {
-                servicesData.subsections[subId].services.push(srvId);
+                servicesData.subcategories[subId].services.push(srvId);
                 servicesData.services[srvId] = {
                   name,
                   parent: subId
@@ -165,7 +165,7 @@ async function fetchServices() {
   return servicesData;
 }
 
-const emptyServicesData = { sections: {}, subsections: {}, services: {} };
+const emptyServicesData = { categories: {}, subcategories: {}, services: {} };
 
 export function useServices() {
   const queryResult = useQuery({

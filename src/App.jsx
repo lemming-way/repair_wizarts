@@ -73,7 +73,7 @@ function App() {
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
 
-  const { sections, isLoading: areServicesLoading } = useServices();
+  const { categories, isLoading: areServicesLoading } = useServices();
 
   // Add visibility change tracking
   useEffect(() => {
@@ -131,7 +131,7 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (Object.keys(sections).length === 0 && areServicesLoading) {
+  if (Object.keys(categories).length === 0 && areServicesLoading) {
     return 'Loading...';
   }
 

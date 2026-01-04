@@ -11,19 +11,19 @@ function Remont() {
   const text = useLanguage();
 
   const { id } = useParams();
-  const subsectionId = isFinite(id) ? Number(id) : 0;
+  const subcategoryId = isFinite(id) ? Number(id) : 0;
   const [ searchParams ] = useSearchParams();
   const search = searchParams.get('search');
 
-  const { subsections, services } = useServices();
+  const { subcategories, services } = useServices();
 
-  const selectedSubsection = subsections[subsectionId];
-  const serviceIds = selectedSubsection?.services || [];
-  const subsectionServices = serviceIds.map( id => ({
+  const selectedSubcategory = subcategories[subcategoryId];
+  const serviceIds = selectedSubcategory?.services || [];
+  const subcategoryServices = serviceIds.map( id => ({
     id,
     name: services[id].name
   }) );
-  const currentServices = search ? subsectionServices.filter( item => item.name === search ) : subsectionServices;
+  const currentServices = search ? subcategoryServices.filter( item => item.name === search ) : subcategoryServices;
 
   useEffect(() => {
     document.title = text('iPhone repair');  // todo: Изменить текст
@@ -33,7 +33,7 @@ function Remont() {
     <section
       className={`container remont remont-container ${style.devices_block}`}
     >
-      <h1>{search || selectedSubsection?.name || ''}</h1>
+      <h1>{search || selectedSubcategory?.name || ''}</h1>
       <p>{text('Select an iPhone model to find out the cost of repair.')  /* todo: Изменить текст */}</p>
       <Link
         to={'/client/requests/create/title'}

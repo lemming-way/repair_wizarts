@@ -27,18 +27,18 @@ function ServiceDetail() {
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
 
-  const { sections, subsections, services } = useServices();
+  const { categories, subcategories, services } = useServices();
   const { user } = useUser();
 
   const serviceId = isFinite(id) ? Number(id) : 0;
-  const subsectionId = services[serviceId]?.parent || 0;
-  const sectionId = subsections[subsectionId]?.parent || 0;
+  const subcategoryId = services[serviceId]?.parent || 0;
+  const categoryId = subcategories[subcategoryId]?.parent || 0;
 
   const currentServiceDetails = {
     id: serviceId,
     name: services[serviceId]?.name || text('Unknown service'),
-    subsectionName: subsections[subsectionId]?.name || text('Unknown subcategory'),
-    sectionName: sections[sectionId]?.name || text('Unknown category'),
+    subcategoryName: subcategories[subcategoryId]?.name || text('Unknown subcategory'),
+    categoryName: categories[categoryId]?.name || text('Unknown category'),
   };
 
   const [show, setShow] = useState(false);
@@ -352,20 +352,20 @@ function ServiceDetail() {
   }
 
   // todo: доработать логику выбора цены
-  // Dynamically generate prices based on selected section/subsection/service
+  // Dynamically generate prices based on selected category/subcategory/service
   const prices = useMemo(() => {
     const servicePrice = 100; // Default price, can be dynamic if available from API
 
-    const servicesForSubsection = {};
-    const subsection = subsections[subsectionId];
+    const servicesForSubcategory = {};
+    const subcategory = subcategories[subcategoryId];
 
-    if (subsection) {
-      subsection.services.forEach(srvId => {
+    if (subcategory) {
+      subcategory.services.forEach(srvId => {
         const serviceName = services[srvId].name;
         if (serviceName) {
-          servicesForSubsection[srvId] = {
+          servicesForSubcategory[srvId] = {
             price: servicePrice,
-            category: subsection.name,
+            category: subcategory.name,
             delivery: 'From 30 minutes',
             name: serviceName,
             img: 'https://cdn-icons-png.flaticon.com/512/10473/10473245.png', // Placeholder image
@@ -373,8 +373,8 @@ function ServiceDetail() {
         }
       });
     }
-    return servicesForSubsection;
-  }, [subsectionId, subsections, services]);
+    return servicesForSubcategory;
+  }, [subcategoryId, subcategories, services]);
 
   return <>
     {/* блок с оплатой */}

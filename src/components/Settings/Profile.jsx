@@ -20,12 +20,12 @@ const experienceOptions = [
 
 function Profile() {
   const text = useLanguage();
-  const [sectionOptionSelected, setSectionOptionSelected] = useState([]);
-  const [subsectionOptionSelected, setSubsectionOptionSelected] = useState([]);
+  const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
+  const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
   const [serviceOptionSelected, setServiceOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
 
-  const { sections, subsections, services } = useServices();
+  const { categories, subcategories, services } = useServices();
   const queryClient = useQueryClient();
   const { userEx } = useUserExtended();
 
@@ -85,11 +85,11 @@ function Profile() {
       : [];
 
     const initialServiceOptions = [];
-    const initialSubsectionOptions = [];
-    const initialSectionOptions = [];
+    const initialSubcategoryOptions = [];
+    const initialCategoryOptions = [];
 
-    const sectionIds = {};
-    const subsectionIds = {};
+    const categoryIds = {};
+    const subcategoryIds = {};
 
     selectedServiceIds.forEach(serviceId => {
       const serviceName = services[serviceId].name;
@@ -98,20 +98,20 @@ function Profile() {
       }
 
       const subId = services[serviceId].parent;
-      if (subId && !subsectionIds[subId]) {
-        initialSubsectionOptions.push({ label: subsections[subId].name, value: subId });
-        subsectionIds[subId] = true;
+      if (subId && !subcategoryIds[subId]) {
+        initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
+        subcategoryIds[subId] = true;
 
-        const secId = subsections[subId].parent;
-        if (secId && !sectionIds[secId]) {
-          initialSectionOptions.push({ label: sections[secId].name, value: secId });
-          sectionIds[secId] = true;
+        const secId = subcategories[subId].parent;
+        if (secId && !categoryIds[secId]) {
+          initialCategoryOptions.push({ label: categories[secId].name, value: secId });
+          categoryIds[secId] = true;
         }
       }
     });
 
-    setSectionOptionSelected(initialSectionOptions);
-    setSubsectionOptionSelected(initialSubsectionOptions);
+    setCategoryOptionSelected(initialCategoryOptions);
+    setSubcategoryOptionSelected(initialSubcategoryOptions);
     setServiceOptionSelected(initialServiceOptions);
 
     setExperience(
@@ -139,7 +139,7 @@ function Profile() {
     });
 
     setBusiness(contractorDetails.business_model || 'Independent technician');
-  }, [userEx, sections, subsections, services]);
+  }, [userEx, categories, subcategories, services]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -170,27 +170,27 @@ function Profile() {
     }
   };
 
-  const sectionOptions = Object.entries(sections).map(([id, { name }]) => ({
+  const categoryOptions = Object.entries(categories).map(([id, { name }]) => ({
     label: name,
     value: id
   }));
 
-  const subsectionOptions = [];
-  for (const { value: id } of sectionOptionSelected) {
-    const section = sections[id];
-    if (section) {
-      subsectionOptions.push(...section.subsections.map(subId => ({
-        label: subsections[subId].name,
+  const subcategoryOptions = [];
+  for (const { value: id } of categoryOptionSelected) {
+    const category = categories[id];
+    if (category) {
+      subcategoryOptions.push(...category.subcategories.map(subId => ({
+        label: subcategories[subId].name,
         value: subId
       })));
     }
   }
 
   const serviceOptions = [];
-  for (const { value: id } of subsectionOptionSelected) {
-    const subsection = subsections[id];
-    if (subsection) {
-      serviceOptions.push(...subsection.services.map(srvId => ({
+  for (const { value: id } of subcategoryOptionSelected) {
+    const subcategory = subcategories[id];
+    if (subcategory) {
+      serviceOptions.push(...subcategory.services.map(srvId => ({
         label: services[srvId].name,
         value: srvId
       })));
@@ -210,30 +210,30 @@ function Profile() {
             <MultiSelect
               key="category_id"
               placeholder={text('Type of category')}
-              options={sectionOptions}
+              options={categoryOptions}
               isMulti={true}
               isSelectAll={true}
               onChange={(selected) => {
-                setSectionOptionSelected(selected);
-                setSubsectionOptionSelected([]);
+                setCategoryOptionSelected(selected);
+                setSubcategoryOptionSelected([]);
                 setServiceOptionSelected([]);
               }}
-              value={sectionOptionSelected}
+              value={categoryOptionSelected}
               menuPlacement="bottom"
             />
             <MultiSelect
-              key="subsection_id"
+              key="subcategory_id"
               placeholder={text('Subcategories')}
               isMulti={true}
               isSelectAll={true}
-              options={subsectionOptions}
+              options={subcategoryOptions}
               onChange={(selected) => {
-                setSubsectionOptionSelected(selected);
+                setSubcategoryOptionSelected(selected);
                 setServiceOptionSelected([]);
               }}
-              value={subsectionOptionSelected}
+              value={subcategoryOptionSelected}
               menuPlacement="bottom"
-              isDisabled={!sectionOptionSelected.length}
+              isDisabled={!categoryOptionSelected.length}
             />
             <MultiSelect
               key="services"
@@ -246,7 +246,7 @@ function Profile() {
               }
               value={serviceOptionSelected}
               menuPlacement="bottom"
-              isDisabled={!subsectionOptionSelected.length}
+              isDisabled={!subcategoryOptionSelected.length}
             />
           </div>
           <input type="text" placeholder={text('Name')} {...getFormAttrs('name')} />

@@ -14,7 +14,7 @@ import sharedStyles from '../shared/RegistrationPage.module.scss';
 
 const RegistrationContractorPage = () => {
   const text = useLanguage();
-  const { sections, subsections, services } = useServices();
+  const { categories, subcategories, services } = useServices();
   const { cities } = useCities();
   const navigate = useNavigate();
   const registerContractorMutation = useRegisterContractor();
@@ -39,8 +39,8 @@ const RegistrationContractorPage = () => {
     }
   }, [phone]);
 
-  const [sectionOptionSelected, setSectionOptionSelected] = useState<MultiSelectOption[]>([]);
-  const [subsectionOptionSelected, setSubsectionOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [categoryOptionSelected, setCategoryOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState<MultiSelectOption[]>([]);
   const [serviceOptionSelected, setServiceOptionSelected] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
@@ -84,8 +84,8 @@ const RegistrationContractorPage = () => {
         password,
         details: {
           address: address.trim(),
-          //~ section: sectionOptionSelected?.map(opt => opt.value) || [],
-          //~ subsection: subsectionOptionSelected?.map(opt => opt.value) || [],
+          //~ section: categoryOptionSelected?.map(opt => opt.value) || [],
+          //~ subsection: subcategoryOptionSelected?.map(opt => opt.value) || [],
           services: serviceOptionSelected?.map(opt => opt.value) || [],
           //~ subservice: subModelOptionSelected?.map(opt => opt.value) || [],
         },
@@ -98,22 +98,22 @@ const RegistrationContractorPage = () => {
     }
   };
 
-  const sectionOptions: MultiSelectOption[] = Object.entries(sections).map(([id, { name }]) => ({
+  const categoryOptions: MultiSelectOption[] = Object.entries(categories).map(([id, { name }]) => ({
     label: name,
     value: id
   }));
 
-  const subsectionOptions: MultiSelectOption[] = [];
-  for (const { value: id } of sectionOptionSelected) {
-    subsectionOptions.push(...sections[id].subsections.map(id => ({
-      label: subsections[id].name,
+  const subcategoryOptions: MultiSelectOption[] = [];
+  for (const { value: id } of categoryOptionSelected) {
+    subcategoryOptions.push(...categories[id].subcategories.map(id => ({
+      label: subcategories[id].name,
       value: id
     })));
   }
 
   const serviceOptions: MultiSelectOption[] = [];
-  for (const { value: id } of subsectionOptionSelected) {
-    serviceOptions.push(...subsections[id].services.map(id => ({
+  for (const { value: id } of subcategoryOptionSelected) {
+    serviceOptions.push(...subcategories[id].services.map(id => ({
       label: services[id].name,
       value: id
     })));
@@ -222,36 +222,36 @@ const RegistrationContractorPage = () => {
           <MultiSelect
             key="category_main_id"
             placeholder="Вид основной категории"
-            options={sectionOptions}
+            options={categoryOptions}
             onChange={(selected: MultiSelectOption[] | null) => {
-              setSectionOptionSelected(selected || []);
-              setSubsectionOptionSelected([]); // Reset sub-categories
+              setCategoryOptionSelected(selected || []);
+              setSubcategoryOptionSelected([]); // Reset sub-categories
               setServiceOptionSelected([]); // Reset models
             }}
-            value={sectionOptionSelected}
+            value={categoryOptionSelected}
             isMulti={true} // Allow multiple main categories if needed
             menuPlacement={'bottom'}
           />
-          {sectionOptionSelected.length > 0 && (
+          {categoryOptionSelected.length > 0 && (
               <MultiSelect
                 key="categories_sub_id"
                 placeholder="Подкатегории"
-                options={subsectionOptions}
+                options={subcategoryOptions}
                 onChange={(selected: MultiSelectOption[] | null) => {
-                  setSubsectionOptionSelected(selected || []);
+                  setSubcategoryOptionSelected(selected || []);
                   setServiceOptionSelected([]); // Reset models on sub-category change
                 }}
-                value={subsectionOptionSelected}
+                value={subcategoryOptionSelected}
                 isSelectAll={true}
                 isMulti={true}
                 menuPlacement={'bottom'}
                 isDisabled={
-                  !sectionOptionSelected ||
-                  sectionOptionSelected.length === 0
+                  !categoryOptionSelected ||
+                  categoryOptionSelected.length === 0
                 }
               />
             )}
-          {subsectionOptionSelected.length > 0 && (
+          {subcategoryOptionSelected.length > 0 && (
             <MultiSelect
               key="model_phone_id"
               placeholder="Наименование услуги"
@@ -264,7 +264,7 @@ const RegistrationContractorPage = () => {
               isMulti={true}
               menuPlacement={'bottom'}
               isDisabled={
-                !subsectionOptionSelected || subsectionOptionSelected.length === 0
+                !subcategoryOptionSelected || subcategoryOptionSelected.length === 0
               }
             />
           )}

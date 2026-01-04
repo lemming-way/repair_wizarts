@@ -12,7 +12,7 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { sections, subsections, services } = useServices();
+  const { categories, subcategories, services } = useServices();
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {
@@ -54,29 +54,29 @@ export default function FilterBlock({
         >
           Рубрики
         </p>
-        {Object.entries(sections).map(([sectionId, section]) => (
-          <details key={sectionId} className={style.margin_btm}>
+        {Object.entries(categories).map(([categoryId, category]) => (
+          <details key={categoryId} className={style.margin_btm}>
             {/*
               По клику на summary устанавливается фильтр по этой категории.
               Добавляем класс для подсветки активной категории.
             */}
             <summary
               className={`${style.filter__summary} ${
-                categoryFilter === sectionId ? style.active_category : ''
+                categoryFilter === categoryId ? style.active_category : ''
               }`}
               onClick={(e) => {
                 // Предотвращаем стандартное открытие/закрытие details, если нам это не нужно,
                 // или оставляем, если внутри есть полезный контент.
                 // e.preventDefault();
-                setCategoryFilter(sectionId);
+                setCategoryFilter(categoryId);
               }}
             >
-              {section.name}
+              {category.name}
             </summary>
             {/* Вложенные детали, если они нужны для навигации, но не для фильтрации */}
             <div className={style.filter__details_data}>
-              {section.subsections.map(subId => {
-                const sub = subsections[subId];
+              {category.subcategories.map(subId => {
+                const sub = subcategories[subId];
                 if (!sub) return null;
 
                 return (
