@@ -13,7 +13,7 @@ import { useContractorByUsernameQuery } from "../hooks/useContractorByUsernameQu
 import { useContractorServicesQuery } from "../hooks/useContractorServicesQuery";
 import { messageKeys, offerKeys, requestKeys, normalizeOptionalOfferRequestId } from "../queries";
 
-const Suggest = (props) => {
+const Offer = (props) => {
     const text = useLanguage();
     const {
         id: offerId,
@@ -144,7 +144,7 @@ const Suggest = (props) => {
                         <div className="offer-contractor__bar">
                             <div className="nav_bottom-text_active df align">
                                 <div className="nav_bottom-text_img">
-                                    <img src="/img/my_suggestion_img/Star 1.png" alt="no img" />
+                                    <img src="/img/my_offer_img/Star 1.png" alt="no img" />
                                 </div>
                                 <h2><span>{contractor.rating}</span></h2>
                             </div>
@@ -249,7 +249,7 @@ const Suggest = (props) => {
                                         {price}
                                     </span>
                                 </h2>
-                                <img src="img/my_suggestion_img/Vector (1).png" alt="" />
+                                <img src="img/my_offer_img/Vector (1).png" alt="" />
                             </div>
                         </div>
                     </div>
@@ -270,7 +270,7 @@ const Suggest = (props) => {
                         </h3>
 
                         <div className="img mobile-img">
-                            <img src="img/my_suggestion_img/Vector (1).png" alt="" />
+                            <img src="img/my_offer_img/Vector (1).png" alt="" />
                         </div>
                     </div>
                 </div>
@@ -299,4 +299,4 @@ const Suggest = (props) => {
     )
 }
 
-export default Suggest;
+export default Offer;

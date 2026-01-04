@@ -64,7 +64,7 @@ const lang = {
   "Total:": "Total:",
   "Choose a contractor": "Choose a contractor",
   "Reviews about the contractor": "Reviews about the contractor",
-  "My suggestions": "My suggestions",
+  "My offers": "My offers",
   "Back": "Back",
   "Name and surname from the application info": "Name and surname from the application info",
   "10 projects posted": "10 projects posted",

@@ -51,7 +51,7 @@ import Home from './components/Home';
 import FinanceClient from './components/Settings/FinanceClient';
 import SettingsContractor from './components/Settings/SettingsContractor';
 import ContractorChatWrap from './components/pages/ContractorChatWrap';
-import Mysuggest from './components/mysuggest';
+import MyOffer from './components/myoffer';
 import MyOrder from './components/Orders/MyOrder';
 import ProfileFeedbackContractor from './components/profileNumberClient/ProfileFeedbackContractor';
 import RegistrationPickPage from './features/user/registration/RegistrationPickPage';
@@ -188,7 +188,7 @@ function App() {
                 <Route path="data" element={<AddDevices />} />
               </Route>
             </Route>
-            <Route path="offers/:id" element={<Mysuggest />} />
+            <Route path="offers/:id" element={<MyOffer />} />
             {/* клиент на странице мастера может оставить отзыв */}
             <Route
               path="feedback/:id"

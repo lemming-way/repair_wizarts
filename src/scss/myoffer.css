@@ -9,12 +9,12 @@
     margin-left: 0px;
 }
 
-.modal-content-mysuggest {
+.modal-content-myoffer {
     text-align: center;
     width: 660px;
 }
 
-.mysuggest__title {
+.myoffer__title {
     padding-top: 43px;
 }
 
@@ -955,7 +955,7 @@ td p {
         display: block;
     }
 
-    .modal-content-mysuggest {
+    .modal-content-myoffer {
         width: 95% !important;
     }
     .page_6 {

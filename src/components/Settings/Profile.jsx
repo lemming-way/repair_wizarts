@@ -260,13 +260,13 @@ function Profile() {
           <input
             type="text"
             placeholder={text('Address')}
-            id="suggest-input"
+            id="offer-input"
             {...getFormAttrs('details.address')}
           />
           <input
             type="text"
             placeholder={text('City')}
-            id="suggest-input"
+            id="offer-input"
             {...getFormAttrs('details.city')}
           />
 

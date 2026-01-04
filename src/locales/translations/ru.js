@@ -159,7 +159,7 @@ const lang = {
   "Total:": "Итого",
   "Choose a contractor": "Выбрать мастера",
   "Reviews about the contractor": "Отзывы о мастере",
-  "My suggestions": "Мои предложения",
+  "My offers": "Мои предложения",
   "Back": "Назад",
   "10 projects posted": "Размещено 10 проектов",
   "100% hired": "Нанято 100 %",

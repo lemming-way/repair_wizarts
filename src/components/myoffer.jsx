@@ -1,22 +1,22 @@
 import { useEffect, useMemo } from 'react';
 
-import styles from './mysuggest.module.css';
+import styles from './myoffer.module.css';
 import { useLanguage } from '../state/language';
 
-import '../scss/mysuggest.css';
+import '../scss/myoffer.css';
 import { Link, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { Navigation, Pagination } from 'swiper';
 
-import Suggest from './suggest';
+import Offer from './offer';
 import SERVER_PATH from '../constants/SERVER_PATH';
 import { useClientRequestsQuery } from '../hooks/useClientRequestsQuery';
 import { useOffersQuery } from '../hooks/useOffersQuery';
 import { useUser } from '../state/user';
 
-function MySuggest() {
+function MyOffer() {
   const text = useLanguage();
   const { id } = useParams();
   const { clientRequests } = useClientRequestsQuery();
@@ -37,7 +37,7 @@ function MySuggest() {
   };
 
   useEffect(() => {
-    document.title = text('My suggestions');
+    document.title = text('My offers');
   }, [id, text]);
 
   return (
@@ -45,7 +45,7 @@ function MySuggest() {
       <div className="sentence font_inter mobile-sentence">
         <div className="sentence_text align">
           <div className="sentence_text-1 mobile-sentence_text-1">
-            <h2 className={styles.heading}>{text('My suggestions')}</h2>
+            <h2 className={styles.heading}>{text('My offers')}</h2>
           </div>
           <div className="sentence_but">
             <Link to="/client/requests">
@@ -248,10 +248,10 @@ function MySuggest() {
         </div>
       </div>
       {offers.map((v) => (
-        <Suggest key={v.id} {...v} />
+        <Offer key={v.id} {...v} />
       ))}
     </section>
   );
 }
 
-export default MySuggest;
+export default MyOffer;
