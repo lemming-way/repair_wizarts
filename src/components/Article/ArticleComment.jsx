@@ -1,10 +1,11 @@
 import styles from "./Article.module.css"
 import dislikeImage from "../../img/dislike.png"
 import likeImage from "../../img/like.png"
-import {
-    likeArticleComment,
-    dislikeArticleComment
-} from "../../services/article.service"
+// todo: Добавить реальный вызов API для лайков/дизлайков комментариев
+// import {
+//     likeArticleComment,
+//     dislikeArticleComment
+// } from "../../services/article.service"
 import { useLanguage } from '../../state/language'
 import formatDate from "../../utilities/formatDate"
 
@@ -19,8 +20,10 @@ const ArticleComment = (props) => {
     } = props
 
     const text = useLanguage()
-    const onLike = () => likeArticleComment(id)
-    const onDislike = () => dislikeArticleComment(id)
+    // todo: Заменить на реальный вызов likeArticleComment(id)
+    const onLike = () => Promise.resolve().then(() => console.log(`Liked comment ${id}`))
+    // todo: Заменить на реальный вызов dislikeArticleComment(id)
+    const onDislike = () => Promise.resolve().then(() => console.log(`Disliked comment ${id}`))
 
     return (
         <div className={`${styles.comment} ${isAnswer? styles.isAnswer : ""}`}>

@@ -12,12 +12,26 @@ import SERVER_PATH from '../../constants/SERVER_PATH'
 import backgroundImg from '../../img/article.png'
 import calendarIcon from '../../img/calendar.png'
 import groupIcon from '../../img/group.png'
-import {
-    getArticle,
-    getArticles
-} from '../../services/article.service'
+// todo: Добавить реальные вызовы API для статей
+// import {
+//     getArticle,
+//     getArticles
+// } from '../../services/article.service'
 import { useLanguage } from '../../state/language'
 import { useUser } from '../../state/user'
+
+// Фиктивные данные для статьи
+const mockArticleData = (id) => ({
+    id: id,
+    title: `Заголовок тестовой статьи ${id}`,
+    views: Math.floor(Math.random() * 1000) + 100,
+    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    text: "<p>Это содержимое тестовой статьи. Здесь может быть любой <b>HTML</b> контент. <br/> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
+    cover_image: null, // или фиктивный путь, если нужно
+    likes: Math.floor(Math.random() * 50)
+});
+
+const mockArticlesData = Array.from({ length: 8 }).map((_, i) => mockArticleData(i + 1));
 
 const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
 const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
@@ -36,10 +50,9 @@ const Article = (props) => {
     const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
     const { user } = useUser()
 
-
-
     useEffect(() => {
-        getArticle(id).then((articleData) => {
+        // todo: Заменить на реальный вызов getArticle(id)
+        Promise.resolve(mockArticleData(id)).then((articleData) => {
             if (articleData.cover_image) {
                 const path = SERVER_PATH + articleData.cover_image
                 setHeaderStyle({ background: `center / cover no-repeat url("${path}")` })
@@ -49,8 +62,9 @@ const Article = (props) => {
             setData(articleData)
             setHeaderStyle({ background: `url("${backgroundImg}")` })
         })
-        getArticles().then(setArticles)
-    }, [id])
+        // todo: Заменить на реальный вызов getArticles()
+        Promise.resolve(mockArticlesData).then(setArticles)
+    }, [id]) // Зависимость [id] сохранена для обновления при смене статьи
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
 

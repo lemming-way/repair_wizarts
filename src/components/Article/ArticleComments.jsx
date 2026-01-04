@@ -5,13 +5,41 @@ import styles from "./Article.module.css"
 import ArticleComment from "./ArticleComment"
 import dislikeImage from '../../img/dislike.png'
 import likeImage from '../../img/like.png'
-import {
-    getArticleComments,
-    createArticleComment,
-    likeArticle,
-    dislikeArticle
-} from "../../services/article.service"
+// todo: Добавить реальные вызовы API для комментариев и лайков/дизлайков статьи
+// import {
+//     getArticleComments,
+//     createArticleComment,
+//     likeArticle,
+//     dislikeArticle
+// } from "../../services/article.service"
 import { useLanguage } from '../../state/language'
+
+const mockCommentsData = [
+    {
+        id: 1,
+        sender: { name: "Иван", lastname: "Петров" },
+        text: "Отличная статья, очень полезно!",
+        likes: 15,
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+        isAnswer: false
+    },
+    {
+        id: 2,
+        sender: { name: "Мария", lastname: "Сидорова" },
+        text: "Спасибо за информацию, давно искала нечто подобное.",
+        likes: 8,
+        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        isAnswer: false
+    },
+    {
+        id: 3,
+        sender: { name: "Алексей", lastname: "Козлов" },
+        text: "Есть ли еще статьи на эту тему?",
+        likes: 2,
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        isAnswer: false
+    }
+];
 
 const ArticleComments = (props) => {
     const {
@@ -22,31 +50,43 @@ const ArticleComments = (props) => {
     const text = useLanguage()
     const navigate = useNavigate()
 
-    // для тестов
     const [comments, setComments] = useState([])
-    
     const [comment, setComment] = useState("")
 
-    const onLike = (e) => likeArticle(articleId)
-    const onDislike = (e) => dislikeArticle(articleId)
+    // todo: Заменить на реальный вызов likeArticle(articleId)
+    const onLike = (e) => Promise.resolve().then(() => console.log(`Liked article ${articleId}`))
+    // todo: Заменить на реальный вызов dislikeArticle(articleId)
+    const onDislike = (e) => Promise.resolve().then(() => console.log(`Disliked article ${articleId}`))
 
     useEffect(() => {
-        getArticleComments(articleId)
+        // todo: Заменить на реальный вызов getArticleComments(articleId)
+        Promise.resolve(mockCommentsData)
             .then(setComments)
     }, [articleId])
 
     const onSubmit = (e) => {
         e.preventDefault()
 
-        return createArticleComment(articleId, { text: comment })
+        // todo: Заменить на реальный вызов createArticleComment(articleId, { text: comment })
+        return Promise.resolve()
             .then(() => {
-                getArticleComments(articleId)
-                .then(setComments)
+                // Добавление нового комментария в фиктивные данные
+                const newComment = {
+                    id: comments.length + 1,
+                    sender: { name: "Тестовый", lastname: "Пользователь" },
+                    text: comment,
+                    likes: 0,
+                    created_at: new Date().toISOString(),
+                    isAnswer: false
+                };
+                setComments(prevComments => [...prevComments, newComment]);
                 setComment("")
             })
             .catch((err) => {
-                if (err.status === 401) {
+                if (err?.status === 401) { // Используем err?.status для безопасного доступа
                     navigate("/register/client")
+                } else {
+                    console.error("Ошибка при создании комментария (фиктивная):", err);
                 }
             })
     }

@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import {Navigation} from "swiper";
 import {Swiper, SwiperSlide} from "swiper/react";
-
+import React, { useEffect, useState } from 'react'; // Добавлен импорт
 import SERVER_PATH from "../../constants/SERVER_PATH";
-import { useService } from "../../hooks/useService";
+// todo: Добавить реальный вызов API для получения статей
+// import { useService } from "../../hooks/useService";
 import defaultImage from "../../img/article.png"
 import likeImage from "../../img/like.png"
 import viewImage from "../../img/view.png"
@@ -12,14 +13,33 @@ import viewImage from "../../img/view.png"
 import '../../scss/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
-import { getArticles } from '../../services/article.service';
+// todo: Добавить реальный вызов API для получения статей
+// import { getArticles } from '../../services/article.service';
 import formatDate from "../../utilities/formatDate";
 import { useLanguage } from "../../state/language";
+
+// Фиктивные данные для статей
+const mockArticlesData = Array.from({ length: 8 }).map((_, i) => ({
+    id: i + 1,
+    title: `Заголовок тестовой статьи ${i + 1}`,
+    views: Math.floor(Math.random() * 1000) + 100,
+    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    text: "<p>Это содержимое тестовой статьи. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>",
+    cover_image: null, // или фиктивный путь, если нужно
+    likes: Math.floor(Math.random() * 50)
+}));
 
 
 function Articles(){
     const text = useLanguage();
-    const articles = useService(getArticles, [])
+    // todo: Заменить на реальный вызов useService(getArticles, [])
+    const [articles, setArticles] = useState({ data: [] });
+
+    useEffect(() => {
+        Promise.resolve(mockArticlesData)
+            .then(data => setArticles({ data }))
+            .catch(error => console.error("Ошибка при получении фиктивных статей:", error));
+    }, []);
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
 

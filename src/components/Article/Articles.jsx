@@ -2,12 +2,22 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 
 import styles from './Article.module.css'
-import { getArticles } from "../../services/article.service"
+// todo: Добавить реальный вызов API для получения статей
+// import { getArticles } from "../../services/article.service"
 // import backgroundImg from '../../img/article.png'
+
+const mockArticlesData = Array.from({ length: 8 }).map((_, i) => ({
+    id: i + 1,
+    title: `Тестовая статья ${i + 1}`,
+    views: Math.floor(Math.random() * 1000) + 100,
+    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    text: "<p>Это содержимое тестовой статьи. Lorem ipsum dolor sit amet...</p>",
+    cover_image: null,
+    likes: Math.floor(Math.random() * 50)
+}));
 
 
 const Articles = () => {
-    // тестовые данные
     const [articles, setArticles] = useState([])
 
     const filterText = (v) => v.replace(/<[^>]*>/g, '');
@@ -21,12 +31,13 @@ const Articles = () => {
     }
 
     useEffect(() => {
-        getArticles()
+        // todo: Заменить на реальный вызов getArticles()
+        Promise.resolve(mockArticlesData)
             .then(setArticles)
             .catch((err) => {
                 console.log("Ошибка запроса:", err);
             });
-    }, [articles])
+    }, []) // Убрана зависимость [articles] для предотвращения бесконечного ререндера
 
     const [isOpenAsideMenu, setOpenAsideMenu] = useState(false)
 
