@@ -12,7 +12,7 @@ import styles from './MyOrder.module.css';
 import { deleteRequest, updateRequest } from '../../services/request.service';
 import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientOrder';
 import appFetch from '../../utilities/appFetch';
-import style from '../Service/serviceDetail.module.scss';
+import style from '../Service/ServiceDetail.module.scss';
 import { useLanguage } from '../../state/language';
 import { useUserExtended } from '../../state/user';
 

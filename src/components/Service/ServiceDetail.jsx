@@ -4,25 +4,25 @@ import { useParams } from 'react-router-dom';
 import '../../scss/detail.scss';
 import '../../scss/media.css';
 //~ import { getContractorRepairs } from '../../services/service.service';
-import { Link } from 'react-router-dom';
-import { Rating } from 'react-simple-star-rating';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import style from './serviceDetail.module.scss';
+import style from './ServiceDetail.module.scss';
 import { createRequest } from '../../services/request.service';
 import appFetch from '../../utilities/appFetch';
-import YMap from '../Map';
 import { useLanguage } from '../../state/language';
 import { useUser } from '../../state/user';
 import { useServices } from '../../state/site-data';
+
+import PaymentBlock from './PaymentBlock';
+import ConfirmationBlock from './ConfirmationBlock';
+import ContractorInfoModals from './ContractorInfoModals';
+import ServiceMainContent from './ServiceMainContent';
 
 function ServiceDetail() {
   const text = useLanguage();
   const [selectedServices, setSelectedServices] = useState([]);
 
-  const [visibleListSelectedServices, setVisibleListSelectedServices] =
-    useState(false);
   const [visibleConfirm, setVisibleConfirm] = useState(false);
   const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
   const { id } = useParams();
@@ -41,18 +41,14 @@ function ServiceDetail() {
     categoryName: categories[categoryId]?.name || text('Unknown category'),
   };
 
-  const [show, setShow] = useState(false);
-
   const [formError, setFormError] = useState('');
-  const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
+  const [visibleBlockPayment, setVisibleBlockPayment] = useState(0);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
-  const [errorBalance] = useState(true);
-  const [errorCash] = useState(true);
-  const [errorSumm] = useState(true);
 
   const [selectedContractor, setSelectedContractor] = useState({});
+  const [showOrderForm, setShowOrderForm] = useState(false);
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
@@ -204,7 +200,7 @@ function ServiceDetail() {
     //~ setInvoice(invoice);
   //~ }, [selected]);
 
-  const [search, setSearch] = useState('');
+  // `search` и `setSearch` теперь внутренние состояния ServiceMainContent
 
   /**
    * Асинхронная функция для назначения мастера на заказ в качестве КАНДИДАТА.
@@ -275,7 +271,7 @@ function ServiceDetail() {
     }
 
     const orderData = {
-      title: selectedServices.map(itemId => prices[itemId].name).join(' '),
+      title: selectedServices.map(itemId => prices[itemId]?.name).join(' '),
       description,
       client_price: getSumPrice(),
       service: serviceId,
@@ -296,7 +292,7 @@ function ServiceDetail() {
 
       await assignContractorToOrder(newOrderId, selectedContractor);
 
-      setShow(false);
+      setShowOrderForm(false);
       setVisibleBlockPayment(true);
     } catch (err) {
       console.error('Произошла ошибка в процессе создания/назначения заказа:', err);
@@ -308,13 +304,11 @@ function ServiceDetail() {
     document.title = currentServiceDetails.name;
   }, [currentServiceDetails.name]);
 
-  const [goToR] = useState(false);
-
   function getSumPrice() {
     let sum = 0;
     selectedServices.forEach(id => {
       if (!ignoreSelectedServices.includes(id)) {
-        sum += prices[id].price || 0;
+        sum += prices[id]?.price || 0;
       }
     });
     return sum;
@@ -361,7 +355,7 @@ function ServiceDetail() {
 
     if (subcategory) {
       subcategory.services.forEach(srvId => {
-        const serviceName = services[srvId].name;
+        const serviceName = services[srvId]?.name;
         if (serviceName) {
           servicesForSubcategory[srvId] = {
             price: servicePrice,
@@ -378,632 +372,60 @@ function ServiceDetail() {
 
   return <>
     {/* блок с оплатой */}
-    {visibleBlockPayment ? (
-      <div className={style.blockPayment_wrap}>
-        {errorBalance ? (
-          <div className={style.error}>
-            {text('Please top up your balance by 500 rubles')}
-          </div>
-        ) : null}
+    <PaymentBlock
+      visibleBlockPayment={visibleBlockPayment}
+      setVisibleBlockPayment={setVisibleBlockPayment}
+      selectedIdx={selectedIdx}
+      setSelectedIdx={setSelectedIdx}
+      setVisibleConfirm={setVisibleConfirm}
+    />
 
-        {errorCash ? (
-          <div className={style.error}>{text('Pay the contractor in person')}</div>
-        ) : null}
-
-        {errorSumm ? (
-          <div className={style.error}>
-            {text('500 rubles will be deducted from your balance')}{' '}
-          </div>
-        ) : null}
-
-        <div className={style.blockPayment}>
-          <div
-            className={style.close}
-            onClick={() => setVisibleBlockPayment(false)}
-          >
-            <img src="/img/close.svg" alt="" />
-          </div>
-
-          <h2>{text('Payment')}</h2>
-          <div className={style.row}>
-            <div className={style.block_v2}>
-              <p>{text('Pay through the website')}</p>
-              <div className={style.radio}>
-                <input
-                  type="radio"
-                  id="inputSite"
-                  name="radioPayments"
-                  checked={selectedIdx === 0}
-                  onChange={() => setSelectedIdx(0)}
-                />
-                <label htmlFor="inputSite">{text('Balance: 0₽')}</label>
-              </div>
-              <p>{text('Standard risk-free deal price')}</p>
-              <p className={style.mini_text}>
-                {text(
-                  'A 9% fee applies when topping up your wallet. The price in the performer response already includes the commission.',
-                )}
-              </p>
-            </div>
-
-            <div
-              className={style.block}
-              style={{ position: 'relative', top: '35px' }}
-            >
-              {/* <p>Оплата наличными</p> */}
-              <div className={style.radio}>
-                <input
-                  type="radio"
-                  id="inputCash"
-                  name="radioPayments"
-                  checked={selectedIdx === 1}
-                  onChange={() => setSelectedIdx(1)}
-                />
-                <label htmlFor="inputCash">{text('Cash payment')}</label>
-              </div>
-              <p className={style.mini_text}>
-                {text('Pay the performer directly')} <br />
-                {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
-              </p>
-            </div>
-          </div>
-
-          <div
-            className={style.button_go}
-            onClick={() => {
-              setVisibleBlockPayment(false);
-              setVisibleConfirm(true);
-            }}
-          >
-            {text('Continue')}
-          </div>
-        </div>
-      </div>
-    ) : null}
     {/* Вы подтвердили производителя работ */}
-    {visibleConfirm ? (
-      <div className={style.blockConfirm_wrap}>
-        <div
-          className={style.blockPayment}
-          style={{ padding: '50px 50px 50px 50px' }}
-        >
-          <div
-            className={style.close}
-            onClick={() => setVisibleConfirm(false)}
-          >
-            <img src="/img/close.svg" alt="" />
-          </div>
+    <ConfirmationBlock
+      visibleConfirm={visibleConfirm}
+      setVisibleConfirm={setVisibleConfirm}
+    />
 
-          <h2>{text('You have confirmed the contractor')}</h2>
-          <div className={style.row}>
-            <p>
-              {text('By confirming the performer you open a chat dialog with them')}
-            </p>
-          </div>
-
-          <Link
-            to="/client/requests/my_orders/#order"
-            className={style.button_confirm}
-          >
-            {text('Continue')}
-          </Link>
-        </div>
-      </div>
-    ) : null}
-
-    <div>
-      <section
-        className={`main__info container detail-container ${style.container_service}`}
-      >
-        <div className="main__info__content">
-          <h1>
-            {text('Repair service cost for') /* todo: Исправить текст */}{' '}
-            <strong>{currentServiceDetails.name}</strong>
-          </h1>
-          <div className="df align-center">
-            <img src="/img/search.png" className="paugfheotw" alt="" />
-            <input
-              type="text"
-              placeholder={text('Search...')}
-              className="searchaproblemEnter"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          {/* блок с iphone */}
-          <div className={`main__info__image ${style.iphone_mobile}`}>
-            <img
-              // src={SERVER_PATH + device.picture}
-              className={style.iphone_mobile__img}
-              src="/img/detail-iphone.png"
-              alt=""
-            />
-            <p>
-              {text('Spare parts for the repair are already included in the service cost. This is the final price')}
-            </p>
-          </div>
-          {/* блок, если не выбраны услуги */}
-          {Object.keys(prices).length === 0 && (
-            <div className="order__no-cards">
-              <img src="/img/many_people.png" alt="" />
-              <p>
-                {text('Please select the organization closest to your home on the map below and place an order by choosing the services you need.')}
-              </p>
-            </div>
-          )}
-
-          {/* список услуг */}
-          <div className={`order__cards__to__scrolls ${style.orders_list}`}>
-            {Object.keys(prices).length > 0 &&
-              Object.entries(prices).map(([id, obj]) => (
-                <>
-                  <div
-                    key={id}
-                    className={`first__s__card ${style.order_row}`}
-                  >
-                    <div className="main__info__content__card">
-                      <div className="main__card__first">
-                        <h4>{text('Service')}</h4>
-                        <p>
-                          {obj['name']} {obj['category']}
-                        </p>
-                      </div>
-                      <div style={{ flex: 1 }}></div>
-                      <div
-                        className="main__card__price"
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        <p>{obj['price']} ₽</p>
-                      </div>
-                      <div className="main__card__second">
-                        <p>{obj['delivery']}</p>
-                        <button
-                          className="pickfaf"
-                          onClick={() => addRemoveService(id)}
-                        >
-                          {selectedServices.includes(id)
-                            ? text('Remove')
-                            : text('Select')}
-                        </button>
-                      </div>
-                      <div
-                        className={`main__card__third ${
-                          selectedServices.includes(id)
-                            ? 'main__card__third--active'
-                            : null
-                        }`}
-                      ></div>
-                    </div>
-                    <div className="main__card__third activeijpqwothweoruh"></div>
-                  </div>
-                </>
-              ))}
-          </div>
-
-          {/* Условный рендеринг кнопки "Оформить заказ" */}
-          {selectedContractor.id && (
-            <div className={style.button_wrap}>
-              <button
-                className={style.button_services}
-                onClick={() => {
-                  setShow(true);
-                }}
-              >
-                {text('Place an order')}
-              </button>
-            </div>
-          )}
-
-          <div
-            className="popupdetailfwpruhwe"
-            style={show ? null : { display: 'none' }}
-          >
-            <div className="modfdfsdafasal-content">
-              <div
-                className={
-                  goToR
-                    ? 'modal-content oformitzayavka gomodaldetailfgg werwertttt'
-                    : 'modal-content oformitzayavka werwertttt'
-                }
-              >
-                <span
-                  onClick={() => {
-                    setFormError('');
-                    setShow(false);
-                  }}
-                >
-                  <img className="close" src="/img/img-delete.png" alt="" />
-                </span>
-                <h1
-                  className="detailpopuptitle"
-                  style={{ paddingBottom: '10px' }}
-                >
-                  {text('Place an order')}
-                </h1>
-                <p style={{ marginBottom: '10px' }}>{text('Official prices')}</p>
-
-                {!user.id ? (
-                  <div
-                    className="modfdfsdafasal-error"
-                    style={{ marginBottom: '10px' }}
-                  >
-                    {text('Please sign up or log in')}
-                  </div>
-                ) : null}
-
-                <form onSubmit={onSubmit}>
-                  {formError && (
-                    <div className="auth-err" style={{ width: '100%' }}>
-                      {text(formError)}
-                    </div>
-                  )}
-
-                  <div className={`df ${style.modal_from_row}`}>
-                    <input
-                      type="text"
-                      placeholder={text('Your name')}
-                      defaultValue={user.name}
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      // disabled
-                    />
-                    <input
-                      className="ismrf"
-                      type="text"
-                      placeholder={text('Phone number')}
-                      defaultValue={user.phone}
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      // disabled
-                    />
-                  </div>
-
-                  {/* список выбранных услуг */}
-                  <div className="selected_service">
-                      <div className="selected_service__heading">
-                      <p>Выплывающий список проблемы</p>
-                        <div style={{ flex: 1 }}></div>
-                      <p className="selected_service__text-light">{text('Total')}</p>
-                      <p className="selected_service__text-price">
-                        {getSumPrice()} ₽
-                      </p>
-                      <div
-                        className="selected_service__arrow"
-                        style={{
-                          rotate: visibleListSelectedServices
-                            ? '-90deg'
-                            : '90deg',
-                        }}
-                        onClick={() =>
-                          setVisibleListSelectedServices((prev) => !prev)
-                        }
-                      >
-                        <img src="/img/sliderright.png" alt="" />
-                      </div>
-                    </div>
-                        {visibleListSelectedServices ? (
-                          <div className="selected_service__services">
-                        {selectedServices.map(id => (
-                          <div
-                            key={id}
-                            className="selected_service__service-row"
-                          >
-                            <p className="selected_service__name">
-                              {prices[id]['name']}
-                            </p>
-                            <div style={{ flex: 1 }}></div>
-                            <p className="selected_service__price">
-                              {prices[id]['price']} ₽
-                            </p>
-                            <p className="selected_service__delivery">
-                              {prices[id]['delivery']}
-                            </p>
-                            <div className="selected_service__checkbox">
-                              <input
-                                checked={
-                                  !ignoreSelectedServices.includes(id)
-                                }
-                                type="checkbox"
-                                name=""
-                                id=""
-                                onChange={() => addRemoveIgnoreService(id)}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        <div className="selected_service__final">
-                          <p className="selected_service__text-light">
-                            {text('Total')}
-                          </p>
-                          <p className="selected_service__text-price">
-                            {getSumPrice()} ₽
-                          </p>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <textarea
-                    className="descdetail"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder={text('Problem description')}
-                    cols="30"
-                    rows="10"
-                  />
-                  <button className={`done ${style.fix_btn}`} type="submit">
-                    {text('Submit')}
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className={`main__info__image ${style.iphone_desktop}`}>
-          <img
-            src="/img/detail-iphone.png"
-            alt=""
-            style={{
-              width: '540px',
-              height: '570px',
-              objectFit: 'contain',
-            }}
-          />
-          <p>
-            {text('Spare parts for the repair are already included in the service cost. This is the final price')}
-          </p>
-        </div>
-      </section>
-
-      {/* цены */}
-      <section className="detail__price">
-        <div className="container detail-price-container">
-          <Swiper
-            slidesPerView={4}
-            spaceBetween={30}
-            navigation={true}
-            modules={[Navigation]}
-            className={style.swiper_price}
-            breakpoints={{
-              0: {
-                slidesPerView: 2,
-              },
-              800: {
-                slidesPerView: 3,
-              },
-              1124: {
-                slidesPerView: 4,
-              },
-            }}
-          >
-            {Object.entries(prices).map(([id, obj]) => (
-              <SwiperSlide key={id} className="sliderr">
-                <div
-                  className={`detail__price__card ${
-                    !selectedServices.includes(id) ? 'red' : null
-                  }`}
-                >
-                  <div className="price">
-                    <h1>{obj['price']}</h1>
-                    <img width="10px" src="/img/rubl.png" alt="" />
-                  </div>
-                  <p>{obj['category']}</p>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </section>
-
-      <section className="map">
-        <YMap
-          contractors={contractors}
-          selectedContractor={selectedContractor}
-          selectContractor={onSelectContractor}
-        />
-      </section>
-    </div>
+    <ServiceMainContent
+      text={text}
+      currentServiceDetails={currentServiceDetails}
+      prices={prices}
+      selectedServices={selectedServices}
+      addRemoveService={addRemoveService}
+      selectedContractor={selectedContractor}
+      onSelectContractor={onSelectContractor}
+      showOrderForm={showOrderForm}
+      setShowOrderForm={setShowOrderForm}
+      contractors={contractors}
+      formError={formError}
+      setFormError={setFormError}
+      user={user}
+      name={name}
+      setName={setName}
+      phone={phone}
+      setPhone={setPhone}
+      getSumPrice={getSumPrice}
+      ignoreSelectedServices={ignoreSelectedServices}
+      addRemoveIgnoreService={addRemoveIgnoreService}
+      description={description}
+      setDescription={setDescription}
+      onSubmit={onSubmit}
+    />
 
     {/* Условный рендеринг модальных окон */}
-    {selectedContractor.id && (
-      <div style={{ display: 'flex', position: 'absolute' }}>
-        <div
-          style={{
-            position: 'absolute',
-            zIndex: 1,
-            bottom: '0',
-            left: '370px',
-            display: 'flex',
-            gap: '10px',
-          }}
-        >
-          {showSmallModal && (
-            <div className="info_contractor">
-              <div
-                className="info_contractor__close"
-                onClick={handleCloseModals}
-                style={{ cursor: 'pointer' }}
-              >
-                <img src="/img/close.svg" alt="" />
-              </div>
-
-              <div className="info_contractor__row1">
-                <img src="/img/profile__image.png" alt="" />
-                <div className="info_contractor__about">
-                  <p>{selectedContractor.name}</p>
-                  <p>{selectedContractor.info}</p>
-                  <div className="info_contractor__stars">
-                    <Rating
-                      size={18}
-                      readonly
-                      initialValue={selectedContractor.rating}
-                      allowFraction
-                      fillColor="#FFC107"
-                      emptyColor="#E4E5E9"
-                    />
-                  </div>
-                  <div className="info_contractor__row-links">
-                    <Link to={`/client/feedback/${selectedContractor.id}`}>
-                      {selectedContractor.reviews} {text('reviews received')}
-                    </Link>
-                    <button
-                      type="button"
-                      className="info_contractor__row-link"
-                      onClick={handleShowBigModal}
-                    >
-                      {text('Learn more')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <p className="info_contractor__info">{selectedContractor.address}</p>
-              <p className="info_contractor__info">{text('Open: from 9 to 21')}</p>
-              <p className="info_contractor__text-about">
-                <span className="info_contractor__text-about-light">
-                  {text('Organization name')}
-                </span>
-                {selectedContractor.orgName}
-              </p>
-              <p className="info_contractor__text-about">
-                <span className="info_contractor__text-about-light">
-                  {text('Experience')}
-                </span>
-                {selectedContractor.experience}
-              </p>
-              <p className="info_contractor__text-about">
-                <span className="info_contractor__text-about-light">
-                  {text('On the platform')}
-                </span>
-                {text('since')} {selectedContractor.onSiteSince}
-              </p>
-              <p className="info_contractor__text-about">
-                <span className="info_contractor__text-about-light">
-                  {text('Status')}
-                </span>
-                {text(selectedContractor.status)}
-              </p>
-              <p className="info_contractor__text-about--accent">
-                <span className="info_contractor__text-about-light">
-                  {text('Rating')}
-                </span>
-                {selectedContractor.rating}
-              </p>
-              <p className="info_contractor__text-about--accent">
-                <span className="info_contractor__text-about-light">
-                  {text('Orders completed')}
-                </span>
-                {selectedContractor.ordersCompleted}
-              </p>
-              <p className="info_contractor__text-about--accent">
-                <span className="info_contractor__text-about-light">
-                  {text('Orders delivered successfully')}
-                </span>
-                {selectedContractor.successRate}
-              </p>
-              <p className="info_contractor__text-about--accent">
-                <span className="info_contractor__text-about-light">
-                  {text('Repeat orders')}
-                </span>
-                {selectedContractor.repeatOrders}
-              </p>
-            </div>
-          )}
-          {showBigModal && (
-            <div className="info_contractor_big">
-              <div>
-                <div
-                  className="info_contractor__close"
-                  onClick={handleCloseModals}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img src="/img/close.svg" alt="" />
-                </div>
-
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Category type')}
-                  </span>
-                  {selectedContractor.categoryView}
-                </p>
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Category')}
-                  </span>
-                  {selectedContractor.categories}
-                </p>
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Brands')}
-                  </span>
-                  {selectedContractor.brands}
-                </p>
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Your activity')}
-                  </span>
-                  {selectedContractor.activity}
-                </p>
-
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Main focus')}
-                  </span>
-                  {selectedContractor.mainFocus}
-                </p>
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('Main business')}
-                  </span>
-                  {text(selectedContractor.businessType)}
-                </p>
-                <p className="info_contractor_big__text-about">
-                  <span className="info_contractor_big__text-about-light">
-                    {text('About the organization:')}{' '}
-                  </span>
-                </p>
-                <p className="info_contractor_big__text">
-                  {selectedContractor.aboutOrg}
-                </p>
-
-                <div>
-                  <Swiper
-                    slidesPerView={4}
-                    spaceBetween={30}
-                    navigation={true}
-                    modules={[Navigation]}
-                    className={style.swiper}
-                    breakpoints={{
-                      0: {
-                        slidesPerView: 2,
-                      },
-                      800: {
-                        slidesPerView: 2,
-                      },
-                      1124: {
-                        slidesPerView: 3,
-                      },
-                    }}
-                  >
-                    {/* Слайдер картинок тестовых цен удален todo: Сделать новый блок цен */}
-                  </Swiper>
-                </div>
-              </div>
-
-              <div></div>
-            </div>
-          )}
-        </div>
-      </div>
-    )}
+    <ContractorInfoModals
+      selectedContractor={selectedContractor}
+      showSmallModal={showSmallModal}
+      showBigModal={showBigModal}
+      handleCloseModals={handleCloseModals}
+      handleShowBigModal={handleShowBigModal}
+    />
 
     {/* Модальное окно с слайдером (удалено, так как test_price не используется для изображений) */}
     {isModalOpen && (
-      <div className="modal" onClick={closeModal}>
-        <div className="modalContent" onClick={(e) => e.stopPropagation()}>
-          <button className="closeBtn" onClick={closeModal}>
+      <div className={style.modal} onClick={closeModal}>
+        <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
+          <button className={style.closeBtn} onClick={closeModal}>
             ×
           </button>
 
@@ -1011,11 +433,11 @@ function ServiceDetail() {
           <Swiper
             navigation={true}
             modules={[Navigation]}
-            className="modalSwiper"
+            className={style.modalSwiper}
           >
             {/* Если нужны картинки, их нужно будет брать из другого источника */}
             <SwiperSlide>
-                <div className="modal-content-info">
+                <div className={style['modal-content-info']}>
                   {/* Placeholder for image if needed */}
                   <p>{text('No image available')}</p>
                 </div>
@@ -1024,75 +446,6 @@ function ServiceDetail() {
         </div>
       </div>
     )}
-
-    {/* Добавим стили для модального окна */}
-    {/* todo: вынести стили в css/scss */}
-    <style jsx>{`
-      .modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-      }
-
-      @media screen and (max-width: 1000px) {
-        .modalContent {
-          height: 50% !important;
-        }
-        .modal img {
-          width: 100% !important;
-          height: auto !important;
-        }
-      }
-
-      .modal-content-info {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-      }
-
-      .modalContent {
-        position: relative;
-        padding: 20px;
-        background: white;
-        width: 60%;
-        height: 80%;
-        overflow: hidden;
-      }
-
-      .modal img {
-        width: auto;
-        height: 80%;
-      }
-
-      .closeBtn {
-        top: 0px;
-        position: absolute;
-        right: 10px;
-        font-size: 30px;
-        background: none;
-        border: none;
-        color: #333;
-        cursor: pointer;
-      }
-
-      .closeBtn:hover {
-        color: red;
-      }
-
-      .modalSwiper {
-        width: 100%;
-        height: 100%;
-      }
-    `}</style>
   </>
 }
 
