@@ -5,11 +5,11 @@ import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
-import { useUserExtended, updateUserDetails } from '../../state/user';
+import { useUser, updateUserDetails } from '../../state/user';
 
 const FinanceClient = () => {
   const queryClient = useQueryClient();
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
   const [success, setSuccess] = useState(false);
@@ -18,19 +18,19 @@ const FinanceClient = () => {
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
   useEffect(() => {
-    const cardWallet = userEx.details?.wallets?.find(
+    const cardWallet = user.details?.wallets?.find(
       (w) => w.type === 'card',
     );
-    const wmWallet = userEx.details?.wallets?.find(
+    const wmWallet = user.details?.wallets?.find(
       (w) => w.type === 'webmoney',
     );
 
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
-  }, [userEx.details?.wallets]);
+  }, [user.details?.wallets]);
 
   // Early return if no user ID
-  if (!userEx.id) {
+  if (!user.id) {
     return null;
   }
 

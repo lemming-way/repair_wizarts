@@ -1,25 +1,96 @@
 /**
- * Модуль для работы с пользователями и аутентификацией
+ * Модуль api для работы с пользователями и аутентификацией
  *
  * @summary
  * **Типы:**
  * LoginType, UserData, UserUpdateData, RegisterUserData, RegisterResult
  *
- * **Функции, влияющие на глобальное состояние:**
- * login, logout, getUserData, updateUser, updateUserDetails, loginByVerificationCode,
- * registerAsClient, registerAsContractor
+ * **Авторизация:**
+ * login, logout, loginByVerificationCode
  *
- * **Функции, не влияющие на глобальное состояние:**
- * updatePassword, recoverPassword, sendVerification
+ * **Получение данных:**
+ * getAuthUser, getUsers
+ *
+ * Изменение данных:**
+ * updateUser, updateUserDetails, registerAsClient, registerAsContractor, updatePassword
+ *
+ * **Вспомогательные функции:**
+ * recoverPassword, sendVerification
  */
 
-import { post, postNoAuth, authWithAuthUser, AuthUser } from './request';
+import { post, postNoAuth, authWithAuthUser } from './request';
 import { AuthToken } from '../auth';
 
 /**
  * Тип логина: по телефону или по e-mail.
  */
 export type LoginType = 'phone' | 'e-mail';
+
+/**
+ * Информация о блокировке пользователя.
+ */
+export type UserBanInfo = {
+    /** Число активных банов на авторизацию */
+    auth?: string | null | unknown;
+    /** Число активных банов на создание или получения поездки */
+    order?: string | null | unknown;
+    /** Число активных банов на создание темы в блоге */
+    blog_topic?: string | null | unknown;
+    /** Число активных банов на создание сообщения в чужой теме */
+    blog_post?: string | null | unknown;
+};
+
+/**
+ * Расширенная информация о пользователе.
+ */
+export type UserData = {
+  /** ID пользователя */
+  u_id?: string | unknown;
+  /** Имя пользователя */
+  u_name?: string | unknown;
+  /** Фамилия пользователя */
+  u_family?: string | unknown;
+  /** Отчество или второе имя */
+  u_middle?: string | unknown;
+  /** Электронная почта */
+  u_email?: string | unknown;
+  /** Номер телефона */
+  u_phone?: string | null | unknown;
+  /** ID роли пользователя в системе */
+  u_role?: string | unknown;
+  /** ID статуса проверки пользователя администратором */
+  u_check_state?: string | null | unknown;
+  /** Блокировки пользователя */
+  u_ban?: UserBanInfo | unknown;
+  /** Исполнитель готов выполнять заказы */
+  u_active?: 0 | 1 | unknown;
+  /** Ссылка на фото */
+  u_photo?: string | unknown;
+  /** Дата рождения в формате ГГГГ-ММ-ДД */
+  u_birthday?: string | null | unknown;
+  /** ID языка пользователя в данных сайта (числовой, не символьный код ISO) */
+  u_lang?: string | null | unknown;
+  /** Трёхбуквенный код выбранной валюты пользователя */
+  u_currency?: string | null | unknown;
+  /** Проверен ли номер телефона (0 - нет, 1 - да). */
+  u_phone_checked?: 0 | 1 | unknown;
+  /** Проверен ли e-mail (0 - нет, 1 - да). */
+  u_email_checked?: '0' | '1' | unknown;
+  /** Город пользователя. */
+  u_city?: string | null | unknown;
+  /** Описание пользователя. */
+  u_description?: string | unknown;
+  /** Дополнительные детали пользователя. */
+  u_details?: Record<string, unknown> | null | unknown;
+  /** Комментарии к заказам из списка data.booking_comments. */
+  b_comments?: string[] | null | unknown;
+  /** Дополнительные услуги из data.services. */
+  b_services?: string[] | null | unknown;
+  /** Типы дальности поездки из data.booking_location_classes. */
+  b_location_classes?: Array<{ b_location_class: string; basic: '0' | '1' }> | null | unknown;
+  /** Дополнительные свойства. */
+  props?: Record<string, Array<unknown>> | unknown;
+}
 
 /**
  * Нормализует строку логина в зависимости от ее типа.
@@ -55,7 +126,7 @@ export async function login(
   login: string,
   password: string,
   type: LoginType = 'phone'
-): Promise<AuthToken & { auth_user?: AuthUser }> {
+): Promise<AuthToken & { auth_user?: UserData }> {
   if (type !== 'e-mail' && type !== 'phone') type = 'phone';
 
   const normalizedLogin = normalizeLogin(login, type);
@@ -66,7 +137,9 @@ export async function login(
     type,
   });
 
-  return authWithAuthUser<AuthToken>('token', { auth_hash });
+  const authResult = await authWithAuthUser<AuthToken>('token', { auth_hash });
+  if (authResult.auth_user && 'object' !== typeof authResult.auth_user) delete authResult.auth_user;
+  return authResult as AuthToken & { auth_user?: UserData };
 }
 
 /**
@@ -78,44 +151,32 @@ export function logout(): Promise<void> {
 }
 
 /**
- * Расширенная информация о пользователе.
- */
-export interface UserData extends AuthUser {
-  /** Проверен ли номер телефона (0 - нет, 1 - да). */
-  u_phone_checked?: 0 | 1 | unknown;
-  /** Проверен ли e-mail (0 - нет, 1 - да). */
-  u_email_checked?: '0' | '1' | unknown;
-  /** Город пользователя. */
-  u_city?: string | null | unknown;
-  /** Описание пользователя. */
-  u_description?: string | unknown;
-  /** Дополнительные детали пользователя. */
-  u_details?: Record<string, unknown> | null | unknown;
-  /** Комментарии к заказам из списка data.booking_comments. */
-  b_comments?: string[] | null | unknown;
-  /** Дополнительные услуги из data.services. */
-  b_services?: string[] | null | unknown;
-  /** Типы дальности поездки из data.booking_location_classes. */
-  b_location_classes?: Array<{ b_location_class: string; basic: '0' | '1' }> | null | unknown;
-  /** Дополнительные свойства. */
-  props?: Record<string, Array<unknown>> | unknown;
-}
-
-/**
  * Получает подробную информацию об авторизованном пользователе.
  * @returns Промис, который разрешается с объектом UserData или пустой объект, если данные не найдены.
  */
-export async function getUserData(): Promise<UserData> {
-  const result = await post<{ user?: Record<string, UserData>; auth_user?: AuthUser }>('user/authorized');
+export async function getAuthUser(): Promise<UserData> {
+  const result = await post<{ user?: Record<string, UserData>; auth_user?: { u_id?: unknown } }>('user/authorized');
   const uid = 'string' === typeof result.auth_user?.u_id || 'number' === typeof result.auth_user?.u_id ? result.auth_user.u_id : undefined;
   if (uid && result.user?.[uid]) return result.user[uid];
   else return {};
 }
 
 /**
+ * Получает подробную информацию о пользователях по их ID.
+ * @param userIds Массив ID пользователей
+ * @returns Промис, который разрешается со списком UserData или пустой объект, если данные не найдены.
+ */
+export async function getUsers(userIds: number[]): Promise<Record<string, UserData>> {
+  if (!userIds.length) return {};
+  const result = await post<{ user?: Record<string, UserData> }>(`user/${userIds}`);
+  if ('object' === typeof result.user && !result.user === null) return result.user;
+  else return {};
+}
+
+/**
  * Данные для обновления профиля пользователя.
  */
-export interface UserUpdateData {
+export type UserUpdateData = {
   /** Имя пользователя. */
   u_name?: string;
   /** Отчество пользователя. */
@@ -209,7 +270,7 @@ export async function loginByVerificationCode(
   login: string,
   verificationCode: string,
   type: LoginType = 'phone'
-): Promise<AuthToken & { auth_user?: AuthUser }> {
+): Promise<AuthToken & { auth_user?: UserData }> {
   if (!verificationCode) {
     return Promise.reject(new Error('Verification code must not be empty.'));
   }
@@ -222,13 +283,15 @@ export async function loginByVerificationCode(
     type: `${type}_code`,
   });
 
-  return authWithAuthUser<AuthToken>('token', { auth_hash });
+  const authResult = await authWithAuthUser<AuthToken>('token', { auth_hash });
+  if (authResult.auth_user && 'object' !== typeof authResult.auth_user) delete authResult.auth_user;
+  return authResult as AuthToken & { auth_user?: UserData };
 }
 
 /**
  * Данные для регистрации нового пользователя.
  */
-export interface RegisterUserData {
+export type RegisterUserData = {
   /** Имя пользователя. */
   u_name: string;
   /** Номер телефона пользователя. */
@@ -244,7 +307,7 @@ export interface RegisterUserData {
 /**
  * Результат успешной регистрации пользователя.
  */
-export interface RegisterResult {
+export type RegisterResult = {
   /** Идентификатор пользователя. */
   u_id: string;
   /** Токен аутентификации. */

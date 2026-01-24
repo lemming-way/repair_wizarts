@@ -13,6 +13,7 @@ import appFetch from '../../utilities/appFetch';
 import { useLanguage } from '../../state/language';
 import { useUser } from '../../state/user';
 import { useServices } from '../../state/site-data';
+import { useContractors } from '../../state/order';
 
 import PaymentBlock from './PaymentBlock';
 import ConfirmationBlock from './ConfirmationBlock';
@@ -52,64 +53,66 @@ function ServiceDetail() {
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
-  const [contractorsList, setContractorsList] = useState([]);
   const [contractorCarData, setContractorCarData] = useState(null);
 
-  // todo: вынести загрузку пользователя в глобальное состояние
-  useEffect(() => {
-    appFetch('user', { body: { lc: 99999999999 } }, true)
-      .then((response) => {
-        if (response && response.data && response.data.user) {
-          const allUsers = Object.values(response.data.user);
+  // todo: получить город из формы
+  const { users: contractors } = useContractors({ service: serviceId, city: 105 });
 
-          const filteredContractors = allUsers
-            .filter((user) => user.u_details && user.u_details.business_model)
-            .map((user) => {
-              const details = user.u_details || {};
-              return {
-                id: user.u_id,
-                username: user.u_name,
-                name: `${user.u_name || ''} ${user.u_family || ''}`.trim(),
-                latitude: 59.9343 + (Math.random() - 0.5) * 0.1,
-                longitude: 30.3351 + (Math.random() - 0.5) * 0.2,
-                info: text(details.business_model || 'Independent technician'),
-                rating: details.rating || 5,
-                reviews: details.reviews || 0,
-                address: details.address || text('Address not specified'),
-                orgName: details.organization_name || text('Private practice'),
-                experience: `${details.experience || 1} ${text('Years unit')}`,
-                onSiteSince: user.u_created
-                  ? new Date(user.u_created * 1000).getFullYear()
-                  : '2023',
-                status: user.u_active ? 'Online' : 'Offline',
-                ordersCompleted: details.ordersCompleted || 0,
-                successRate: `${details.successRate || 100}%`,
-                repeatOrders: `${details.repeatOrders || 0}%`,
-                categoryView:
-                  details.section?.map((item) => item.label).join(', ') ||
-                  text('Electronics'),
-                categories:
-                  details.subsection?.map((item) => item.label).join(', ') ||
-                  text('Phone repair'),
-                brands:
-                  details.services?.map((item) => item.label).join(', ') ||
-                  text('All brands'),
-                activity: details.specialty || text('Equipment repair'),
-                mainFocus: details.main_business || text('General repair'),
-                businessType: details.business_model || text('Service center'),
-                aboutOrg:
-                  details.about_organization ||
-                  text('Organization information is not available.'),
-              };
-            });
+  //~ // todo: вынести загрузку пользователя в глобальное состояние
+  //~ useEffect(() => {
+    //~ appFetch('user', { body: { lc: 99999999999 } }, true)
+      //~ .then((response) => {
+        //~ if (response && response.data && response.data.user) {
+          //~ const allUsers = Object.values(response.data.user);
 
-          setContractorsList(filteredContractors);
-        }
-      })
-      .catch((error) => {
-        console.error('Ошибка при загрузке пользователей:', error);
-      });
-  }, [text]);
+          //~ const filteredContractors = allUsers
+            //~ .filter((user) => user.u_details && user.u_details.business_model)
+            //~ .map((user) => {
+              //~ const details = user.u_details || {};
+              //~ return {
+                //~ id: user.u_id,
+                //~ username: user.u_name,
+                //~ name: `${user.u_name || ''} ${user.u_family || ''}`.trim(),
+                //~ latitude: 59.9343 + (Math.random() - 0.5) * 0.1,
+                //~ longitude: 30.3351 + (Math.random() - 0.5) * 0.2,
+                //~ info: text(details.business_model || 'Independent technician'),
+                //~ rating: details.rating || 5,
+                //~ reviews: details.reviews || 0,
+                //~ address: details.address || text('Address not specified'),
+                //~ orgName: details.organization_name || text('Private practice'),
+                //~ experience: `${details.experience || 1} ${text('Years unit')}`,
+                //~ onSiteSince: user.u_created
+                  //~ ? new Date(user.u_created * 1000).getFullYear()
+                  //~ : '2023',
+                //~ status: user.u_active ? 'Online' : 'Offline',
+                //~ ordersCompleted: details.ordersCompleted || 0,
+                //~ successRate: `${details.successRate || 100}%`,
+                //~ repeatOrders: `${details.repeatOrders || 0}%`,
+                //~ categoryView:
+                  //~ details.section?.map((item) => item.label).join(', ') ||
+                  //~ text('Electronics'),
+                //~ categories:
+                  //~ details.subsection?.map((item) => item.label).join(', ') ||
+                  //~ text('Phone repair'),
+                //~ brands:
+                  //~ details.services?.map((item) => item.label).join(', ') ||
+                  //~ text('All brands'),
+                //~ activity: details.specialty || text('Equipment repair'),
+                //~ mainFocus: details.main_business || text('General repair'),
+                //~ businessType: details.business_model || text('Service center'),
+                //~ aboutOrg:
+                  //~ details.about_organization ||
+                  //~ text('Organization information is not available.'),
+              //~ };
+            //~ });
+
+          //~ setContractorsList(filteredContractors);
+        //~ }
+      //~ })
+      //~ .catch((error) => {
+        //~ console.error('Ошибка при загрузке пользователей:', error);
+      //~ });
+  //~ }, [text]);
 
   useEffect(() => {
     setPhone(user.phone);
@@ -170,8 +173,6 @@ function ServiceDetail() {
     //~ list: [],
   //~ });
   const [description, setDescription] = useState('');
-
-  const contractors = useMemo(() => contractorsList, [contractorsList]);
 
   //~ // непонятный код, основанный на побочных эффектах. привести в понятный вид
   //~ const repairFiltered = useMemo(

@@ -14,11 +14,11 @@ import ModalConfirmPauseClientOrder from '../addDevices/ModalConfirmPauseClientO
 import appFetch from '../../utilities/appFetch';
 import style from '../Service/ServiceDetail.module.scss';
 import { useLanguage } from '../../state/language';
-import { useUserExtended } from '../../state/user';
+import { useUser } from '../../state/user';
 
 function MyOrder() {
   const text = useLanguage();
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
   const navigate = useNavigate();
   const { id } = useParams();
   const [visibleModalConfirmContractor, setVisibleModalConfirmContractor] =
@@ -36,7 +36,7 @@ function MyOrder() {
   const [currentOrder, setCurrentOrder] = useState({});
   useEffect(() => {
     const fetchData = async () => {
-      if (!userEx.id) {
+      if (!user.id) {
         return;
       }
       try {
@@ -74,7 +74,7 @@ function MyOrder() {
       }
     };
     fetchData();
-  }, [userEx.id, id]);
+  }, [user.id, id]);
   //~ const categoryDefinder = async (type, sectionId, subsectionId, serviceId) => {
     //~ try {
       //~ switch (type) {
@@ -257,7 +257,7 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    {text('Balance')}: {userEx.details?.balance || 0}р
+                    {text('Balance')}: {user.details?.balance || 0}р
                   </label>
                 </div>
                 <p>{text('Standard risk-free deal price')}</p>

@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 
 import style from './blackListModal.module.css';
 import appFetch from '../../../utilities/appFetch';
-import { useUserExtended, updateUserDetails } from '../../../state/user';
+import { useUser, updateUserDetails } from '../../../state/user';
 
-const EMPTY_ARRAY = []
+const EMPTY_ARRAY = Object.freeze([]);
 
 export default function BlackListModal({ setVisibleBlackList }) {
-  const { userEx } = useUserExtended();
-  const blackList = userEx.details?.black_list || EMPTY_ARRAY;
+  const { user } = useUser();
+  const blackList = user.details?.black_list || EMPTY_ARRAY;
 
   const [blackListData, setBlackListData] = useState([]);
 
@@ -46,7 +46,7 @@ export default function BlackListModal({ setVisibleBlackList }) {
   const handleUnblock = (id) => {
     const newList = blackList.filter((l) => l.id !== id);
     console.log(newList);
-    if (!userEx.id) {
+    if (!user.id) {
       return;
     }
     updateUserDetails({

@@ -9,12 +9,12 @@ import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import style from './style.module.css';
 import { useLanguage } from '../../state/language';
-import { useUserExtended, updateUserDetails } from '../../state/user';
+import { useUser, updateUserDetails } from '../../state/user';
 
 function ChoiceOfReplenishmentMethodClient() {
   const text = useLanguage();
   const queryClient = useQueryClient();
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
   const navigator = useNavigate();
 
   // const [error, setError] = useState("")
@@ -87,7 +87,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>{text('Top up balance')}</h3>
 
           <div>
-            {userEx.details?.wallets ? (
+            {user.details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -99,8 +99,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {userEx.details?.wallets[0]?.type} <br />
-                    {userEx.details?.wallets[0]?.value}
+                    {user.details?.wallets[0]?.type} <br />
+                    {user.details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -206,10 +206,10 @@ function ChoiceOfReplenishmentMethodClient() {
             <button
               className={style.button}
               onClick={() => {
-                if (!userEx.id) {
+                if (!user.id) {
                   return;
                 }
-                const oldHistory = userEx.details?.history_of_pay || [];
+                const oldHistory = user.details?.history_of_pay || [];
                 const newPayment = {
                   cost: Number(cost),
                   type: 'Credit',
@@ -222,7 +222,7 @@ function ChoiceOfReplenishmentMethodClient() {
                   {
                     balance:
                         Number( cost ) +
-                        Number( userEx.details?.balance || 0 ),
+                        Number( user.details?.balance || 0 ),
                     history_of_pay: [...oldHistory, newPayment],
                   },
                 );

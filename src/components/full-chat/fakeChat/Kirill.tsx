@@ -26,7 +26,7 @@ import { getContractorOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
-import { useUserExtended, UserRole } from '../../../state/user';
+import { useUser, UserRole } from '../../../state/user';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
@@ -1255,8 +1255,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
 function ChoiceOfReplenishmentMethodCard() {
   const text = useLanguage();
-  const { userEx } = useUserExtended();
-  const isUserAuthorized = 'id' in userEx && !!userEx.id;
+  const { user } = useUser();
+  const isUserAuthorized = 'id' in user && !!user.id;
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [contractorUser, setContractorUser] = useState<any>(null);
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
@@ -1274,7 +1274,7 @@ function ChoiceOfReplenishmentMethodCard() {
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
   const userRequests = useService(
-    isUserAuthorized && userEx.role === UserRole.Contractor ? getContractorOrders : getAllClientRequests,
+    isUserAuthorized && user.role === UserRole.Contractor ? getContractorOrders : getAllClientRequests,
     [],
   );
 
@@ -1559,7 +1559,7 @@ function ChoiceOfReplenishmentMethodCard() {
     if (!currentChat?.orders?.length) return;
 
     const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'contractor' = isUserAuthorized && userEx.role === UserRole.Contractor ? 'contractor' : 'client';
+    const role: 'client' | 'contractor' = isUserAuthorized && user.role === UserRole.Contractor ? 'contractor' : 'client';
 
     // 1) загружаем все файлы → получаем постоянные URL
     const uploadedUrls: string[] = [];
@@ -1884,7 +1884,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   currentUser={currentUser}
                   contractorUser={contractorUser}
                   refetchRequests={userRequests.refetch}
-                  viewerIsContractor={isUserAuthorized && userEx.role === UserRole.Contractor} // НОВОЕ
+                  viewerIsContractor={isUserAuthorized && user.role === UserRole.Contractor} // НОВОЕ
                 />
               ))}
             </div>
@@ -1917,8 +1917,8 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {'details' in userEx && Array.isArray(userEx.details?.black_list) && userEx.details.black_list.find(
-                  (item: any) => isUserAuthorized && item.id?.toString() === String(userEx.id),
+                {'details' in user && Array.isArray(user.details?.black_list) && user.details.black_list.find(
+                  (item: any) => isUserAuthorized && item.id?.toString() === String(user.id),
                 ) ? (
                   <div className={styles.chat_block_wrap}>
                     <img src="/img/icons/chat_block.png" alt="" />

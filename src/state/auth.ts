@@ -1,7 +1,7 @@
 /**
  * Результат успешной аутентификации пользователя.
  */
-export interface AuthToken {
+export type AuthToken = {
   /** Токен аутентификации. */
   token: string;
   /** Хэш пользователя. */

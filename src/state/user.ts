@@ -1,31 +1,38 @@
-import { useMemo } from 'react';
-import { QueryClient, UseQueryResult, useQuery, UseMutationResult, useMutation, useQueryClient } from '@tanstack/react-query';
+/**
+ * Модуль для работы с глобальным состоянием пользователей и аутентификацией
+ *
+ * @summary
+ * **Типы данных:**
+ * UserRole, UserProfile, RegisterPayload, UserUpdatePayload,
+ *
+ * **Функции, влияющие на глобальное состояние:**
+ * useUser, useUsersByIds, login, logout, useLogin,
+ * registerClient, useRegisterClient, registerContractor, useRegisterContractor,
+ * updateUser, useUpdateUser, useUpdateUserAvatar, useUpdateUserDetails
+ *
+ * **Функции, не влияющие на глобальное состояние:**
+ * updateUserPassword, useUpdateUserPassword, recoverPassword, usePasswordRecovery
+ */
+import {
+  QueryClient, UseQueryResult, UseMutationResult,   // типы
+  useQuery, useQueries, useMutation, useQueryClient   // хуки
+} from '@tanstack/react-query';
 
 import CONFIG from '../constants';
 import { getToken, setToken, clearToken } from './auth';
 import { fileToBase64 } from '../shared/lib/utilities';
 import {
-  LoginType, UserUpdateData, RegisterUserData, RegisterResult,  // типы
+  LoginType, UserData as APIUserData, UserUpdateData, RegisterUserData, RegisterResult,  // типы
   login as apiLogin, logout as apiLogout, // loginByVerificationCode,  // функции
   registerAsClient as apiRegisterAsClient, registerAsContractor as apiRegisterAsContractor,
-  getUserData, updateUser as apiUpdateUser, updateUserDetails as apiUpdateUserDetails,
+  getAuthUser, getUsers as apiGetUsers, updateUser as apiUpdateUser, updateUserDetails as apiUpdateUserDetails,
   updatePassword as apiUpdatePassword, recoverPassword as apiRecoverPassword
 } from './api/user';
 
 /**
- * Ключи для кэширования данных пользователя в React Query.
- */
-const USER_QUERY_KEY = {
-  /** Базовые данные пользователя */
-  baseData: 'basic',
-  /** Полные данные пользователя */
-  extraData: 'extra',
-};
-
-/**
  * Пустой объект, используемый по умолчанию для предотвращения ошибок доступа к свойствам.
  */
-const EMPTY_OBJECT = {};
+const EMPTY_OBJECT = Object.freeze({});
 
 /**
  * Роли пользователей в системе.
@@ -40,7 +47,7 @@ export enum UserRole {
 /**
  * Базовые данные пользователя.
  */
-export interface UserBaseData {
+export type UserProfile = {
   /** Идентификатор пользователя. */
   id: number;
   /** Имя пользователя. */
@@ -59,13 +66,6 @@ export interface UserBaseData {
   language: string;
   /** Валюта пользователя. */
   currency: string;
-}
-
-// todo: Уточнить тип details
-/**
- * Дополнительные данные пользователя.
- */
-interface UserExtraData {
   /** Проверен ли номер телефона. */
   isPhoneVerified: boolean;
   /** Проверен ли e-mail. */
@@ -78,110 +78,70 @@ interface UserExtraData {
   details: Record<string, unknown>;
 }
 
-/**
- * Полный объект данных пользователя, объединяющий базовые и дополнительные данные.
- */
-export type UserExtendedData = UserBaseData & UserExtraData;
+// todo: Уточнить тип details
 
 /**
- * Полный объект данных пользователя, включающий базовые и дополнительные данные.
- */
-interface UserProfile {
-  /** Базовые данные пользователя. */
-  baseData: UserBaseData;
-  /** Дополнительные данные пользователя. */
-  extraData: UserExtraData;
+ * Заполняет структуру UserProfile данными, полученными из API.
+ * @param data Сырые данные пользователя из API.
+ * @returns Разобранные данные пользователя.
+*/
+function fillUserProfile(data: APIUserData): UserProfile {
+  const numId = Number(data.u_id);
+  const ret: UserProfile = {
+    id: Number.isFinite(numId) ? numId : 0,
+    name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
+    lastname: String(data.u_family || ''),
+    email: String(data.u_email || ''),
+    phone: String(data.u_phone || ''),
+    role: data.u_role === '2' ? UserRole.Contractor : UserRole.Client,
+    avatar: String(data.u_photo || ''),
+    language: String(data.u_lang || CONFIG.APP.language || ''), // todo: Здесь ошибка, символьный код языка для data.u_lang нужно взять из site data
+    currency: String(data.u_currency || ''),
+    isPhoneVerified: Number( data.u_phone_checked ) === 1,
+    isEmailVerified: Number( data.u_email_checked) === 1,
+    description: String(data.u_description || ''),
+    locality: Number(data.u_city) || 0,
+    details:  // todo: Добавить распаковку u_details
+      'object' === typeof data.u_details && data.u_details !== null && !Array.isArray(data.u_details) ?
+      data.u_details as Record<string, unknown> :
+      {}
+  };
+  return ret;
 }
 
-let currentFetch: Promise<UserProfile | {}> | null = null;
 /**
  * Загружает полные данные пользователя из API.
- * @param client Объект с клиентским контекстом (например, QueryClient).
+ * @param client Объект QueryClient.
  * @returns Промис, который разрешается с объектом UserProfile или пустым объектом,
  *          если пользователь не авторизован или данные не найдены.
  * @throws {Error} Если произошла ошибка при запросе к API.
  */
-function fetchUser({ client }): Promise<UserProfile | {}> {
+async function fetchAuthUser({ client }): Promise<UserProfile | {}> {
   const token = getToken();
-  if (!token) return Promise.resolve({});
+  if (!token) return {};
 
-  if (!currentFetch) currentFetch = new Promise(async (resolve, reject) => {
-    try {
-      const result = await getUserData();
-      if (!result) {
-        resolve({});
-        return;
-      }
-      const baseData: UserBaseData = {
-        id: Number( result.u_id ),
-        name: result.u_name && result.u_middle ? `${result.u_name} ${result.u_middle}` : String(result.u_name || result.u_middle || ''),
-        lastname: String(result.u_family || ''),
-        email: String(result.u_email || ''),
-        phone: String(result.u_phone || ''),
-        role: result.u_role === '2' ? UserRole.Contractor : UserRole.Client,
-        avatar: String(result.u_photo || ''),
-        language: String(result.u_lang || CONFIG.APP.language || ''),
-        currency: String(result.u_currency || '')
-      };
-      const extraData: UserExtraData = {
-        isPhoneVerified: Number( result.u_phone_checked ) === 1,
-        isEmailVerified: Number( result.u_email_checked) === 1,
-        description: String(result.u_description || ''),
-        locality: Number(result.u_city) || 0,
-        details:
-          'object' === typeof result.u_details && result.u_details !== null && !Array.isArray(result.u_details) ?
-          result.u_details as Record<string, unknown> :
-          {}
-      };
-      resolve({ baseData, extraData });
-    }
-    catch (e) {
-      reject(e instanceof Error ? e : new Error(String(e)));
-    }
-    finally {
-      currentFetch = null;
-    }
-  });
-  return currentFetch;
+  try {
+    const result = await getAuthUser();
+    if (!result) return {};
+    const userProfile = fillUserProfile(result);
+    return userProfile.id > 0 ? userProfile : {};
+  }
+  catch (e) {
+    throw e instanceof Error ? e : new Error(String(e));
+  }
 }
 
 /**
- * Загружает только базовые данные пользователя и синхронизирует расширенные данные в кэше.
- * Использует `fetchUser` для получения полных данных, но возвращает только `baseData`.
- * @param client Клиент React Query.
- * @returns Промис, который разрешается с объектом UserBaseData или пустым объектом.
- */
-async function fetchUserBase({ client }): Promise<UserBaseData | {}> {
-  const result = await fetchUser({ client });
-  // @ ts-ignore
-  client.setQueryData([ 'user', USER_QUERY_KEY.extraData ], 'extraData' in result && result.extraData ? result.extraData : {});
-  return 'baseData' in result && result.baseData ? result.baseData : {};
-}
-
-/**
- * Загружает расширенные данные пользователя и синхронизирует базовые данные в кэше.
- * Использует `fetchUser` для получения полных данных, но возвращает только `extraData`.
- * @param client Клиент React Query.
- * @returns Промис, который разрешается с объектом UserExtraData или пустым объектом.
- */
-async function fetchUserExtra({ client }): Promise<UserExtraData | {}> {
-  const result = await fetchUser({ client });
-  // @ts-ignore
-  client.setQueryData([ 'user', USER_QUERY_KEY.baseData ], 'baseData' in result && result.baseData ? result.baseData : {});
-  return 'extraData' in result && result.extraData ? result.extraData : {};
-}
-
-/**
- * Хук для получения базовых данных текущего пользователя.
- * @returns Объект с состоянием запроса React Query и объектом `user`, содержащим базовые данные.
+ * Хук для получения данных текущего пользователя.
+ * @returns Объект с состоянием запроса React Query и объектом `user`, содержащим данные.
  */
 export function useUser():
-  UseQueryResult<Awaited<UserBaseData | {}>, unknown> &
-  { user: UserBaseData | {} }
+  UseQueryResult<Awaited<UserProfile | {}>, unknown> &
+  { user: UserProfile | {} }
 {
   const queryResult = useQuery({
-    queryKey: [ 'user', USER_QUERY_KEY.baseData ],
-    queryFn: fetchUserBase,
+    queryKey: [ 'user', 'authorized' ],
+    queryFn: fetchAuthUser,
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
 
@@ -193,36 +153,111 @@ export function useUser():
   };
 }
 
+// Механизм батчинга для fetchUserById
+type UserResolver = {
+  userId: number;
+  resolve: (user: UserProfile | {}) => void;
+  reject: (error: unknown) => void;
+};
+
+let usersToFetch: UserResolver[];
+let usersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
+
 /**
- * Хук для получения полных данных текущего пользователя (базовые и дополнительные).
- * @returns Объект с состоянием запроса React Query и объектотм `userEx` (полные данные пользователя).
+ * Загружает данные пользователя по ID из API.
+ * Использует батчинг для объединения нескольких запросов в один API вызов.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param queryKey Ключ запроса, содержащий ID пользователя (например, ['user', 123]).
+ * @returns Промис, который разрешается с объектом UserProfile или пустым объектом.
+ * @throws {Error} Если произошла ошибка при запросе к API или пользователь не найден.
  */
-export function useUserExtended():
-  UseQueryResult<Awaited<UserExtraData | {}>, unknown> &
-  { userEx: UserExtendedData | {} }
-{
-  const queryResult = useQuery({
-    queryKey: [ 'user', USER_QUERY_KEY.extraData ],
-    queryFn: fetchUserExtra,
-    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
+function fetchUserById({ queryKey }: { queryKey: (string | number)[] }): Promise<UserProfile | {}> {
+  const userId = Number(queryKey[1]);
+  if (!userId) return Promise.resolve({});
+
+  if (usersFetchTimeout) clearTimeout(usersFetchTimeout);
+  usersFetchTimeout = setTimeout(async () => {
+    const resolvers = usersToFetch;
+    usersToFetch = [];
+    usersFetchTimeout = null;
+
+    const userIdsToFetch = [...new Set(usersToFetch.map(item => item.userId))];
+
+    if (userIdsToFetch.length === 0) {
+      return;
+    }
+
+    try {
+      const apiUsers = await apiGetUsers(userIdsToFetch);
+      resolvers.forEach(item => {
+        const userData = apiUsers[item.userId];
+        if (userData) {
+          const userProfile = fillUserProfile(userData);
+          item.resolve(userProfile.id > 0 ? userProfile : {});
+        } else {
+          item.resolve({});
+        }
+      });
+    } catch (error) {
+      resolvers.forEach(item => item.reject(error));
+    }
+  }, 10);
+
+  return new Promise((resolve, reject) => {
+    usersToFetch.push({ userId, resolve, reject });
   });
-  const queryClient = useQueryClient();
-  const userBase =
-    (queryResult.data && queryClient.getQueryData<UserBaseData>([ 'user', USER_QUERY_KEY.baseData ])) ||
-    EMPTY_OBJECT;
+}
 
-  const userEx = useMemo<UserExtendedData | {}>(() => ({
-      ...userBase,
-      ...(queryResult.data || {})
-    }),
-    [userBase, queryResult.data]
-  );
-
-  delete queryResult.data;
-  return {
-    ...queryResult,
-    userEx
+function combineFetchUserResults(results: UseQueryResult<Awaited<UserProfile | {}>, unknown>[]) {
+  // Агрегируем состояния загрузки и ошибок
+  const ret: {
+    isLoading: boolean;
+    isFetching: boolean;
+    isError: boolean;
+    error: unknown;
+    isSuccess:  boolean;
+    users: UserProfile[];
+  } = {
+    isLoading: false,
+    isFetching: false,
+    isError: false,
+    error: null,
+    isSuccess: true,
+    users: []
   };
+
+  results.forEach(query => {
+    if (query.isLoading) ret.isLoading = true;
+    if (query.isFetching) ret.isFetching = true;
+    if (query.isError) {
+      ret.isError = true;
+      ret.error = query.error;
+    }
+    if (query.isLoading) ret.isLoading = true;
+    // @ts-ignore
+    if (query.data?.id) ret.users.push(query.data);
+  });
+
+  return ret;
+}
+
+/**
+ * Хук для получения данных нескольких пользователей по их ID.
+ * @param userIds Массив ID пользователей.
+ * @returns Объект, содержащий объединенное состояние запросов React Query
+ *          и массив `users` с данными успешно полученных пользователей.
+ */
+export function useUsersByIds(userIds: number[]) {
+  const queries = userIds.map(userId => ({
+    queryKey: ['user', userId],
+    queryFn: fetchUserById,
+    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
+  }));
+
+  return useQueries({
+    queries,
+    combine: combineFetchUserResults
+  });
 }
 
 /**
@@ -252,28 +287,16 @@ export async function login(
 
     setToken({ token: authResult.token, u_hash: authResult.u_hash }, keepAuthorized);
 
-    queryClient.invalidateQueries({ queryKey: ['user'] });
+    queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 
-    // Заполняем базовые данные пользователя в кэше, если auth_user присутствует
+    // Заполняем данные пользователя в кэше, если auth_user присутствует
     if (authResult.auth_user) {
-      const baseData: UserBaseData = {
-        id: Number(authResult.auth_user.u_id),
-        name: authResult.auth_user.u_name && authResult.auth_user.u_middle ?
-          `${authResult.auth_user.u_name} ${authResult.auth_user.u_middle}` :
-          String(authResult.auth_user.u_name || authResult.auth_user.u_middle || ''),
-        lastname: String(authResult.auth_user.u_family || ''),
-        email: String(authResult.auth_user.u_email || ''),
-        phone: String(authResult.auth_user.u_phone || ''),
-        role: authResult.auth_user.u_role === '2' ? UserRole.Contractor : UserRole.Client,
-        avatar: String(authResult.auth_user.u_photo || ''),
-        language: String(authResult.auth_user.u_lang || CONFIG.APP.language || ''),
-        currency: String(authResult.auth_user.u_currency || '')
-      };
-      queryClient.setQueryData(['user', USER_QUERY_KEY.baseData], baseData);
+      const userProfile = fillUserProfile(authResult.auth_user);
+      queryClient.setQueryData(['user', 'authorized'], userProfile);
     }
   } catch (error) {
     clearToken();
-    queryClient.invalidateQueries({ queryKey: ['user'] }); // Очищаем кэш и при ошибке
+    queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] }); // Очищаем кэш и при ошибке
     throw error;
   }
 }
@@ -290,7 +313,7 @@ export async function logout(queryClient: QueryClient): Promise<void> {
     console.error('Logout API call failed, but clearing token anyway:', error);
   } finally {
     clearToken();
-    queryClient.invalidateQueries({ queryKey: ['user'] }); // Очищаем кэш пользователя
+    queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] }); // Очищаем кэш пользователя
   }
 }
 
@@ -299,7 +322,7 @@ export async function logout(queryClient: QueryClient): Promise<void> {
  * Использует функцию `login` в качестве mutationFn.
  * В случае успеха:
  * - Запоминает токен с помощью setToken (уже внутри `login`).
- * - Очищает все данные пользователя в кэше react-query (ключ ['user']).
+ * - Очищает все данные пользователя в кэше react-query (ключ ['user', 'authorized']).
  * - Сразу же заполняет базовые данные пользователя значениями, переданными при авторизации.
  * В случае неудачи:
  * - Очищает все данные пользователя и сбрасывает токен с помощью clearToken (уже внутри `login`).
@@ -311,7 +334,7 @@ export function useLogin() {
     mutationFn: ({ loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean }) =>
       login(queryClient, loginValue, password, keepAuthorized),
   });
-  
+
   const loginFn = mutation.mutateAsync;
   const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
   delete ret.mutateAsync;
@@ -324,7 +347,7 @@ export function useLogin() {
 /**
  * Данные для регистрации нового пользователя.
  */
-export interface RegisterPayload {
+export type RegisterPayload = {
   name: string;
   lastname: string;
   phone: string;
@@ -335,12 +358,6 @@ export interface RegisterPayload {
   keepAuthorized: boolean;
 }
 
-/**
- * Регистрирует нового пользователя как клиента.
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param payload Объект с данными для регистрации.
- * @returns Промис, который разрешается после успешной регистрации.
- */
 /**
  * Вспомогательная функция для регистрации нового пользователя.
  * @param queryClient Инстанс QueryClient для управления кэшем.
@@ -379,7 +396,7 @@ async function _registerUser(
     throw new Error('Registration failed: token or user hash is missing.');
   }
   setToken({ token: result.token, u_hash: result.u_hash }, keepAuthorized);
-  queryClient.invalidateQueries({ queryKey: ['user'] });
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
 /**
@@ -443,10 +460,10 @@ export function useRegisterContractor() {
 
 /**
  * Опции для обновления профиля пользователя.
- * Поля здесь соответствуют логическим полям из UserBaseData и UserExtraData.
+ * Поля здесь соответствуют логическим полям из UserProfile.
  * Все поля являются опциональными; будут обновлены только те, которые присутствуют.
  */
-export interface UserUpdatePayload {
+export type UserUpdatePayload = {
   name?: string;
   lastname?: string;
   phone?: string;
@@ -501,7 +518,7 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
   }
 
   await apiUpdateUser(apiUserData);
-  queryClient.invalidateQueries({ queryKey: ['user'] });
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
 /**
@@ -531,7 +548,7 @@ export function useUpdateUser() {
 export async function updateUserAvatar(queryClient: QueryClient, photoFile: File): Promise<void> {
   const base64Photo = await fileToBase64(photoFile);
   await apiUpdateUser({ u_photo: base64Photo });
-  queryClient.invalidateQueries({ queryKey: ['user'] });
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
 /**
@@ -560,7 +577,7 @@ export function useUpdateUserAvatar() {
  */
 export async function updateUserDetails(queryClient: QueryClient, details: Record<string, unknown>): Promise<void> {
   await apiUpdateUserDetails(details);
-  queryClient.invalidateQueries({ queryKey: ['user'] });
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
 /**

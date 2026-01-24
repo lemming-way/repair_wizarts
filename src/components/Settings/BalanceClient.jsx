@@ -7,11 +7,11 @@ import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
-import { useUserExtended, updateUserDetails } from '../../state/user';
+import { useUser, updateUserDetails } from '../../state/user';
 
 const BalanceClient = () => {
   const queryClient = useQueryClient();
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
   const [isVisibleRow, setVisibleRow] = useState(false);
@@ -28,19 +28,19 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  const walletValue = userEx.details?.wallets?.[0]?.value;
-  const userBalance = userEx.details?.balance;
+  const walletValue = user.details?.wallets?.[0]?.value;
+  const userBalance = user.details?.balance;
 
   useEffect(() => {
-    if (!userEx.id) {
+    if (!user.id) {
       return;
     }
       setInputCard(walletValue || 'не указано');
       setInputPrice(userBalance || '0.0');
       setCurrentPage(1); // сбрасываем страницу при смене данных
-  }, [userEx.id, walletValue, userBalance]);
+  }, [user.id, walletValue, userBalance]);
 
-  const allPayments = userEx.details?.history_of_pay || [];
+  const allPayments = user.details?.history_of_pay || [];
 
   // Apply filtering
   const filteredPayments = allPayments.filter((item) => {
@@ -95,7 +95,7 @@ const BalanceClient = () => {
     );
   });
 
-  if (!userEx.id) {
+  if (!user.id) {
     return null;
   }
 
@@ -122,7 +122,7 @@ const BalanceClient = () => {
         <h3 className={style.heading}>Баланс</h3>
 
         <div className={style.wrap_row1}>
-          <p className={style.balance}>{userEx.details?.balance || '0.0'}</p>
+          <p className={style.balance}>{user.details?.balance || '0.0'}</p>
 
           {!isVisibleRow && (
             <div className={style.buttons_row}>
@@ -138,18 +138,18 @@ const BalanceClient = () => {
             </div>
           )}
 
-          {isVisibleRow && userEx.details?.wallets && (
+          {isVisibleRow && user.details?.wallets && (
             <div className={style.wrap_row1__row}>
               <select
                 className={style.select}
                 onChange={(e) => {
-                  const currentCard = userEx.details.wallets.find(
+                  const currentCard = user.details.wallets.find(
                     (item) => item.type === e.target.value,
                   );
                   setInputCard(currentCard.value);
                 }}
               >
-                {userEx.details?.wallets.map((item) => (
+                {user.details?.wallets.map((item) => (
                   <option key={item.type} value={item.type}>
                     {item.type}
                   </option>
@@ -172,8 +172,8 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = userEx.details?.history_of_pay
-                      ? userEx.details?.history_of_pay
+                    const oldHistory = user.details?.history_of_pay
+                      ? user.details?.history_of_pay
                       : [];
                     const newPayment = {
                       cost: Number(inputPrice),
@@ -182,14 +182,14 @@ const BalanceClient = () => {
                       status: 'Успешно',
                       title: 'Вывод средств',
                     };
-                    if (!userEx.id) {
+                    if (!user.id) {
                       return;
                     }
                     updateUserDetails(
                       queryClient,
                       {
                         balance:
-                          (userEx.details?.balance || 0) -
+                          (user.details?.balance || 0) -
                           Number(inputPrice),
                         history_of_pay: [...oldHistory, newPayment],
                       }

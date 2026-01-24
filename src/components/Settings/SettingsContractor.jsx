@@ -10,7 +10,7 @@ import style from './SettingsContractor.module.css';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';
 import { fileToBase64 } from '../../shared/lib/utilities';
-import { useUserExtended, updateUser, updateUserAvatar, updateUserDetails, updateUserPassword } from '../../state/user';
+import { useUser, updateUser, updateUserAvatar, updateUserDetails, updateUserPassword } from '../../state/user';
 
 export default function SettingsContractor() {
   const text = useLanguage();
@@ -21,7 +21,7 @@ export default function SettingsContractor() {
   const [suceeded, setSuceeded] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [error, setError] = useState('data saved');
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
 
   const [mask_value, setMask_value] = useState('+7(9');
 
@@ -39,11 +39,11 @@ export default function SettingsContractor() {
   });
 
   useEffect(() => {
-    if (userEx.id) {
-      const contractor = userEx.details || {};
+    if (user.id) {
+      const contractor = user.details || {};
       const obj = {
-        phone: userEx.phone || '',
-        email: userEx.email || '',
+        phone: user.phone || '',
+        email: user.email || '',
         details: {
           availability_from: contractor.availability_from || '00:00:00',
           availability_to: contractor.availability_to || '00:00:00',
@@ -55,17 +55,17 @@ export default function SettingsContractor() {
       };
       setForm(obj);
     }
-    if (userEx.avatar) {
-      setPreviewUrl(userEx.avatar);
+    if (user.avatar) {
+      setPreviewUrl(user.avatar);
     }
-  }, [userEx]);
+  }, [user]);
 
   useEffect(() => {
     document.title = text('Settings');
   }, [text]);
 
   // Early return if no user ID
-  if (!userEx.id) {
+  if (!user.id) {
     return null;
   }
 
@@ -189,7 +189,7 @@ export default function SettingsContractor() {
             />
             <div className="height">
               <VerificationInput
-                isConfirmed={userEx.isPhoneVerified}
+                isConfirmed={user.isPhoneVerified}
                 {...getFormAttrs('phone')}
                 value={form.phone || ''}
                 onChangeMask={correctPhoneNumder}
@@ -197,7 +197,7 @@ export default function SettingsContractor() {
             </div>
             <VerificationInput
               isEmail
-              isConfirmed={userEx.isEmailVerified}
+              isConfirmed={user.isEmailVerified}
               value={form.email || ''}
               onChangeMask={(e) =>
                 setForm((prev) => ({ ...prev, email: e.target.value }))

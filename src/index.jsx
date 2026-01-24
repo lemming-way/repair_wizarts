@@ -13,7 +13,7 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { NotificationsProvider } from './state/notifications/NotificationsContext';
 
-const isDevelopment = process.env.NODE_ENV === 'development';  // todo: Перенести в /index
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root')
@@ -24,7 +24,7 @@ root.render(
       <NotificationsProvider>
         <BrowserRouter>
           <CustomProvider theme="dark">
-            {isDevelopment ? <QueryDevtools /> : null}
+            {isDevelopment && <QueryDevtools />}
             <App />
           </CustomProvider>
         </BrowserRouter>

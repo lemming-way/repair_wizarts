@@ -1,38 +1,21 @@
+/**
+ * Модуль для работы с api
+ *
+ * @summary
+ * **Типы:**
+ * ErrorResponse, RequestOptions
+ * 
+ * **Классы:**
+ * FetchError
+ *
+ * **Функции:**
+ * requestRaw, request, get, getRaw, post, authWithAuthUser, postWithAuthUser, postNoAuth
+ */
 import CONFIG from '../../constants';
 import { AuthToken, getToken } from '../auth';
 
 const serverURL = process.env.REACT_APP_API_URL || CONFIG.API?.url || '';
 const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
-
-/**
- * Информация о блокировке пользователя.
- */
-export type UserBanInfo = {
-    auth?: string | null | unknown;
-    order?: string | null | unknown;
-    blog_topic?: string | null | unknown;
-    blog_post?: string | null | unknown;
-};
-
-/**
- * Информация об авторизованном пользователе.
- */
-export type AuthUser = {
-  u_id?: string | unknown;
-  u_name?: string | unknown;
-  u_family?: string | unknown;
-  u_middle?: string | unknown;
-  u_email?: string | unknown;
-  u_phone?: string | null | unknown;
-  u_role?: string | unknown;
-  u_check_state?: string | null | unknown;
-  u_ban?: UserBanInfo | unknown;
-  u_active?: 0 | 1 | unknown;
-  u_photo?: string | unknown;
-  u_birthday?: string | null | unknown;
-  u_lang?: string | null | unknown;
-  u_currency?: string | null | unknown;
-};
 
 /**
  * Класс для возврата ошибки вместе с исходным результатом запроса.
@@ -64,7 +47,7 @@ export type ErrorResponse = {
 type SuccessResponse = {
     code: "200";
     status: "success";
-    auth_user?: AuthUser | unknown;
+    auth_user?: unknown;
     auth_hash?: string | unknown;  // при запросе авторизации
     data?: unknown;
 };
@@ -93,7 +76,8 @@ function appendFormValue(formData: FormData, key: string, value: unknown) {
  */
 function prepareFormDataBody(
   data: RequestOptions['data'],
-  includeAuth?: AuthToken | null
+  withAuthUser: boolean,
+  includeAuth: AuthToken | null
 ): FormData {
   const formData = new FormData();
 
@@ -106,6 +90,10 @@ function prepareFormDataBody(
     });
   }
   // Если data не FormData и не Object, оно игнорируется
+
+  if (withAuthUser) {
+      formData.append('au', 'f');
+  }
 
   if (includeAuth) {
       formData.append('token', includeAuth.token);
@@ -137,15 +125,20 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
   correlationId = isDebug ? correlationId || Math.random().toString(36).slice(2) : undefined;
 
   const method = opts.method || 'GET';
-  const url = `${API_BASE_URL}${opts.path}`;
+  let url = `${API_BASE_URL}${opts.path}`;
 
   let formDataBody: FormData | undefined;
 
   if (method === 'POST') {
     const token = getToken();
     const includeAuth = opts.noAuth !== true && !!token?.token && !!token?.u_hash ? token : null;
-    formDataBody = prepareFormDataBody(opts.data, includeAuth);
-  } else if (method !== 'GET') {
+    formDataBody = prepareFormDataBody(opts.data, opts.withAuthUser === true, includeAuth);
+  } else if (method === 'GET') {
+    if (opts.withAuthUser === true) {
+      if (url.includes('?')) url += '&au=f';
+      else url += '?au=f';
+    }
+  } else {
     throw new Error(`Unsupported HTTP method: ${method}. Only GET and POST are supported.`);
   }
 
@@ -196,10 +189,10 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
  * Отправляет HTTP запрос и проверяет статус ответа.
  * @template T Тип ожидаемых данных в ответе (допускается Array или любой Object).
  * @param {RequestOptions} [opts={}] Опции запроса.
- * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа и опциональной информацией о пользователе.
+ * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа и опциональной информацией о пользователе.
  * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
  */
-export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?: AuthUser }> {
+export async function request<T=unknown>(opts: RequestOptions): Promise<T & { auth_user?: unknown }> {
   const isDebug = process.env.NODE_ENV !== 'production';
   const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
 
@@ -222,7 +215,7 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
     if (opts.withAuthUser === true && 'object' === typeof successResponse.auth_user) {
       Object.assign(result, { auth_user: successResponse.auth_user });
     }
-    return result as T & { auth_user?: AuthUser };
+    return result as T & { auth_user?: unknown };
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     if (isDebug) {
@@ -242,7 +235,7 @@ export async function request<T>(opts: RequestOptions): Promise<T & { auth_user?
  * @param path Путь к API.
  * @returns {Promise<T>} Промис с данными ответа.
  */
-export function get<T>(path: string) {
+export function get<T=unknown>(path: string) {
   return request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>;
 }
 
@@ -263,7 +256,7 @@ export function getRaw(path: string) {
  * @param data Данные запроса.
  * @returns {Promise<T>} Промис с данными ответа.
  */
-export function post<T>(path: string, data?: RequestOptions['data']) {
+export function post<T=unknown>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data }) as Promise<T>
 }
 
@@ -273,9 +266,9 @@ export function post<T>(path: string, data?: RequestOptions['data']) {
  * @template T Тип ожидаемых данных.
  * @param path Путь к API.
  * @param data Данные запроса.
- * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа.
+ * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа.
  */
-export function authWithAuthUser<T>(path: string, data?: RequestOptions['data']) {
+export function authWithAuthUser<T=unknown>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, noAuth: true, withAuthUser: true });
 }
 /**
@@ -283,9 +276,9 @@ export function authWithAuthUser<T>(path: string, data?: RequestOptions['data'])
  * @template T Тип ожидаемых данных.
  * @param path Путь к API.
  * @param data Данные запроса.
- * @returns {Promise<T & { auth_user?: AuthUser }>} Промис с данными ответа.
+ * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа.
  */
-export function postWithAuthUser<T>(path: string, data?: RequestOptions['data']) {
+export function postWithAuthUser<T=unknown>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, withAuthUser: true });
 }
 
@@ -296,6 +289,6 @@ export function postWithAuthUser<T>(path: string, data?: RequestOptions['data'])
  * @param {RequestOptions['data']} [data] Данные запроса.
  * @returns {Promise<T>} Промис с данными ответа.
  */
-export function postNoAuth<T>(path: string, data?: RequestOptions['data']) {
+export function postNoAuth<T=unknown>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, noAuth: true }) as Promise<T>;
 }

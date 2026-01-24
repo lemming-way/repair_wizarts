@@ -7,7 +7,7 @@ import 'swiper/css/navigation';
 import { MultiSelect } from '../../shared/ui/';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
-import { useUserExtended, updateUser, updateUserDetails } from '../../state/user';
+import { useUser, updateUser, updateUserDetails } from '../../state/user';
 import { useServices } from '../../state/site-data';
 
 const experienceOptions = [
@@ -27,7 +27,7 @@ function Profile() {
 
   const { categories, subcategories, services } = useServices();
   const queryClient = useQueryClient();
-  const { userEx } = useUserExtended();
+  const { user } = useUser();
 
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
@@ -76,9 +76,9 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (!userEx.id || !userEx.details) return;
+    if (!user.id || !user.details) return;
 
-    const contractorDetails = userEx.details;
+    const contractorDetails = user.details;
 
     const selectedServiceIds = Array.isArray(contractorDetails.services)
       ? contractorDetails.services
@@ -125,9 +125,9 @@ function Profile() {
     );
 
     setForm({
-      name: userEx.name,
-      lastname: userEx.lastname,
-      description: userEx.description || '',
+      name: user.name,
+      lastname: user.lastname,
+      description: user.description || '',
       details: {
         organization_name: contractorDetails.organization_name || '',
         address: contractorDetails.address || '',
@@ -139,14 +139,14 @@ function Profile() {
     });
 
     setBusiness(contractorDetails.business_model || 'Independent technician');
-  }, [userEx, categories, subcategories, services]);
+  }, [user, categories, subcategories, services]);
 
   useEffect(() => {
     document.title = text('Settings');
   }, [text]);
 
   // Early return if no user ID
-  if (!userEx.id) {
+  if (!user.id) {
     return null;
   }
 

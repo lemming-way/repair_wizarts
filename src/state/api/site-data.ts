@@ -1,13 +1,24 @@
+/**
+ * Модуль api для работы со статическими данными сайта
+ *
+ * @summary
+ * **Типы:**
+ * CityData, LanguageData, SiteData, ServicesResponse
+ *
+ * **Получение данных:**
+ * getSiteDataVersion, getSiteData, getServices
+ */
+
 import CONFIG from '../../constants';
 import { get, getRaw, FetchError } from './request';
 
 const CATEGORIES_URL = CONFIG.API?.categoriesUrl || '';
 
-interface SiteDataVersion {
+type SiteDataVersion = {
   'cache version'?: string | unknown;
 }
 
-export interface CityData {
+export type CityData = {
   country?: string | unknown;
   zone?: string | unknown;
   ru?: string | unknown;
@@ -17,7 +28,7 @@ export interface CityData {
   es?: string | unknown;
 }
 
-export interface LanguageData {
+export type LanguageData = {
   native?: string | unknown;
   ru?: string | unknown;
   en?: string | unknown;
@@ -27,7 +38,7 @@ export interface LanguageData {
   iso?: string | unknown;
 }
 
-export interface SiteData {
+export type SiteData = {
   version?: string | unknown;
   default_lang?: number | unknown;
   data?: {

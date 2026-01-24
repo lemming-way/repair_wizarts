@@ -59,7 +59,7 @@ function filterCities(siteData: SiteData, language: string, country: string) {
   return cities;
 }
 
-const EMPTY_OBJECT = {};
+const EMPTY_OBJECT = Object.freeze({});
 
 export function useCities(country: string = 'ru') {
   const queryClient = useQueryClient();
