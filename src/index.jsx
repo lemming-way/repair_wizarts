@@ -7,9 +7,9 @@ import 'rsuite/Dropdown/styles/index.css';
 
 import { queryClient } from './state/queryClient';
 import { QueryDevtools } from './dev/QueryDevtools';
-import "./App.scss"
+import "./app/App.scss"
 
-import App from './App';
+import App from './app';
 import reportWebVitals from './reportWebVitals';
 import { NotificationsProvider } from './state/notifications/NotificationsContext';
 
