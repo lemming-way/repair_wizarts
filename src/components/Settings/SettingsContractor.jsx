@@ -10,7 +10,7 @@ import style from './SettingsContractor.module.css';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';
 import { fileToBase64 } from '../../shared/lib/utilities';
-import { useUser, updateUser, updateUserAvatar, updateUserDetails, updateUserPassword } from '../../state/user';
+import { useUser, updateUser, updateUserAvatar, updateUserPassword } from '../../state/user';
 
 export default function SettingsContractor() {
   const text = useLanguage();
@@ -28,30 +28,13 @@ export default function SettingsContractor() {
   const [form, setForm] = useState({
     phone: '',
     email: '',
-    details: {
-      availability_from: '00:00:00',
-      availability_to: '00:00:00',
-      status: '',
-      mailing: false,
-      is_active: false,
-      login: '',
-    },
   });
 
   useEffect(() => {
     if (user.id) {
-      const contractor = user.details || {};
       const obj = {
         phone: user.phone || '',
         email: user.email || '',
-        details: {
-          availability_from: contractor.availability_from || '00:00:00',
-          availability_to: contractor.availability_to || '00:00:00',
-          status: contractor.status || '',
-          mailing: contractor.mailing || false,
-          is_active: contractor.is_active || false,
-          login: contractor.login || '',
-        },
       };
       setForm(obj);
     }
@@ -117,7 +100,6 @@ export default function SettingsContractor() {
 
     const promises = [
       updateUser(queryClient, form),
-      updateUserDetails(queryClient, form.details)
     ];
     if (form.password?.length > 0 && form.new_password?.length > 0) {
       promises.push( updateUserPassword(queryClient, form) );
@@ -177,16 +159,6 @@ export default function SettingsContractor() {
             )}
             {error && <div className={`auth-err ${style.error}`}>{text(error)}</div>}
 
-            <input
-              value={form.details.login}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  details: { ...prev.details, login: e.target.value },
-                }))
-              }
-              placeholder={text('Login')}
-            />
             <div className="height">
               <VerificationInput
                 isConfirmed={user.isPhoneVerified}
@@ -212,66 +184,14 @@ export default function SettingsContractor() {
               <input type="text" placeholder={text('Password confirmation')} />
               {/* <img src="/img/img-almost-eye.png" alt="" className="almost-eye img" /> */}
             </div>
-            <input
-              type="time"
-              style={{ paddingRight: '10px' }}
-              placeholder={text('What time are you available from')}
-              value={form.details.availability_from}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  details: {
-                    ...prev.details,
-                    availability_from: e.target.value,
-                  },
-                }))
-              }
-            />
-            <input
-              type="time"
-              style={{ paddingRight: '10px' }}
-              placeholder={text('What time are you available to')}
-              value={form.details.availability_to}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  details: { ...prev.details, availability_to: e.target.value },
-                }))
-              }
-            />
-            <input
-              type="text"
-              placeholder={text('Status no more than 40 characters')}
-              value={form.details.status}
-              onChange={(e) => {
-                setForm((prev) => ({
-                  ...prev,
-                  details: { ...prev.details, status: e.target.value },
-                }));
-              }}
-              // {...getFormAttrs('status')}
-            />
             <label className="checkbox">
               <input
                 type="checkbox"
-                checked={form.details.mailing}
+                checked={form.is_active}  // todo: связать с u_active
                 onChange={(e) =>
                   setForm((prev) => ({
                     ...prev,
-                    details: { ...prev.details, mailing: e.target.value },
-                  }))
-                }
-              />
-              {text('Email newsletter')}
-            </label>
-            <label className="checkbox">
-              <input
-                type="checkbox"
-                checked={form.details.is_active}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    details: { ...prev.details, is_active: e.target.value },
+                    is_active: e.target.value,  // todo: связать с u_active
                   }))
                 }
               />

@@ -11,8 +11,8 @@
  * **Получение данных:**
  * getAuthUser, getUsers
  *
- * Изменение данных:**
- * updateUser, updateUserDetails, registerAsClient, registerAsContractor, updatePassword
+ * **Изменение данных:**
+ * updateUser, registerAsClient, registerAsContractor, updatePassword
  *
  * **Вспомогательные функции:**
  * recoverPassword, sendVerification
@@ -197,30 +197,31 @@ export type UserUpdateData = {
   u_city?: number | null;
   /** Описание пользователя. */
   u_description?: string;
+  /** Дополнительные детали пользователя. */
+  u_details?: Record<string, unknown>;
 }
 
 /**
- * Обновляет основные данные профиля пользователя.
+ * Обновляет профиль пользователя.
  * @param userData Объект с данными для обновления.
  * @returns Промис, который разрешается после успешного обновления.
  */
 export function updateUser(userData: UserUpdateData): Promise<void> {
-  return post<void>('user', { data: userData });
+  const { u_details, ...rest } = userData;
+  const formattedData: Record<string, unknown> = rest;
+
+  if (u_details) {
+    const formattedDetails = Object.entries(u_details).map(([key, value]) => {
+      if (value === undefined) value = null;
+      return ['=', [key], value];
+    });
+
+    formattedData.u_details = formattedDetails;
+  }
+
+  return post<void>('user', { data: formattedData });
 }
 
-/**
- * Обновляет дополнительные детали профиля пользователя.
- * @param userDetails Объект с дополнительными деталями пользователя.
- * @returns Промис, который разрешается после успешного обновления.
- */
-export function updateUserDetails(userDetails: Record<string, unknown>): Promise<void> {
-  const formattedDetails = Object.entries(userDetails).map(([key, value]) => {
-    if (value === undefined) value = null;
-    return ['=', [key], value];
-  });
-
-  return post<void>('user', { data: { u_details: formattedDetails } });
-}
 
 /**
  * Обновляет пароль пользователя.

@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import style from './blackListModal.module.css';
 import appFetch from '../../../utilities/appFetch';
-import { useUser, updateUserDetails } from '../../../state/user';
+import { useUser, updateUser } from '../../../state/user';
 
 const EMPTY_ARRAY = Object.freeze([]);
 
 export default function BlackListModal({ setVisibleBlackList }) {
+  const queryClient = useQueryClient();
   const { user } = useUser();
-  const blackList = user.details?.black_list || EMPTY_ARRAY;
+  const blackList = user.blackList || EMPTY_ARRAY;
 
   const [blackListData, setBlackListData] = useState([]);
 
@@ -49,10 +51,8 @@ export default function BlackListModal({ setVisibleBlackList }) {
     if (!user.id) {
       return;
     }
-    updateUserDetails({
-      black_list: newList
-    });
-    setBlackListData((prev) => prev.filter(user => user.id !== id));
+    updateUser(queryClient, { blackList: newList });
+    setBlackListData((prev) => prev.filter((user) => user.id !== id));
   };
 
   return (

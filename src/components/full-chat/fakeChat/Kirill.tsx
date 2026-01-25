@@ -692,17 +692,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       order.drivers?.find((d: any) => d.u_id === order.b_options.winnerContractor)
         ?.c_options || {};
 
-    if (contractorReqData?.bind_amount > currentUser.details?.balance) {
+    if (contractorReqData?.bind_amount > currentUser.details?.balance) { /* todo: загружать баланс отдельно */
       setIsBalanceError(true);
       setBalanceErrorNum(
         Number(contractorReqData.bind_amount) -
-          Number(currentUser.details?.balance || 0),
+          Number(currentUser.details?.balance || 0), /* todo: загружать баланс отдельно */
       );
     } else {
       setIsBalanceError(false);
       setBalanceErrorNum(0);
     }
-  }, [order, currentUser.details?.balance, setIsBalanceError, setBalanceErrorNum]);
+  }, [order, currentUser.details?.balance, setIsBalanceError, setBalanceErrorNum]); /* todo: загружать баланс отдельно */
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
   //~ const handleConfirmOrder = async () => {
     //~ const contractorReqData =
@@ -1917,7 +1917,7 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {'details' in user && Array.isArray(user.details?.black_list) && user.details.black_list.find(
+                {'blackList' in user && Array.isArray(user.blackList) && user.blackList.find(
                   (item: any) => isUserAuthorized && item.id?.toString() === String(user.id),
                 ) ? (
                   <div className={styles.chat_block_wrap}>

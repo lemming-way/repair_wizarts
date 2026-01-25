@@ -98,7 +98,7 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>{text('Propose an order')}</h2>
-        {(user.details?.balance || 0) < 500 && (
+        {(user.details?.balance || 0) < 500 && ( /* todo: загружать баланс отдельно */
           <p className={style.error}>
             {text('Please top up your balance by 500 rubles')}
           </p>
@@ -128,7 +128,7 @@ export default function AddOrderModal({
           <div>
             <p className={style.mini_heading}>{text('Budget')}</p>
             <p className={style.balance}>
-              {text('Balance')} {user.details?.balance || 0} ₽
+              {text('Balance')} {user.details?.balance || 0 /* todo: загружать баланс отдельно */} ₽
             </p>
             <div className={style.icon}>
               <input

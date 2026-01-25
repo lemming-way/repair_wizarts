@@ -257,7 +257,7 @@ function MyOrder() {
                     onChange={() => setSelectedIdx(0)}
                   />
                   <label htmlFor="inputSite">
-                    {text('Balance')}: {user.details?.balance || 0}р
+                    {text('Balance')}: {user.details?.balance || 0 /* todo: загружать баланс отдельно */}р
                   </label>
                 </div>
                 <p>{text('Standard risk-free deal price')}</p>

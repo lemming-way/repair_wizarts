@@ -6,7 +6,7 @@ import { useUser } from '../../state/user';
 function ChoiceOfReplenishmentMethodHistoryClient() {
   const text = useLanguage();
   const { user } = useUser();
-  const history = user.details?.history_of_pay || [];
+  const history = user.details?.history_of_pay || [];   /* todo: загружать баланс отдельно */
 
   const historyOfPaymentsItems = history.map((item) => (
     <div className="blocks">

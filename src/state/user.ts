@@ -3,12 +3,12 @@
  *
  * @summary
  * **Типы данных:**
- * UserRole, UserProfile, RegisterPayload, UserUpdatePayload,
+ * UserRole, UserProfile, RegisterPayload, UserUpdatePayload, BusinessModel
  *
  * **Функции, влияющие на глобальное состояние:**
  * useUser, useUsersByIds, login, logout, useLogin,
  * registerClient, useRegisterClient, registerContractor, useRegisterContractor,
- * updateUser, useUpdateUser, useUpdateUserAvatar, useUpdateUserDetails
+ * updateUser, useUpdateUser, updateUserAvatar, useUpdateUserAvatar,
  *
  * **Функции, не влияющие на глобальное состояние:**
  * updateUserPassword, useUpdateUserPassword, recoverPassword, usePasswordRecovery
@@ -25,7 +25,7 @@ import {
   LoginType, UserData as APIUserData, UserUpdateData, RegisterUserData, RegisterResult,  // типы
   login as apiLogin, logout as apiLogout, // loginByVerificationCode,  // функции
   registerAsClient as apiRegisterAsClient, registerAsContractor as apiRegisterAsContractor,
-  getAuthUser, getUsers as apiGetUsers, updateUser as apiUpdateUser, updateUserDetails as apiUpdateUserDetails,
+  getAuthUser, getUsers as apiGetUsers, updateUser as apiUpdateUser,
   updatePassword as apiUpdatePassword, recoverPassword as apiRecoverPassword
 } from './api/user';
 
@@ -42,7 +42,17 @@ export enum UserRole {
   Client = 1,
   /** Мастер */
   Contractor = 2
-};
+}
+
+/**
+ * Бизнес-модель пользователя.
+ */
+export enum BusinessModel {
+  /** Независимый техник */
+  IndependentTechnician = 'Independent technician',
+  /** Сервисный центр */
+  ServiceCenter = 'Service center'
+}
 
 /**
  * Базовые данные пользователя.
@@ -74,11 +84,23 @@ export type UserProfile = {
   description: string;
   /** Местоположение (город) пользователя. */
   locality: number;
-  /** Произвольные дополнительные детали пользователя. */
-  details: Record<string, unknown>;
+  /** Черный список */
+  blackList: number[];
+  /** Адрес */
+  address: string;
+  /** Опыт */
+  experience: number;
+  /** Онлайн ли пользователь */
+  isOnline: boolean;
+  /** Последняя активность */
+  lastTimeBeenOnline: string;
+  /** Услуги */
+  services: number[];
+  /** Бизнес-модель */
+  businessModel: BusinessModel;
+  /** Название организации */
+  organizationName: string;
 }
-
-// todo: Уточнить тип details
 
 /**
  * Заполняет структуру UserProfile данными, полученными из API.
@@ -87,6 +109,7 @@ export type UserProfile = {
 */
 function fillUserProfile(data: APIUserData): UserProfile {
   const numId = Number(data.u_id);
+  const u_details = data.u_details as Record<string, unknown> || undefined;
   const ret: UserProfile = {
     id: Number.isFinite(numId) ? numId : 0,
     name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
@@ -101,10 +124,14 @@ function fillUserProfile(data: APIUserData): UserProfile {
     isEmailVerified: Number( data.u_email_checked) === 1,
     description: String(data.u_description || ''),
     locality: Number(data.u_city) || 0,
-    details:  // todo: Добавить распаковку u_details
-      'object' === typeof data.u_details && data.u_details !== null && !Array.isArray(data.u_details) ?
-      data.u_details as Record<string, unknown> :
-      {}
+    blackList: Array.isArray(u_details?.blackList) ? u_details.blackList : [],
+    address: 'string' === typeof u_details?.address ? u_details.address : '',
+    experience: 'number' === typeof u_details?.experience ? u_details.experience : 0,
+    isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
+    lastTimeBeenOnline: 'string' === typeof u_details?.lastTimeBeenOnline ? u_details.lastTimeBeenOnline : '',
+    services: Array.isArray(u_details?.services) ? u_details.services : [],
+    businessModel: u_details?.businessModel === BusinessModel.ServiceCenter ? BusinessModel.ServiceCenter : BusinessModel.IndependentTechnician,
+    organizationName: 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
   };
   return ret;
 }
@@ -354,7 +381,11 @@ export type RegisterPayload = {
   email: string;
   locality?: number;
   password: string;
-  details?: Record<string, unknown>; // Дополнительные детали, только для мастера
+  address?: string;
+  experience?: number;
+  services?: number[];
+  businessModel?: BusinessModel;
+  organizationName?: string;
   keepAuthorized: boolean;
 }
 
@@ -372,7 +403,19 @@ async function _registerUser(
   registerApiFn: (registerData: RegisterUserData) => Promise<RegisterResult>,
   role: UserRole
 ): Promise<void> {
-  const { name, lastname, phone, email, password, details, keepAuthorized } = payload;
+  const {
+    name,
+    lastname,
+    phone,
+    email,
+    password,
+    address,
+    experience,
+    services,
+    businessModel,
+    organizationName,
+    keepAuthorized
+  } = payload;
   const u_name = `${name.trim()} ${lastname.trim()}`.trim();
   const u_phone = phone.trim();
   const u_email = email.trim();
@@ -387,8 +430,14 @@ async function _registerUser(
     u_email,
     password,
   };
-  if (role === UserRole.Contractor && details) {
-    registerData.u_details = details;
+  if (role === UserRole.Contractor) {
+    registerData.u_details = {
+      address: address || '',
+      experience: experience || 0,
+      services: services || [],
+      businessModel: businessModel || BusinessModel.IndependentTechnician,
+      organizationName: organizationName || ''
+    };
   }
 
   const result = await registerApiFn(registerData);
@@ -472,6 +521,14 @@ export type UserUpdatePayload = {
   currency?: string;
   locality?: number;
   description?: string;
+  blackList?: number[];
+  address?: string;
+  experience?: number;
+  isOnline?: boolean;
+  lastTimeBeenOnline?: string;
+  services?: number[];
+  businessModel?: BusinessModel;
+  organizationName?: string;
 }
 
 /**
@@ -516,6 +573,30 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
     const description = payload.description.trim();
     apiUserData.u_description = description;
   }
+  if (payload.blackList !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, blackList: payload.blackList };
+  }
+  if (payload.address !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, address: payload.address };
+  }
+  if (payload.experience !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, experience: payload.experience };
+  }
+  if (payload.isOnline !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, isOnline: payload.isOnline };
+  }
+  if (payload.lastTimeBeenOnline !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, lastTimeBeenOnline: payload.lastTimeBeenOnline };
+  }
+  if (payload.services !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, services: payload.services };
+  }
+  if (payload.businessModel !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, businessModel: payload.businessModel };
+  }
+  if (payload.organizationName !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
+  }
 
   await apiUpdateUser(apiUserData);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
@@ -558,35 +639,6 @@ export function useUpdateUserAvatar() {
   const queryClient = useQueryClient();
   const mutation = useMutation({
     mutationFn: (photoFile: File) => updateUserAvatar(queryClient, photoFile),
-  });
-
-  const save = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
-  return {
-    ...ret,
-    save
-  }
-}
-
-/**
- * Обновляет дополнительные детали профиля пользователя.
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param details Объект с дополнительными деталями пользователя.
- * @returns Промис, который разрешается после успешного обновления.
- */
-export async function updateUserDetails(queryClient: QueryClient, details: Record<string, unknown>): Promise<void> {
-  await apiUpdateUserDetails(details);
-  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
-}
-
-/**
- * Хук для обновления дополнительных деталей профиля пользователя.
- */
-export function useUpdateUserDetails() {
-  const queryClient = useQueryClient();
-  const mutation = useMutation({
-    mutationFn: (details: Record<string, unknown>) => updateUserDetails(queryClient, details),
   });
 
   const save = mutation.mutateAsync;

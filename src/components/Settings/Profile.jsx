@@ -7,7 +7,7 @@ import 'swiper/css/navigation';
 import { MultiSelect } from '../../shared/ui/';
 import style from './Profile.module.css';
 import { useLanguage } from '../../state/language';
-import { useUser, updateUser, updateUserDetails } from '../../state/user';
+import { useUser, updateUser, BusinessModel } from '../../state/user';
 import { useServices } from '../../state/site-data';
 
 const experienceOptions = [
@@ -35,16 +35,12 @@ function Profile() {
     name: '',
     lastname: '',
     description: '',
-    details: {
-      organization_name: '',
-      address: '',
-      specialty: '',
-      main_business: '',
-      experience: '',
-      city: '',
-    },
+    organizationName: '',
+    address: '',
+    experience: '',
+    city: '',
   });
-  const [business_model, setBusiness] = useState('Independent technician');
+  const [businessModel, setBusiness] = useState(BusinessModel.IndependentTechnician);
 
   const getFormAttrs = (field) => {
     const value = field.split('.').reduce((obj, key) => obj?.[key], form);
@@ -76,12 +72,10 @@ function Profile() {
   };
 
   useEffect(() => {
-    if (!user.id || !user.details) return;
+    if (!user.id) return;
 
-    const contractorDetails = user.details;
-
-    const selectedServiceIds = Array.isArray(contractorDetails.services)
-      ? contractorDetails.services
+    const selectedServiceIds = Array.isArray(user.services)
+      ? user.services
       : [];
 
     const initialServiceOptions = [];
@@ -115,10 +109,10 @@ function Profile() {
     setServiceOptionSelected(initialServiceOptions);
 
     setExperience(
-      contractorDetails.experience
+      user.experience
         ? [
             experienceOptions.find(
-              (opt) => opt.value === contractorDetails.experience,
+              (opt) => opt.value === user.experience,
             ),
           ]
         : null,
@@ -128,17 +122,13 @@ function Profile() {
       name: user.name,
       lastname: user.lastname,
       description: user.description || '',
-      details: {
-        organization_name: contractorDetails.organization_name || '',
-        address: contractorDetails.address || '',
-        city: contractorDetails.city || '',
-        specialty: contractorDetails.specialty || '',
-        main_business: contractorDetails.main_business || '',
-        experience: contractorDetails.experience || '',
-      },
+      organizationName: user.organizationName,
+      address: user.address,
+      city: user.city,  // todo: Загрузить город по ID
+      experience: user.experience,
     });
 
-    setBusiness(contractorDetails.business_model || 'Independent technician');
+    setBusiness(user.businessModel);
   }, [user, categories, subcategories, services]);
 
   useEffect(() => {
@@ -153,15 +143,14 @@ function Profile() {
   const onSubmit = async (e) => {
     e.preventDefault();
 
-    const details = {
-      ...form.details,
-      business_model,
+    const payload = {
+      ...form,
+      businessModel,
       services: serviceOptionSelected.map(opt => opt.value) || [],
     };
 
     try {
-      await updateUser(queryClient, form);
-      await updateUserDetails(queryClient, details);
+      await updateUser(queryClient, payload);
       setError('');
       setSuceeded(true);
     } catch (err) {
@@ -261,19 +250,19 @@ function Profile() {
             type="text"
             placeholder={text('Address')}
             id="offer-input"
-            {...getFormAttrs('details.address')}
+            {...getFormAttrs('address')}
           />
           <input
             type="text"
             placeholder={text('City')}
             id="offer-input"
-            {...getFormAttrs('details.city')}
+            {...getFormAttrs('city')}
           />
 
           <input
             type="text"
             placeholder={text('Organization name')}
-            {...getFormAttrs('details.organization_name')}
+            {...getFormAttrs('organizationName')}
           />
 
           <div className={`custom_nvakasd ${style.wrap_custom_field}`}>
@@ -286,7 +275,7 @@ function Profile() {
                 setExperience(selected ? [selected] : null);
                 setForm((prev) => ({
                   ...prev,
-                  details: { ...prev.details, experience: selected?.value || '' },
+                  experience: selected?.value || '',
                 }));
               }}
               value={experience}
@@ -295,21 +284,9 @@ function Profile() {
             />
           </div>
 
-          <input
-            type="text"
-            placeholder={text('Main business')}
-            {...getFormAttrs('details.main_business')}
-          />
-
-          <input
-            type="text"
-            placeholder={text('Type of activity')}
-            {...getFormAttrs('details.specialty')}
-          />
-
           <textarea
             placeholder={
-              business_model === 'Independent technician' ? text('About me') : text('About organization')
+              businessModel === BusinessModel.IndependentTechnician ? text('About me') : text('About organization')
             }
             {...getFormAttrs('description')}
           />
@@ -329,11 +306,11 @@ function Profile() {
                 type="radio"
                 name="select__service"
                 id="yesornow"
-                onChange={() => setBusiness('Independent technician')}
-                checked={business_model === 'Independent technician'}
+                onChange={() => setBusiness(BusinessModel.IndependentTechnician)}
+                checked={businessModel === BusinessModel.IndependentTechnician}
               />
               <label htmlFor="yesornow">
-                <p>{text('Independent technician')}</p>
+                <p>{text(BusinessModel.IndependentTechnician)}</p>
               </label>
             </div>
 
@@ -342,11 +319,11 @@ function Profile() {
                 type="radio"
                 name="select__service"
                 id="inputradioservicebtn"
-                onChange={() => setBusiness('Service center')}
-                checked={business_model === 'Service center'}
+                onChange={() => setBusiness(BusinessModel.ServiceCenter)}
+                checked={businessModel === BusinessModel.ServiceCenter}
               />
               <label htmlFor="inputradioservicebtn">
-                <p>{text('Service center')}</p>
+                <p>{text(BusinessModel.ServiceCenter)}</p>
               </label>
             </div>
           </div>

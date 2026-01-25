@@ -7,7 +7,7 @@ import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
-import { useUser, updateUserDetails } from '../../state/user';
+import { useUser, updateUser } from '../../state/user';
 
 const BalanceClient = () => {
   const queryClient = useQueryClient();
@@ -28,8 +28,8 @@ const BalanceClient = () => {
   const [endDate, setEndDate] = useState('');
   const [selectedType, setSelectedType] = useState('');
 
-  const walletValue = user.details?.wallets?.[0]?.value;
-  const userBalance = user.details?.balance;
+  const walletValue = user.details?.wallets?.[0]?.value;   /* todo: загружать баланс отдельно */
+  const userBalance = user.details?.balance;   /* todo: загружать баланс отдельно */
 
   useEffect(() => {
     if (!user.id) {
@@ -40,7 +40,7 @@ const BalanceClient = () => {
       setCurrentPage(1); // сбрасываем страницу при смене данных
   }, [user.id, walletValue, userBalance]);
 
-  const allPayments = user.details?.history_of_pay || [];
+  const allPayments = user.details?.history_of_pay || [];   /* todo: загружать баланс отдельно */
 
   // Apply filtering
   const filteredPayments = allPayments.filter((item) => {
@@ -122,7 +122,7 @@ const BalanceClient = () => {
         <h3 className={style.heading}>Баланс</h3>
 
         <div className={style.wrap_row1}>
-          <p className={style.balance}>{user.details?.balance || '0.0'}</p>
+          <p className={style.balance}>{user.details?.balance || '0.0' /* todo: загружать баланс отдельно */}</p>
 
           {!isVisibleRow && (
             <div className={style.buttons_row}>
@@ -138,18 +138,18 @@ const BalanceClient = () => {
             </div>
           )}
 
-          {isVisibleRow && user.details?.wallets && (
+          {isVisibleRow && user.details?.wallets && (   /* todo: загружать баланс отдельно */
             <div className={style.wrap_row1__row}>
               <select
                 className={style.select}
                 onChange={(e) => {
-                  const currentCard = user.details.wallets.find(
+                  const currentCard = user.details.wallets.find(   /* todo: загружать баланс отдельно */
                     (item) => item.type === e.target.value,
                   );
                   setInputCard(currentCard.value);
                 }}
               >
-                {user.details?.wallets.map((item) => (
+                {user.details?.wallets.map((item) => (   /* todo: загружать баланс отдельно */
                   <option key={item.type} value={item.type}>
                     {item.type}
                   </option>
@@ -172,8 +172,8 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = user.details?.history_of_pay
-                      ? user.details?.history_of_pay
+                    const oldHistory = user.details?.history_of_pay   /* todo: загружать баланс отдельно */
+                      ? user.details?.history_of_pay   /* todo: загружать баланс отдельно */
                       : [];
                     const newPayment = {
                       cost: Number(inputPrice),
@@ -185,15 +185,18 @@ const BalanceClient = () => {
                     if (!user.id) {
                       return;
                     }
-                    updateUserDetails(
-                      queryClient,
-                      {
-                        balance:
-                          (user.details?.balance || 0) -
-                          Number(inputPrice),
-                        history_of_pay: [...oldHistory, newPayment],
-                      }
-                    );
+                    // todo: сохранять баланс по-другому
+                    //~ updateUser(
+                      //~ queryClient,
+                      //~ {
+                        //~ details: {
+                          //~ balance:
+                            //~ (user.details?.balance || 0) -   /* todo: загружать баланс отдельно */
+                            //~ Number(inputPrice),
+                          //~ history_of_pay: [...oldHistory, newPayment],
+                        //~ },
+                      //~ }
+                    //~ );
                   }}
                 >
                   Вывести

@@ -38,7 +38,7 @@ import Finance from '../components/Settings/Finance';
 import Balance from '../components/Settings/Balance';
 import Article from '../components/Article';
 import { getLocation } from '../services/location.service';
-import { useUser, updateUserDetails } from '../state/user';
+import { useUser, updateUser } from '../state/user';
 import PersonalRequests from '../components/Orders/PersonalRequests';
 import Articles from '../components/Article/Articles';
 import ChoiceOfReplenishmentMethod from '../components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
@@ -84,7 +84,7 @@ function App() {
     const handleVisibilityChange = async () => {
       const isVisible = document.visibilityState === 'visible';
 
-      await updateUserDetails(
+      await updateUser(
         queryClient,
         {
           isOnline: isVisible,
@@ -95,7 +95,7 @@ function App() {
 
     // Add page unload tracking
     const handleBeforeUnload = async () => {
-      await updateUserDetails(
+      await updateUser(
         queryClient,
         {
           isOnline: false,

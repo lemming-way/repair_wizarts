@@ -9,7 +9,7 @@ import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import style from './style.module.css';
 import { useLanguage } from '../../state/language';
-import { useUser, updateUserDetails } from '../../state/user';
+import { useUser, updateUser } from '../../state/user';
 
 function ChoiceOfReplenishmentMethodClient() {
   const text = useLanguage();
@@ -87,7 +87,7 @@ function ChoiceOfReplenishmentMethodClient() {
           <h3>{text('Top up balance')}</h3>
 
           <div>
-            {user.details?.wallets ? (
+            {/* todo: загружать баланс отдельно */user.details?.wallets ? (
               <>
                 <div className={style.payment_row}>
                   <input
@@ -99,8 +99,8 @@ function ChoiceOfReplenishmentMethodClient() {
                   />
                   <img src="/img/visa_block.png" alt="" />
                   <p>
-                    {user.details?.wallets[0]?.type} <br />
-                    {user.details?.wallets[0]?.value}
+                    {/* todo: загружать баланс отдельно */user.details?.wallets[0]?.type} <br />
+                    {/* todo: загружать баланс отдельно */user.details?.wallets[0]?.value}
                   </p>
                 </div>
                 <div className={style.payment_row}>
@@ -209,7 +209,7 @@ function ChoiceOfReplenishmentMethodClient() {
                 if (!user.id) {
                   return;
                 }
-                const oldHistory = user.details?.history_of_pay || [];
+                const oldHistory = user.details?.history_of_pay || []; /* todo: загружать баланс отдельно */
                 const newPayment = {
                   cost: Number(cost),
                   type: 'Credit',
@@ -217,15 +217,17 @@ function ChoiceOfReplenishmentMethodClient() {
                   status: 'Active',
                   title: 'Credit',
                 };
-                updateUserDetails(
-                  queryClient,
-                  {
-                    balance:
-                        Number( cost ) +
-                        Number( user.details?.balance || 0 ),
-                    history_of_pay: [...oldHistory, newPayment],
-                  },
-                );
+                // todo: сохранять баланс по-другому
+                //~ updateUser(
+                  //~ queryClient,
+                  //~ {
+                    //~ details: {
+                      //~ balance:
+                        //~ Number(cost) + Number(user.details?.balance || 0), /* todo: загружать баланс отдельно */
+                      //~ history_of_pay: [...oldHistory, newPayment],
+                    //~ },
+                  //~ },
+                //~ );
                 setStage(0);
               }}
             >

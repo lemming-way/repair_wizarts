@@ -5,7 +5,7 @@ import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
-import { useUser, updateUserDetails } from '../../state/user';
+import { useUser, updateUser } from '../../state/user';
 
 const FinanceClient = () => {
   const queryClient = useQueryClient();
@@ -18,16 +18,16 @@ const FinanceClient = () => {
   const [isVisibleDelete, setVisibleDelete] = useState(false);
 
   useEffect(() => {
-    const cardWallet = user.details?.wallets?.find(
+    const cardWallet = user.details?.wallets?.find(   /* todo: загружать баланс отдельно */
       (w) => w.type === 'card',
     );
-    const wmWallet = user.details?.wallets?.find(
+    const wmWallet = user.details?.wallets?.find(   /* todo: загружать баланс отдельно */
       (w) => w.type === 'webmoney',
     );
 
     setCard(cardWallet?.value || '');
     setWebmoney(wmWallet?.value || '');
-  }, [user.details?.wallets]);
+  }, [user.details?.wallets]);   /* todo: загружать баланс отдельно */
 
   // Early return if no user ID
   if (!user.id) {
@@ -41,11 +41,11 @@ const FinanceClient = () => {
         { type: 'webmoney', value: webmoney },
       ];
 
-      const payload = {
+      const walletsData = {
         wallets,
       };
 
-      await updateUserDetails(queryClient, payload);
+      //~ await updateUser(queryClient, { details: walletsData });  // todo: сохранять баланс по-другому
       setVisibleSuccess(true);
       setSuccess(true);
     } catch (err) {

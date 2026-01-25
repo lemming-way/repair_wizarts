@@ -75,6 +75,7 @@ const RegistrationContractorPage = () => {
     }
 
     try {
+      // todo: добавить дополнительные поля
       await registerContractorMutation.register({
         name: name.trim(),
         lastname: lastname.trim(),
@@ -82,13 +83,8 @@ const RegistrationContractorPage = () => {
         email: email.trim(),
         locality: Number(city || 0),
         password,
-        details: {
-          address: address.trim(),
-          //~ section: categoryOptionSelected?.map(opt => opt.value) || [],
-          //~ subsection: subcategoryOptionSelected?.map(opt => opt.value) || [],
-          services: serviceOptionSelected?.map(opt => opt.value) || [],
-          //~ subservice: subModelOptionSelected?.map(opt => opt.value) || [],
-        },
+        address: address.trim(),
+        services: serviceOptionSelected?.map(opt => Number(opt.value)) || [],
         keepAuthorized: keep,
       });
       navigate("/");
