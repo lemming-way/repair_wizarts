@@ -380,6 +380,7 @@ export type RegisterPayload = {
   phone: string;
   email: string;
   locality?: number;
+  description?: string;
   password: string;
   address?: string;
   experience?: number;
@@ -484,9 +485,15 @@ export function useRegisterClient() {
  */
 export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
   await _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
-  if (payload.locality) {
-    await apiUpdateUser({ u_city: payload.locality });
+  if (payload.locality || payload.description) {
+    const updateData = {};
+    if (payload.locality) updateData.u_city = payload.locality;
+    if (payload.description) updateData.u_description = payload.description;
+    await apiUpdateUser(updateData);
   }
+  // todo: создать машину водителю
+  // todo: пометить пользователя как прошедшего проверку (пока нет админки)
+  // todo: предусмотреть возобновление регистрации, если она прервана между запросами
 }
 
 /**
@@ -519,8 +526,8 @@ export type UserUpdatePayload = {
   email?: string;
   language?: string;
   currency?: string;
-  locality?: number;
-  description?: string;
+  //~ locality?: number;
+  //~ description?: string;
   blackList?: number[];
   address?: string;
   experience?: number;
@@ -566,13 +573,13 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
     const currency = payload.currency.trim();
     apiUserData.u_currency = currency;
   }
-  if (payload.locality !== undefined) {
-    apiUserData.u_city = payload.locality || null;  // Сработает только для мастера
-  }
-  if (payload.description !== undefined) {
-    const description = payload.description.trim();
-    apiUserData.u_description = description;
-  }
+  //~ if (payload.locality !== undefined) {
+    //~ apiUserData.u_city = payload.locality || null;  // Сработает только для неподтверждённого мастера
+  //~ }
+  //~ if (payload.description !== undefined) {
+    //~ const description = payload.description.trim();  // Сработает только для неподтверждённого мастера
+    //~ apiUserData.u_description = description;
+  //~ }
   if (payload.blackList !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, blackList: payload.blackList };
   }
@@ -598,7 +605,7 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
   }
 
-  await apiUpdateUser(apiUserData);
+  await apiUpdateUser(apiUserData, 1);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
@@ -628,7 +635,7 @@ export function useUpdateUser() {
  */
 export async function updateUserAvatar(queryClient: QueryClient, photoFile: File): Promise<void> {
   const base64Photo = await fileToBase64(photoFile);
-  await apiUpdateUser({ u_photo: base64Photo });
+  await apiUpdateUser({ u_photo: base64Photo }, 1);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 

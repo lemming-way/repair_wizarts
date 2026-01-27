@@ -193,10 +193,11 @@ export type UserUpdateData = {
   u_photo?: string;
   /** Валюта пользователя. */
   u_currency?: string;
-  /** Город пользователя. */
-  u_city?: number | null;
-  /** Описание пользователя. */
-  u_description?: string;
+  // u_city и u_description работают только для неподтверждённого водителя - нужен отдельный запрос
+  //~ /** Город пользователя. */
+  //~ u_city?: number | null;
+  //~ /** Описание пользователя. */
+  //~ u_description?: string;
   /** Дополнительные детали пользователя. */
   u_details?: Record<string, unknown>;
 }
@@ -204,9 +205,10 @@ export type UserUpdateData = {
 /**
  * Обновляет профиль пользователя.
  * @param userData Объект с данными для обновления.
+ * @param userTemporaryRole Временная роль пользователя при выполнении запроса
  * @returns Промис, который разрешается после успешного обновления.
  */
-export function updateUser(userData: UserUpdateData): Promise<void> {
+export function updateUser(userData: UserUpdateData, userTemporaryRole?: 1 | 2): Promise<void> {
   const { u_details, ...rest } = userData;
   const formattedData: Record<string, unknown> = rest;
 
