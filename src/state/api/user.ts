@@ -31,13 +31,13 @@ export type LoginType = 'phone' | 'e-mail';
  */
 export type UserBanInfo = {
     /** Число активных банов на авторизацию */
-    auth?: string | null | unknown;
+    auth?: string | null;
     /** Число активных банов на создание или получения поездки */
-    order?: string | null | unknown;
+    order?: string | null;
     /** Число активных банов на создание темы в блоге */
-    blog_topic?: string | null | unknown;
+    blog_topic?: string | null;
     /** Число активных банов на создание сообщения в чужой теме */
-    blog_post?: string | null | unknown;
+    blog_post?: string | null;
 };
 
 /**
@@ -45,51 +45,51 @@ export type UserBanInfo = {
  */
 export type UserData = {
   /** ID пользователя */
-  u_id?: string | unknown;
+  u_id?: string;
   /** Имя пользователя */
-  u_name?: string | unknown;
+  u_name?: string;
   /** Фамилия пользователя */
-  u_family?: string | unknown;
+  u_family?: string;
   /** Отчество или второе имя */
-  u_middle?: string | unknown;
+  u_middle?: string;
   /** Электронная почта */
-  u_email?: string | unknown;
+  u_email?: string;
   /** Номер телефона */
-  u_phone?: string | null | unknown;
+  u_phone?: string | null;
   /** ID роли пользователя в системе */
-  u_role?: string | unknown;
+  u_role?: string;
   /** ID статуса проверки пользователя администратором */
-  u_check_state?: string | null | unknown;
+  u_check_state?: string | null;
   /** Блокировки пользователя */
-  u_ban?: UserBanInfo | unknown;
+  u_ban?: UserBanInfo;
   /** Исполнитель готов выполнять заказы */
-  u_active?: 0 | 1 | unknown;
+  u_active?: 0 | 1;
   /** Ссылка на фото */
-  u_photo?: string | unknown;
+  u_photo?: string;
   /** Дата рождения в формате ГГГГ-ММ-ДД */
-  u_birthday?: string | null | unknown;
+  u_birthday?: string | null;
   /** ID языка пользователя в данных сайта (числовой, не символьный код ISO) */
-  u_lang?: string | null | unknown;
+  u_lang?: string | null;
   /** Трёхбуквенный код выбранной валюты пользователя */
-  u_currency?: string | null | unknown;
+  u_currency?: string | null;
   /** Проверен ли номер телефона (0 - нет, 1 - да). */
-  u_phone_checked?: 0 | 1 | unknown;
+  u_phone_checked?: 0 | 1;
   /** Проверен ли e-mail (0 - нет, 1 - да). */
-  u_email_checked?: '0' | '1' | unknown;
+  u_email_checked?: '0' | '1';
   /** Город пользователя. */
-  u_city?: string | null | unknown;
+  u_city?: string | null;
   /** Описание пользователя. */
-  u_description?: string | unknown;
+  u_description?: string;
   /** Дополнительные детали пользователя. */
-  u_details?: Record<string, unknown> | null | unknown;
+  u_details?: Record<string, unknown> | null;
   /** Комментарии к заказам из списка data.booking_comments. */
-  b_comments?: string[] | null | unknown;
+  b_comments?: string[] | null;
   /** Дополнительные услуги из data.services. */
-  b_services?: string[] | null | unknown;
+  b_services?: string[] | null;
   /** Типы дальности поездки из data.booking_location_classes. */
-  b_location_classes?: Array<{ b_location_class: string; basic: '0' | '1' }> | null | unknown;
+  b_location_classes?: Array<{ b_location_class: string; basic: '0' | '1' }> | null;
   /** Дополнительные свойства. */
-  props?: Record<string, Array<unknown>> | unknown;
+  props?: Record<string, Array<unknown>>;
 }
 
 /**
@@ -193,11 +193,10 @@ export type UserUpdateData = {
   u_photo?: string;
   /** Валюта пользователя. */
   u_currency?: string;
-  // u_city и u_description работают только для неподтверждённого водителя - нужен отдельный запрос
-  //~ /** Город пользователя. */
-  //~ u_city?: number | null;
-  //~ /** Описание пользователя. */
-  //~ u_description?: string;
+  /** Город пользователя. */
+  u_city?: number | null;  // Работает только для неподтверждённого водителя
+  /** Описание пользователя. */
+  u_description?: string;  // Работает только для неподтверждённого водителя
   /** Дополнительные детали пользователя. */
   u_details?: Record<string, unknown>;
 }

@@ -15,35 +15,35 @@ import { get, getRaw, FetchError } from './request';
 const CATEGORIES_URL = CONFIG.API?.categoriesUrl || '';
 
 type SiteDataVersion = {
-  'cache version'?: string | unknown;
+  'cache version'?: string;
 }
 
 export type CityData = {
-  country?: string | unknown;
-  zone?: string | unknown;
-  ru?: string | unknown;
-  en?: string | unknown;
-  ar?: string | unknown;
-  fr?: string | unknown;
-  es?: string | unknown;
+  country?: string;
+  zone?: string;
+  ru?: string;
+  en?: string;
+  ar?: string;
+  fr?: string;
+  es?: string;
 }
 
 export type LanguageData = {
-  native?: string | unknown;
-  ru?: string | unknown;
-  en?: string | unknown;
-  ar?: string | unknown;
-  fr?: string | unknown;
-  es?: string | unknown;
-  iso?: string | unknown;
+  native?: string;
+  ru?: string;
+  en?: string;
+  ar?: string;
+  fr?: string;
+  es?: string;
+  iso?: string;
 }
 
 export type SiteData = {
-  version?: string | unknown;
-  default_lang?: number | unknown;
+  version?: string;
+  default_lang?: number;
   data?: {
-    cities?: Record<string, CityData> | unknown;
-    langs?: Record<string, LanguageData> | unknown;
+    cities?: Record<string, CityData>;
+    langs?: Record<string, LanguageData>;
   }
 }
 
@@ -66,17 +66,17 @@ export async function getSiteData() {
 }
 
 export type ServicesResponse = Array<{
-  id?: string | unknown;
-  name?:  string | unknown;
+  id?: string;
+  name?:  string;
   subsections?: Array<{
-    id?:  string | unknown;
-    name?:  string | unknown;
+    id?:  string;
+    name?:  string;
     services?: Array<{
-      id?: string | unknown;
-      name?:  string | unknown;
-    }> | unknown;
+      id?: string;
+      name?:  string;
+    }>;
   }>;
-}> | unknown;
+}>;
 
 /**
  * Получает классификатор услуг.
@@ -105,7 +105,7 @@ export async function getServices(): Promise<ServicesResponse> {
         throw new FetchError('Invalid response content type.', response);
       }
 
-      const responseData: unknown = await response.json();
+      const responseData: ServicesResponse = await response.json();
 
       if (isDebug) {
         console.debug('[services api] response', correlationId, responseData);

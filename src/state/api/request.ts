@@ -37,7 +37,7 @@ export class FetchError extends Error {
 export type ErrorResponse = {
     code: string;
     status: "error";
-    message: string | unknown;
+    message: string;
     data?: unknown;
 };
 
@@ -48,7 +48,7 @@ type SuccessResponse = {
     code: "200";
     status: "success";
     auth_user?: unknown;
-    auth_hash?: string | unknown;  // при запросе авторизации
+    auth_hash?: string;  // при запросе авторизации
     data?: unknown;
 };
 

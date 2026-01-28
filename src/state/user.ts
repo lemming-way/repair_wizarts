@@ -57,9 +57,11 @@ export enum BusinessModel {
 /**
  * Базовые данные пользователя.
  */
-export type UserProfile = {
+interface UserBaseData {
   /** Идентификатор пользователя. */
   id: number;
+  /** Роль пользователя. */
+  role: UserRole;
   /** Имя пользователя. */
   name: string;
   /** Фамилия пользователя. */
@@ -68,8 +70,6 @@ export type UserProfile = {
   email: string;
   /** Телефон пользователя. */
   phone: string;
-  /** Роль пользователя. */
-  role: UserRole;
   /** Аватар пользователя (URL). */
   avatar: string;
   /** Язык пользователя. */
@@ -80,20 +80,26 @@ export type UserProfile = {
   isPhoneVerified: boolean;
   /** Проверен ли e-mail. */
   isEmailVerified: boolean;
-  /** Описание пользователя. */
-  description: string;
-  /** Местоположение (город) пользователя. */
-  locality: number;
   /** Черный список */
   blackList: number[];
-  /** Адрес */
-  address: string;
-  /** Опыт */
-  experience: number;
   /** Онлайн ли пользователь */
   isOnline: boolean;
   /** Последняя активность */
   lastTimeBeenOnline: string;
+}
+
+interface ClientUserProfile extends UserBaseData {
+}
+
+interface ContractorUserProfile extends UserBaseData {
+  /** Описание пользователя. */
+  description: string;
+  /** Местоположение (город) пользователя. */
+  locality: number;
+  /** Адрес */
+  address: string;
+  /** Опыт */
+  experience: number;
   /** Услуги */
   services: number[];
   /** Бизнес-модель */
@@ -101,6 +107,8 @@ export type UserProfile = {
   /** Название организации */
   organizationName: string;
 }
+
+export type UserProfile = ClientUserProfile | ContractorUserProfile;
 
 /**
  * Заполняет структуру UserProfile данными, полученными из API.
@@ -486,7 +494,7 @@ export function useRegisterClient() {
 export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
   await _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
   if (payload.locality || payload.description) {
-    const updateData = {};
+    const updateData: UserUpdateData = {};
     if (payload.locality) updateData.u_city = payload.locality;
     if (payload.description) updateData.u_description = payload.description;
     await apiUpdateUser(updateData);
