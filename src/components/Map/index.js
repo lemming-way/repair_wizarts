@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from '../../state/language';
 import { useGlobalState } from '../../state/global';
 
-// --- НАЧАЛО: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 function queryYMaps() {
   if (window.ymaps3) {
     const ymaps3 = window.ymaps3;
@@ -36,7 +35,7 @@ function queryYMaps() {
 function Map(props) {
   const {
     contractors,
-    // selectedContractor, // Больше не нужен внутри этого компонента
+    // selectedContractor, // Временно не используется внутри этого компонента
     selectContractor, // Функция из родителя для выбора мастера
   } = props;
   const text = useLanguage();
@@ -65,16 +64,18 @@ function Map(props) {
           color='red'
         />
       {/* Перебираем мастеров и создаем для каждого метку */}
-      {contractors?.map((v) => (
-        <YMaps.YMapDefaultMarker
-          key={v.id}
-          coordinates={[v.longitude, v.latitude]}
-          iconName='auto-parts'
-          size='normal'
-          color='red'
-          // --- ИЗМЕНЕНИЕ: Передаем весь объект мастера в функцию selectContractor ---
-          onClick={() => selectContractor(v)}
-        />
+      {/* todo: Добавить детальную информацию по мастерам */}
+      {contractors
+        ?.filter(v => !!v.coordinates)
+        .map((v) => (
+          <YMaps.YMapDefaultMarker
+            key={v.id}
+            coordinates={[v.longitude, v.latitude]}
+            iconName='auto-parts'
+            size='normal'
+            color='red'
+            onClick={() => selectContractor(v)}
+          />
       ))}
       </YMaps.YMap>
       :
@@ -83,6 +84,5 @@ function Map(props) {
     </div>
   );
 }
-// --- КОНЕЦ: ИСПРАВЛЕННЫЙ КОМПОНЕНТ MAP ---
 
 export default Map;

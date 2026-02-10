@@ -17,8 +17,7 @@ import {
   UseQueryResult,
   useQuery,
   useQueries,
-  useMutation,
-  UseMutationResult
+  useMutation
 } from '@tanstack/react-query';
 
 import CONFIG from '../constants';

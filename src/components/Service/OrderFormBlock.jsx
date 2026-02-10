@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLanguage } from '../../state/language';
 import style from './ServiceDetail.module.scss';
 
+// todo: Может быть, следует переделать в модалку?
 function OrderFormBlock({
   show,
   setFormError,
@@ -9,10 +10,6 @@ function OrderFormBlock({
   formError,
   user,
   onSubmit,
-  name,
-  setName,
-  phone,
-  setPhone,
   getSumPrice,
   selectedServices,
   prices,
@@ -65,23 +62,8 @@ function OrderFormBlock({
             )}
 
             <div className={`df ${style.modal_from_row}`}>
-              <input
-                type="text"
-                placeholder={text('Your name')}
-                defaultValue={user.name}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                // disabled
-              />
-              <input
-                className="ismrf"
-                type="text"
-                placeholder={text('Phone number')}
-                defaultValue={user.phone}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                // disabled
-              />
+              <input type="text" placeholder={text('Your name')} defaultValue={user.name} disabled />
+              <input className="ismrf" type="text" placeholder={text('Phone number')} defaultValue={user.phone} disabled />
             </div>
 
             {/* список выбранных услуг */}

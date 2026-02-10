@@ -13,10 +13,7 @@
  * **Функции, не влияющие на глобальное состояние:**
  * updateUserPassword, useUpdateUserPassword, recoverPassword, usePasswordRecovery
  */
-import {
-  QueryClient, UseQueryResult, UseMutationResult,   // типы
-  useQuery, useQueries, useMutation, useQueryClient   // хуки
-} from '@tanstack/react-query';
+import { QueryClient, UseQueryResult, useQuery, useQueries, useMutation } from '@tanstack/react-query';
 
 import CONFIG from '../constants';
 import { getToken, setToken, clearToken } from './auth';
@@ -60,6 +57,8 @@ interface UserBaseData {
   name: string;
   /** Фамилия пользователя. */
   lastname: string;
+  /** Полное имя пользователя (имя + фамилия). */
+  fullname: string;
   /** E-mail пользователя. */
   email: string;
   /** Телефон пользователя. */
@@ -92,6 +91,12 @@ interface ContractorUserProfile extends UserBaseData {
   locality: number;
   /** Адрес */
   address: string;
+  // todo: Сделать геокодирование при создании пользователя/изменении адреса
+  /** Географические координаты для карты */
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
   /** Опыт */
   experience: number;
   /** Услуги */
@@ -116,6 +121,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     id: Number.isFinite(numId) ? numId : 0,
     name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
     lastname: String(data.u_family || ''),
+    fullname: [ data.u_name, data.u_middle, data.u_family ].filter(Boolean).join(' '),
     email: String(data.u_email || ''),
     phone: String(data.u_phone || ''),
     role: data.u_role === '2' ? UserRole.Contractor : UserRole.Client,

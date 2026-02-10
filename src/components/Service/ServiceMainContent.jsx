@@ -21,10 +21,6 @@ function ServiceMainContent({
   formError,
   setFormError,
   user,
-  name,
-  setName,
-  phone,
-  setPhone,
   getSumPrice,
   ignoreSelectedServices,
   addRemoveIgnoreService,
@@ -122,19 +118,17 @@ function ServiceMainContent({
               ))}
           </div>
 
-          {/* Условный рендеринг кнопки "Оформить заказ" */}
-          {selectedContractor.id && (
-            <div className={style.button_wrap}>
-              <button
-                className={style.button_services}
-                onClick={() => {
-                  setShowOrderForm(true);
-                }}
-              >
-                {text('Place an order')}
-              </button>
-            </div>
-          )}
+          {/* todo: Перебрасывать на форму входа/регистрации, если пользователь не авторизован */}
+          <div className={style.button_wrap}>
+            <button
+              className={style.button_services}
+              onClick={() => {
+                setShowOrderForm(true);
+              }}
+            >
+              {text('Place an order')}
+            </button>
+          </div>
 
           <OrderFormBlock
             show={showOrderForm}
@@ -143,10 +137,6 @@ function ServiceMainContent({
             formError={formError}
             user={user}
             onSubmit={onSubmit}
-            name={name}
-            setName={setName}
-            phone={phone}
-            setPhone={setPhone}
             getSumPrice={getSumPrice}
             selectedServices={selectedServices}
             prices={prices}
