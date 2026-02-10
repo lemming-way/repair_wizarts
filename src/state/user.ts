@@ -21,13 +21,7 @@ import {
 import CONFIG from '../constants';
 import { getToken, setToken, clearToken } from './auth';
 import { fileToBase64 } from '../shared/lib/utilities';
-import {
-  LoginType, UserData as APIUserData, UserUpdateData, RegisterUserData, RegisterResult,  // типы
-  login as apiLogin, logout as apiLogout, // loginByVerificationCode,  // функции
-  registerAsClient as apiRegisterAsClient, registerAsContractor as apiRegisterAsContractor,
-  getAuthUser, getUsers as apiGetUsers, updateUser as apiUpdateUser,
-  updatePassword as apiUpdatePassword, recoverPassword as apiRecoverPassword
-} from './api/user';
+import * as UserAPI from './api/user';
 
 /**
  * Пустой объект, используемый по умолчанию для предотвращения ошибок доступа к свойствам.
@@ -115,7 +109,7 @@ export type UserProfile = ClientUserProfile | ContractorUserProfile;
  * @param data Сырые данные пользователя из API.
  * @returns Разобранные данные пользователя.
 */
-function fillUserProfile(data: APIUserData): UserProfile {
+function fillUserProfile(data: UserAPI.UserData): UserProfile {
   const numId = Number(data.u_id);
   const u_details = data.u_details as Record<string, unknown> || undefined;
   const ret: UserProfile = {
@@ -153,13 +147,13 @@ function fillUserProfile(data: APIUserData): UserProfile {
  */
 async function fetchAuthUser({ client }): Promise<UserProfile | {}> {
   const token = getToken();
-  if (!token) return {};
+  if (!token) return EMPTY_OBJECT;
 
   try {
-    const result = await getAuthUser();
+    const result = await UserAPI.getAuthUser();
     if (!result) return {};
     const userProfile = fillUserProfile(result);
-    return userProfile.id > 0 ? userProfile : {};
+    return userProfile.id > 0 ? userProfile : EMPTY_OBJECT;
   }
   catch (e) {
     throw e instanceof Error ? e : new Error(String(e));
@@ -170,20 +164,17 @@ async function fetchAuthUser({ client }): Promise<UserProfile | {}> {
  * Хук для получения данных текущего пользователя.
  * @returns Объект с состоянием запроса React Query и объектом `user`, содержащим данные.
  */
-export function useUser():
-  UseQueryResult<Awaited<UserProfile | {}>, unknown> &
-  { user: UserProfile | {} }
-{
+export function useUser() {
   const queryResult = useQuery({
     queryKey: [ 'user', 'authorized' ],
     queryFn: fetchAuthUser,
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
 
-  const user = queryResult.data || EMPTY_OBJECT;
-  delete queryResult.data;
+  const { data, ...ret } = queryResult;
+  const user = (data as UserProfile) || EMPTY_OBJECT;
   return {
-    ...queryResult,
+    ...ret,
     user
   };
 }
@@ -216,14 +207,14 @@ function fetchUserById({ queryKey }: { queryKey: (string | number)[] }): Promise
     usersToFetch = [];
     usersFetchTimeout = null;
 
-    const userIdsToFetch = [...new Set(usersToFetch.map(item => item.userId))];
+    const userIdsToFetch = [...new Set(resolvers.map(item => item.userId))];
 
     if (userIdsToFetch.length === 0) {
       return;
     }
 
     try {
-      const apiUsers = await apiGetUsers(userIdsToFetch);
+      const apiUsers = await UserAPI.getUsers(userIdsToFetch);
       resolvers.forEach(item => {
         const userData = apiUsers[item.userId];
         if (userData) {
@@ -245,33 +236,26 @@ function fetchUserById({ queryKey }: { queryKey: (string | number)[] }): Promise
 
 function combineFetchUserResults(results: UseQueryResult<Awaited<UserProfile | {}>, unknown>[]) {
   // Агрегируем состояния загрузки и ошибок
-  const ret: {
-    isLoading: boolean;
-    isFetching: boolean;
-    isError: boolean;
-    error: unknown;
-    isSuccess:  boolean;
-    users: UserProfile[];
-  } = {
+  const ret = {
     isLoading: false,
     isFetching: false,
     isError: false,
-    error: null,
+    error: null as unknown,
     isSuccess: true,
-    users: []
+    users: [] as UserProfile[]
   };
 
-  results.forEach(query => {
-    if (query.isLoading) ret.isLoading = true;
-    if (query.isFetching) ret.isFetching = true;
-    if (query.isError) {
+  for (const query of results) {
+    ret.isLoading ||= query.isLoading;
+    ret.isFetching ||= query.isFetching;
+    if (query.isError && !ret.error) {
       ret.isError = true;
       ret.error = query.error;
     }
-    if (query.isLoading) ret.isLoading = true;
-    // @ts-ignore
-    if (query.data?.id) ret.users.push(query.data);
-  });
+    ret.isSuccess &&= query.isSuccess;
+    const data = query.data as UserProfile;
+    if (data?.id) ret.users.push(data);
+  }
 
   return ret;
 }
@@ -310,8 +294,8 @@ export async function login(
   keepAuthorized: boolean
 ): Promise<void> {
   try {
-    const loginType: LoginType = loginValue.includes('@') ? 'e-mail' : 'phone';
-    const authResult = await apiLogin(loginValue, password, loginType);
+    const loginType: UserAPI.LoginType = loginValue.includes('@') ? 'e-mail' : 'phone';
+    const authResult = await UserAPI.login(loginValue, password, loginType);
 
     if (
       !authResult.token || !authResult.u_hash ||
@@ -343,7 +327,7 @@ export async function login(
  */
 export async function logout(queryClient: QueryClient): Promise<void> {
   try {
-    await apiLogout(); // Вызов API функции выхода
+    await UserAPI.logout(); // Вызов API функции выхода
   } catch (error) {
     console.error('Logout API call failed, but clearing token anyway:', error);
   } finally {
@@ -364,18 +348,18 @@ export async function logout(queryClient: QueryClient): Promise<void> {
  * - Очищает все данные пользователя в кэше react-query.
  */
 export function useLogin() {
-  const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: ({ loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean }) =>
-      login(queryClient, loginValue, password, keepAuthorized),
+    mutationFn: (
+      { loginValue, password, keepAuthorized }: { loginValue: string; password: string; keepAuthorized: boolean },
+      { client }
+    ) =>
+      login(client, loginValue, password, keepAuthorized),
   });
 
-  const loginFn = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    login: loginFn
+    login: mutateAsync
   }
 }
 
@@ -409,7 +393,7 @@ export type RegisterPayload = {
 async function _registerUser(
   queryClient: QueryClient,
   payload: RegisterPayload,
-  registerApiFn: (registerData: RegisterUserData) => Promise<RegisterResult>,
+  registerApiFn: (registerData: UserAPI.RegisterUserData) => Promise<UserAPI.RegisterResult>,
   role: UserRole
 ): Promise<void> {
   const {
@@ -433,7 +417,7 @@ async function _registerUser(
     throw new Error("Phone number or email address must be specified.");
   }
 
-  const registerData: RegisterUserData = {
+  const registerData: UserAPI.RegisterUserData = {
     u_name,
     u_phone,
     u_email,
@@ -464,24 +448,21 @@ async function _registerUser(
  * @returns Промис, который разрешается после успешной регистрации.
  */
 export function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  return _registerUser(queryClient, payload, apiRegisterAsClient, UserRole.Client);
+  return _registerUser(queryClient, payload, UserAPI.registerAsClient, UserRole.Client);
 }
 
 /**
  * Хук для регистрации нового пользователя как клиента.
  */
 export function useRegisterClient() {
-  const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (payload: RegisterPayload) => registerClient(queryClient, payload),
+    mutationFn: (payload: RegisterPayload, { client }) => registerClient(client, payload),
   });
 
-  const register = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    register
+    register: mutateAsync
   }
 }
 
@@ -492,12 +473,12 @@ export function useRegisterClient() {
  * @returns Промис, который разрешается после успешной регистрации.
  */
 export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  await _registerUser(queryClient, payload, apiRegisterAsContractor, UserRole.Contractor);
+  await _registerUser(queryClient, payload, UserAPI.registerAsContractor, UserRole.Contractor);
   if (payload.locality || payload.description) {
-    const updateData: UserUpdateData = {};
+    const updateData: UserAPI.UserUpdateData = {};
     if (payload.locality) updateData.u_city = payload.locality;
     if (payload.description) updateData.u_description = payload.description;
-    await apiUpdateUser(updateData);
+    await UserAPI.updateUser(updateData);
   }
   // todo: создать машину водителю
   // todo: пометить пользователя как прошедшего проверку (пока нет админки)
@@ -508,17 +489,14 @@ export async function registerContractor(queryClient: QueryClient, payload: Regi
  * Хук для регистрации нового пользователя как мастера.
  */
 export function useRegisterContractor() {
-  const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (payload: RegisterPayload) => registerContractor(queryClient, payload),
+    mutationFn: (payload: RegisterPayload, { client }) => registerContractor(client, payload),
   });
 
-  const register = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    register
+    register: mutateAsync
   }
 }
 
@@ -554,7 +532,7 @@ export type UserUpdatePayload = {
  */
 export async function updateUser(queryClient: QueryClient, payload: UserUpdatePayload): Promise<void> {
   // todo: Может быть, добавить полную проверку для phone, email, language, currency, locality
-  const apiUserData: UserUpdateData = {};
+  const apiUserData: UserAPI.UserUpdateData = {};
 
   if (payload.name !== undefined) {
     const name = payload.name.trim();
@@ -613,7 +591,7 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
   }
 
-  await apiUpdateUser(apiUserData, 1);
+  await UserAPI.updateUser(apiUserData, 1);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
@@ -621,17 +599,14 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
  * Хук для обновления основных данных профиля пользователя.
  */
 export function useUpdateUser() {
-  const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (payload: UserUpdatePayload) => updateUser(queryClient, payload),
+    mutationFn: (payload: UserUpdatePayload, { client }) => updateUser(client, payload),
   });
 
-  const save = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    save
+    save: mutateAsync
   }
 }
 
@@ -643,7 +618,7 @@ export function useUpdateUser() {
  */
 export async function updateUserAvatar(queryClient: QueryClient, photoFile: File): Promise<void> {
   const base64Photo = await fileToBase64(photoFile);
-  await apiUpdateUser({ u_photo: base64Photo }, 1);
+  await UserAPI.updateUser({ u_photo: base64Photo }, 1);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
@@ -651,17 +626,14 @@ export async function updateUserAvatar(queryClient: QueryClient, photoFile: File
  * Хук для обновления фотографии профиля пользователя.
  */
 export function useUpdateUserAvatar() {
-  const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (photoFile: File) => updateUserAvatar(queryClient, photoFile),
+    mutationFn: (photoFile: File, { client }) => updateUserAvatar(client, photoFile),
   });
 
-  const save = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    save
+    save: mutateAsync
   }
 }
 
@@ -672,7 +644,7 @@ export function useUpdateUserAvatar() {
  * @returns Промис, который разрешается после успешного обновления.
  */
 export async function updateUserPassword(oldPassword: string, newPassword: string): Promise<void> {
-  await apiUpdatePassword(oldPassword, newPassword);
+  await UserAPI.updatePassword(oldPassword, newPassword);
 }
 
 /**
@@ -684,12 +656,10 @@ export function useUpdateUserPassword() {
       updateUserPassword(oldPassword, newPassword),
   });
 
-  const update = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    update
+    update: mutateAsync
   }
 }
 
@@ -699,8 +669,8 @@ export function useUpdateUserPassword() {
  * @returns Промис, который разрешается после успешной отправки запроса.
  */
 export async function recoverPassword(loginValue: string): Promise<void> {
-  const loginType: LoginType = loginValue.includes('@') ? 'e-mail' : 'phone';
-  await apiRecoverPassword(loginValue, loginType);
+  const loginType: UserAPI.LoginType = loginValue.includes('@') ? 'e-mail' : 'phone';
+  await UserAPI.recoverPassword(loginValue, loginType);
 }
 
 /**
@@ -711,11 +681,9 @@ export function usePasswordRecovery() {
     mutationFn: (loginValue: string) => recoverPassword(loginValue),
   });
 
-  const recover = mutation.mutateAsync;
-  const ret = mutation as Omit<UseMutationResult, 'mutateAsync'> & { mutateAsync?: UseMutationResult['mutateAsync'] };
-  delete ret.mutateAsync;
+  const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    recover
+    recover: mutateAsync
   }
 }

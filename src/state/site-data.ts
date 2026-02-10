@@ -76,10 +76,10 @@ export function useCities(country: string = 'ru') {
     },
     staleTime: Infinity
   });
-  const cities: Record<number, string> = queryResult.data || EMPTY_OBJECT;
-  delete queryResult.data;
+  const { data, ...ret } = queryResult;
+  const cities: Record<number, string> = data || EMPTY_OBJECT;
   return {
-    ...queryResult,
+    ...ret,
     cities
   }
 }
@@ -173,10 +173,10 @@ export function useServices() {
     queryFn: fetchServices,
     staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
   });
-  const servicesData: ServicesData = queryResult.data || emptyServicesData;
-  delete queryResult.data;
+  const { data, ...ret } = queryResult;
+  const servicesData: ServicesData = data || emptyServicesData;
   return {
-    ...queryResult,
+    ...ret,
     ...servicesData
   }
 }

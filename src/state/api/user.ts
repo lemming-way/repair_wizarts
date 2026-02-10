@@ -137,9 +137,9 @@ export async function login(
     type,
   });
 
-  const authResult = await authWithAuthUser<AuthToken>('token', { auth_hash });
-  if (authResult.auth_user && 'object' !== typeof authResult.auth_user) delete authResult.auth_user;
-  return authResult as AuthToken & { auth_user?: UserData };
+  const { auth_user, ...authResult } = await authWithAuthUser<AuthToken>('token', { auth_hash });
+  if (auth_user && 'object' === typeof auth_user) return { ...authResult, auth_user };
+  else return authResult;
 }
 
 /**
@@ -285,9 +285,9 @@ export async function loginByVerificationCode(
     type: `${type}_code`,
   });
 
-  const authResult = await authWithAuthUser<AuthToken>('token', { auth_hash });
-  if (authResult.auth_user && 'object' !== typeof authResult.auth_user) delete authResult.auth_user;
-  return authResult as AuthToken & { auth_user?: UserData };
+  const { auth_user, ...authResult } = await authWithAuthUser<AuthToken>('token', { auth_hash });
+  if (auth_user && 'object' === typeof auth_user) return { ...authResult, auth_user };
+  else return authResult;
 }
 
 /**
