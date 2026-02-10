@@ -15,7 +15,7 @@ import CONFIG from '../../constants';
 import { AuthToken, getToken } from '../auth';
 
 const serverURL = process.env.REACT_APP_API_URL || CONFIG.API?.url || '';
-const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
+export const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
 
 /**
  * Класс для возврата ошибки вместе с исходным результатом запроса.

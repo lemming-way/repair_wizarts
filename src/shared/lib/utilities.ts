@@ -11,3 +11,9 @@ export function fileToBase64(file: File): Promise<string> {
     reader.onerror = (error) => reject(error);
   });
 }
+
+export const IMAGE_TYPES = Object.freeze([ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ]);
+
+export function isImage(mimeType: string) {
+  return IMAGE_TYPES.includes(mimeType);
+}

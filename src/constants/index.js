@@ -14,11 +14,17 @@ const CONFIG = {
 		title: 'Заголовок сайта',
 		description: 'Описание сайта'
 	},
+	
+	ORDERS: {
+		initialLifetime: 604800
+	},
 
 	API: {
 		url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
 		categoriesUrl: 'https://profiback.itest24.com/api/full-data',
-		userDataStaleTime: 15 * 60000
+		userDataStaleTime: 15 * 60000,
+		ordersDataStaleTime: 2 * 60000,
+		ordersDataRefetchTime: 2 * 60000
 		// queryDefaultStaleTime,
 		// queryDefaultRetry
 	},
