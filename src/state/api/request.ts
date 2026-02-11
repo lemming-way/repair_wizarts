@@ -4,12 +4,12 @@
  * @summary
  * **Типы:**
  * ErrorResponse, RequestOptions
- * 
+ *
  * **Классы:**
  * FetchError
  *
  * **Функции:**
- * requestRaw, request, get, getRaw, post, authWithAuthUser, postWithAuthUser, postNoAuth
+ * requestRaw, request, get, getRaw, post, authWithAuthUser, postWithAuthUser, postNoAuth, getLongList
  */
 import CONFIG from '../../constants';
 import { AuthToken, getToken } from '../auth';
@@ -23,7 +23,7 @@ export const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/
  */
 export class FetchError extends Error {
   cause: Response | ErrorResponse | null;
-  
+
   constructor(message, fetchResult: Response | ErrorResponse | null = null) {
     super(message);
     this.name = 'FetchError';
@@ -116,9 +116,9 @@ export type RequestOptions = {
 
 /**
  * Отправляет HTTP запрос и возвращает необработанный JSON ответ.
- * @param {RequestOptions} [opts={}] Опции запроса.
- * @returns {Promise<unknown>} Промис с данными ответа.
- * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
+ * @param opts Опции запроса.
+ * @returns Промис с данными ответа.
+ * @throws В случае ошибки запроса, сети или парсинга ответа.
  */
 export async function requestRaw(opts: RequestOptions, correlationId?: string): Promise<unknown> {
   const isDebug = process.env.NODE_ENV !== 'production';
@@ -165,7 +165,7 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
       if (isDebug) {
         console.debug('[api] response', correlationId, responseData);
       }
-      
+
       return responseData;
     } else {
       const errorMessage = `${resp.status}: ${resp.statusText || 'HTTP Error'}`;
@@ -185,14 +185,21 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
   }
 }
 
+type APIBaseType = object | void;
+
+type APIResponse<T> = Promise<
+  T extends void
+  ? { auth_user?: unknown }
+  : T & { auth_user?: unknown }
+>;
+
 /**
  * Отправляет HTTP запрос и проверяет статус ответа.
- * @template T Тип ожидаемых данных в ответе (допускается Array или любой Object).
- * @param {RequestOptions} [opts={}] Опции запроса.
- * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа и опциональной информацией о пользователе.
- * @throws {Error} В случае ошибки запроса, сети или парсинга ответа.
+ * @param opts Опции запроса.
+ * @returns Промис с данными ответа и опциональной информацией о пользователе.
+ * @throws В случае ошибки запроса, сети или парсинга ответа.
  */
-export async function request<T=unknown>(opts: RequestOptions): Promise<T & { auth_user?: unknown }> {
+export async function request<T extends APIBaseType = Record<string, unknown>>(opts: RequestOptions): APIResponse<T> {
   const isDebug = process.env.NODE_ENV !== 'production';
   const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
 
@@ -215,7 +222,7 @@ export async function request<T=unknown>(opts: RequestOptions): Promise<T & { au
     if (opts.withAuthUser === true && 'object' === typeof successResponse.auth_user) {
       Object.assign(result, { auth_user: successResponse.auth_user });
     }
-    return result as T & { auth_user?: unknown };
+    return result as APIResponse<T>;
   } catch (e) {
     const error = e instanceof Error ? e : new Error(String(e));
     if (isDebug) {
@@ -226,16 +233,51 @@ export async function request<T=unknown>(opts: RequestOptions): Promise<T & { au
 }
 
 /**
- * Упрощенный API клиент.
+ * Вспомогательная функция для загрузки длинных списков без пагинации.
+ * Размер ответа ограничен 30 элементами, поэтому делаем запросы в цикле для получения всех результатов.
+ * @param path Путь к эндпоитну
+ * @param data Параметры запроса
+ * @param fieldName Ключ в возвращаемом значении, по которому расположены данные
+ * @returns Промис, разрешающийся массивом данных
  */
+export async function getLongList<T>(path: string, data: RequestOptions['data'], fieldName: string): Promise<T[]> {
+  let payload;
+  if (data instanceof FormData) {
+    payload = new FormData();
+    data.forEach((value, key) => payload.append(key, value));
+    payload.set('lo', 0);
+    payload.set('lc', 30);
+  }
+  else {
+    payload = {
+      ...data,
+      lo: 0,
+      lc: 30
+    }
+  }
+
+  let ret = [] as T[];
+  while (true) {
+    const result = await post<Record<string, unknown>>(path, payload);
+    if (result?.[fieldName] && 'object' === typeof result[fieldName]) {
+      const values = Object.values(result[fieldName]);
+      ret = ret.concat(values);
+      if (payload instanceof FormData) payload.set('lo', String(Number(payload.get('lo')) + 30));
+      else payload.lo += 30;
+    }
+    else break;
+  }
+  return ret;
+}
+
+// ============== Упрощенный API ==============
 
 /**
  * Отправляет GET запрос (без авторизации).
- * @template T Тип ожидаемых данных.
  * @param path Путь к API.
- * @returns {Promise<T>} Промис с данными ответа.
+ * @returns Промис с данными ответа.
  */
-export function get<T=unknown>(path: string) {
+export function get<T extends APIBaseType = Record<string, unknown>>(path: string) {
   return request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>;
 }
 
@@ -243,7 +285,7 @@ export function get<T=unknown>(path: string) {
  * Отправляет GET запрос (без авторизации).
  * Возвращает сырые данные ответа, без предварительного разбора.
  * @param path Путь к API.
- * @returns {Promise<unknown>} Промис с данными ответа.
+ * @returns Промис с данными ответа.
  */
 export function getRaw(path: string) {
   return requestRaw({ method: 'GET', path, noAuth: true });
@@ -251,44 +293,40 @@ export function getRaw(path: string) {
 
 /**
  * Отправляет POST запрос с авторизацией (если токен доступен).
- * @template T Тип ожидаемых данных.
  * @param path Путь к API.
  * @param data Данные запроса.
- * @returns {Promise<T>} Промис с данными ответа.
+ * @returns Промис с данными ответа.
  */
-export function post<T=unknown>(path: string, data?: RequestOptions['data']) {
+export function post<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data }) as Promise<T>
 }
 
 /**
  * Отправляет POST запрос без авторизации с получением данных авторизованного пользователя.
  * (Имеет смысл только для запросов авторизации)
- * @template T Тип ожидаемых данных.
  * @param path Путь к API.
  * @param data Данные запроса.
- * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа.
+ * @returns Промис с данными ответа.
  */
-export function authWithAuthUser<T=unknown>(path: string, data?: RequestOptions['data']) {
+export function authWithAuthUser<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, noAuth: true, withAuthUser: true });
 }
 /**
  * Отправляет POST запрос с получением данных авторизованного пользователя.
- * @template T Тип ожидаемых данных.
  * @param path Путь к API.
  * @param data Данные запроса.
- * @returns {Promise<T & { auth_user?: unknown }>} Промис с данными ответа.
+ * @returns Промис с данными ответа.
  */
-export function postWithAuthUser<T=unknown>(path: string, data?: RequestOptions['data']) {
+export function postWithAuthUser<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, withAuthUser: true });
 }
 
 /**
  * Отправляет POST запрос без авторизации.
- * @template T Тип ожидаемых данных.
- * @param {string} path Путь к API.
- * @param {RequestOptions['data']} [data] Данные запроса.
- * @returns {Promise<T>} Промис с данными ответа.
+ * @param path Путь к API.
+ * @param data Данные запроса.
+ * @returns Промис с данными ответа.
  */
-export function postNoAuth<T=unknown>(path: string, data?: RequestOptions['data']) {
+export function postNoAuth<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
   return request<T>({ method: 'POST', path, data, noAuth: true }) as Promise<T>;
 }

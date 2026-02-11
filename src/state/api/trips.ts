@@ -12,7 +12,7 @@
  * createTrip, updateTrip, cancelTripByClient, cancelTripByDriver, inviteDriver, acceptInvoice, createOffer,
  * acceptOffer, setArriveState, startTrip, finishTrip, scoreTrip
  */
-import { post, postWithAuthUser } from './request';
+import { post, postWithAuthUser, getLongList } from './request';
 
 // ==================== Типы данных ====================
 
@@ -261,16 +261,14 @@ export async function createTrip(data: TripCreationData): Promise<number | null>
  * @param status - Статус заказов для фильтрации
  * @returns Список поездок
  */
-export async function getTrips(status: GetTripsState): Promise<TripData[]> {
+export function getTrips(status: GetTripsState): Promise<TripData[]> {
   const path = [
     "get",
     "now",
     "",
     "archive"
   ];
-  const result = await post<{booking: Record<number, TripData>}>(`drive/${path}`, { fields: '000000006' });
-  if (result?.booking && 'object' === typeof result.booking) return Object.values(result.booking);
-  else return [];
+  return getLongList<TripData>(`drive/${path}`, { fields: '000000006' }, 'booking');
 }
 
 /**
