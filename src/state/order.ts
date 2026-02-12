@@ -155,7 +155,7 @@ export type OrderUpdateData = {
   orderId: number,
   address?: string;
   description?: string;
-  attachments?: File[];
+  attachments?: Array<File | string>;
   desiredPrice?: number;
 }
 
@@ -271,23 +271,30 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         description: String(trip.b_options?.description ?? ''),
         desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
         createdAt: new Date(String(trip.b_created ?? '')),
-        attachments
+        attachments,
+        contractorOffers: []
       };
       order.updatedAt = order.createdAt;
       order.city = Number(trip.city_start ?? 0);
+      const b_state = Number(trip.b_state);
       if (trip.drivers?.length) {
         for (const driver of trip.drivers) {
+          const d_id = Number(driver.u_id);
           const d_state = Number(driver.c_state ?? 0);
+          const d_price = Number(driver.c_options?.price ?? 0);
           if (d_state === 1) {
-            (order.contractorOffers ??= []).push({
-              contractorId: Number(driver.u_id),
-              price: Number(driver.c_options?.price ?? 0),
+            order.contractorOffers!.push({
+              contractorId: d_id,
+              price: d_price,
               comment: String(driver.c_options?.comment ?? ''),
               readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
                 driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
                 { value: 0, unit: TimeUnit.HOURS },
               createdAt: new Date(String(driver.c_becomed_candidate ?? ''))
             });
+            if (d_id === userId && b_state === 1) {
+              order.contractorPrice = d_price;
+            }
           }
           else if (d_state === 3 || d_state === 4 || d_state === 5 || d_state === 6) {
             c_state = d_state;
@@ -297,8 +304,8 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
             else if (d_state === 5) order.updatedAt = new Date(String(driver.c_started ?? ''));
             else order.updatedAt = new Date(String(driver.c_completed ?? ''));
 
-            order.contractorId = Number(driver.u_id);
-            order.contractorPrice = Number(driver.c_options?.price ?? 0);
+            order.contractorId = d_id;
+            order.contractorPrice = d_price;
           }
         }
       }
@@ -306,7 +313,6 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
         else if (trip.b_offer) order.contractorId = userId;
       }
-      const b_state = Number(trip.b_state);
 
       if (b_state === 1) order.status = OrderStatus.PUBLISHED;
       else if (b_state === 6) order.status = OrderStatus.NEGOTIATION;
@@ -377,7 +383,7 @@ export function useClientOrders() {
 export function useFinishedOrders() {
   const { user } = useUser() as { user: UserProfile };
   const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'active' ],
+    queryKey: [ 'orders', user.id, 'finished' ],
     queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.Finished),
     staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
@@ -482,7 +488,7 @@ function combineFetchOrderResults(results: UseQueryResult<Awaited<Order | null>,
 export function useOrdersByIds(ids: number[]) {
   const { user } = useUser() as { user: UserProfile };
   const queries = ids.map(orderId => ({
-    queryKey: ['orders', user.id, orderId],
+    queryKey: [ 'orders', user.id, orderId ],
     queryFn: fetchOrderById,
     staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
@@ -512,17 +518,31 @@ async function updateOrder({ orderId, address, description, attachments, desired
     if (description !== undefined) updates.b_options.description = description;
     if (desiredPrice !== undefined) updates.b_options.desiredPrice = desiredPrice;
     if (attachments) {
+      const fileAttachments = attachments.filter(file => file instanceof File);
+      const urlAttachments = attachments.filter(file => 'string' === typeof file);
+
       const oldData = await TripAPI.getTripsById([ orderId ]);
+      const oldFilesToSave = {};
       let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
       if ('object' === typeof oldData[0]?.b_options?.images && oldData[0].b_options.images !== null) {
-        const oldIds = Object.keys(oldData[0].b_options.images);
+        const oldFiles = oldData[0].b_options.images;
+        const oldIds = [] as string[];
+        for (const fileId in oldFiles) {
+          if (urlAttachments.includes(oldFiles[fileId])) {
+            oldFilesToSave[fileId] = oldFiles[fileId];
+          }
+          else {
+            oldIds.push(fileId);
+          }
+        }
         oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
       }
       // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
       //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
-      if (attachments.length) {
+      updates.b_options.images = oldFilesToSave;
+      if (fileAttachments.length) {
         const images = await Promise.all(
-          attachments
+          fileAttachments
             .filter(file => isImage(file.type))
             .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
         );
@@ -543,10 +563,7 @@ async function updateOrder({ orderId, address, description, attachments, desired
         updates.b_options.images = uploaded.reduce((ret, item) => {
           if (item.id && item.url) ret[ item.id ] = item.url;
           return ret;
-        }, {});
-      }
-      else {
-        updates.b_options.images = {};
+        }, updates.b_options.images as Record<string, string>);
       }
     }
   }
@@ -572,15 +589,15 @@ export function useUpdateOrder() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.NEGOTIATION, OrderStatus.CONTRACTOR_CONFIRMED ]
+        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.NEGOTIATION ]
         .includes(order.status)
       ) {
         throw new Error('Incorrect order state.');
@@ -588,7 +605,7 @@ export function useUpdateOrder() {
       if (
         (address === undefined || address === order.address) &&
         (description === undefined || description === order.description) &&
-        (desiredPrice === undefined || address === order.desiredPrice) &&
+        (desiredPrice === undefined || desiredPrice === order.desiredPrice) &&
         !attachments
       ) {
         return;
@@ -596,6 +613,7 @@ export function useUpdateOrder() {
 
       await updateOrder({ orderId, address, description, attachments, desiredPrice });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
       return;
     }
   });
@@ -641,10 +659,10 @@ export function useCancelOrder() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (
@@ -654,8 +672,16 @@ export function useCancelOrder() {
         throw new Error('Cannot cancel an ongoing order.');
       }
 
-      if (user.role === UserRole.Contractor) await cancelOrderByContractor(orderId, reason);
-      else await cancelOrderByClient(orderId, reason);
+      if (user.role === UserRole.Contractor) {
+        await cancelOrderByContractor(orderId, reason);
+        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
+        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+      }
+      else {
+        await cancelOrderByClient(orderId, reason);
+        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
+        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'finished' ] });
+      }
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
       return;
     }
@@ -711,10 +737,10 @@ export function useCreateOffer() {
       if (!price || !comment || !readyIn) throw new Error('Mandatory parameter is empty.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
@@ -722,6 +748,8 @@ export function useCreateOffer() {
 
       await createOffer({ orderId, price, comment, readyIn });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
       return;
     }
   });
@@ -764,10 +792,10 @@ export function useUpdateOffer() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       const offer = order.contractorOffers.find(offer => offer.contractorId === user.id);
@@ -782,6 +810,7 @@ export function useUpdateOffer() {
 
       await updateOffer({ orderId, price, comment, readyIn });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
       return;
     }
   });
@@ -818,10 +847,10 @@ export function useAcceptOffer() {
       if (!contractorId) throw new Error('Contractor ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order || order.clientId !== user.id) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
@@ -830,6 +859,7 @@ export function useAcceptOffer() {
 
       await acceptOffer(orderId, contractorId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
       return;
     }
   });
@@ -851,9 +881,9 @@ function revokeOffer(orderId: number, reason: string = ''): Promise<void> {
 }
 
 /**
- * Возвращает мутацию назначения исполнителя по заказу.
- * Хук может быть вызван без дополнительных условий, но назначения исполнителя доступно только клиенту,
- * создавшему заказ.
+ * Возвращает мутацию назначения отзыва предложения от мастера.
+ * Хук может быть вызван без дополнительных условий, но отзыв предложения доступен только мастеру,
+ * сделавшему предложение о выполнении заказа.
  */
 export function useRevokeOffer() {
   const { user } = useUser() as { user: UserProfile };
@@ -865,10 +895,10 @@ export function useRevokeOffer() {
       if (!reason) reason = '';
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
@@ -876,6 +906,8 @@ export function useRevokeOffer() {
 
       await revokeOffer(orderId, reason);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
       return;
     }
   });
@@ -896,7 +928,7 @@ export function useRevokeOffer() {
 export function useContractorOrders() {
   const { user } = useUser() as { user: UserProfile };
   const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'active' ],
+    queryKey: [ 'orders', user.id, 'contractor' ],
     queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.Current),
     staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
@@ -920,9 +952,9 @@ export function useContractorOrders() {
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
 export function useAvailableOrders() {
-  const { user } = useUser() as { user: UserProfile };
+  const { user } = useUser() as { user: UserProfile & { services: number[] } };
   const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'active' ],
+    queryKey: [ 'orders', user.id, 'available' ],
     queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.New),
     staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
@@ -930,7 +962,8 @@ export function useAvailableOrders() {
   });
 
   const { data, ...ret } = queryResult;
-  const orders = data || EMPTY_ARRAY;
+  const filteredData = data?.filter(order => user.services?.includes(order.serviceId));
+  const orders = filteredData?.length ? filteredData : EMPTY_ARRAY;
   return {
     ...ret,
     orders
@@ -971,10 +1004,10 @@ export function useAcceptInvoice() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.NEGOTIATION) throw new Error('Incorrect order state.');
@@ -982,6 +1015,7 @@ export function useAcceptInvoice() {
 
       await acceptInvoice(orderId, order.desiredPrice);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
       return;
     }
   });
@@ -1016,10 +1050,10 @@ export function useStartOrderWork() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.CONTRACTOR_CONFIRMED) throw new Error('Incorrect order state.');
@@ -1027,6 +1061,7 @@ export function useStartOrderWork() {
 
       await startOrderWork(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
       return;
     }
   });
@@ -1061,10 +1096,10 @@ export function useCompleteOrderByContractor() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.IN_PROGRESS) throw new Error('Incorrect order state.');
@@ -1072,6 +1107,7 @@ export function useCompleteOrderByContractor() {
 
       await completeOrderByContractor(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
       return;
     }
   });
@@ -1108,10 +1144,10 @@ export function useVerifyOrderCompletion() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: ['orders', user.id, orderId],
+        queryKey: [ 'orders', user.id, orderId ],
         queryFn: fetchOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
-      })[0];
+      });
 
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.COMPLETED) throw new Error('Incorrect order state.');
@@ -1119,6 +1155,7 @@ export function useVerifyOrderCompletion() {
 
       await verifyOrderCompletion(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
       return;
     }
   });
