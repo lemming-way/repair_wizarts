@@ -26,6 +26,8 @@ function ServiceMainContent({
   addRemoveIgnoreService,
   description,
   setDescription,
+  address,
+  setAddress,
   onSubmit,
 }) {
   const [search, setSearch] = useState('');
@@ -144,6 +146,8 @@ function ServiceMainContent({
             addRemoveIgnoreService={addRemoveIgnoreService}
             description={description}
             setDescription={setDescription}
+            address={address}
+            setAddress={setAddress}
           />
         </div>
 

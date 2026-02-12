@@ -42,10 +42,11 @@ function ContractorInfoModals({
             </div>
 
             <div className="info_contractor__row1">
-              <img src="/img/profile__image.png" alt="" />
+              <img src={selectedContractor.avatar || "/img/profile__image.png"} alt="" />
               <div className="info_contractor__about">
                 <p>{selectedContractor.name}</p>
-                <p>{selectedContractor.info}</p>
+                <p>{selectedContractor.description}</p>
+                {/*
                 <div className="info_contractor__stars">
                   <Rating
                     size={18}
@@ -56,10 +57,13 @@ function ContractorInfoModals({
                     emptyColor="#E4E5E9"
                   />
                 </div>
+                */}
                 <div className="info_contractor__row-links">
+                  {/*
                   <Link to={`/client/feedback/${selectedContractor.id}`}>
                     {selectedContractor.reviews} {text('reviews received')}
                   </Link>
+                  */}
                   <button
                     type="button"
                     className="info_contractor__row-link"
@@ -77,7 +81,7 @@ function ContractorInfoModals({
               <span className="info_contractor__text-about-light">
                 {text('Organization name')}
               </span>
-              {selectedContractor.orgName}
+              {selectedContractor.organizationName}
             </p>
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
@@ -85,42 +89,54 @@ function ContractorInfoModals({
               </span>
               {selectedContractor.experience}
             </p>
+            {/* Поле 'On the platform since' отсутствует в UserProfile
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('On the platform')}
               </span>
               {text('since')} {selectedContractor.onSiteSince}
             </p>
+            */}
+            {/* Поле 'Status' отсутствует в UserProfile
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('Status')}
               </span>
               {text(selectedContractor.status)}
             </p>
+            */}
+            {/* Рейтинг закомментирован по запросу
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Rating')}
               </span>
               {selectedContractor.rating}
             </p>
+            */}
+            {/* Поле 'Orders completed' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Orders completed')}
               </span>
               {selectedContractor.ordersCompleted}
             </p>
+            */}
+            {/* Поле 'Orders delivered successfully' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Orders delivered successfully')}
               </span>
               {selectedContractor.successRate}
             </p>
+            */}
+            {/* Поле 'Repeat orders' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Repeat orders')}
               </span>
               {selectedContractor.repeatOrders}
             </p>
+            */}
           </div>
         )}
         {showBigModal && (
@@ -134,6 +150,8 @@ function ContractorInfoModals({
                 <img src="/img/close.svg" alt="" />
               </div>
 
+              {/* Поля 'Category type', 'Category', 'Brands', 'Your activity', 'Main focus', 'About the organization' отсутствуют в UserProfile */}
+              {/*
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
                   {text('Category type')}
@@ -165,12 +183,14 @@ function ContractorInfoModals({
                 </span>
                 {selectedContractor.mainFocus}
               </p>
+              */}
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
-                  {text('Main business')}
+                  {text('Business model')}
                 </span>
-                {text(selectedContractor.businessType)}
+                {text(selectedContractor.businessModel)}
               </p>
+              {/*
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
                   {text('About the organization:')}{' '}
@@ -179,6 +199,7 @@ function ContractorInfoModals({
               <p className="info_contractor_big__text">
                 {selectedContractor.aboutOrg}
               </p>
+              */}
 
               <div>
                 <Swiper

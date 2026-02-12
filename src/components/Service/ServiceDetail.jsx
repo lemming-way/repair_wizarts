@@ -40,7 +40,7 @@ function ServiceDetail() {
   };
 
   const [formError, setFormError] = useState('');
-  const [visibleBlockPayment, setVisibleBlockPayment] = useState(0);
+  const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
   const [selectedContractor, setSelectedContractor] = useState({});
@@ -70,6 +70,7 @@ function ServiceDetail() {
     setShowBigModal(true);
   };
 
+  const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
 
   const onSubmit = async (e) => {
@@ -81,12 +82,10 @@ function ServiceDetail() {
 
     const orderData = {
       cityId: selectedCity,
-      // todo: Добавить адрес в форму
-      address: '',
+      address,
       serviceId,
       description,
       price: getSumPrice(),
-      type: 'order'
     };
     if (selectedContractor?.id) orderData.contractorId = selectedContractor.id;
     // todo: Добавить загрузку изображений в форму
@@ -214,6 +213,8 @@ function ServiceDetail() {
       addRemoveIgnoreService={addRemoveIgnoreService}
       description={description}
       setDescription={setDescription}
+      address={address}
+      setAddress={setAddress}
       onSubmit={onSubmit}
     />
 

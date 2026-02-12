@@ -17,6 +17,8 @@ function OrderFormBlock({
   addRemoveIgnoreService,
   description,
   setDescription,
+  address,
+  setAddress,
 }) {
   const text = useLanguage();
   const [visibleListSelectedServices, setVisibleListSelectedServices] = useState(false);
@@ -65,6 +67,15 @@ function OrderFormBlock({
               <input type="text" placeholder={text('Your name')} defaultValue={user.name} disabled />
               <input className="ismrf" type="text" placeholder={text('Phone number')} defaultValue={user.phone} disabled />
             </div>
+
+            <input
+              type="text"
+              placeholder={text('Address')}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              style={{ marginBottom: '10px' }}
+              required
+            />
 
             {/* список выбранных услуг */}
             <div className="selected_service">
