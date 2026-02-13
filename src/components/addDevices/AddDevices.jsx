@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
@@ -7,67 +7,45 @@ import '../../scss/added.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import style from './AddDevices.module.css';
-import { createRequest } from '../../services/request.service';
-import appFetch from '../../utilities/appFetch';
 import { useLanguage } from '../../state/language';
+import { useServices } from '../../state/site-data';
+import { useCreateOrder } from '../../state/order';
 
-// Вспомогательная функция для преобразования файла в base64
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-
-// Исправленная функция для загрузки фото
-const uploadPhoto = async (file) => {
-  try {
-    const base64String = await fileToBase64(file);
-
-    const fileObject = {
-      file: JSON.stringify({
-        base64: base64String,
-        name: file.name,
-      }),
-    };
-    // --- КОНЕЦ ОТЛАДКИ ---
-
-    // Шаг 5: Отправляем запрос
-    const response = await appFetch('/dropbox/file/', {
-      method: 'POST',
-      body: fileObject,
-    });
-
-    const result = await response;
-
-    // Шаг 6: Анализируем ответ
-
-    console.log('Фото успешно загружено:', result);
-    return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
-  } catch (error) {
-    console.error('Ошибка в функции uploadPhoto:', error);
-    throw error;
-  }
-};
-function Profile() {
+function AddDevices() {
   const text = useLanguage();
   const fileInputRef = useRef();
   const navigate = useNavigate();
-  const [URLSearchParams] = useSearchParams();
-  const title = URLSearchParams.get('title');
   const [error, setError] = useState('');
+  const [address, setAddress] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [photos, setPhotos] = useState([]);
-  const [Sections, setSections] = useState([]);
-  const [Subsections, setSubsections] = useState([]);
-  const [Services, setServices] = useState([]);
-  const [selectedService, setSelectedService] = useState({
-    section: '',
-    subsection: '',
-    service: '',
-  });
+
+  const { createOrder } = useCreateOrder();
+
+  const { categories, subcategories, services } = useServices();
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedService, setSelectedService] = useState('');
+
+  const categoriesOptions = Object.entries(categories).map(([id, category]) => ({
+      value: String(id),
+      label: category.name,
+  }));
+
+  const subcategoriesOptions =
+    selectedCategory && categories && subcategories
+    ? categories[selectedCategory]
+        .subcategories
+        .map(subId => ({ value: String(subId), label: subcategories[subId].name }))
+    : [];
+
+  const servicesOptions =
+    selectedSubcategory && subcategories && services
+    ? subcategories[selectedSubcategory]
+        .services
+        .map(serviceId => ({ value: String(serviceId), label: services[serviceId].name }))
+    : [];
 
   // загрузка фото
   const handleImageChange = (event) => {
@@ -84,111 +62,53 @@ function Profile() {
     setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
-  const getData = async (type, sectionId, subsectionId) => {
-    try {
-      // Your existing getData logic remains here...
-      switch (type) {
-        case 'section':
-          const sectionsResponse = await fetch(
-            'https://profiback.itest24.com/api/sections',
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const sections = await sectionsResponse.json();
-          setSections(
-            sections.map((section) => ({
-              value: section.id,
-              label: section.name,
-            })),
-          );
-          break;
-        case 'subsection':
-          const subsectionResponse = await fetch(
-            `https://profiback.itest24.com/api/subsections/?section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const subsections = await subsectionResponse.json();
-          setSubsections(
-            subsections.map((subsection) => ({
-              value: subsection.id,
-              label: subsection.name,
-            })),
-          );
-          break;
-        case 'service':
-          console.log(sectionId, subsectionId);
-          const serviceResponse = await fetch(
-            `https://profiback.itest24.com/api/services/?subsection_id=${subsectionId}&section_id=${sectionId}`,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${'123'}`,
-              },
-            },
-          );
-          const services = await serviceResponse.json();
-          console.log(services);
-          setServices(
-            services.map((service) => ({
-              value: service.id,
-              label: service.name,
-            })),
-          );
-          break;
-         default:
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const rawFiles = photos.map(p => p.file).filter(Boolean);
+
+    // Используем заглушку для cityId
+    // todo: получить город из блока выбора города
+    const cityId = 105;
+
+    if (!address || !selectedService || !description || !price) {
+        setError(text('Mandatory parameter is empty.'));
+        return;
+    }
+
     try {
-      // Загрузка всех фото на сервер
-      const photoUrls = [];
-      for (const photo of photos) {
-        if (photo.file) {
-          const url = await uploadPhoto(photo.file);
-          photoUrls.push(url);
-        }
-      }
-
-      const data = {
-        title,
-        description,
-        client_price: price,
-        photoUrls,
-        ...selectedService,
-      };
-
-      await createRequest({
-        data,
-        files: undefined, // файлы уже загружены
+      await createOrder({
+        cityId: cityId,
+        address: address,
+        serviceId: Number(selectedService),
+        description: description,
+        attachments: rawFiles,
+        price: Number(price),
       });
+
       navigate('/client/requests');
     } catch (err) {
-      if (err.message) {
-        return setError(err.message);
+      // Обработка ошибок
+      let errorMessage = text('Check the correctness of the entered data');
+      if (err instanceof Error && err.message) {
+          errorMessage = err.message;
       }
-      setError(text('Check the correctness of the entered data'));
+      setError(errorMessage);
       console.error(err);
     }
   };
 
   useEffect(() => {
     document.title = text('Add device');
-    getData('section');
   }, [text]);
+
+  useEffect(() => {
+    // Очищаем все Object URL при размонтировании компонента
+    return () => {
+      photos.forEach((photo) => URL.revokeObjectURL(photo.url));
+    };
+  }, [photos]);
 
   return (
     <section className="page_8">
@@ -243,6 +163,26 @@ function Profile() {
                       </div>
                       <h2>Опишите с каким мастером вы хотите работать</h2>
                     </div>
+
+                    <div className="description">
+                      <div className="description_text mobile-description_text">
+                        <h2>Адрес выполнения работ</h2>
+                      </div>
+                      <div className="descrip df mobile-descrip">
+                        <div className="description_img mobile-description_img">
+                          <img
+                            src="/img/accommodation_img/Group.svg"
+                            alt="img absent"
+                          />
+                        </div>
+                        <input
+                          placeholder="Укажите адрес..."
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
                     <div className="description">
                       <div className="description_text mobile-description_text">
                         <h2>Детальное описание задачи</h2>
@@ -280,21 +220,17 @@ function Profile() {
                     <div className="select-device__box">
                       <select
                         className="pick__price"
-                        value={selectedService.section}
+                        value={selectedCategory}
                         onChange={(e) => {
-                          getData('subsection', e.target.value);
-                          setSelectedService((prev) => ({
-                            ...prev,
-                            section: e.target.value,
-                            subsection: '',
-                            service: '',
-                          }));
+                          setSelectedCategory(Number(e.target.value));
+                          setSelectedSubcategory('');
+                          setSelectedService('');
                         }}
                       >
                         <option value="" disabled>
                           Категория
                         </option>
-                        {Sections.map((item) => (
+                        {categoriesOptions.map((item) => (
                           <option key={item.value} value={item.value}>
                             {item.label}
                           </option>
@@ -302,25 +238,17 @@ function Profile() {
                       </select>
                       <select
                         className="pick__price"
-                        value={selectedService.subsection}
-                        disabled={!selectedService.section}
+                        value={selectedSubcategory}
+                        disabled={!selectedCategory}
                         onChange={(e) => {
-                          getData(
-                            'service',
-                            selectedService.section,
-                            e.target.value,
-                          );
-                          setSelectedService((prev) => ({
-                            ...prev,
-                            subsection: e.target.value,
-                            service: '',
-                          }));
+                          setSelectedSubcategory(Number(e.target.value));
+                          setSelectedService('');
                         }}
                       >
                         <option value="" disabled>
                           Вид категории
                         </option>
-                        {Subsections.map((item) => (
+                        {subcategoriesOptions.map((item) => (
                           <option value={item.value} key={item.value}>
                             {item.label}
                           </option>
@@ -329,19 +257,16 @@ function Profile() {
                       <select
                         required
                         className="pick__price"
-                        value={selectedService.service}
+                        value={selectedService}
                         onChange={(e) =>
-                          setSelectedService((prev) => ({
-                            ...prev,
-                            service: e.target.value,
-                          }))
+                          setSelectedService(Number(e.target.value))
                         }
-                        disabled={!selectedService.subsection}
+                        disabled={!selectedSubcategory}
                       >
                         <option value="" disabled>
                           Бренд
                         </option>
-                        {Services.map((item) => (
+                        {servicesOptions.map((item) => (
                           <option value={item.value} key={item.value}>
                             {item.label}
                           </option>
@@ -453,4 +378,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default AddDevices;
