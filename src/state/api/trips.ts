@@ -13,6 +13,7 @@
  * acceptOffer, setArriveState, startTrip, finishTrip, scoreTrip
  */
 import { post, postWithAuthUser, getLongList } from './request';
+import { getDrivenCar } from './cars';
 
 // ==================== Типы данных ====================
 
@@ -210,7 +211,7 @@ export enum GetTripsState {
  * @param cityId - ID города
  * @param minRating - минимальный рейтинг мастера (не реализовано)
  * @param isOnline - возвращать только пользователей онлайн
- * @returns Список ID мастеров, оказывающих данную услугу
+ * @returns Промис, который разрешается со списком ID мастеров, оказывающих данную услугу
  */
 export async function getContractorsByService({ serviceId, cityId, minRating, isOnline }: {
   serviceId: number;
@@ -243,7 +244,7 @@ export async function getContractorsByService({ serviceId, cityId, minRating, is
 /**
  * Создать новую поездку
  * @param TripCreationData - Данные для создания поездки
- * @returns ID созданной поездки
+ * @returns Промис, который разрешается с ID созданной поездки
  */
 export async function createTrip(data: TripCreationData): Promise<number | null> {
   if (!data.b_start_datetime) data.b_start_datetime = 'any';
@@ -259,7 +260,7 @@ export async function createTrip(data: TripCreationData): Promise<number | null>
 /**
  * Получить список поездок клиента или водителя с фильтрацией по статусу
  * @param status - Статус заказов для фильтрации
- * @returns Список поездок
+ * @returns Промис, который разрешается со списком поездок
  */
 export function getTrips(status: GetTripsState): Promise<TripData[]> {
   const path = [
@@ -274,7 +275,7 @@ export function getTrips(status: GetTripsState): Promise<TripData[]> {
 /**
  * Получить список поездок по их ID
  * @param tripIds - массив ID поездок
- * @returns Список поездок
+ * @returns Промис, который разрешается со списком поездок и ID авторизованного пользователя
  */
 export async function getTripsById(tripIds: number[]): Promise<{ data: TripData[], authUserId: number }> {
   if (!tripIds.length) return { data: [], authUserId: 0 };
@@ -374,10 +375,9 @@ export async function inviteDriver(tripId: number, userId: number): Promise<void
  * @returns Промис, который разрешается после успешного обновления
  */
 export async function acceptInvoice(tripId: number, options?: Record<string, any>): Promise<void> {
-  const result = await post<{ car: Record<number, CarData> }>('user/authorized/car/driven');
-  if (!result?.car) throw new Error('API Error');
-  const carId = Object.keys(result.car)[0];
-  if (!carId) throw new Error('User has no car');
+  const result = await getDrivenCar();
+  if (!result?.c_id) throw new Error('User has no car');
+  const carId = result.c_id;
   const data: any = {
     c_id: carId,
     c_payment_way: 1
@@ -393,10 +393,9 @@ export async function acceptInvoice(tripId: number, options?: Record<string, any
  * @returns Промис, который разрешается после успешного обновления
  */
 export async function createOffer(tripId: number, options?: Record<string, any>): Promise<void> {
-  const result = await post<{ car: Record<number, CarData> }>('user/authorized/car/driven');
-  if (!result?.car) throw new Error('API Error');
-  const carId = Object.keys(result.car)[0];
-  if (!carId) throw new Error('User has no car');
+  const result = await getDrivenCar();
+  if (!result?.c_id) throw new Error('User has no car');
+  const carId = result.c_id;
   const data: any = {
     c_id: carId,
     c_payment_way: 1
