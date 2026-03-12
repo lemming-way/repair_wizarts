@@ -14,7 +14,7 @@ import { useService } from "../../hooks/useService";
 
 
 
-function App() {
+function Myorders() {
     const { id } = useParams()
     const request = useService(getRequestById.bind(null, id), {})
 
@@ -105,4 +105,4 @@ function App() {
 }
 
 
-export default App;
+export default Myorders;

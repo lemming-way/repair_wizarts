@@ -42,7 +42,7 @@ export type Order = {
   contractorPrice?: number;
   createdAt: Date;
   updatedAt: Date;
-  attachments: Record<number, string>;
+  attachments: number[];
   contractorOffers: Offer[];
 }
 
@@ -87,6 +87,16 @@ export enum OrderStatus {
   DISPUTE = 'dispute',
   CANCELLED = 'cancelled'
 }
+
+export const orderStatusString = {
+  [OrderStatus.PUBLISHED]: 'Awaiting offer',
+  [OrderStatus.NEGOTIATION]: 'Offered to the contractor',
+  [OrderStatus.CONTRACTOR_CONFIRMED]: 'Contractor confirmed',
+  [OrderStatus.IN_PROGRESS]: 'In progress',
+  [OrderStatus.COMPLETED]: 'Completed',
+  [OrderStatus.CANCELLED]: 'Cancelled',
+  [OrderStatus.CLOSED]: 'Finished',
+};
 
 const EMPTY_ARRAY = Object.freeze([]);
 
@@ -155,7 +165,7 @@ export type OrderUpdateData = {
   orderId: number,
   address?: string;
   description?: string;
-  attachments?: Array<File | string>;
+  attachments?: Array<File | number>;
   desiredPrice?: number;
 }
 
@@ -195,10 +205,7 @@ async function createOrder({
     const uploaded = await Promise.all(
       images.map(image => FileAPI.uploadFile(image.name, image.data, 0))
     );
-    orderOptions.images = uploaded.reduce((ret, item) => {
-      if (item.id && item.url) ret[ item.id ] = item.url;
-      return ret;
-    }, {});
+    orderOptions.images = uploaded.filter(Boolean);
   }
 
   const orderCreationData: TripAPI.TripCreationData = {
@@ -252,20 +259,18 @@ export function useCreateOrder() {
 function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTrips>>): Order[] {
   const result = rawData.reduce((ret, trip) => {
     if (trip.b_id && trip.u_id) {
-      let c_state = 0;
-      const attachments = Object.entries(trip.b_options?.images || {})
-        .reduce((ret, item) => {
-          const id = Number(item[0]);
-          const url = item[1];
-          if (Number.isFinite(id) && url && 'string' === typeof url) {
-            ret[id] = url;
-          }
-          return ret;
-        }, {} as Record<number, string>);
+      let c_state = 0;  // статус назначенного исполнителя исполнителя, если есть
+      // очищаем список прикреплённых файлов
+      const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
+      const attachments = images
+        .map(id => Number(id || 0))
+        .filter(Number.isFinite);
 
+      // запоняем основные свойства заказа
       const order: Partial<Order> = {
         id: Number(trip.b_id),
         clientId: Number(trip.u_id),
+        city: Number(trip.city_start ?? 0),
         address: String(trip.b_start_address ?? ''),
         serviceId: Number(trip.b_options?.service ?? 0),
         description: String(trip.b_options?.description ?? ''),
@@ -274,15 +279,20 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         attachments,
         contractorOffers: []
       };
-      order.updatedAt = order.createdAt;
-      order.city = Number(trip.city_start ?? 0);
-      const b_state = Number(trip.b_state);
+      // отбрасываем бракованные данные
+      if (!order.id || !order.clientId || !order.serviceId || !order.city) {
+        return ret;
+      }
+      order.updatedAt = order.createdAt;  // начальное значение, будет меняться
+      const b_state = Number(trip.b_state);  // внутренний статус заказа в API
+      // обрабатываем исполнителей, откликнувшихся на заказ
       if (trip.drivers?.length) {
         for (const driver of trip.drivers) {
           const d_id = Number(driver.u_id);
           const d_state = Number(driver.c_state ?? 0);
           const d_price = Number(driver.c_options?.price ?? 0);
           if (d_state === 1) {
+            // не назначенный исполнитель
             order.contractorOffers!.push({
               contractorId: d_id,
               price: d_price,
@@ -293,10 +303,12 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
               createdAt: new Date(String(driver.c_becomed_candidate ?? ''))
             });
             if (d_id === userId && b_state === 1) {
+              // текущий пользователь является мастером, откликнувшимся на заказ
               order.contractorPrice = d_price;
             }
           }
           else if (d_state === 3 || d_state === 4 || d_state === 5 || d_state === 6) {
+            // назначенный исполнитель
             c_state = d_state;
 
             if (d_state === 3) order.updatedAt = new Date(String(driver.c_appointed ?? ''));
@@ -309,11 +321,13 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
           }
         }
       }
+      // проверяем, предложен ли заказ конкретному мастеру
       if (!order.contractorId) {
         if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
         else if (trip.b_offer) order.contractorId = userId;
       }
 
+      // маппинг статусов
       if (b_state === 1) order.status = OrderStatus.PUBLISHED;
       else if (b_state === 6) order.status = OrderStatus.NEGOTIATION;
       else if (b_state === 2) {
@@ -510,8 +524,9 @@ export function useOrdersByIds(ids: number[]) {
  * @param desiredPrice Предложенная стоимость работ
  * @returns Промис, который разрешается после успешного обновления данных
  */
-async function updateOrder({ orderId, address, description, attachments, desiredPrice }: OrderUpdateData): Promise<void> {
+async function updateOrder({ orderId, address, description, attachments, desiredPrice }: OrderUpdateData) {
   const updates: TripAPI.TripEditData = {};
+  const ret: { updatedFiles: number[]; deletedFiles: number[] } = { updatedFiles: [], deletedFiles: [] };
   if (address !== undefined) updates.b_start_address = address;
   if (description !== undefined || attachments || desiredPrice !== undefined) {
     updates.b_options = {};
@@ -519,27 +534,19 @@ async function updateOrder({ orderId, address, description, attachments, desired
     if (desiredPrice !== undefined) updates.b_options.desiredPrice = desiredPrice;
     if (attachments) {
       const fileAttachments = attachments.filter(file => file instanceof File);
-      const urlAttachments = attachments.filter(file => 'string' === typeof file);
+      const idAttachments = attachments.filter(file => 'number' === typeof file);
 
       const oldData = await TripAPI.getTripsById([ orderId ]);
-      const oldFilesToSave = {};
       let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
-      if ('object' === typeof oldData[0]?.b_options?.images && oldData[0].b_options.images !== null) {
-        const oldFiles = oldData[0].b_options.images;
-        const oldIds = [] as string[];
-        for (const fileId in oldFiles) {
-          if (urlAttachments.includes(oldFiles[fileId])) {
-            oldFilesToSave[fileId] = oldFiles[fileId];
-          }
-          else {
-            oldIds.push(fileId);
-          }
-        }
+      if (Array.isArray(oldData[0]?.b_options?.images)) {
+        const oldIds = (oldData[0].b_options.images ?? [])
+          .map(Number)
+          .filter(id => !!id && Number.isFinite(id) && !idAttachments.includes(id));
         oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
       }
       // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
       //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
-      updates.b_options.images = oldFilesToSave;
+      const newAttachments = idAttachments;
       if (fileAttachments.length) {
         const images = await Promise.all(
           fileAttachments
@@ -551,23 +558,25 @@ async function updateOrder({ orderId, address, description, attachments, desired
           if (fileIndex >= 0) {
             const oldId = Number(oldFilesInfo[fileIndex]!.dl_id || 0);
             oldFilesInfo[fileIndex] = null;
+            ret.updatedFiles.push(oldId);
             return FileAPI.updateFile(oldId, image.data);
           }
           return FileAPI.uploadFile(image.name, image.data, 0);
         });
-        const deletes = oldFilesInfo.filter(Boolean).map(file => FileAPI.deleteFile(file!.dl_id));
+        const deletedIds = oldFilesInfo.filter(Boolean).map(file => Number(file!.dl_id));
+        ret.deletedFiles = deletedIds;
+        const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
         if (deletes.length) {
           await Promise.all(deletes);
         }
-        const uploaded = await Promise.all(uploads);
-        updates.b_options.images = uploaded.reduce((ret, item) => {
-          if (item.id && item.url) ret[ item.id ] = item.url;
-          return ret;
-        }, updates.b_options.images as Record<string, string>);
+        const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
+        newAttachments.push(...uploaded);
+        updates.b_options.images = newAttachments;
       }
     }
   }
-  return TripAPI.updateTrip(orderId, updates);
+  await TripAPI.updateTrip(orderId, updates);
+  return ret;
 }
 
 /**
@@ -611,7 +620,13 @@ export function useUpdateOrder() {
         return;
       }
 
-      await updateOrder({ orderId, address, description, attachments, desiredPrice });
+      const results = await updateOrder({ orderId, address, description, attachments, desiredPrice });
+      for (const id of results.deletedFiles) {
+        client.removeQueries({ queryKey: [ 'files', id ] });
+      }
+      for (const id of results.updatedFiles) {
+        client.invalidateQueries({ queryKey: [ 'files', id ] });
+      }
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
       return;
@@ -1183,6 +1198,23 @@ export function useVerifyOrderCompletion() {
 //~ ): Promise<{ success: boolean; disputeId: number }>;
 
 // ==================== 6. Вспомогательные и системные ====================
+
+export function useFileById(fileId: number | null) {
+  const queryResult = useQuery({
+    queryKey: [ 'files', fileId ],
+    queryFn: () => FileAPI.fetchFile(fileId ?? 0),
+    staleTime: CONFIG.API?.filesStaleTime ?? 1800000,
+    enabled: !!fileId
+  });
+
+  const { data: { blob, type, filename } = {}, ...ret } = queryResult;
+  return {
+    ...ret,
+    blob,
+    type,
+    filename
+  };
+}
 
 //~ /**
  //~ * Получить статистику по заказам для дашборда

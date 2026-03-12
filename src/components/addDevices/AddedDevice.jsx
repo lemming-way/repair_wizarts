@@ -7,42 +7,10 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 import style from './AddedDevice.module.css';
 import formatDate from '../../utilities/formatDate';
+import { AnyImage, getKeyFor } from '../../shared/ui';
 import { useServices } from '../../state/site-data';
-import { OrderStatus, useUpdateOrder, useCancelOrder } from '../../state/order';
+import { OrderStatus, orderStatusString, useUpdateOrder, useCancelOrder } from '../../state/order';
 import { useLanguage } from '../../state/language';
-
-const StatusString = {
-  [OrderStatus.PUBLISHED]: 'Awaiting offer',
-  [OrderStatus.NEGOTIATION]: 'Offered to the contractor',
-  [OrderStatus.CONTRACTOR_CONFIRMED]: 'Contractor confirmed',
-  [OrderStatus.IN_PROGRESS]: 'In progress',
-  [OrderStatus.COMPLETED]: 'Completed',
-  [OrderStatus.CANCELLED]: 'Cancelled',
-  [OrderStatus.CLOSED]: 'Finished',
-};
-
-// Компонент для отображения изображений
-const DropboxImage = ({ src, alt = '' }) => {
-  const [imgSrc, setImgSrc] = useState(null);
-
-  useEffect(() => {
-    if (src instanceof File) {
-      const url = URL.createObjectURL(src)
-      setImgSrc(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    else {
-      setImgSrc(src);
-    }
-  }, [src]);
-
-  return imgSrc ?
-    <img src={imgSrc} alt={alt} style={{ width: '100%' }} />
-    :
-    <div style={{ width: '100%', height: 120, background: '#eee' }}>
-      Загрузка...
-    </div>;
-};
 
 const AddedDevice = (props) => {
   const text = useLanguage();
@@ -55,7 +23,7 @@ const AddedDevice = (props) => {
     status,
     serviceId,
     createdAt,
-    attachments = {}, // Record<number, string>
+    attachments,
   } = props;
 
   const { updateOrder } = useUpdateOrder();
@@ -78,25 +46,34 @@ const AddedDevice = (props) => {
     }
   }, [subcategories, services, serviceId, selectedSubcategoryId, selectedCategoryId]);
 
-  const [photos, setPhotos] = useState(Object.values(attachments));
+  const [photos, setPhotos] = useState(attachments);
 
   useEffect(() => {
-    setPhotos(Object.values(attachments));
+    setPhotos(attachments);
   }, [attachments]);
 
   // загрузка фото
   const handleImageChange = (event) => {
     const files = Array.from(event.target.files);
-    if (photos.length + files.length > 10) {
-      // Можно добавить setError, если нужно
+    const newPhotos = files
+      .filter(file => photos.every(existing => {
+        return !(existing instanceof File) ||
+               existing.name !== file.name ||
+               existing.size !== file.size ||
+               existing.type !== file.type ||
+               existing.lastModified !== file.lastModified;
+      }));
+    if (photos.length + newPhotos.length > 10) {
+      //~ setError(text('You can upload no more than 10 files.'));
       return;
     }
-    setPhotos((prev) => [...prev, ...files]);
+    //~ setError('');
+    setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
   // Удаление фото по индексу
   const handleRemovePhoto = (index) => {
-    setPhotos((prev) => [...prev].splice(index, 1));
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const [price, setPrice] = useState(desiredPrice);
@@ -159,7 +136,7 @@ const AddedDevice = (props) => {
             <div
               className={`double_buttons  ${style.card_modile__status_block}`}
             >
-              <span className={buttonClassName}>{text(StatusString[status])}</span>
+              <span className={buttonClassName}>{text(orderStatusString[status])}</span>
             </div>
 
             <div className={style.card__line}></div>
@@ -218,9 +195,9 @@ const AddedDevice = (props) => {
                               }}
                             >
                               {photos.map((photo, index) => (
-                                <SwiperSlide key={index} className="">
+                                <SwiperSlide key={getKeyFor(photo)} className="">
                                   <div style={{ position: 'relative' }}>
-                                    <DropboxImage src={photo} alt="" />
+                                    <AnyImage src={photo} alt="" style={{ width: '100%' }} />
                                     <button
                                       type="button"
                                       style={{

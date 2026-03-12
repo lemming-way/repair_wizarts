@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import '../../scss/orders.css';
 import '../../scss/swiper.css';
 import 'swiper/css';
@@ -10,24 +10,20 @@ import style from './Allorders.module.css';
 import EmailSettings from './EmailSettings';
 import FilterBlock from './FilterBlock';
 import StatsBlock from './StatsBlock';
-import appFetch from '../../utilities/appFetch';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-import { useUser } from '../../state/user';
+import { useServices } from '../../state/site-data';
+import { useUsersByIds } from '../../state/user';
+import { useAvailableOrders, useContractorOrders, OrderStatus, orderStatusString } from '../../state/order';
 
-// Переименовал App в AllOrders для большей ясности
-function App() {
+function AllOrders() {
   const text = useLanguage();
-  const { user } = useUser();
+  const { categories, subcategories, services } = useServices();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
-  const [serviceInPage, setServiceInPage] = useState(10);
+  const [ordersPerPage, setOrdersPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [allOrders, setAllOrders] = useState([]); // Храним все загруженные заказы
-  const [isLoading, setIsLoading] = useState(false);
-  const [fetchError, setFetchError] = useState(null);
-  const [userOrderReqs, setUserOrderReqs] = useState(0);
   // --- Состояния для фильтров ---
   const [categoryFilter, setCategoryFilter] = useState(null); // null - нет фильтра
   const [offersCountFilter, setOffersCountFilter] = useState([]); // [[5, 10], [20, null]]
@@ -37,133 +33,78 @@ function App() {
     max: '',
   });
 
-  const fetchUserOrderReqs = useCallback(async () => {
-    if (!user.id) {
-      console.warn('User ID not found, skipping fetch.');
-      return;
-    }
+  const {
+    orders: availableOrders,
+    isLoading: isLoadingAvailable,
+    isError: isErrorAvailable,
+    error: errorAvailable,
+  } = useAvailableOrders();
 
-    setIsLoading(true);
-    setFetchError(null);
+  const {
+    orders: contractorOrders,
+    isLoading: isLoadingContractor,
+    isError: isErrorContractor,
+    error: errorContractor,
+  } = useContractorOrders();
 
-    try {
-      const allOrder = await appFetch('/drive', {
-        body: {
-          u_a_role: 2, // Роль "Водитель" (Мастер)
-          lc: 99999999999999, // Получить все
-        },
-      });
+  const isLoading = isLoadingAvailable || isLoadingContractor;
+  const isFetchError = isErrorAvailable || isErrorContractor;
+  const fetchError = errorAvailable || errorContractor;
 
-      // Фильтруем заказы, на которые откликнулся текущий мастер
-      const filteredOrders = Object.values(
-        allOrder?.data?.booking || {},
-      ).filter(
-        (order) =>
-          order.b_options?.type === 'order' &&
-          order.drivers?.some((driver) => driver.u_id === user.id),
-      );
+  const pendingContractorOrders = contractorOrders.filter(
+    (o) =>
+      o.status === OrderStatus.PUBLISHED ||
+      o.status === OrderStatus.NEGOTIATION
+  );
 
-      // Форматируем данные, чтобы в `drivers` был только объект текущего мастера
-      const formattedOrders = filteredOrders.map((item) => {
-        return {
-          ...item,
-          // Находим и сохраняем только данные нашего мастера для этого заказа
-          driverData: item.drivers.find(
-            (driver) => driver.u_id === user.id,
-          ),
-        };
-      });
+  const allOrders = [
+    ...availableOrders,
+    ...pendingContractorOrders,
+  ];
 
-      // Фильтруем по статусу уже после основной загрузки
-      const ordersByStatus = formattedOrders.filter(() => true);
-      setUserOrderReqs(ordersByStatus.length);
-    } catch (error) {
-      console.error(error);
-      setFetchError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user.id]);
-  // Загрузка данных при монтировании компонента
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setIsLoading(true);
-      setFetchError(null);
+  const clientIds = Array.from(new Set(allOrders.map(o => o.clientId)));  // список уникальных id
+  const { users: clients } = useUsersByIds(clientIds);
+  const clientsById = new Map();
+  for (const user of clients) clientsById.set(user.id, user);
+  const getClient = (order) =>
+    clientsById.get(order.clientId) ?? null;
 
-      try {
-        const dataNow = await appFetch('drive/now', {
-          body: { u_a_role: 2 },
-        });
-        const dataAll = await appFetch('/drive', {
-          body: { u_a_role: 2 },
-        });
+  const getPrice = (order) => {
+    return order.contractorPrice ?? order.desiredPrice;
+  };
 
-        const combinedOrders = {
-          ...(dataNow.data.booking || {}),
-          ...(dataAll.data.booking || {}),
-        };
+  // Сейчас заглушка. todo: сделать правильный фильтр новых/просмотренных заказов
+  const isNew = (order) => {
+    return true;
+  };
 
-        const initialFilteredOrders = Object.values(combinedOrders)
-          .filter((order) => order.b_options?.type === 'order')
-          .map((order) => ({
-            ...order,
-            isNew:
-              new Date().getTime() - new Date(order.b_created).getTime() <
-              2 * 24 * 60 * 60 * 1000,
-          }));
+  const userOrderReqs = contractorOrders.filter(
+    (o) => o.status === OrderStatus.PUBLISHED
+  ).length;
 
-        setAllOrders(initialFilteredOrders);
-      } catch (error) {
-        console.error(error);
-        setFetchError(error.message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Заглушка для статистики
+  // todo: получить реальную статистику с бэка
+  const stats = {
+    totalProjects: 0,
+    totalAmount: 0,
+    totalOrders: 0,
+  };
 
-    fetchOrders();
-    fetchUserOrderReqs();
-  }, [fetchUserOrderReqs]);
-  const stats = useMemo(() => {
-    // Статистика считается на основе всех загруженных заказов, до применения фильтров
-    const totalProjects = allOrders.length;
-
-    const totalAmount = allOrders.reduce((sum, order) => {
-      const price = Number(order.b_options?.client_price) || 0;
-      return sum + price;
-    }, 0);
-
-    // В данном контексте "Заказы" и "Проекты" - это одно и то же
-    const totalOrders = allOrders.length;
-
-    return {
-      totalProjects,
-      totalAmount,
-      totalOrders,
-    };
-  }, [allOrders]);
   // --- Логика фильтрации ---
-  // Этот блок будет пересчитываться при каждом рендере, если изменится состояние фильтров
+  // Этот блок будет пересчитываться при каждом рендере
   const filteredOrders = allOrders.filter((order) => {
-    // Исключить заказы, где владелец — текущий пользователь
-    const ownerId =
-      order.b_options?.author?.id ||
-      order.b_options?.author?.u_id ||
-      order.b_options?.u_id;
-    if (ownerId && String(ownerId) === String(user.id)) return false;
-
     // Фильтр "Новые" / "Просмотренные"
-    if (selectValue === 'New' && !order.isNew) return false;
-    if (selectValue === 'Viewed' && order.isNew) return false;
+    if (selectValue === 'New' && !isNew(order)) return false;
+    if (selectValue === 'Viewed' && isNew(order)) return false;
 
     // Фильтрация по категории
-    if (categoryFilter && order.b_options?.category !== categoryFilter) {
+    if (categoryFilter && subcategories?.[ services?.[order.serviceId]?.parent ]?.parent !== categoryFilter) {
       return false;
     }
 
     // Фильтрация по количеству предложений (откликов от мастеров)
     if (offersCountFilter.length > 0) {
-      const offersCount = order.drivers?.length ?? 0;
+      const offersCount = order.contractorOffers.length ?? 0;
       const match = offersCountFilter.some((range) => {
         const [min, max] = range;
         if (max === null) return offersCount >= min;
@@ -174,7 +115,7 @@ function App() {
 
     // Фильтрация по бюджету
     if (budgetFilter.length > 0) {
-      const price = order.b_options?.client_price ?? 0;
+      const price = getPrice(order);
       const match = budgetFilter.some((range) => {
         const [min, max] = range;
         if (max === null) return price >= min;
@@ -184,7 +125,7 @@ function App() {
     }
 
     // Фильтрация по своему диапазону цен
-    const price = order.b_options?.client_price ?? 0;
+    const price = getPrice(order);
     if (customPriceRange.min && price < Number(customPriceRange.min))
       return false;
     if (customPriceRange.max && price > Number(customPriceRange.max))
@@ -192,6 +133,11 @@ function App() {
 
     return true;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, offersCountFilter, budgetFilter, customPriceRange]);
+
   return (
     <>
       {isVisibleEmailSettings && (
@@ -287,8 +233,8 @@ function App() {
 
           {isLoading ? (
             <p>{text('Loading orders...')}</p>
-          ) : fetchError ? (
-            <p>{text('Loading error')}: {fetchError}</p>
+          ) : isFetchError ? (
+            <p>{`${text('Loading error')}${fetchError ? `: ${text(fetchError)}` : ''}`}</p>
           ) : filteredOrders.length === 0 ? (
             <p>{text('No orders available that match the filters.')}</p>
           ) : (
@@ -305,22 +251,22 @@ function App() {
               </div>
               {filteredOrders
                 .slice(
-                  (currentPage - 1) * serviceInPage,
-                  currentPage * serviceInPage,
+                  (currentPage - 1) * ordersPerPage,
+                  currentPage * ordersPerPage,
                 )
                 .map((order) => (
                   <div
-                    key={order.b_id}
+                    key={order.id}
                     className={`${style.row_order} ${style.first_row}`}
                   >
                     <div className={style.block_title}>
-                      <Link to={`/contractor/requests/offer/${order.b_id}`}>
+                      <Link to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
-                          {order.b_options?.title || text('Untitled')}
+                          {services?.[order.serviceId]?.name || text('Untitled')}
                         </h3>
                       </Link>
                       <p className={style.text_navigation}>
-                        {order.b_options?.category}
+                        {categories?.[ subcategories?.[ services?.[order.serviceId]?.parent ]?.parent ]?.name ?? ''}
                       </p>
                       <div
                         className={style.row}
@@ -331,7 +277,7 @@ function App() {
                         }}
                       >
                         <p>{text('3 days left')}</p>
-                        <p>{text('offers')} {order.drivers?.length ?? 0}</p>
+                        <p>{text('offers')} {order.contractorOffers.length}</p>
                       </div>
                     </div>
 
@@ -343,14 +289,13 @@ function App() {
                           </div>
                           <img
                             src={
-                              order.b_options?.author?.photo ||
-                              '/img/profil_img/1.png'
+                              getClient(order)?.avatar || '/img/profil_img/1.png'
                             }
                             alt=""
                           />
                         </div>
                         <div className={style.col}>
-                          <p>{order.b_options?.author?.name || text('Unnamed')}</p>
+                          <p>{getClient(order)?.fullname || text('Unnamed')}</p>
                           <p>1 {text('project on site')}</p>
                           <p>100% {text('hired')}</p>
                         </div>
@@ -358,13 +303,13 @@ function App() {
 
                       <div className={style.block_price}>
                         <p className={style.price}>
-                          {order.b_options?.client_price
+                          {getPrice(order)
                             ? `${order.b_options.client_price} ₽`
                             : text('Price not specified')}
                         </p>
                         <p className={style.status}>
                           <img src="/img/icon-confirm.png" alt="" />
-                          {order.b_options?.status || text('No status')}
+                          {orderStatusString[order.status] || text('No status')}
                         </p>
                       </div>
                     </div>
@@ -375,7 +320,7 @@ function App() {
 
           <div className={style.pagination_wrap}>
             <PaginationPages
-              contentCountInPage={serviceInPage}
+              contentCountInPage={ordersPerPage}
               contentLength={filteredOrders.length}
               currentPage={currentPage}
               onPageChange={setCurrentPage}
@@ -384,8 +329,8 @@ function App() {
               <p className={style.select_pages_wrap}>{text('Show')}:</p>
               <select
                 className={style.select_pages__select}
-                value={serviceInPage}
-                onChange={(e) => setServiceInPage(Number(e.target.value))}
+                value={ordersPerPage}
+                onChange={(e) => setOrdersPerPage(Number(e.target.value))}
               >
                 <option value="10">10 {text('per page')}</option>
                 <option value="20">20 {text('per page')}</option>
@@ -399,4 +344,4 @@ function App() {
   );
 }
 
-export default App;
+export default AllOrders;

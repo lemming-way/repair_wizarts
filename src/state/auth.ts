@@ -138,6 +138,14 @@ export function getToken(): AuthToken | null {
 }
 
 /**
+ * Проверяет наличие токена в памяти.
+ * @returns Статус токена.
+ */
+export function isUserAuthorized(): Boolean {
+  return !!token;
+}
+
+/**
  * Устанавливает токен аутентификации.
  * Если persist = true, токен сохраняется в localStorage в зашифрованном виде.
  * @param authToken Объект токена аутентификации.

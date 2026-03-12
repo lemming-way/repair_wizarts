@@ -9,7 +9,7 @@
  * FetchError
  *
  * **Функции:**
- * requestRaw, request, get, getRaw, post, authWithAuthUser, postWithAuthUser, postNoAuth, getLongList
+ * get, getRawJSON, post, fetchAsBlob, authWithAuthUser, postWithAuthUser, postNoAuth, getLongList
  */
 import CONFIG from '../../constants';
 import { AuthToken, getToken } from '../auth';
@@ -110,19 +110,30 @@ export type RequestOptions = {
   method?: 'GET' | 'POST';
   path: string; // Endpoint
   data?: Record<string, unknown> | FormData | null | undefined; // Данные запроса
+  noParse?: boolean; // Получить сырые JSON данные
+  asBlob?: boolean; // Получить данные как Blob
   noAuth?: boolean; // Отключает авторизацию для POST запросов
   withAuthUser?: boolean; // Включить в ответ данные авторизованного пользователя, если есть
 };
 
+type APIBaseType = object | void;
+
+type APIResponse<T> =
+  T extends void
+  ? { auth_user?: unknown }
+  : T & { auth_user?: unknown };
+
+type APIPromise<T> = Promise<APIResponse<T>>;
+
 /**
- * Отправляет HTTP запрос и возвращает необработанный JSON ответ.
+ * Отправляет HTTP запрос и проверяет статус ответа.
  * @param opts Опции запроса.
- * @returns Промис с данными ответа.
+ * @returns Промис с данными ответа и опциональной информацией о пользователе.
  * @throws В случае ошибки запроса, сети или парсинга ответа.
  */
-export async function requestRaw(opts: RequestOptions, correlationId?: string): Promise<unknown> {
+async function request<T extends APIBaseType = Record<string, unknown>>(opts: RequestOptions): APIPromise<T> {
   const isDebug = process.env.NODE_ENV !== 'production';
-  correlationId = isDebug ? correlationId || Math.random().toString(36).slice(2) : undefined;
+  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
 
   const method = opts.method || 'GET';
   let url = `${API_BASE_URL}${opts.path}`;
@@ -150,8 +161,33 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
     const resp = await fetch(url, { method, body: formDataBody });
 
     if (resp.ok) {
-      const contentType = resp.headers.get('content-type') || '';
+      const contentType = resp.headers.get('Content-Type') || '';
       if (!contentType.includes('application/json')) {
+        if (opts.asBlob) {
+          const ret = {
+            blob: await resp.blob(),
+            type: contentType,
+            filename: ''
+          };
+          const disposition = resp.headers.get('Content-Disposition');
+          if (disposition) {
+            const filenameStarMatch = disposition.match(/filename\*=(?:UTF-8|utf-8)''(.+?)(?:;|$)/i);
+            if (filenameStarMatch) {
+              try {
+                ret.filename = decodeURIComponent(filenameStarMatch[1]);
+              } catch { /* Игнорируем ошибку */ }
+            }
+            if (!ret.filename) {
+              const filenameMatch = disposition.match(/filename=(?:"([^"]+)"|([^;]+))/i);
+              if (filenameMatch) {
+                ret.filename = filenameMatch[1] || filenameMatch[2];
+              }
+            }
+          }
+
+          return ret as unknown as APIResponse<T>;
+        }
+
         if (isDebug) {
           const rawText = await resp.text();
           const errorMessage = `Invalid response content type: ${contentType}. Expected application/json. Raw response: ${rawText}`;
@@ -159,14 +195,6 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
         }
         throw new FetchError('Invalid response content type.', resp);
       }
-
-      const responseData: unknown = await resp.json();
-
-      if (isDebug) {
-        console.debug('[api] response', correlationId, responseData);
-      }
-
-      return responseData;
     } else {
       const errorMessage = `${resp.status}: ${resp.statusText || 'HTTP Error'}`;
 
@@ -176,35 +204,17 @@ export async function requestRaw(opts: RequestOptions, correlationId?: string): 
 
       throw new FetchError(errorMessage, resp);
     }
-  } catch (e) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    if (isDebug && !(e instanceof FetchError)) {
-      console.error('[api] request failed', correlationId, error);
+
+    const responseData: unknown = await resp.json();
+
+    if (isDebug) {
+      console.debug('[api] response', correlationId, responseData);
     }
-    throw error;
-  }
-}
 
-type APIBaseType = object | void;
+    if (opts.noParse) {
+      return responseData as APIResponse<T>;
+    }
 
-type APIResponse<T> = Promise<
-  T extends void
-  ? { auth_user?: unknown }
-  : T & { auth_user?: unknown }
->;
-
-/**
- * Отправляет HTTP запрос и проверяет статус ответа.
- * @param opts Опции запроса.
- * @returns Промис с данными ответа и опциональной информацией о пользователе.
- * @throws В случае ошибки запроса, сети или парсинга ответа.
- */
-export async function request<T extends APIBaseType = Record<string, unknown>>(opts: RequestOptions): APIResponse<T> {
-  const isDebug = process.env.NODE_ENV !== 'production';
-  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
-
-  try {
-    const responseData = await requestRaw(opts, correlationId);
     const successResponse = responseData as SuccessResponse;
     if (successResponse.status !== 'success' || successResponse.code !== '200') {
       const errorResponse = responseData as ErrorResponse;
@@ -238,7 +248,7 @@ export async function request<T extends APIBaseType = Record<string, unknown>>(o
  * @param path Путь к эндпоитну
  * @param data Параметры запроса
  * @param fieldName Ключ в возвращаемом значении, по которому расположены данные
- * @returns Промис, разрешающийся массивом данных
+ * @returns Промис, разрешающийся с массивом данных
  */
 export async function getLongList<T>(path: string, data: RequestOptions['data'], fieldName: string): Promise<T[]> {
   let payload;
@@ -283,12 +293,12 @@ export function get<T extends APIBaseType = Record<string, unknown>>(path: strin
 
 /**
  * Отправляет GET запрос (без авторизации).
- * Возвращает сырые данные ответа, без предварительного разбора.
+ * Возвращает сырые JSON данные ответа, без предварительного разбора.
  * @param path Путь к API.
  * @returns Промис с данными ответа.
  */
-export function getRaw(path: string) {
-  return requestRaw({ method: 'GET', path, noAuth: true });
+export function getRawJSON(path: string) {
+  return request({ method: 'GET', path, noParse: true, noAuth: true });
 }
 
 /**
@@ -298,7 +308,24 @@ export function getRaw(path: string) {
  * @returns Промис с данными ответа.
  */
 export function post<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
-  return request<T>({ method: 'POST', path, data }) as Promise<T>
+  return request<T>({ method: 'POST', path, data }) as Promise<T>;
+}
+
+type BlobResult = {
+  blob: Blob;
+  type: string;
+  filename: string;
+};
+
+/**
+ * Отправляет POST запрос с авторизацией (если токен доступен).
+ * Возвращает двоичные данные ответа, без предварительного разбора.
+ * @param path Путь к API.
+ * @param data Данные запроса.
+ * @returns Промис с данными ответа.
+ */
+export function fetchAsBlob(path: string, data?: RequestOptions['data']) {
+  return request<BlobResult>({ method: 'POST', path, asBlob: true, data }) as Promise<BlobResult>;
 }
 
 /**

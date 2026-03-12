@@ -1,5 +1,6 @@
 import style from './ModalEditOrder.module.css';
 
+// todo: компонент к удалению
 export default function ModalEditOrder({ setVisibleModalEdit }) {
   return (
     <>

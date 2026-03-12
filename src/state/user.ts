@@ -16,7 +16,7 @@
 import { QueryClient, UseQueryResult, useQuery, useQueries, useMutation } from '@tanstack/react-query';
 
 import CONFIG from '../constants';
-import { getToken, setToken, clearToken } from './auth';
+import { setToken, clearToken, isUserAuthorized } from './auth';
 import { fileToBase64 } from '../shared/lib/utilities';
 import * as UserAPI from './api/user';
 
@@ -152,8 +152,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
  * @throws {Error} Если произошла ошибка при запросе к API.
  */
 async function fetchAuthUser({ client }): Promise<UserProfile | {}> {
-  const token = getToken();
-  if (!token) return EMPTY_OBJECT;
+  if (!isUserAuthorized()) return EMPTY_OBJECT;
 
   try {
     const result = await UserAPI.getAuthUser();
@@ -276,7 +275,8 @@ export function useUsersByIds(userIds: number[]) {
   const queries = userIds.map(userId => ({
     queryKey: ['user', userId],
     queryFn: fetchUserById,
-    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
+    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
+    enabled: !!userId
   }));
 
   return useQueries({

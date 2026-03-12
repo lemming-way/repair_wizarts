@@ -10,7 +10,7 @@
  */
 
 import CONFIG from '../../constants';
-import { get, getRaw, FetchError } from './request';
+import { get, getRawJSON, FetchError } from './request';
 
 const CATEGORIES_URL = CONFIG.API?.categoriesUrl || '';
 
@@ -52,7 +52,7 @@ export type SiteData = {
  * @returns Промис, который разрешается строкой с версией сайта.
  */
 export async function getSiteDataVersion() {
-  const result = await getRaw('?cv') as SiteDataVersion;
+  const result = await getRawJSON('?cv') as SiteDataVersion;
   return String( result?.['cache version'] || '' );
 }
 

@@ -3,7 +3,8 @@ import { useState } from "react"
 import style from "./EmailSettings.module.css"
 
 
-
+// todo: эта настройка сейчас никуда не записывается
+// todo: нужно либо сохранять настройки и отправлять уведомления, либо полностью удалить из приложения
 export default function EmailSettings({ setVisibvleEmailSettings }) {
 
     const [turn, setTurn] = useState("")
@@ -47,7 +48,7 @@ export default function EmailSettings({ setVisibvleEmailSettings }) {
                         </div>
                         <div className={style.radio_block}>
                             <input type="radio" id="turn_off" checked={turn==="turn_off"} value={"turn_off"} onChange={(e)=>setTurn(e.target.value)}  name="turn" />
-                            <label htmlFor="turn_off">Не получасть уведомления</label>
+                            <label htmlFor="turn_off">Не получать уведомления</label>
                         </div>
                     </div>
 

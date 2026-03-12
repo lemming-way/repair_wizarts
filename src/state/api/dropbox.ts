@@ -11,7 +11,7 @@
  * updateUser, registerAsClient, registerAsContractor, updatePassword
  */
 
-import { API_BASE_URL, post } from './request';
+import { post, fetchAsBlob } from './request';
 
 export type FileUploadData = {
   dl_id?: number;
@@ -40,11 +40,12 @@ export type DropboxFileInfo = {
 /**
  * Загрузка или обновление файла
  * @param fileData Данные файла для загрузки
- * @returns Идентификатор файла
+ * @returns Промис, разрешающийся с ID файла или null
  */
 async function uploadOrUpdate(fileData: FileUploadData) {
   const fileId = ( await post<{ dl_id: string }>('dropbox/file/', { file: JSON.stringify(fileData) }) )?.dl_id;
-  return fileId || null;
+  const numericId = Number(fileId || 0);
+  return numericId && Number.isFinite(numericId) ? numericId : null;
 }
 
 /**
@@ -53,10 +54,10 @@ async function uploadOrUpdate(fileData: FileUploadData) {
  * @param base64 Содержимое файла
  * @param userId ID пользователя владельца файла
  * @param privacy Уровень доступа к файлу
- * @returns URL загруженного файла
+ * @returns Промис, разрешающийся с ID загруженного файла или null
  */
-export async function uploadFile(name: string, base64: string, privacy: -1 | 0 | 1 = 1, userId?: number)
-  : Promise<{ id?: string, url?: string }> {
+export function uploadFile(name: string, base64: string, privacy: -1 | 0 | 1 = 1, userId?: number)
+  : Promise<number | null> {
   const fileData: FileUploadData = {
     base64,
     name,
@@ -64,12 +65,7 @@ export async function uploadFile(name: string, base64: string, privacy: -1 | 0 |
   };
   if (userId) fileData.u_id = userId;
 
-  const fileId = await uploadOrUpdate(fileData);
-  if (fileId) return {
-    id: fileId,
-    url: `${API_BASE_URL}dropbox/file/${fileId}`
-  };
-  else return {};
+  return uploadOrUpdate(fileData);
 }
 
 /**
@@ -78,29 +74,33 @@ export async function uploadFile(name: string, base64: string, privacy: -1 | 0 |
  * @param base64 Содержимое файла
  * @param userId ID пользователя владельца файла
  * @param privacy Уровень доступа к файлу
- * @returns URL загруженного файла
+ * @returns Промис, разрешающийся с ID загруженного файла
  */
-export async function updateFile(fileId: number, base64?: string, privacy?: -1 | 0 | 1, userId?: number)
-  : Promise<{ id?: string, url?: string }> {
+export function updateFile(fileId: number, base64?: string, privacy?: -1 | 0 | 1, userId?: number)
+  : Promise<number | null> {
   const fileData: FileUploadData = { dl_id: fileId };
   if (base64) fileData.base64 = base64;
   if (privacy === -1 || privacy === 0 || privacy === 1) fileData.private = privacy;
   if (userId) fileData.u_id = userId;
 
-  const retFileId = await uploadOrUpdate(fileData);
-  if (retFileId) return {
-    id: retFileId,
-    url: `${API_BASE_URL}dropbox/file/${retFileId}`
-  };
-  else return {};
+  return uploadOrUpdate(fileData);
+}
+
+/**
+ * Получение файла
+ * @param fileId Идентификатор файла
+ * @returns Промис, возвращающий загруженный файл как Blob
+ */
+export async function fetchFile(fileId: number) {
+  return fetchAsBlob(`dropbox/file/${fileId}`);
 }
 
 /**
  * Удаление файла
- * @param dl_id Идентификатор файла
+ * @param fileId Идентификатор файла
  * @returns Результат удаления (файл)
  */
-export function deleteFile(fileId: string) {
+export function deleteFile(fileId: number) {
   return post<void>(`dropbox/file/${fileId}/del`);
 }
 
@@ -109,7 +109,7 @@ export function deleteFile(fileId: string) {
  * @param fileIds Массив идентификаторов файлов
  * @returns Информация о файлах
  */
-export async function getFilesInfo(fileIds: string[]): Promise<DropboxFileInfo[]> {
+export async function getFilesInfo(fileIds: number[]): Promise<DropboxFileInfo[]> {
   const ret = await post<{ 'dropbox files': Record<string, DropboxFileInfo> }>(`dropbox/file/${fileIds}/select`);
   if (ret?.['dropbox files'] && 'object' === typeof ret['dropbox files']) return Object.values(ret['dropbox files']);
   else return [];

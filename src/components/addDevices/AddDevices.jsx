@@ -7,6 +7,7 @@ import '../../scss/added.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import style from './AddDevices.module.css';
+import { AnyImage, getKeyFor } from '../../shared/ui';
 import { useLanguage } from '../../state/language';
 import { useServices } from '../../state/site-data';
 import { useCreateOrder } from '../../state/order';
@@ -50,23 +51,25 @@ function AddDevices() {
   // загрузка фото
   const handleImageChange = (event) => {
     const files = Array.from(event.target.files);
-    if (photos.length + files.length > 10) {
+    const newPhotos = files
+      .filter(file => photos.every(existing => {
+        return !(existing instanceof File) ||
+               existing.name !== file.name ||
+               existing.size !== file.size ||
+               existing.type !== file.type ||
+               existing.lastModified !== file.lastModified;
+      }));
+    if (photos.length + newPhotos.length > 10) {
       setError(text('You can upload no more than 10 files.'));
       return;
     }
     setError('');
-    const newPhotos = files.map((file) => ({
-      file: file,
-      url: URL.createObjectURL(file),
-    }));
     setPhotos((prev) => [...prev, ...newPhotos]);
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const rawFiles = photos.map(p => p.file).filter(Boolean);
 
     // Используем заглушку для cityId
     // todo: получить город из блока выбора города
@@ -83,7 +86,7 @@ function AddDevices() {
         address: address,
         serviceId: Number(selectedService),
         description: description,
-        attachments: rawFiles,
+        attachments: photos,
         price: Number(price),
       });
 
@@ -102,13 +105,6 @@ function AddDevices() {
   useEffect(() => {
     document.title = text('Add device');
   }, [text]);
-
-  useEffect(() => {
-    // Очищаем все Object URL при размонтировании компонента
-    return () => {
-      photos.forEach((photo) => URL.revokeObjectURL(photo.url));
-    };
-  }, [photos]);
 
   return (
     <section className="page_8">
@@ -322,9 +318,9 @@ function AddDevices() {
                     </SwiperSlide>
                   ) : (
                     photos.map((photo, index) => (
-                      <SwiperSlide key={index}>
-                        <img
-                          src={photo.url}
+                      <SwiperSlide key={getKeyFor(photo)}>
+                        <AnyImage
+                          src={photo}
                           alt={`upload-preview-${index}`}
                           className={style.swiperPhoto}
                         />

@@ -52,7 +52,7 @@ import FinanceClient from '../components/Settings/FinanceClient';
 import SettingsContractor from '../components/Settings/SettingsContractor';
 import ContractorChatWrap from '../components/pages/ContractorChatWrap';
 import MyOffer from '../components/myoffer';
-import MyOrder from '../components/Orders/MyOrder';
+import MyOrder from '../features/orders/client/manage/MyOrder';
 import ProfileFeedbackContractor from '../components/profileNumberClient/ProfileFeedbackContractor';
 import RegistrationPickPage from '../features/user/registration/RegistrationPickPage';
 import RegistrationUserPage from '../features/user/registration/RegistrationUserPage';

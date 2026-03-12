@@ -12,7 +12,7 @@
  * createCar, updateCar, driveCar
  * 
  */
-import { post, postWithAuthUser } from './request';
+import { post } from './request';
 
 // ==================== Типы данных ====================
 

@@ -1,7 +1,8 @@
-import style from './Allorders.module.css'; // Убедитесь, что стили подключены правильно
+import style from './Allorders.module.css';
 import { useServices } from '../../state/site-data';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
+// todo: оставлять только категории, релевантные для мастера
 export default function FilterBlock({
   categoryFilter,
   setCategoryFilter,
