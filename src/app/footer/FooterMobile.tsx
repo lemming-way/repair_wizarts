@@ -1,8 +1,8 @@
 import React from 'react';
 
 import styles from './FooterMobile.module.scss';
-import ListItem from "../../components/ListItem/ListItem";
-import { useLanguage } from '../../state/language';
+import ListItem from "../components/ListItem/ListItem";
+import { useLanguage } from '../state/language';
 import FooterInfo from "./FooterInfo";
 
 const FooterMobile = () => {

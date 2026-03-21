@@ -1,0 +1,119 @@
+import { Link } from "react-router-dom";
+import {Navigation} from "swiper";
+import {Swiper, SwiperSlide} from "swiper/react";
+import React, { useEffect, useState } from 'react'; // Добавлен импорт
+import SERVER_PATH from "../../../config/SERVER_PATH";
+// todo: Добавить реальный вызов API для получения статей
+// import { useService } from "../../hooks/useService";
+import defaultImage from "../../img/article.png"
+import likeImage from "../../img/like.png"
+import viewImage from "../../img/view.png"
+
+
+import '../../scss/swiper.css'
+import "swiper/css";
+import "swiper/css/navigation";
+// todo: Добавить реальный вызов API для получения статей
+// import { getArticles } from '../../services/article.service';
+import formatDate from "../../utilities/formatDate";
+import { useLanguage } from "../../state/language";
+
+// Фиктивные данные для статей
+const mockArticlesData = Array.from({ length: 8 }).map((_, i) => ({
+    id: i + 1,
+    title: `Заголовок тестовой статьи ${i + 1}`,
+    views: Math.floor(Math.random() * 1000) + 100,
+    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+    text: "<p>Это содержимое тестовой статьи. Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>",
+    cover_image: null, // или фиктивный путь, если нужно
+    likes: Math.floor(Math.random() * 50)
+}));
+
+
+function Articles(){
+    const text = useLanguage();
+    // todo: Заменить на реальный вызов useService(getArticles, [])
+    const [articles, setArticles] = useState({ data: [] });
+
+    useEffect(() => {
+        Promise.resolve(mockArticlesData)
+            .then(data => setArticles({ data }))
+            .catch(error => console.error("Ошибка при получении фиктивных статей:", error));
+    }, []);
+
+    const filterText = (v) => v.replace(/<[^>]*>/g, '');
+
+    const getImage = (path) =>
+        path ? SERVER_PATH + path : defaultImage
+
+    return (
+        <section className="blog">
+            <div className="container ircontainer">
+                <h1>{text('Articles')}</h1>
+                <div className="blog__card__list">
+                    <Swiper
+                        slidesPerView={4}
+                        spaceBetween={30}
+                        navigation={true}
+                        modules={[Navigation]}
+                        className="mySwiper"
+                        breakpoints={{
+                            0: {
+                                slidesPerView: 2
+                            },
+                            775: {
+                                slidesPerView: 2
+                            },
+                            1099: {
+                                slidesPerView: 3
+                            },
+                            1585: {
+                                slidesPerView: 4
+                            },
+                        }}
+                    >
+                        {articles.data.map((v) => (
+                            <SwiperSlide className="swiper-slier" key={v.id}>
+                                <Link to={"/articles/" + v.id}>
+                                    <div className="blog__card">
+                                        <img
+                                            className="blog-card__picture"
+                                            src={getImage(v.cover_image)}
+                                            alt=""
+                                        />
+                                        <div className="blog__card__content">
+                                            <h4 className="blog-card__title">{v.title}</h4>
+                                            <p className="blog-card__description">{filterText(v.text)}</p>
+                                            <span className="blog-card__date">{formatDate(v.created_at)}</span>
+                                            <div className="blog-card-stats">
+                                                <div className="blog-card-stats__item">
+                                                    <img
+                                                        src={likeImage}
+                                                        className="blog-card-stats__picture"
+                                                        alt="absent"
+                                                    />
+                                                    <span className="blog-card-stats__count">{v.likes}</span>
+                                                </div>
+                                                <div className="blog-card-stats__item">
+                                                    <img
+                                                        src={viewImage}
+                                                        className="blog-card-stats__picture blog-card-stats__view-picture"
+                                                        alt="absent"
+                                                    />
+                                                    <span className="blog-card-stats__count">{v.views}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
+                </div>
+            </div>
+        </section>
+    )
+}
+
+
+export default Articles;

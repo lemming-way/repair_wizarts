@@ -1,4 +1,4 @@
-@use '../../styles/mixins';
+@use '../styles/mixins';
 
 .toolbar {
   display: flex;
@@ -69,7 +69,7 @@
 
   &_burger {
     display: none;
-    background: url('../../img/header/icons/burger-icon.svg') no-repeat right
+    background: url('../img/header/icons/burger-icon.svg') no-repeat right
       top 8px;
     cursor: pointer;
     position: absolute;
@@ -120,7 +120,7 @@
     }
 
     &_icon {
-      background: url('../../img/header/icons/burger-icon.svg') no-repeat right
+      background: url('../img/header/icons/burger-icon.svg') no-repeat right
         top 8px;
       width: 25px;
       height: 25px;

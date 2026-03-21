@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 import styles from './ToolbarSearchBar.module.scss';
-import { useLanguage } from '../../state/language';
+import { useLanguage } from '../state/language';
 
 const ToolbarSearchBar = () => {
   const [service, setService] = useState<string>('');

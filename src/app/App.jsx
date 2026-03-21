@@ -2,70 +2,70 @@ import { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import WalletHistoryClient from '../components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
-import ClientSettingsWrap from '../components/pages/ClientSettingsWrap';
-import ContractorSettingsWrap from '../components/pages/ContractorSettingsWrap';
+import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
+import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
+import ContractorSettingsWrap from './components/pages/ContractorSettingsWrap';
 
-import RegistrationContractorPage from '../features/user/registration/RegistrationContractorPage';
+import RegistrationContractorPage from './features/user/registration/RegistrationContractorPage';
 
 // Order imports
-import AllOrders from '../components/Orders/Allorders';
+import AllOrders from './components/Orders/Allorders';
 
-import SettingsAll from '../components/Settings/Settings-all';
-import Profile from '../components/Settings/Profile';
-//~ import Services from '../components/Settings/services';
-import Reviews from '../components/Reviews';
+import SettingsAll from './components/Settings/Settings-all';
+import Profile from './components/Settings/Profile';
+//~ import Services from './components/Settings/services';
+import Reviews from './components/Reviews';
 
-import MyOffers from '../features/orders/contractor/list/MyOffers';
-import Offer from '../features/orders/contractor/manage/Offer';
+import MyOffers from './features/orders/contractor/list/MyOffers';
+import Offer from './features/orders/contractor/manage/Offer';
 
 // after login
-import ProfileFH from '../components/full-height/ProfileFH';
-import WalletFH from '../components/full-height/WalletFH';
+import ProfileFH from './components/full-height/ProfileFH';
+import WalletFH from './components/full-height/WalletFH';
 
 // after login end
 
-import MapContractor from '../components/Pick-contractor/contractors';
-import ProfileNumber from '../components/Chat/profileNumber';
-// import OfferAService from '../components/Orders/OfferAService';
-import AddDevices from '../components/addDevices/AddDevices';
-import AddedDevices from '../components/addDevices/AddedDevices';
-import TitleService from '../components/addDevices/TitleService';
-import Applications from '../components/Applications/applications';
-import LoginPage from '../features/user/login/LoginPage';
-import WalletConfirm from '../components/ChoiceOfReplenishmentMethod/WalletConfirm';
-import Finance from '../components/Settings/Finance';
-import Balance from '../components/Settings/Balance';
-import Article from '../components/Article';
-import { getLocation } from '../services/location.service';
-import { useUser, updateUser } from '../state/user';
-import PersonalRequests from '../components/Orders/PersonalRequests';
-import Articles from '../components/Article/Articles';
-import ChoiceOfReplenishmentMethod from '../components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
-import ChoiceOfReplenishmentMethodClient from '../components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import ContractorsOffers from '../features/orders/client/list/ContractorsOffers';
-import WalletHistory from '../components/ChoiceOfReplenishmentMethod/WalletHistory';
-// import AddedDevicesPage from '../components/Orders/AddedDevicesPage';
-import FChatKirill from '../components/full-chat/fakeChat/Kirill';
-import Home from '../components/Home';
-import FinanceClient from '../components/Settings/FinanceClient';
-import SettingsContractor from '../components/Settings/SettingsContractor';
-import ContractorChatWrap from '../components/pages/ContractorChatWrap';
-import MyOffer from '../components/myoffer';
-import MyOrder from '../features/orders/client/manage/MyOrder';
-import ProfileFeedbackContractor from '../components/profileNumberClient/ProfileFeedbackContractor';
-import RegistrationPickPage from '../features/user/registration/RegistrationPickPage';
-import RegistrationUserPage from '../features/user/registration/RegistrationUserPage';
-import Remont from '../components/remont';
-import { ServiceDetail } from '../components/Service';
-import BalanceClient from '../components/Settings/BalanceClient';
+import MapContractor from './components/Pick-contractor/contractors';
+import ProfileNumber from './components/Chat/profileNumber';
+// import OfferAService from './components/Orders/OfferAService';
+import AddDevices from './components/addDevices/AddDevices';
+import AddedDevices from './components/addDevices/AddedDevices';
+import TitleService from './components/addDevices/TitleService';
+import Applications from './components/Applications/applications';
+import LoginPage from './features/user/login/LoginPage';
+import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfirm';
+import Finance from './components/Settings/Finance';
+import Balance from './components/Settings/Balance';
+import Article from './components/Article';
+import { getLocation } from './services/location.service';
+import { useUser, updateUser } from './state/user';
+import PersonalRequests from './components/Orders/PersonalRequests';
+import Articles from './components/Article/Articles';
+import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
+import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
+import ContractorsOffers from './features/orders/client/list/ContractorsOffers';
+import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistory';
+// import AddedDevicesPage from './components/Orders/AddedDevicesPage';
+import FChatKirill from './components/full-chat/fakeChat/Kirill';
+import Home from './components/Home';
+import FinanceClient from './components/Settings/FinanceClient';
+import SettingsContractor from './components/Settings/SettingsContractor';
+import ContractorChatWrap from './components/pages/ContractorChatWrap';
+import MyOffer from './components/myoffer';
+import MyOrder from './features/orders/client/manage/MyOrder';
+import ProfileFeedbackContractor from './components/profileNumberClient/ProfileFeedbackContractor';
+import RegistrationPickPage from './features/user/registration/RegistrationPickPage';
+import RegistrationUserPage from './features/user/registration/RegistrationUserPage';
+import Remont from './components/remont';
+import { ServiceDetail } from './components/Service';
+import BalanceClient from './components/Settings/BalanceClient';
 import { Footer } from './footer';
 import { Toolbar } from './header';
-import { useServices } from '../state/site-data';
-import { setGlobal } from '../state/global';
-import { useNotifications } from '../state/notifications/NotificationsContext';
+import { useServices } from './state/site-data';
+import { setGlobal } from './state/global';
+import { useNotifications } from './state/notifications/NotificationsContext';
 
-import '../scss/swiper.css';
+import './scss/swiper.css';
 
 function App() {
   const { user, status } = useUser();

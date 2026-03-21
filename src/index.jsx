@@ -5,13 +5,13 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import {CustomProvider} from 'rsuite';
 import 'rsuite/Dropdown/styles/index.css';
 
-import { queryClient } from './state/queryClient';
-import { QueryDevtools } from './dev/QueryDevtools';
+import { queryClient } from './app/state/queryClient';
+import { QueryDevtools } from './app/dev/QueryDevtools';
 import "./app/App.scss"
 
 import App from './app';
 import reportWebVitals from './reportWebVitals';
-import { NotificationsProvider } from './state/notifications/NotificationsContext';
+import { NotificationsProvider } from './app/state/notifications/NotificationsContext';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 

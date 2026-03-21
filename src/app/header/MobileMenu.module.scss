@@ -1,4 +1,4 @@
-@use '../../styles/mixins';
+@use '../styles/mixins';
 
 .mobileMenu {
   margin-left: 0;
@@ -22,7 +22,7 @@
     }
 
     &_item {
-        // background: url("../../img/header/icons/arrow-down-icon.svg") no-repeat right bottom 5px;
+        // background: url("../img/header/icons/arrow-down-icon.svg") no-repeat right bottom 5px;
         // background-size: 15px;
         padding-right: 20px;
         cursor: pointer;

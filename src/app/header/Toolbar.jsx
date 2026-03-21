@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import MobileMenu from './MobileMenu';
-import DropdownSetout from '../../components/dropdownSetout';
+import DropdownSetout from '../components/dropdownSetout';
 import ServiceDropdown from './ServiceDropdown';
 import ServiceDropdownCities from './ServiceDropdownCities';
 import ToolbarButtons from './ToolbarButtons';
 import styles from './Toolbar.module.scss';
-import ListItem from '../../components/ListItem/ListItem';
+import ListItem from '../components/ListItem/ListItem';
 import './header.scss';
-import { useLanguage } from '../../state/language';
-import logo from '../../img/header/new-logotype.svg';
-import { useUser, UserRole } from '../../state/user';
+import { useLanguage } from '../state/language';
+import logo from '../img/header/new-logotype.svg';
+import { useUser, UserRole } from '../state/user';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React

@@ -1,6 +1,6 @@
-@use '../../styles/mixins';
+@use '../styles/mixins';
 
-$arrowRightIconPath: '/img/header/icons/arrow-right-icon.svg';
+$arrowRightIconPath: '../img/header/icons/arrow-right-icon.svg';
 
 .serviceDropdown {
   background-color: #131313 !important;

@@ -2,7 +2,7 @@ import React from 'react';
 import {Link} from "react-router-dom";
 
 import styles from "./ToolbarButtons.module.scss";
-import { useLanguage } from '../../state/language';
+import { useLanguage } from '../state/language';
 
 const ToolbarButtons = () => {
   const text = useLanguage();

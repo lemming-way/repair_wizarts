@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 
-import arrowRight from '../../img/header/icons/arrow-right-icon.svg';
+import arrowRight from '../img/header/icons/arrow-right-icon.svg';
 import styles from './ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './ServiceCategoriesDropdown';
-import { useServices } from '../../state/site-data';
+import { useServices } from '../state/site-data';
 
 const ServiceDropdownMobile = () => {
   

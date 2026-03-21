@@ -1,6 +1,6 @@
 // import React, { useState } from 'react';
 // import Dropdown from 'react-multilevel-dropdown';
-// import arrowDown from '../../../../img/header/icons/arrow-down-icon.svg';
+// import arrowDown from '../img/header/icons/arrow-down-icon.svg';
 // import styles from './ServiceDropdown.module.scss';
 // import { Link } from 'react-router-dom';
 // import { useSelector } from 'react-redux';
@@ -105,9 +105,9 @@ import Dropdown from 'react-multilevel-dropdown';
 import { Link } from 'react-router-dom';
 
 import styles from './ServiceDropdown.module.scss';
-import arrowDown from '../../img/header/icons/arrow-down-icon.svg';
-import { useLanguage } from '../../state/language';
-import { useServices } from '../../state/site-data';
+import arrowDown from '../img/header/icons/arrow-down-icon.svg';
+import { useLanguage } from '../state/language';
+import { useServices } from '../state/site-data';
 
 const ServiceDropdown = () => {
   const text = useLanguage();

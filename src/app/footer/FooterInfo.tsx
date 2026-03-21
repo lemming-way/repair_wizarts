@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useLanguage } from '../../state/language';
+import { useLanguage } from '../state/language';
 
 const FooterInfo = () => {
   const text = useLanguage();

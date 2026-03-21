@@ -1,8 +1,8 @@
 import FooterInfo from "./FooterInfo";
 import styles from './FooterDesktop.module.scss';
 import FooterMobile from "./FooterMobile";
-import ListItem from "../../components/ListItem/ListItem";
-import { useLanguage } from '../../state/language';
+import ListItem from "../components/ListItem/ListItem";
+import { useLanguage } from '../state/language';
 
 function FooterDesktop() {
   const text = useLanguage();

@@ -1,0 +1,518 @@
+import React, { useEffect, useState, useMemo } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Rating } from "react-simple-star-rating";
+import { Link } from "react-router-dom";
+
+import './contractor.css'
+import { useSearchParams } from "react-router-dom";
+import Popup from "reactjs-popup";
+import { Navigation, Pagination } from "swiper";
+
+import InfoBlock from "./InfoBlock";
+import SERVER_PATH from "../../../config/SERVER_PATH";
+import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
+import { useService } from "../../hooks/useService";
+import { getContractorRepairs } from "../../services/service.service";
+import { getContractorByUsername } from "../../services/user.service";
+import YMap from '../Map'
+import { useLanguage } from "../../state/language";
+
+
+function App() {
+    const text = useLanguage();
+    const [params] = useSearchParams()
+    const [contractor, setContractor] = useState({ })
+    const repairs = useService(getContractorRepairs, [])
+    // const counters = useService(getCounters, { })
+    // const covers = useService(getCovers, [])
+    const [picture, setPicture] = useState("")
+    // const images = [
+    //     '/img/sentence_img/iphone-x.png',
+    //     '/img/sentence_img/iphone-x.png', // Здесь можно добавить другие изображения
+    //     '/img/sentence_img/iphone-x.png',
+    // ];
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Функция для открытия модального окна
+    const openModal = (imageSrc) => {
+        //~ setModalImage(imageSrc); // Устанавливаем путь к картинке
+        setIsModalOpen(true); // Открываем модальное окно
+    };
+
+    // Функция для закрытия модального окна
+    const closeModal = () => {
+        setIsModalOpen(false); // Закрываем модальное окно
+    };
+
+    const contractorId = params.get('id')
+    const pics = params.get('pics')
+
+    const contractors = useMemo(() => repairs.data.reduce((state, repair) => {
+        if (state.find((v) => v.id === repair.contractor_id)) {
+            return state
+        }
+
+        return [...state, {
+            id: repair.contractor_id,
+            latitude: repair.address_latitude,
+            longitude: repair.address_longitude
+        }]
+    }, []), [repairs.data])
+
+    const onContractorSelect = (e, data) => {
+        getContractorByUsername(data).then(setContractor)
+    }
+
+    useEffect(() => {
+        if (pics) {
+            setTimeout(() => {
+                document.documentElement.scrollTop =
+                    document.documentElement.scrollHeight - document.documentElement.clientHeight
+            }, 1000);
+        }
+    }, [pics])
+
+    useEffect(() => {
+        if (contractorId) {
+            getContractorByUsername(contractorId).then(setContractor)
+        }
+
+        document.title = text('Contacts');
+    }, [contractorId, text])
+
+    // тестовые данные - услуги
+    const test_price = [
+        {
+            "price": 500,
+            "model": "iphone 15 pro max",
+            "delivery": "from 30 minutes",
+            "name": "Glass replacement"
+        },
+        {
+            "price": 300,
+            "model": "iphone 14",
+            "delivery": "from 30 minutes",
+            "name": "Battery replacement"
+        },
+        {
+            "price": 450,
+            "model": "samsung s23",
+            "delivery": "from 1 hour",
+            "name": "Display repair"
+        },
+        {
+            "price": 350,
+            "model": "xiaomi 13",
+            "delivery": "from 2 hours",
+            "name": "Device cleaning"
+        },
+        {
+            "price": 700,
+            "model": "google pixel 7",
+            "delivery": "from 1 hour",
+            "name": "Back cover replacement"
+        },
+        {
+            "price": 550,
+            "model": "oneplus 10",
+            "delivery": "from 3 hours",
+            "name": "Camera repair"
+        },
+        {
+            "price": 400,
+            "model": "sony xperia 1 iv",
+            "delivery": "from 2 hours",
+            "name": "Software update"
+        },
+        {
+            "price": 600,
+            "model": "samsung s22 ultra",
+            "delivery": "from 1 hour",
+            "name": "Charging port replacement"
+        }
+    ]
+
+    const [isVisibleInfo, setVisibleInfo] = useState(false)
+
+    return (
+        <main>
+
+            {isVisibleInfo && <InfoBlock handlerClose={setVisibleInfo} />}
+
+            {/* <section className="slider">
+                <div className="container">
+                    <div className="slider__content">
+                        <h2>
+                            Для любой поломки есть мастер техники
+                            Apple
+                        </h2>
+                        <h4>Оригинальные запчасти</h4>
+                        <h4>Разумные цены</h4>
+                        <h4>Выезд</h4>
+                        <div className="home-counters">
+                            <div className="home-counters__top">
+                                <div className="header-counters__dot"></div>
+                                <div className="header-counters__item">
+                                    Количество участников на сайте: {counters.data.contractors}
+                                </div>
+                                <div className="header-counters__dot"></div>
+                                <div className="header-counters__item">
+                                    Выполнено заказов на сайте: {counters.data.submissions}
+                                </div>
+                            </div>
+                            <Link
+                                to="/register"
+                                className="home-counters__button"
+                            >
+                                    Стать участником
+                            </Link>
+                        </div>
+                    </div>
+                    <Swiper
+                        navigation={true}
+                        modules={[Navigation, Pagination]}
+                        pagination={true}
+                        className="mySwiper"
+                    >
+                        {covers.data.map((v) => (
+                            <SwiperSlide className='pqw9ueryewqir' key={v.id}>
+                                <img
+                                    className='swiper-slide-asfdfadsXg afewrweq'
+                                    src={SERVER_PATH + v.image}
+                                    alt=""
+                                />
+                            </SwiperSlide>
+                        ))}
+                    </Swiper>
+                </div>
+            </section> */}
+
+            <HeroSection />
+            <section className="contractor__map">
+                <h1 className="contractor__map__title">{text('Map of our contractors')}</h1>
+                <YMap
+                    contractors={contractors}
+                    selectedContractor={contractor}
+                    selectContractor={onContractorSelect}
+                />
+            </section>
+            <h2 className="contractor__h2">{text('Server information')}</h2>
+            <div className="section__blocks-row">
+
+            <div className="info_contractor">
+                <div className="info_contractor__row1">
+                    <img src="/img/profile__image.png" alt="" />
+                    <div className="info_contractor__about">
+                        <p>Алексей Михеев</p>
+                        <p>{text('Independent technician')}</p>
+                        <div className="info_contractor__stars">
+                            <img src="/img/star.png" alt="" />
+                            <img src="/img/star.png" alt="" />
+                            <img src="/img/star.png" alt="" />
+                            <img src="/img/star.png" alt="" />
+                            <img src="/img/star.png" alt="" />
+                        </div>
+                        <div className="info_contractor__row-links">
+                            <Link to="/client/feedback/1">23 {text('reviews')}</Link>
+                            <button className="info_contractor__row-link" href="#" onClick={()=> setVisibleInfo(true)}>
+                                {text('More details')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p className="info_contractor__info">Санкт-Петербург, Каховского 7</p>
+                <p className="info_contractor__info">{text('Open from 9 to 21')}</p>
+                <p className="info_contractor__text-about">
+                    <span className="info_contractor__text-about-light">{text('On the platform')}</span>
+                    {' '}
+                    {text('since 2022')}
+                </p>
+                <p className="info_contractor__text-about">
+                    <span className="info_contractor__text-about-light">{text('Status')}</span>
+                    {text('Online')}
+                </p>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Rating')}</span>
+                    5.0
+                </p>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Orders completed')}</span>
+                    40
+                </p>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Orders delivered successfully')}</span>
+                    100%
+                </p>
+                <p className="info_contractor__text-about--accent">
+                    <span className="info_contractor__text-about-light">{text('Two repeat orders')}</span>
+                    54%
+                </p>
+
+            </div>
+
+            <div className="info_contractor_big flex_right_block">
+                
+                <div className="contact__swiper" >
+                    <Swiper
+                        slidesPerView={4}
+                        spaceBetween={30}
+                        navigation={true}
+                        modules={[Navigation]}
+                        className="info_contractor_big_swiper"
+                        breakpoints={{
+                            0: {
+                                slidesPerView: 1
+                            },
+                            800: {
+                                slidesPerView: 1
+                            },
+                            1124: {
+                                slidesPerView: 1
+                            },
+                        }}
+                    >
+
+                        {test_price.map((obj, index) =>
+                            <SwiperSlide key={index} className="">
+                                <div
+                                    onClick={() => openModal('/img/sentence_img/iphone-x.png')}
+                                    className="info_contractor_big__slide"></div>
+                            </SwiperSlide>
+                        )}
+                    </Swiper>
+                </div>
+            </div>
+
+                {contractor.username && (
+                    <React.Fragment>
+                        <h1 className="info__service">{text('Contractor information')}</h1>
+                        <div className="content__info">
+                            <div className="oeeqwhfpihaepPUihf">
+                                <section className="page_qrwewq9DXP79fg1">
+                                    <div>
+                                        <div className="cardfdsfsda font">
+                                            <div className="card_iphone df">
+                                                <div className="card_iphone-img">
+                                                    <img
+                                                        src={SERVER_PATH + contractor.avatar}
+                                                        alt=""
+                                                        style={{
+                                                            width: "100px",
+                                                            height: "100px",
+                                                            borderRadius: "50px",
+                                                            objectFit: "cover"
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="big_card-phon_text">
+                                                    <div className="card_iphone-text">
+                                                        <h2>
+                                                            {contractor.name} {contractor.lastname}
+                                                        </h2>
+
+                                                        <h3>
+                                                            {contractor.business_model}
+                                                        </h3>
+                                                    </div>
+                                                    <div className="card_iphone-img_2">
+                                                        <Rating
+                                                            initialValue={contractor.rating}
+                                                            allowFraction
+                                                            readonly
+                                                            size="28"
+                                                        />
+                                                    </div>
+                                                    <div className="card_iphone-text_3">
+                                                        <Link to={"/client/feedback/" + contractor.username}>
+                                                            {contractor.number_of_feedbacks} {text('reviews')}
+                                                        </Link>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="organization_names">
+                                                <div className="organization_text">
+                                                    <h2>
+                                                        {contractor.address}
+                                                    </h2>
+                                                </div>
+                                            </div>
+                                            <div className="infrormation">
+                                                <div className="big_infoo df">
+                                                    <div className="information_text df">
+                                                        <div className="infoo_text">
+                                                            <h2>{text('On the platform')}:</h2>
+                                                            <h2>{text('Status')}:</h2>
+                                                            <h2>{text('Rating')}:</h2>
+                                                        </div>
+
+                                                        <div className="infoo_text-2">
+                                                            <h2>{text('since 2023')}</h2>
+                                                            <h3>{text('Offline')}</h3>
+                                                            <h3>{contractor.rating}</h3>
+                                                        </div>
+                                                    </div>
+                                                    <div className="infoo_button">
+                                                        <div className="but">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div className="asfdsafdspouhfewo ">
+                                <div className="center__all__asfsiahg">
+                                    <div className="swiper-button image-swiper-button-next">
+                                        <img className="image-swiper-button-next" src="../img/sliderright.png" alt="asdfdsa" />
+                                    </div>
+                                    <div className="swiper-button image-swiper-button-prev">
+                                        <img src="../img/sliderleft.png" alt="sdfdsa" />
+                                    </div>
+                                    <Swiper
+                                        pagination={true}
+                                        navigation={{
+                                            nextEl: ".contact__image-swiper-button-next",
+                                            prevEl: ".contact__image-swiper-button-prev",
+                                        }}
+                                        modules={[Pagination, Navigation]}
+                                        className="mySwipetr qrpeqw9grfuilbdsjn"
+                                        slidesPerView="auto"
+                                    >
+                                        {contractor.pictures.map((v) => (
+                                            <SwiperSlide key={v} className="swiper-slidetr asfpwruwegiahbdfls sliderr">
+                                                <img
+                                                    className="contact-contractor__picture"
+                                                    src={SERVER_PATH + v}
+                                                    alt=""
+                                                    onClick={() => setPicture(SERVER_PATH + v)}
+                                                />
+                                                <button
+                                                    className="contact-contractor__open-button"
+                                                    onClick={() => setPicture(SERVER_PATH + v)}
+                                                >
+                                                    {text('Open image')}
+                                                </button>
+                                            </SwiperSlide>
+                                        ))}
+                                    </Swiper>
+                                    <Popup
+                                        open={picture !== ""}
+                                        onClose={() => setPicture("")}
+                                        className="contact-contractor__modal"
+                                    >
+                                        <img src={picture} className="contact-contractor-modal__picture" alt="absent" />
+                                    </Popup>
+                                </div>
+                            </div>
+                        </div>
+                    </React.Fragment>
+                )}
+            </div>
+            {/* Модальное окно с слайдером */}
+            {isModalOpen && (
+                <div className="modal" onClick={closeModal}>
+                    <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+                        <button className="closeBtn" onClick={closeModal}>
+                            &times;
+                        </button>
+                        <Swiper
+                            navigation={true}
+                            modules={[Navigation]}
+                            className="modalSwiper"
+                        >
+                            {test_price.map((obj, index) =>
+                                <SwiperSlide key={index} className="sliderr">
+                                    <div className="info_contractor_big__slide info_contractor_big__slide-block"></div>
+                                </SwiperSlide>
+                            )}
+                        </Swiper>
+                    </div>
+                </div>
+            )}
+
+            {/* Добавим стили для модального окна */}
+            {/* todo: перенести стили в css/scss */}
+            <style jsx>{`
+.info_contractor_big__slide-block {
+    width: 80%;
+    height: 100%;
+}
+                .modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                }
+
+                @media screen and (max-width: 1000px) {
+                    .modalContent {
+                        height: 50% !important;
+                    }
+                    .modal img {
+                        width: 100% !important;
+                        height: auto !important;
+                    }
+                }
+
+                .modal-content-info {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    width: 100%;
+                    height: 100%;
+                }
+                
+                .modalContent {
+                    position: relative;
+                    padding: 20px;
+                    background: white;
+                    width: 60%;
+                    height: 80%;
+                    overflow: hidden;
+                }
+
+                .modal img {
+                    width: auto;
+                    height: 80%;
+                }
+
+                .closeBtn {
+                    position: absolute;
+                    right: 10px;
+                    font-size: 30px;
+                    top: 0px;
+                    background: none;
+                    border: none;
+                    color: #333;
+                    cursor: pointer;
+                }
+
+                .closeBtn:hover {
+                    color: red;
+                }
+
+                .modalSwiper {
+                    width: 100%;
+                    height: 100%;
+                }
+                .sliderr {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+            `}</style>
+
+        </main>
+    )
+}
+
+
+export default App;

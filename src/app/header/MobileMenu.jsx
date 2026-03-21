@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 
 import ServiceDropDownMobile from './ServiceDropDownMobile';
 import styles from './MobileMenu.module.scss';
-import ListItem from '../../components/ListItem/ListItem';
-import ListItemElectronic from '../../components/ListItem/ListItemElectronic';
-import { useLanguage } from '../../state/language';
-import logo from '../../img/header/new-logotype.svg';
+import ListItem from '../components/ListItem/ListItem';
+import ListItemElectronic from '../components/ListItem/ListItemElectronic';
+import { useLanguage } from '../state/language';
+import logo from '../img/header/new-logotype.svg';
 
 
 const MobileMenu = ({ setMenuActive }) => {
