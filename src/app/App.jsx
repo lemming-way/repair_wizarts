@@ -16,8 +16,8 @@ import Profile from '../components/Settings/Profile';
 //~ import Services from '../components/Settings/services';
 import Reviews from '../components/Reviews';
 
-import Orders from '../components/Orders/Orders';
-import Offer from '../components/Orders/Offer';
+import MyOffers from '../features/orders/contractor/list/MyOffers';
+import Offer from '../features/orders/contractor/manage/Offer';
 
 // after login
 import ProfileFH from '../components/full-height/ProfileFH';
@@ -27,7 +27,7 @@ import WalletFH from '../components/full-height/WalletFH';
 
 import MapContractor from '../components/Pick-contractor/contractors';
 import ProfileNumber from '../components/Chat/profileNumber';
-import OfferAService from '../components/Orders/OfferAService';
+// import OfferAService from '../components/Orders/OfferAService';
 import AddDevices from '../components/addDevices/AddDevices';
 import AddedDevices from '../components/addDevices/AddedDevices';
 import TitleService from '../components/addDevices/TitleService';
@@ -43,7 +43,7 @@ import PersonalRequests from '../components/Orders/PersonalRequests';
 import Articles from '../components/Article/Articles';
 import ChoiceOfReplenishmentMethod from '../components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
 import ChoiceOfReplenishmentMethodClient from '../components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import MyOrdersContractor from '../components/Orders/MyOrdersContractor';
+import ContractorsOffers from '../features/orders/client/list/ContractorsOffers';
 import WalletHistory from '../components/ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from '../components/Orders/AddedDevicesPage';
 import FChatKirill from '../components/full-chat/fakeChat/Kirill';
@@ -181,7 +181,7 @@ function App() {
             <Route path="requests">
               <Route index element={<AddedDevices />} />
               {/* <Route path="archived" element={<Archive />} /> */}
-              <Route path="my_orders" element={<MyOrdersContractor />} />
+              <Route path="my_orders" element={<ContractorsOffers />} />
               <Route path="my_order/:id" element={<MyOrder />} />
               <Route path="create">
                 <Route path="title" element={<TitleService />} />
@@ -241,11 +241,11 @@ function App() {
               <Route path="requests">
                 <Route index element={<AllOrders />} />
                 <Route path="offer/:id" element={<Offer />} />
-                <Route path="orders" element={<Orders />} />
+                <Route path="orders" element={<MyOffers />} />
                 <Route path="personal" element={<PersonalRequests />} />
                 {/* <Route path=":id" element={<MyOrders />} /> */}
               </Route>
-              <Route path="offers/create/:id" element={<OfferAService />} />
+              {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
             </Route>
           </Route>
         </Routes>

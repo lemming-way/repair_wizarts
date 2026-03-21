@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import style from './ModalEditOrder.module.css';
+import style from '../../../OrderModals.module.css';
 import { AnyImage, getKeyFor } from '../../../../../shared/ui';
 import { useServices } from '../../../../../state/site-data';
 import { useUpdateOrder } from '../../../../../state/order';
@@ -72,7 +72,7 @@ export default function ModalEditOrder({
   return (
     <>
       <div className={style.wrap}>
-        <div className={style.block}>
+        <div className={`${style.block} ${style.block_width_95}`}>
           <div
             className={style.close}
             onClick={() => onCancel?.()}
@@ -80,11 +80,11 @@ export default function ModalEditOrder({
             <img src="/img/close.svg" alt="" />
           </div>
 
-          <h1 className={style.centeredText}>
+          <h1 className={style.modal_heading_centered}>
             {text('Editing the project')}
           </h1>
           <div
-            className={`${style.modal_content__row_swiper} ${style.flexWrapRow}`}
+            className={`${style.modal_edit_order__swiper_row} ${style.modal_edit_order__flex_wrap_row}`}
           >
             <Swiper
               slidesPerView={4}
@@ -105,9 +105,9 @@ export default function ModalEditOrder({
               }}
             >
               {attachments.map(image => (
-                <SwiperSlide key={getKeyFor()} className={style.slide_with_delete}>
+                <SwiperSlide key={getKeyFor()} className={style.modal_edit_order__slide_with_delete}>
                   <AnyImage src={image} alt="" />
-                  <button className={style.delete_image_btn} onClick={() => removeImage(image)}>
+                  <button className={style.modal_edit_order__delete_image_btn} onClick={() => removeImage(image)}>
                     &times;
                   </button>
                 </SwiperSlide>
@@ -115,9 +115,9 @@ export default function ModalEditOrder({
             </Swiper>
 
             <div
-              className={`${style.photo_upload} ${style.photo_upload_block}`}
+              className={`${style.modal_edit_order__photo_upload} ${style.modal_edit_order__photo_upload_block}`}
             >
-              <div className={style.photo_upload_img}>
+              <div className={style.modal_edit_order__photo_upload_img}>
                 <label htmlFor="upimg">
                   <img
                     src="/img/accommodation_img/photo.png"
@@ -130,7 +130,7 @@ export default function ModalEditOrder({
                   accept="image/png, image/jpeg"
                   multiple
                   id="upimg"
-                  className={style.hiddenInput}
+                  className={style.modal_edit_order__hidden_input}
                 />
               </div>
             </div>
@@ -138,69 +138,69 @@ export default function ModalEditOrder({
 
           <form
             onSubmit={onSubmitEdit}
-            className={style.flexColumnForm}
+            className={style.modal_edit_order__flex_column_form}
           >
-            <p className={style.form__light_text}>
+            <p className={style.modal_edit_order__form_light_text}>
               {text('Service')}
               <img
-                className={style.modal_edit__icon}
+                className={style.modal_edit_order__icon}
                 src="/img/multi_box.png"
                 alt=""
               />
             </p>
-            <p className={style.inputSmallWidthMarginBottom}>
+            <p className={style.modal_edit_order__input_small_width_margin_bottom}>
               {services?.[order.serviceId]?.name ?? ''}
             </p>
 
-            <p className={style.form__light_text}>
+            <p className={style.modal_edit_order__form_light_text}>
               {text('Address')}
               <img
-                className={style.modal_edit__icon}
-                src="/img/pencil_modal.png"
+                className={style.modal_edit_order__icon}
+                src="/img/pencil_modal.svg"
                 alt=""
               />
             </p>
             <input
               type="number"
-              className={style.inputSmallWidthMarginBottom}
+              className={style.modal_edit_order__input_small_width_margin_bottom}
               placeholder={text('Address')}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
 
-            <p className={style.form__light_text}>
+            <p className={style.modal_edit_order__form_light_text}>
               {text('Order description')}
               <img
-                className={style.modal_edit__icon}
+                className={style.modal_edit_order__icon}
                 src="/img/pencil_modal.svg"
                 alt=""
               />
             </p>
             <textarea
-              className={`${style.descdetail} ${style.textareaNoResize}`}
+              className={`${style.textarea} ${style.textarea_margin_bottom_20}`}
               placeholder={text('Order description')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             ></textarea>
 
-            <p className={style.form__light_text}>
+            <p className={style.modal_edit_order__form_light_text}>
               {text('Budget')}
               <img
-                className={style.modal_edit__icon}
+                className={style.modal_edit_order__icon}
                 src="/img/price_icon.png"
                 alt=""
               />
             </p>
             <input
               type="number"
-              className={style.inputSmallWidthMarginBottom}
+              className={style.modal_edit_order__input_small_width_margin_bottom}
               placeholder={text('Price')}
               value={desiredPrice}
               onChange={(e) => setDesiredPrice(e.target.value)}
             />
 
             <button
-              className={`${style.done} ${style.button__edit} ${style.buttonSmallWidthMarginAuto}`}
+              className={`${style.modal_edit_order__button_done} ${style.modal_edit_order__button_edit} ${style.modal_edit_order__button_small_width_margin_auto}`}
               type="submit"
             >
               {text('Save')}

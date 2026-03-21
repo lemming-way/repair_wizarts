@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom"
 
-import style from "./ModalDelete.module.css"
+import style from "../../../OrderModals.module.css"
 
 
 
@@ -21,7 +21,7 @@ export default function ModalOfferGo({ setVisibleModalGo }) {
                     </div>
                 </div>
             </div>
-            
+
         </>
     )
 }

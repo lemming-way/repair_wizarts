@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 
-import style from './ModalConfirmContractor.module.css';
+import style from '../../../OrderModals.module.css';
 
 export default function ModalConfirmContractor({
   setVisibleModalConfirmContractor,
@@ -24,7 +24,7 @@ export default function ModalConfirmContractor({
 
           <div className={style.buttons}>
             <div
-              className={style.button}
+              className={`${style.button} ${style.button_height_60}`}
               onClick={() => {
                 setVisibleModalConfirmContractor(false);
                 navigator('/client/chat/' + id);

@@ -54,7 +54,7 @@ function AllOrders() {
   const pendingContractorOrders = contractorOrders.filter(
     (o) =>
       o.status === OrderStatus.PUBLISHED ||
-      o.status === OrderStatus.NEGOTIATION
+      o.status === OrderStatus.REQUESTED
   );
 
   const allOrders = [

@@ -1,6 +1,8 @@
-import style from './ModalDelete.module.css';
+import style from '../../../OrderModals.module.css';
+import { useLanguage } from '../../../../../state/language';
 
-export default function ModalDelete({ setVisibleDeleteModal, onDelete }) {
+export default function ModalRevokeOffer({ setVisibleRevokeModal, onConfirm }) {
+  const text = useLanguage();
   return (
     <>
       <div className={style.wrap}>
@@ -8,26 +10,25 @@ export default function ModalDelete({ setVisibleDeleteModal, onDelete }) {
           <div
             className={style.close}
             onClick={() => {
-              setVisibleDeleteModal(false);
-              onDelete();
+              setVisibleRevokeModal(false);
             }}
           >
             <img src="/img/close.svg" alt="" />
           </div>
-          <p className={style.message}>Подтверждаете удаление?</p>
+          <p className={style.message}>{text('Are you sure you want to delete your offer?')}</p>
 
           <div className={style.buttons}>
             <div
               className={style.button_back}
-              onClick={() => setVisibleDeleteModal(false)}
+              onClick={() => setVisibleRevokeModal(false)}
             >
-              Отмена
+              {text('Cancel')}
             </div>
             <div
               className={style.button}
-              onClick={() => setVisibleDeleteModal(false)}
+              onClick={onConfirm}
             >
-              Удалить
+              {text('Delete')}
             </div>
           </div>
         </div>

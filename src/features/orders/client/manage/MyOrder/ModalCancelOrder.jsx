@@ -1,4 +1,4 @@
-import style from './ModalCancelOrder.module.css';
+import style from '../../../OrderModals.module.css';
 import { useLanguage } from '../../../../../state/language';
 
 export default function ModalCancelOrder({ setVisibleCancelModal, onCancelOrder }) {

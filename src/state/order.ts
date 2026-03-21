@@ -77,7 +77,7 @@ export type Offer = {
 export enum OrderStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
-  NEGOTIATION = 'negotiation',
+  REQUESTED = 'requested',
   CONTRACTOR_CONFIRMED = 'contractor_confirmed',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
@@ -90,7 +90,7 @@ export enum OrderStatus {
 
 export const orderStatusString = {
   [OrderStatus.PUBLISHED]: 'Awaiting offer',
-  [OrderStatus.NEGOTIATION]: 'Offered to the contractor',
+  [OrderStatus.REQUESTED]: 'Offered to the contractor',
   [OrderStatus.CONTRACTOR_CONFIRMED]: 'Contractor confirmed',
   [OrderStatus.IN_PROGRESS]: 'In progress',
   [OrderStatus.COMPLETED]: 'Completed',
@@ -329,7 +329,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
 
       // маппинг статусов
       if (b_state === 1) order.status = OrderStatus.PUBLISHED;
-      else if (b_state === 6) order.status = OrderStatus.NEGOTIATION;
+      else if (b_state === 6) order.status = OrderStatus.REQUESTED;
       else if (b_state === 2) {
         if (c_state === 4) order.status = OrderStatus.IN_PROGRESS;
         if (c_state === 5) order.status = OrderStatus.COMPLETED;
@@ -606,7 +606,7 @@ export function useUpdateOrder() {
       if (!order) throw new Error('Order not found.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.NEGOTIATION ]
+        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED ]
         .includes(order.status)
       ) {
         throw new Error('Incorrect order state.');
@@ -681,7 +681,7 @@ export function useCancelOrder() {
 
       if (!order) throw new Error('Order not found.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.NEGOTIATION, OrderStatus.CONTRACTOR_CONFIRMED ]
+        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.CONTRACTOR_CONFIRMED ]
         .includes(order.status)
       ) {
         throw new Error('Cannot cancel an ongoing order.');
@@ -1025,7 +1025,7 @@ export function useAcceptInvoice() {
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.NEGOTIATION) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.REQUESTED) throw new Error('Incorrect order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
 
       await acceptInvoice(orderId, order.desiredPrice);

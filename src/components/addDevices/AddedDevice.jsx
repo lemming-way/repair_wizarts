@@ -80,11 +80,11 @@ const AddedDevice = (props) => {
   const [message, setMessage] = useState(description);
 
   const title = services?.[serviceId]?.name || '';
-  const isEditable = status === OrderStatus.PUBLISHED || status === OrderStatus.NEGOTIATION;
+  const isEditable = status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED;
   const isCancellable =
     status === OrderStatus.DRAFT ||
     status === OrderStatus.PUBLISHED ||
-    status === OrderStatus.NEGOTIATION ||
+    status === OrderStatus.REQUESTED ||
     status === OrderStatus.CONTRACTOR_CONFIRMED;
 
   const onSubmit = async (e) => {
@@ -104,7 +104,7 @@ const AddedDevice = (props) => {
   };
 
   const buttonClassName = cn('dubl-btn-free', {
-    'dubl-btn': status === OrderStatus.PUBLISHED || status === OrderStatus.NEGOTIATION,
+    'dubl-btn': status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED,
     'dubl-but': status === OrderStatus.CONTRACTOR_CONFIRMED,
     'dubl-but-blue': status === OrderStatus.IN_PROGRESS,
     'dubl-but-green': status === OrderStatus.COMPLETED,

@@ -93,14 +93,14 @@ function MyOrder() {
     currentOrder && [
       OrderStatus.DRAFT,
       OrderStatus.PUBLISHED,
-      OrderStatus.NEGOTIATION
+      OrderStatus.REQUESTED
     ].includes(currentOrder.status);
 
   const canCancelOrder = user.role === UserRole.Client &&
     currentOrder && [
       OrderStatus.DRAFT,
       OrderStatus.PUBLISHED,
-      OrderStatus.NEGOTIATION,
+      OrderStatus.REQUESTED,
       OrderStatus.CONTRACTOR_CONFIRMED
     ].includes(currentOrder.status);
 

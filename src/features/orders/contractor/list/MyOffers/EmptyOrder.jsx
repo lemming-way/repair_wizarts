@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 
-import style from "./Orders.module.css"
+import style from "./MyOffers.module.css"
 
 
 export default function EmptyOrder () {
