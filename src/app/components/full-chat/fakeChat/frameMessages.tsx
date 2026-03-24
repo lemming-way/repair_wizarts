@@ -2,96 +2,147 @@ import { useEffect, useMemo } from 'react';
 import '../../../scss/chat.css';
 import { Link } from 'react-router-dom';
 
-import { useAllClientRequestsQuery } from '../../../hooks/useAllClientRequestsQuery';
-import { useContractorOrdersQuery } from '../../../hooks/useContractorOrdersQuery';
-import { useUser, UserRole } from '../../../state/user';
+import { Order, OrderStatus, useClientOrders, useContractorOrders } from 'app/state/order';
+import { useUser, useUsersByIds, UserRole } from 'app/state/user';
 
-function App() {
+// Тип для отдельного чата
+type Chat = {
+  chatId: string; // Например, `${clientId}_${contractorId}`
+  otherUserId: number;
+  orders: Order[]; // Все заказы, связанные с этим чатом
+  lastMessage: {
+    text: string;
+    ts: string;
+  };
+};
+
+// Утилита: получить последнее "сообщение" (описание заказа) из одного заказа
+function getLastMessageFromOrder(order: Order): { text: string; ts: string } {
+  // Используем описание заказа как заглушку для сообщений чата,
+  // поскольку реальные сообщения чата еще не реализованы.
+  let text = order.description || 'Нет сообщений';
+  const MAX_LEN = 120;
+  if (text.length > MAX_LEN) {
+    text = text.slice(0, MAX_LEN).trimEnd() + '…';
+  }
+  // Используем order.updatedAt как временную метку последней активности в заказе
+  return {
+    text: text,
+    ts: order.updatedAt.toISOString(),
+  };
+}
+
+function FrameMessages() {
   const { user } = useUser();
   const isUserAuthorized = 'id' in user && !!user.id;
   const userRole = isUserAuthorized ? user.role : 0;
-  const contractorOrdersQuery = useContractorOrdersQuery({ enabled: userRole === UserRole.Contractor });  // todo: Сделать отдельный параметр вместо enabled
-  const allClientRequestsQuery = useAllClientRequestsQuery({ enabled: userRole !== UserRole.Contractor });  // todo: Сделать отдельный параметр вместо enabled
-  const userRequests = userRole === UserRole.Contractor
-    ? contractorOrdersQuery.contractorOrders
-    : allClientRequestsQuery.clientRequests;
 
-  // утилита: получить последнее сообщение по всем заказам чата
-  function getLastMessageFromOrders(orders: any[]): {
-    text: string;
-    ts?: string;
-  } {
-    let latest: { text: string; ts?: string } = {
-      text: 'Нет сообщений',
-      ts: undefined,
-    };
-    let latestTs = -Infinity;
+  // Используем новые хуки для получения заказов
+  const { orders: contractorOrders, isLoading: isLoadingContractorOrders } = useContractorOrders();
+  const { orders: clientOrders, isLoading: isLoadingClientOrders } = useClientOrders();
 
-    for (const order of orders || []) {
-      const hist = Array.isArray(order?.b_options?.chat_history)
-        ? order.b_options.chat_history
-        : [];
-
-      for (const m of hist) {
-        const t = m?.ts ? new Date(m.ts).getTime() : NaN;
-        if (!Number.isNaN(t) && t > latestTs) {
-          latestTs = t;
-          latest = { text: String(m?.text ?? ''), ts: m.ts };
-        }
-      }
+  const userRequests = useMemo(() => {
+    if (userRole === UserRole.Contractor) {
+      return contractorOrders.filter(order => order.status !== OrderStatus.PUBLISHED);
+    } else {
+      return clientOrders.filter(order => order.status !== OrderStatus.DRAFT && order.status !== OrderStatus.PUBLISHED);
     }
-    // небольшое визуальное сокращение длинных сообщений
-    const MAX_LEN = 120;
-    if (latest.text.length > MAX_LEN) {
-      latest.text = latest.text.slice(0, MAX_LEN).trimEnd() + '…';
-    }
-    return latest;
-  }
+  }, [userRole, contractorOrders, clientOrders]);
+
+  const isLoadingOrders = userRole === UserRole.Contractor ? isLoadingContractorOrders : isLoadingClientOrders;
 
   const groupedChats = useMemo(() => {
-    const requestEntries: any[] = Array.isArray(userRequests) ? userRequests : [];
-    const rawRequests = Array.from(
-      new Map(
-        requestEntries
-          .map((item: any) => Object.values(item?.data?.booking || {}))
-          .flat()
-          .filter((request: any) => request?.b_id)
-          .map((request: any) => [request.b_id, request]),
-      ).values(),
-    );
-    const filteredRequests = rawRequests.filter(
-      (item: any) =>
-        item.b_options?.winnerContractor && item.drivers && item.drivers.length > 0,
-    );
-    const chatsByContractor: any = filteredRequests.reduce(
-      (acc: any, request: any) => {
-        const contractorId = request.b_options.winnerContractor;
-        if (!acc[contractorId]) {
-          acc[contractorId] = [];
+    if (!userRequests.length || !user.id || !user.role) return [];
+
+    const chatsMap = new Map<number, { orders: Order[]; otherUserId: number }>();
+
+    for (const order of userRequests) {
+        if (!order.id) continue;
+
+        let otherUserId: number | undefined;
+        // Определяем ID другого участника на основе роли текущего пользователя
+        if (user.role === UserRole.Client && order.contractorId && order.contractorId !== user.id) {
+            otherUserId = order.contractorId;
+        } else if (user.role === UserRole.Contractor && order.clientId && order.clientId !== user.id) {
+            otherUserId = order.clientId;
         }
-        acc[contractorId].push(request);
-        return acc;
-      },
-      {},
-    );
-    return Object.values(chatsByContractor).map((orders: any) => {
-      const firstOrder = orders[0];
-      const winnerDriver = firstOrder.drivers.find(
-        (d) => d.u_id === firstOrder.b_options.winnerContractor,
-      );
-      return {
-        isOwner: 'id' in user && firstOrder.u_id === user.id,
-        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerContractor}`,
-        clientInfo: firstOrder.b_options.author || {},
-        contractorInfo: winnerDriver.c_options.author || {},
-        orders: orders,
-      };
+
+        if (otherUserId) {
+            if (!chatsMap.has(otherUserId)) {
+                chatsMap.set(otherUserId, { orders: [], otherUserId });
+            }
+            chatsMap.get(otherUserId)!.orders.push(order);
+        }
+    }
+
+    const chats: Chat[] = Array.from(chatsMap.values()).map((chatGroup) => {
+        // Находим последний заказ в этой группе, чтобы получить временную метку "последнего сообщения"
+        const sortedOrders = [...chatGroup.orders].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        const latestOrder = sortedOrders[0];
+        const lastMsg = getLastMessageFromOrder(latestOrder); // Используем рефакторенную вспомогательную функцию
+
+        // Создаем стабильный chatId, используя отсортированные ID обоих участников
+        const currentUserId = user.id;
+        const otherParticipantId = chatGroup.otherUserId;
+        const chatId = user.role === UserRole.Contractor ?
+          `${otherParticipantId}_${currentUserId}` :
+          `${currentUserId}_${otherParticipantId}`;
+
+        return {
+            chatId,
+            otherUserId: chatGroup.otherUserId,
+            orders: chatGroup.orders, // Все заказы для этого чата
+            lastMessage: lastMsg,
+        };
     });
-  }, [userRequests, user]);
+
+    // Сортируем чаты по временной метке последнего сообщения (сначала самые новые)
+    chats.sort((a, b) => {
+        const tsA = new Date(a.lastMessage.ts).getTime();
+        const tsB = new Date(b.lastMessage.ts).getTime();
+        return tsB - tsA;
+    });
+
+    return chats;
+  }, [userRequests, user.id, user.role]);
+
+  // Собираем уникальные ID других пользователей для получения их профилей
+  const uniqueOtherUserIds = useMemo(() => {
+    return Array.from(new Set(groupedChats.map(chat => chat.otherUserId)));
+  }, [groupedChats]);
+
+  // Получаем профили всех других участников чатов
+  const { users: otherUsers, isLoading: isLoadingOtherUsers } = useUsersByIds(uniqueOtherUserIds);
+
+  // Создаем Map для быстрого поиска профилей пользователей по ID
+  const otherUsersMap = useMemo(() => {
+    return new Map(otherUsers.map(u => [u.id, u]));
+  }, [otherUsers]);
 
   useEffect(() => {
     document.title = 'Чат';
   }, []);
+
+  if (isLoadingOrders || isLoadingOtherUsers) {
+    return (
+      <div className="frame_messages frame_messages__fullchat">
+        <div className="block_messages font_inter">
+          <div className="messages_text">
+            <h2>Сообщения</h2>
+          </div>
+          <div className="magnafire df align">
+            <div className="magnafire_img">
+              <img src="/img/chat_img/лупа.png" alt="no img" />
+            </div>
+            <div className="magnafire_input">
+              <input type="text" placeholder="Поиск..." />
+            </div>
+          </div>
+        </div>
+        <div className="big_messages__wrap">Загрузка чатов...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="frame_messages frame_messages__fullchat">
@@ -112,73 +163,63 @@ function App() {
       <div className="big_messages__wrap">
         {groupedChats.length === 0
           ? 'Пусто'
-          : groupedChats.map(
-              ({ chatId, contractorInfo, isOwner, clientInfo, orders }) => {
-                const lastMsg = getLastMessageFromOrders(orders);
-                return (
-                  <div className="big_messages" key={chatId}>
-                    <Link
-                      to={
-                        window.location.href.includes('contractor')
-                          ? `/contractor/chat/${chatId}`
-                          : `/client/chat/${chatId}`
-                      }
-                    >
-                      <div className="ilya df font_inter align">
-                        <div className="ilya_img">
-                          <img
-                            src={contractorInfo.u_photo || '/img/img-camera.png'}
-                            style={{ height: 65, width: 66, borderRadius: 30 }}
-                            alt="chat icon"
-                          />
-                        </div>
+          : groupedChats.map((chat) => {
+              const otherUserInfo = otherUsersMap.get(chat.otherUserId);
+              if (!otherUserInfo) return null; // Этого не должно произойти, если данные согласованы
 
-                        <div className="ilya_text">
-                          <h2>
-                            {isOwner
-                              ? contractorInfo.u_name || 'Мастер'
-                              : clientInfo.name || 'Мастер'}
-                          </h2>
+              const displayName = otherUserInfo.fullname || otherUserInfo.name || 'Неизвестный пользователь';
+              const avatarSrc = otherUserInfo.avatar || '/img/img-camera.png';
 
-                          <h3
-                            className="txt-text-small-ver"
-                            style={{ color: '#555' }}
-                            title={lastMsg.text}
-                          >
-                            {lastMsg.text}
-                          </h3>
-                        </div>
-
-                        <div className="ilya_text-2">
-                          <h2>
-                            {lastMsg.ts
-                              ? new Date(lastMsg.ts).toLocaleTimeString(
-                                  'ru-RU',
-                                  {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  },
-                                )
-                              : new Date(
-                                  contractorInfo.u_details?.lastTimeBeenOnline ||
-                                    new Date().toISOString(),
-                                ).toLocaleTimeString('ru-RU', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                          </h2>
-                          {/* Убрали индикатор нового сообщения */}
-                        </div>
+              return (
+                <div className="big_messages" key={chat.chatId}>
+                  <Link
+                    to={
+                      user.role === UserRole.Contractor
+                        ? `/contractor/chat/${chat.chatId}`
+                        : `/client/chat/${chat.chatId}`
+                    }
+                  >
+                    <div className="ilya df font_inter align">
+                      <div className="ilya_img">
+                        <img
+                          src={avatarSrc}
+                          style={{ height: 65, width: 66, borderRadius: 30 }}
+                          alt="chat icon"
+                        />
                       </div>
-                      <div className="line_ilya"></div>
-                    </Link>
-                  </div>
-                );
-              },
-            )}
+
+                      <div className="ilya_text">
+                        <h2>{displayName}</h2>
+
+                        <h3
+                          className="txt-text-small-ver"
+                          style={{ color: '#555' }}
+                          title={chat.lastMessage.text}
+                        >
+                          {chat.lastMessage.text}
+                        </h3>
+                      </div>
+
+                      <div className="ilya_text-2">
+                        <h2>
+                          {new Date(chat.lastMessage.ts).toLocaleTimeString(
+                            'ru-RU',
+                            {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            },
+                          )}
+                        </h2>
+                      </div>
+                    </div>
+                    <div className="line_ilya"></div>
+                  </Link>
+                </div>
+              );
+            })}
       </div>
     </div>
   );
 }
 
-export default App;
+export default FrameMessages;

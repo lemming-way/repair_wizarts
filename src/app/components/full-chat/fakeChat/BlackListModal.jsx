@@ -1,88 +1,55 @@
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-
 import style from './blackListModal.module.css';
-import appFetch from '../../../utilities/appFetch';
-import { useUser, updateUser } from '../../../state/user';
+import { useUser, useUpdateUser, useUsersByIds } from '../../../state/user';
+import { useLanguage } from '../../../state/language';
 
-const EMPTY_ARRAY = Object.freeze([]);
-
-export default function BlackListModal({ setVisibleBlackList }) {
-  const queryClient = useQueryClient();
+export default function BlackListModal({ setModalVisible }) {
+  const text = useLanguage();
   const { user } = useUser();
-  const blackList = user.blackList || EMPTY_ARRAY;
+  const blackListIds = user.blackList || [];
 
-  const [blackListData, setBlackListData] = useState([]);
+  const { users, isLoading: isUsersLoading } = useUsersByIds(blackListIds);
+  const { save, isPending: isUpdatingUser } = useUpdateUser();
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const data = await Promise.all(
-        blackList.map(async (item) => {
-          const userReq = await appFetch(`user/${item.id}`, {}, true);
-          const targetUser = Object.values(userReq.data.user || {})[0];
-          const date = new Date(item.date);
-          const pad = (n) => String(n).padStart(2, '0');
-
-          const formattedDate = `${pad(date.getDate())}.${pad(
-            date.getMonth() + 1,
-          )}.${date.getFullYear()} ${pad(date.getHours())}:${pad(
-            date.getMinutes(),
-          )}`;
-
-          return {
-            id: item.id,
-            name: targetUser?.u_name || 'Неизвестно',
-            date: formattedDate,
-          };
-        }),
-      );
-
-      setBlackListData(data);
-    };
-
-    if (blackList.length > 0) {
-      fetchUsers();
-    }
-  }, [blackList]);
-
-  const handleUnblock = (id) => {
-    const newList = blackList.filter((l) => l.id !== id);
-    console.log(newList);
+  const handleUnblock = async (id) => {
     if (!user.id) {
       return;
     }
-    updateUser(queryClient, { blackList: newList });
-    setBlackListData((prev) => prev.filter((user) => user.id !== id));
+    const newList = blackListIds.filter((lId) => lId !== id);
+    save({ blackList: newList });
   };
 
   return (
     <div className={style.wrap}>
       <div className={style.block}>
-        <div className={style.close} onClick={() => setVisibleBlackList(false)}>
+        <div className={style.close} onClick={() => setModalVisible(false)}>
           <img src="/img/close.svg" alt="" />
         </div>
-        <h2 className={style.heading}>Черный список</h2>
-        <div className={style.row_td}>
-          <p>Дата</p>
-          <p>Пользователь</p>
-        </div>
-        {blackListData.length === 0 ? (
-          <p>Пока пусто</p>
+        <h2 className={style.heading}>{text('Blacklist')}</h2>
+        {isUsersLoading ? (
+          <p>{text('Loading...')}</p>
+        ) : users.length === 0 ? (
+          <p>{text('Currently empty')}</p>
         ) : (
-          blackListData.map((item) => (
-            <div key={item.id} className={style.user_ban}>
-              <div
-                className={style.row_button}
-                onClick={() => handleUnblock(item.id)}
-              >
-                <div className={style.button}>Разблокировать</div>
-              </div>
-              <div className={style.data}>
-                <p>{item.date}</p>
-                <p>{item.name}</p>
-              </div>
+          <>
+            <div className={style.row_td}>
+              <p>{text('User')}</p>
+              <div style={{ flexGrow: 1 }} /> {/* Spacer for layout */}
+              <p>{text('Action')}</p>
             </div>
-          ))
+            {users.map(item => (
+              <div key={item.id} className={style.user_ban}>
+                <div className={style.data}>
+                  <p>{item.fullname || text('Unknown user')}</p>
+                </div>
+                <div
+                  className={style.row_button}
+                  onClick={() => !isUpdatingUser && handleUnblock(item.id)}
+                >
+                  <div className={style.button}>{text('Unblock')}</div>
+                </div>
+              </div>
+            ))}
+          </>
         )}
       </div>
     </div>

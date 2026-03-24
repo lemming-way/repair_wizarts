@@ -1,45 +1,11 @@
 import { useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
 
 import style from './AddOrderModal.module.css';
-import { updateRequest } from '../../../services/request.service';
-import { getToken } from '../../../services/token.service';
 import { useLanguage } from '../../../state/language';
-import { useUser } from '../../../state/user';
-
-// Вспомогательная функция для преобразования файла в base64
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-
-// Функция для загрузки фото
-const uploadPhoto = async (file) => {  // перенести в api
-  const base64String = await fileToBase64(file);
-  const token = getToken();
-  const body = new URLSearchParams({
-    token: token.token,
-    u_hash: token.hash,
-    file: JSON.stringify({
-      base64: base64String,
-      name: file.name,
-    }),
-  });
-
-  const response = await fetch(
-    'https://ibronevik.ru/taxi/api/v1/dropbox/file/',
-    {
-      method: 'POST',
-      body,
-      // НЕ указываем Content-Type, fetch сам поставит нужный для URLSearchParams
-    },
-  );
-  const result = await response.json();
-  return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
-};
+import { useUser, UserRole } from '../../../state/user';
+import { useCreateOrder } from '../../../state/order';
+import { useServices } from '../../../state/site-data';
+import { AnyImage, getKeyFor } from '../../../shared/ui';
 
 export default function AddOrderModal({
   setVisibleAddOrder,
@@ -48,46 +14,68 @@ export default function AddOrderModal({
 }) {
   const text = useLanguage();
   const { user } = useUser();
-  const { id } = useParams();
-  const [title, setTitle] = useState('');
+  const { createOrder, isLoading } = useCreateOrder();
+  const { services } = useServices();
+
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
-  const [deadline, setDeadline] = useState('');
   const [photos, setPhotos] = useState([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [formError, setFormError] = useState('');
   const inputRef = useRef(null);
 
-  const handleSubmit = async () => {
-    setIsUploading(true);
+  if (!currentOrder || !currentOrder.contractorId) {
+    setVisibleAddOrder(false);
+    return null;
+  }
+
+  const serviceId = currentOrder.serviceId;
+  const cityId = currentOrder.city;
+  const address = currentOrder.address;
+  const contractorId = currentOrder.contractorId;
+  const serviceName = services[serviceId]?.name || text('Unknown Service');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!user.id) {
+      setFormError(text('You must be logged in to create an order.'));
+      return;
+    }
+    if (user.role !== UserRole.Client) {
+      setFormError(text('Only clients can create orders.'));
+      return;
+    }
+    if (!description.trim()) {
+      setFormError(text('Description cannot be empty.'));
+      return;
+    }
+    const parsedBudget = Number(budget);
+    if (!Number.isFinite(parsedBudget) || parsedBudget <= 0) {
+      setFormError(text('Budget must be a positive number.'));
+      return;
+    }
+
+    const fullDescription = description.trim();
+
     try {
-      // Загрузка всех фото
-      const photoUrls = [];
-      for (const photo of photos) {
-        if (photo.file) {
-          const url = await uploadPhoto(photo.file);
-          photoUrls.push(url);
-        }
-      }
-      const currentExtraOrders = Array.isArray(
-        currentOrder.b_options.extra_orders,
-      )
-        ? currentOrder.b_options.extra_orders
-        : [];
-      const newExtraOrder = {
-        id: Math.floor(Math.random() * 1000000),
-        title,
-        description,
-        client_price: budget,
-        time: deadline,
-        photoUrls,
-      };
-      await updateRequest(id, {
-        extra_orders: [...currentExtraOrders, newExtraOrder],
+      await createOrder({
+        cityId,
+        address,
+        serviceId,
+        contractorId,
+        description: fullDescription,
+        attachments: photos,
+        price: parsedBudget,
       });
       setVisibleAddOrder(false);
       setVisibleOkModal(true);
-    } finally {
-      setIsUploading(false);
+
+      setDescription('');
+      setBudget('');
+      setPhotos([]);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : String(err));
     }
   };
 
@@ -98,18 +86,22 @@ export default function AddOrderModal({
           <img src="/img/close.svg" alt="" />
         </div>
         <h2 className={style.heading}>{text('Propose an order')}</h2>
-        {(user.details?.balance || 0) < 500 && ( /* todo: загружать баланс отдельно */
+        {/* todo: загружать баланс отдельно */}
+        {(user.details?.balance || 0) < 500 && (
           <p className={style.error}>
             {text('Please top up your balance by 500 rubles')}
           </p>
+        )}
+        {formError && (
+          <p className={style.error}>{formError}</p>
         )}
         <div>
           <input
             className={style.input_heading}
             type="text"
-            placeholder={text('Title')}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            placeholder={text('Service')}
+            value={serviceName}
+            readOnly
           />
         </div>
 
@@ -127,8 +119,9 @@ export default function AddOrderModal({
         <div className={style.row1}>
           <div>
             <p className={style.mini_heading}>{text('Budget')}</p>
+            {/* todo: загружать баланс отдельно */}
             <p className={style.balance}>
-              {text('Balance')} {user.details?.balance || 0 /* todo: загружать баланс отдельно */} ₽
+              {text('Balance')} {0} ₽
             </p>
             <div className={style.icon}>
               <input
@@ -140,37 +133,14 @@ export default function AddOrderModal({
               />
             </div>
           </div>
-          <div style={{ position: 'relative' }}>
-            <img className={style.icon2} src="/img/icons/clock.png" alt="" />
-            <p className={style.mini_heading}>{text('Term')}</p>
-            <select
-              className={style.select}
-              value={deadline}
-              onChange={(e) => setDeadline(e.target.value)}
-            >
-              <option value="" disabled>
-                {text('Select')}
-              </option>
-              <option value="ready">{text('Ready to wait')}</option>
-              <option value="1">{text('1 hour')}</option>
-              <option value="2">{text('2 hours')}</option>
-              <option value="3">{text('3 hours')}</option>
-              <option value="4">{text('4 hours')}</option>
-              <option value="6">{text('6 hours')}</option>
-              <option value="8">{text('8 hours')}</option>
-              <option value="24">{text('24 hours')}</option>
-              <option value="72">{text('3 days')}</option>
-              <option value="168">{text('7 days')}</option>
-            </select>
-          </div>
         </div>
 
         <div className={style.block_photo}>
           <p className={style.heading_h3}>{text('Add photos')}</p>
           <div
             className={style.add_photo}
-            onClick={() => inputRef.current && inputRef.current.click()}
-            style={{ cursor: 'pointer' }}
+            onClick={() => !isLoading && inputRef.current?.click()}
+            style={{ cursor: isLoading ? 'not-allowed' : 'pointer' }}
           >
             <img src="/img/icons/camera.png" alt="" />
             <input
@@ -179,21 +149,21 @@ export default function AddOrderModal({
               accept="image/*"
               multiple
               style={{ display: 'none' }}
+              disabled={isLoading}
               onChange={(e) => {
-                const files = Array.from(e.target.files);
-                const newPhotos = files.map((file) => ({
-                  file,
-                  url: URL.createObjectURL(file),
-                }));
-                setPhotos((prev) => [...prev, ...newPhotos].slice(0, 10));
+                if (e.target.files) {
+                  const files = Array.from(e.target.files);
+                  setPhotos((prev) => [...prev, ...files].slice(0, 10));
+                  e.target.value = '';
+                }
               }}
             />
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             {photos.map((photo, idx) => (
-              <div key={idx} style={{ position: 'relative' }}>
-                <img
-                  src={photo.url}
+              <div key={getKeyFor(photo)} style={{ position: 'relative' }}>
+                <AnyImage
+                  src={photo}
                   alt="preview"
                   style={{
                     width: 60,
@@ -206,16 +176,23 @@ export default function AddOrderModal({
                   type="button"
                   style={{
                     position: 'absolute',
-                    top: 0,
-                    right: 0,
+                    top: -5,
+                    right: -5,
                     background: 'rgba(255,255,255,0.7)',
                     border: 'none',
                     cursor: 'pointer',
                     borderRadius: '50%',
+                    width: 20,
+                    height: 20,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0,
                   }}
                   onClick={() =>
                     setPhotos((prev) => prev.filter((_, i) => i !== idx))
                   }
+                  disabled={isLoading}
                 >
                   ✕
                 </button>
@@ -225,18 +202,21 @@ export default function AddOrderModal({
         </div>
 
         <div className={style.buttons}>
-          <div
+          <button
             className={style.button}
-            onClick={isUploading ? undefined : handleSubmit}
+            onClick={handleSubmit}
+            disabled={isLoading}
           >
-            {isUploading ? text('Loading...') : text('Send')}
-          </div>
-          <div
+            {isLoading ? text('Loading...') : text('Send')}
+          </button>
+          <button
+            type="button"
             className={style.button_back}
             onClick={() => setVisibleAddOrder(false)}
+            disabled={isLoading}
           >
             {text('Back')}
-          </div>
+          </button>
         </div>
       </div>
     </div>

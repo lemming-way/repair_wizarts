@@ -1,15 +1,11 @@
-import type {
-  FC,
-  Dispatch,
-  SetStateAction,
-  KeyboardEvent} from 'react';
+import type { Dispatch, SetStateAction, FC } from 'react';
 import React, {
   useEffect,
   useRef,
   useState,
   useMemo,
   useCallback,
-  Suspense
+  Suspense,
 } from 'react';
 import '../../../scss/chat.css';
 import Dropdown from 'react-multilevel-dropdown';
@@ -20,26 +16,36 @@ import AddFeedbackModal from './AddFeedbackModal';
 import AddOrderModal from './AddOrderModal';
 import BlackListModal from './BlackListModal';
 import styles from './Chat.module.css';
-import { useService } from '../../../hooks/useService';
-import { getAllClientRequests } from '../../../services/request.service';
-import { getContractorOrders } from '../../../services/order.service';
 import BlockUser from './BlockUser';
 import DeleteChatModal from './DeleteChatModal';
 import OkModal from './OkModal';
-import { useUser, UserRole } from '../../../state/user';
+import { UserProfile, useUser, UserRole, useUsersByIds } from '../../../state/user';
+import {
+  Order,
+  OrderStatus,
+  useClientOrders,
+  useContractorOrders,
+} from '../../../state/order';
 
 import type { EmojiClickData } from 'emoji-picker-react';
 
-import appFetch from '../../../utilities/appFetch';
 import OnlineDotted from '../../onlineDotted/OnlineDotted';
 import DisputeModalV2 from './DisputeModal_v2';
 import DisputeFinalModalV2 from './DisputeFinalModal';
-import { updateRequest } from '../../../services/request.service';
 import FrameMessages from './frameMessages';
 import { useLanguage } from '../../../state/language';
+import { AnyMedia, getKeyFor } from '../../../shared/ui';
 
-const LazySwiper = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
-const LazySwiperSlide = React.lazy(() => import('../../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
+const LazySwiper = React.lazy(() =>
+  import('../../../shared/ui/SwiperWrapper').then((m) => ({
+    default: m.SwiperWithModules,
+  })),
+);
+const LazySwiperSlide = React.lazy(() =>
+  import('../../../shared/ui/SwiperWrapper').then((m) => ({
+    default: m.SwiperSlide,
+  })),
+);
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
 // TODO: Модуль не функционален, надо всё переделать
@@ -52,7 +58,7 @@ interface ChatMessage {
   ts: string; // ISO
   author: ChatAuthor;
   text: string;
-  files?: string[]; // постоянные ссылки https://ibronevik.ru/taxi/api/v1/dropbox/file/{id}
+  files?: number[]; // Теперь файлы представлены числовыми ID
 }
 
 const nowIso = () => new Date().toISOString();
@@ -60,7 +66,7 @@ const nowIso = () => new Date().toISOString();
 const makeMsg = (
   author: ChatAuthor,
   text: string,
-  files?: string[],
+  files?: number[], // Принимаем массив ID файлов
 ): ChatMessage => ({
   id:
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -80,9 +86,9 @@ type TimelineKind =
   | 'cancel_requested'
   | 'cancel_contractor_accepted'
   | 'cancel_contractor_rejected'
-  | 'dispute_opened'
-  | 'dispute_contractor_accepted'
-  | 'dispute_contractor_rejected'
+  | 'dispute_opened' // Заглушка
+  | 'dispute_contractor_accepted' // Заглушка
+  | 'dispute_contractor_rejected' // Заглушка
   | 'order_completed';
 
 interface TimelineItemBase {
@@ -110,476 +116,44 @@ interface TimelineSimpleItem extends TimelineItemBase {
 type TimelineItem = TimelineChatItem | TimelineSimpleItem;
 // =================================================
 
-/**
- * ВСПОМОГАТЕЛЬНОЕ: парсинг имени файла из заголовка Content-Disposition
- */
-const parseFilename = (cd: string | null): string | null => {
-  if (!cd) return null;
-  // filename*=UTF-8''name or filename="name"
-  const utf8 = /filename\*=UTF-8''([^;]+)/i.exec(cd);
-  if (utf8?.[1]) {
-    try {
-      return decodeURIComponent(utf8[1]);
-    } catch {
-      return utf8[1];
-    }
-  }
-  const simple = /filename="([^"]+)"/i.exec(cd);
-  if (simple?.[1]) return simple[1];
-  return null;
-};
-
-/**
- * ЕДИНАЯ ЗАГРУЗКА ФАЙЛА ИЗ DROPBOX API (POST, токен/хэш)
- * Возвращает objectURL, mime, filename.
- */
-const fetchDropboxObjectUrl = async (
-  apiUrl: string,
-): Promise<{ objectUrl: string; mime: string; filename: string | null }> => {
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    body: new URLSearchParams({
-      token: 'bbdd06a50ddcc1a4adc91fa0f6f86444',
-      u_hash:
-        'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
-    }),
-  });
-  const mime = res.headers.get('Content-Type') || 'application/octet-stream';
-  const filename = parseFilename(res.headers.get('Content-Disposition'));
-  const blob = await res.blob();
-  const objectUrl = URL.createObjectURL(blob);
-  return { objectUrl, mime, filename };
-};
-
-// Типизированный компонент для dropbox-фото (оставил как было — используется в карточках заказа)
-const DropboxImage: FC<{
-  url: string;
-  alt?: string;
-  style?: React.CSSProperties;
-}> = ({ url, alt = '', style }) => {
-  const text = useLanguage();
-  const [imgUrl, setImgUrl] = useState<string | null>(
-    url && url.startsWith('blob:') ? url : null,
-  );
-  const [error, setError] = useState(false);
-  const urlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    let revoked = false;
-    if (!url) return;
-    if (url.startsWith('blob:')) {
-      setImgUrl(url);
-      return;
-    }
-    const match = url.match(/\/dropbox\/file\/(\d+)/);
-    const id = match ? match[1] : null;
-    if (!id) return;
-    // IMPORTANT: получаем файл по API (POST с токеном)
-    fetch(`https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/${id}`, {
-      method: 'POST',
-      body: new URLSearchParams({
-        token: 'bbdd06a50ddcc1a4adc91fa0f6f86444', // тот же проект
-        u_hash:
-          'VLUy4+8k6JF8ZW3qvHrDZ5UDlv7DIXhU4gEQ82iRE/zCcV5iub0p1KhbBJheMe9JB95JHAXUCWclAwfoypaVkLRXyQP29NDM0NV1l//hGXKk6O43BS3TPCMgZEC4ymtr',
-      }),
-    })
-      .then(async (res) => {
-        const blob = await (res.blob ? res.blob() : res);
-        // @ts-ignore
-        const objectUrl = URL.createObjectURL(blob);
-        urlRef.current = objectUrl;
-        if (!revoked) setImgUrl(objectUrl);
-      })
-      .catch(() => setError(true));
-    return () => {
-      revoked = true;
-      if (urlRef.current) URL.revokeObjectURL(urlRef.current);
-    };
-  }, [url]);
-
-  if (error)
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: 120,
-          background: '#eee',
-          color: 'red',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {text('Photo upload error')}
-      </div>
-    );
-  if (!imgUrl)
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: 120,
-          background: '#eee',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {text('Loading...')}
-      </div>
-    );
-  return <img src={imgUrl} alt={alt} style={style || { width: '100%' }} />;
-};
-
-/**
- * НОВОЕ: Универсальный предпросмотр файла из Dropbox API
- * - Грузит через POST (как изображение выше)
- * - Показывает inline для image/video/audio/pdf
- * - Для остальных — иконка и кнопка "Скачать" с корректным именем.
- */
-const DropboxFilePreview: FC<{
-  url: string;
-  style?: React.CSSProperties;
-}> = ({ url, style }) => {
-  const text = useLanguage();
-  const [state, setState] = useState<{
-    objectUrl: string | null;
-    mime: string;
-    filename: string | null;
-    error: boolean;
-  }>({
-    objectUrl: null,
-    mime: 'application/octet-stream',
-    filename: null,
-    error: false,
-  });
-
-  const [isOpen, setIsOpen] = useState(false);
-  const objUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    let canceled = false;
-    const run = async () => {
-      try {
-        if (!url) return;
-        // blob: — показываем сразу
-        if (url.startsWith('blob:')) {
-          if (!canceled) {
-            setState({
-              objectUrl: url,
-              mime: 'application/octet-stream',
-              filename: null,
-              error: false,
-            });
-          }
-          return;
-        }
-        // dropbox id
-        const m = url.match(/\/dropbox\/file\/(\d+)/);
-        const id = m?.[1];
-        if (!id) {
-          // не наш API — отдаём как есть ссылку
-          if (!canceled) {
-            setState({
-              objectUrl: url,
-              mime: 'application/octet-stream',
-              filename: null,
-              error: false,
-            });
-          }
-          return;
-        }
-        const { objectUrl, mime, filename } = await fetchDropboxObjectUrl(
-          `https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/${id}`,
-        );
-        objUrlRef.current = objectUrl;
-        if (!canceled) {
-          setState({ objectUrl, mime, filename, error: false });
-        }
-      } catch (e) {
-        if (!canceled) setState((s) => ({ ...s, error: true }));
-      }
-    };
-    run();
-    return () => {
-      canceled = true;
-      if (objUrlRef.current) URL.revokeObjectURL(objUrlRef.current);
-    };
-  }, [url]);
-
-  // Закрытие по ESC + блокируем прокрутку боди, пока открыт просмотр
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e as any).key === 'Escape') setIsOpen(false);
-    };
-    document.addEventListener('keydown', onKeyDown as any);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.removeEventListener('keydown', onKeyDown as any);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [isOpen]);
-
-  if (state.error)
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: 120,
-          background: '#eee',
-          color: 'red',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 8,
-        }}
-      >
-        {text('File loading error')}
-      </div>
-    );
-
-  if (!state.objectUrl)
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: 120,
-          background: '#eee',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 8,
-        }}
-      >
-        {text('File loading...')}
-      </div>
-    );
-
-  const mime = state.mime || '';
-  const isImg = mime.startsWith('image/');
-  const isVideo = mime.startsWith('video/');
-  const isAudio = mime.startsWith('audio/');
-  const isPdf = mime === 'application/pdf';
-
-  if (isImg) {
-    return (
-      <>
-        {/* Миниатюра */}
-        <img
-          src={state.objectUrl}
-          alt={state.filename || 'file'}
-          style={{
-            width: '100%',
-            height: 120,
-            objectFit: 'cover',
-            borderRadius: 8,
-            cursor: 'pointer',
-            ...(style || {}),
-          }}
-          onClick={() => setIsOpen(true)}
-        />
-
-        {/* Модалка полноэкранного просмотра */}
-        {isOpen && (
-          <div
-            onClick={() => setIsOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.85)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999,
-              cursor: 'zoom-out',
-            }}
-          >
-            <img
-              src={state.objectUrl}
-              alt={state.filename || text('File')}
-              style={{
-                maxWidth: '95vw',
-                maxHeight: '95vh',
-                borderRadius: 10,
-                boxShadow: '0 0 20px rgba(0,0,0,0.5)',
-              }}
-              onClick={(e) => e.stopPropagation()} // чтобы клик по самой картинке не закрывал
-            />
-            {/* Кнопка закрытия (опционально) */}
-            <button
-              onClick={() => setIsOpen(false)}
-              aria-label={text('Close')}
-              style={{
-                position: 'fixed',
-                top: 16,
-                right: 16,
-                background: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 8,
-                padding: '8px 10px',
-                fontSize: 14,
-                cursor: 'pointer',
-              }}
-            >
-              {text('Close')}
-            </button>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  if (isVideo) {
-    return (
-      <video
-        src={state.objectUrl}
-        controls
-        style={{
-          width: '100%',
-          height: 120,
-          objectFit: 'cover',
-          borderRadius: 8,
-          ...(style || {}),
-        }}
-      />
-    );
-  }
-
-  if (isAudio) {
-    return (
-      <audio
-        src={state.objectUrl}
-        controls
-        style={{ width: '100%', ...(style || {}) }}
-      />
-    );
-  }
-
-  if (isPdf) {
-    return (
-      <iframe
-        src={state.objectUrl}
-        title={state.filename || text('Document')}
-        style={{
-          width: '100%',
-          height: 300,
-          border: 'none',
-          borderRadius: 8,
-          ...(style || {}),
-        }}
-      />
-    );
-  }
-
-  // Остальные типы — иконка + кнопка скачать
-  return (
-    <div
-      style={{
-        height: 120,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        padding: 12,
-        background: '#f6f6f6',
-        borderRadius: 8,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          overflow: 'hidden',
-        }}
-      >
-        <img
-          src="/img/chat_img/folder.png"
-          alt=""
-          style={{ width: 36, opacity: 0.7 }}
-        />
-        <div
-          style={{
-            fontSize: 13,
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            overflow: 'hidden',
-            maxWidth: 180,
-          }}
-          title={state.filename || text('Attachment')}
-        >
-          {state.filename || text('Attachment')}
-        </div>
-      </div>
-      <a
-        href={state.objectUrl}
-        download={state.filename || text('File')}
-        className={styles.file_link}
-        style={{
-          padding: '8px 12px',
-          borderRadius: 6,
-          background: '#fff',
-          border: '1px solid #ddd',
-        }}
-      >
-        {text('Download')}
-      </a>
-    </div>
-  );
-};
-
-interface ContractorInfo {
-  u_photo?: string;
-  u_name?: string;
-}
-
-interface GroupedChat {
-  chatId: string;
-  contractorInfo: ContractorInfo;
-  orders: any[];
-}
-
 interface OrderDetailsBlockProps {
-  order: any;
+  order: Order;
   setOrderId: Dispatch<SetStateAction<number>>;
   setIsOpenDisput: Dispatch<SetStateAction<boolean>>;
-  currentUser: any;
-  contractorUser: any;
+  currentUser: UserProfile;
+  partnerUser: UserProfile;
   setIsBalanceError: Dispatch<SetStateAction<boolean>>;
   setBalanceErrorNum: Dispatch<SetStateAction<number>>;
-  refetchRequests: () => void; // Используем refetch
-  // НОВОЕ: кто смотрит чат (мастер или клиент)
   viewerIsContractor: boolean;
 }
 
 const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
   order,
   currentUser,
-  contractorUser,
-  refetchRequests,
+  partnerUser,
   setOrderId,
   setIsOpenDisput,
   setIsBalanceError,
   setBalanceErrorNum,
-  viewerIsContractor, // НОВОЕ
+  viewerIsContractor,
 }) => {
   const text = useLanguage();
-  const isRequestType = order?.b_options?.orderType === 'request';
+  // isRequestType - заглушка, т.к. orderType не в новой структуре Order
+  const isRequestType = false; // order?.b_options?.orderType === 'request';
 
   // ===== ЧАТ: история для этого заказа =====
+  // chat_history не в новой структуре Order, используем заглушку
   const chatHistory: ChatMessage[] = useMemo(() => {
-    const raw = order?.b_options?.chat_history;
-    const arr = Array.isArray(raw) ? (raw as ChatMessage[]) : [];
-    // сортируем сообщения по времени (старые -> новые)
-    return [...arr].sort(
-      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
-    );
-  }, [order?.b_options?.chat_history]);
+    // const raw = order?.b_options?.chat_history; // STUB
+    // const arr = Array.isArray(raw) ? (raw as ChatMessage[]) : [];
+    // // сортируем сообщения по времени (старые -> новые)
+    // return [...arr].sort(
+    //   (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
+    // );
+    return []; // Заглушка
+  }, [
+    /* order?.b_options?.chat_history */
+  ]);
   // ========================================
 
   // ===== Таймлайн для этого заказа (единая лента) =====
@@ -587,71 +161,66 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     const items: TimelineItem[] = [];
 
     // 3.1 Создание заказа
-    if (order?.b_created) {
+    if (order.createdAt) {
       items.push({
         kind: 'order_created',
-        ts: order.b_created,
+        ts: order.createdAt.toISOString(),
       } as TimelineSimpleItem);
     }
 
-    // 3.2 Запрос отмены (клиент)
-    if (
-      order?.b_options?.is_request_for_cancel_exist &&
-      order?.b_options?.cancel_requested_ts
-    ) {
+    // 3.2 Запрос отмены (клиент) - заглушка, т.к. флаги отмены не в новой структуре
+    if (order.status === OrderStatus.CANCELLED /* && order?.b_options?.cancel_requested_ts */) {
       items.push({
         kind: 'cancel_requested',
-        ts: order.b_options.cancel_requested_ts,
+        ts: order.updatedAt.toISOString(), // Используем updatedAt как заглушку для времени запроса отмены
       } as TimelineSimpleItem);
     }
 
-    // 3.3 Решение мастера по отмене
-    if (
-      typeof order?.b_options?.is_contractor_agree_with_cancel === 'boolean' &&
-      order?.b_options?.cancel_contractor_decision_ts
-    ) {
-      items.push({
-        kind: order.b_options.is_contractor_agree_with_cancel
-          ? 'cancel_contractor_accepted'
-          : 'cancel_contractor_rejected',
-        ts: order.b_options.cancel_contractor_decision_ts,
-      } as TimelineSimpleItem);
-    }
+    // 3.3 Решение мастера по отмене - заглушка
+    // if (
+    //   typeof order?.b_options?.is_contractor_agree_with_cancel === 'boolean' &&
+    //   order?.b_options?.cancel_contractor_decision_ts
+    // ) {
+    //   items.push({
+    //     kind: order.b_options.is_contractor_agree_with_cancel
+    //       ? 'cancel_contractor_accepted'
+    //       : 'cancel_contractor_rejected',
+    //     ts: order.b_options.cancel_contractor_decision_ts,
+    //   } as TimelineSimpleItem);
+    // }
 
-    // 3.4 Открытие спора
-    if (
-      order?.b_options?.is_open_dispute &&
-      order?.b_options?.dispute_opened_ts
-    ) {
+    // 3.4 Открытие спора - заглушка
+    if (order.status === OrderStatus.DISPUTE /* && order?.b_options?.dispute_opened_ts */) {
       items.push({
         kind: 'dispute_opened',
-        ts: order.b_options.dispute_opened_ts,
+        ts: order.updatedAt.toISOString(), // Используем updatedAt как заглушку для времени открытия спора
       } as TimelineSimpleItem);
     }
 
-    // 3.5 Решение мастера по спору
-    if (
-      typeof order?.b_options?.is_contractor_agree_with_dispute === 'boolean' &&
-      order?.b_options?.dispute_contractor_decision_ts
-    ) {
-      items.push({
-        kind: order.b_options.is_contractor_agree_with_dispute
-          ? 'dispute_contractor_accepted'
-          : 'dispute_contractor_rejected',
-        ts: order.b_options.dispute_contractor_decision_ts,
-      } as TimelineSimpleItem);
-    }
+    // 3.5 Решение мастера по спору - заглушка
+    // if (
+    //   typeof order?.b_options?.is_contractor_agree_with_dispute === 'boolean' &&
+    //   order?.b_options?.dispute_contractor_decision_ts
+    // ) {
+    //   items.push({
+    //     kind: order.b_options.is_contractor_agree_with_dispute
+    //       ? 'dispute_contractor_accepted'
+    //       : 'dispute_contractor_rejected',
+    //     ts: order.b_options.dispute_contractor_decision_ts,
+    //   } as TimelineSimpleItem);
+    // }
 
     // 3.6 Завершение заказа
-    if (order?.b_state === '4' && order?.b_options?.complete_ts) {
+    if (order.status === OrderStatus.CLOSED /* && order?.b_options?.complete_ts */) {
       items.push({
         kind: 'order_completed',
-        ts: order.b_options.complete_ts,
+        ts: order.updatedAt.toISOString(), // Используем updatedAt как заглушку для времени завершения
       } as TimelineSimpleItem);
     }
 
     // 3.7 Сообщения чата
     for (const m of chatHistory) {
+      // Chat history is a stub, so this loop will not add anything.
       if (m?.ts) {
         items.push({
           kind: 'chat',
@@ -665,199 +234,43 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     items.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
     return items;
   }, [
-    order?.b_created,
-    order?.b_state,
-    order?.b_options?.is_request_for_cancel_exist,
-    order?.b_options?.cancel_requested_ts,
-    order?.b_options?.is_contractor_agree_with_cancel,
-    order?.b_options?.cancel_contractor_decision_ts,
-    order?.b_options?.is_open_dispute,
-    order?.b_options?.dispute_opened_ts,
-    order?.b_options?.is_contractor_agree_with_dispute,
-    order?.b_options?.dispute_contractor_decision_ts,
-    order?.b_options?.complete_ts,
+    order.createdAt,
+    order.status,
+    order.updatedAt,
     chatHistory,
   ]);
   // =====================================================
 
-  // Локальное состояние для каждого блока заказа
-  //~ const [isLoading, setIsLoading] = useState(false);
+  // Состояния для модального окна изображения
+  const [modalImageID, setModalImage] = useState<number|null>(null);
 
   // Состояния для управления UI конкретного заказа
   const [isVisibleAddFeedback, setVisibleAddFeedback] = useState(false);
 
-  // Add balance check
+  // Add balance check - заглушка
+  // TODO: Implement actual balance check using current user's balance
   useEffect(() => {
-    const contractorReqData =
-      order.drivers?.find((d: any) => d.u_id === order.b_options.winnerContractor)
-        ?.c_options || {};
-
-    if (contractorReqData?.bind_amount > currentUser.details?.balance) { /* todo: загружать баланс отдельно */
-      setIsBalanceError(true);
-      setBalanceErrorNum(
-        Number(contractorReqData.bind_amount) -
-          Number(currentUser.details?.balance || 0), /* todo: загружать баланс отдельно */
-      );
-    } else {
-      setIsBalanceError(false);
-      setBalanceErrorNum(0);
-    }
-  }, [order, currentUser.details?.balance, setIsBalanceError, setBalanceErrorNum]); /* todo: загружать баланс отдельно */
+    setIsBalanceError(false); // Всегда false для заглушки
+    setBalanceErrorNum(0); // Всегда 0 для заглушки
+  }, [order, currentUser.id, setIsBalanceError, setBalanceErrorNum]); // currentUser.id is sufficient dependency
   // --- НАЧАЛО: Логика для кнопок подтверждения и отмены ---
-  //~ const handleConfirmOrder = async () => {
-    //~ const contractorReqData =
-      //~ order.drivers?.find((d: any) => d.u_id === order.b_options.winnerContractor)
-        //~ ?.c_options || {};
-
-    //~ // Calculate total amount with 9% commission
-    //~ const commission = Number(contractorReqData.bind_amount) * 0.09;
-    //~ const totalAmount = Number(contractorReqData.bind_amount) + commission;
-
-    //~ if (totalAmount > Number(user?.u_details?.balance || 0)) {
-      //~ console.log(contractorUser);
-      //~ setIsBalanceError(true);
-      //~ setBalanceErrorNum(totalAmount - Number(user?.u_details?.balance || 0));
-      //~ return;
-    //~ }
-
-    //~ setIsLoading(true);
-    //~ try {
-      //~ await appFetch(`/drive/get/${order.b_id}`, {
-        //~ body: {
-          //~ u_a_role: 1,
-          //~ u_id: contractorUser.u_id,
-          //~ action: 'set_performer',
-        //~ },
-      //~ });
-
-      //~ // Шаг 2: Завершаем заказ
-      //~ await appFetch(`/drive/get/${order.b_id}`, {
-        //~ body: {
-          //~ u_a_role: 1,
-          //~ action: 'set_complete_state',
-        //~ },
-      //~ }).then((v) => console.log(v));
-
-      //~ // Update contractor's balance (full amount)
-      //~ updateUser(
-        //~ {
-          //~ details: {
-            //~ balance:
-              //~ Number(contractorReqData.bind_amount) +
-              //~ Number(contractorUser.u_details.balance),
-          //~ },
-        //~ },
-        //~ contractorUser.u_id,
-        //~ true,
-      //~ );
-
-      //~ // Update client's balance (amount + commission)
-      //~ updateUser(
-        //~ {
-          //~ details: {
-            //~ balance: Number(user.u_details?.balance || 0) - totalAmount,
-          //~ },
-        //~ },
-        //~ user.u_id,
-        //~ true,
-      //~ );
-
-      //~ // ====== ДОБАВИЛИ отметку времени завершения в b_options ======
-      //~ await updateRequest(
-        //~ order.b_id,
-        //~ {
-          //~ complete_ts: nowIso(),
-        //~ },
-        //~ true,
-        //~ order.u_id,
-      //~ );
-
-      //~ console.log(`Заказ ${order.b_id} успешно подтвержден и завершен.`);
-      //~ refetchRequests(); // Обновляем список заказов
-    //~ } catch (error) {
-      //~ console.error('Ошибка при подтверждении заказа:', error);
-    //~ } finally {
-      //~ setIsLoading(false);
-    //~ }
-  //~ };
-
-  //~ const handleCancelOrder = async () => {
-    //~ setIsLoading(true);
-    //~ try {
-      //~ // Обновляем b_options, добавляя флаг отмены + время
-      //~ await updateRequest(order.b_id, {
-        //~ is_request_for_cancel_exist: true,
-        //~ cancel_requested_ts: nowIso(), // <— отметка времени
-      //~ });
-      //~ console.log(`Запрос на отмену заказа ${order.b_id} отправлен.`);
-      //~ refetchRequests(); // Обновляем список
-    //~ } catch (error) {
-      //~ console.error('Ошибка при отмене заказа:', error);
-    //~ } finally {
-      //~ setIsLoading(false);
-    //~ }
-  //~ };
-  //~ const handleOpenDispute = async () => {
-    //~ setOrderId(order.b_id);
-    //~ setIsOpenDisput(true);
-    //~ try {
-      //~ await updateRequest(order.b_id, {
-        //~ is_open_dispute: true,
-        //~ dispute_opened_ts: nowIso(), // <— отметка времени
-      //~ });
-    //~ } catch (e) {
-      //~ console.error('open dispute error', e);
-    //~ }
-  //~ };
+  // Логика кнопок была закомментирована и теперь будет удалена, заменена заглушками
   // --- КОНЕЦ: Логика для кнопок ---
 
-  //~ function formatTimeByHours(hours: number) {
-    //~ if (Number.isNaN(hours)) return 'Готов ждать';
-    //~ if (hours >= 24) {
-      //~ const days = Math.floor(hours / 24);
-      //~ const lastDigit = days % 10;
-      //~ const lastTwo = days % 100;
-      //~ let word = 'дней';
-      //~ if (lastTwo < 11 || lastTwo > 14) {
-        //~ if (lastDigit === 1) word = 'день';
-        //~ else if (lastDigit >= 2 && lastDigit <= 4) word = 'дня';
-      //~ }
-      //~ return `${days} ${word}`;
-    //~ } else {
-      //~ const lastDigit = hours % 10;
-      //~ const lastTwo = hours % 100;
-      //~ let word = 'часов';
-      //~ if (lastTwo < 11 || lastTwo > 14) {
-        //~ if (lastDigit === 1) return 'час';
-        //~ else if (lastDigit >= 2 && lastDigit <= 4) return 'часа';
-      //~ }
-      //~ return `${hours} ${word}`;
-    //~ }
-  //~ }
-
-  const driverData = order.drivers?.find(
-    (d: any) => d.u_id === order.b_options.winnerContractor,
+  // driverData и contractorReqData - заглушки
+  const driverData = order.contractorOffers.find(
+    (offer) => offer.contractorId === order.contractorId,
   );
-  const contractorReqData = driverData?.c_options || {};
-  //~ const isOrderCompleted = order.b_state === '4';
-  //~ const isCancelRequested =
-    //~ !!order.b_options?.is_request_for_cancel_exist || order.b_state == '3';
-  //~ const isOwner = order.u_id === user?.u_id;
-  //~ const isContractorAgreeWithCancelRequest =
-    //~ order.b_options.is_contractor_agree_with_cancel || order.b_state == '3';
-  //~ const isOpenDispute = order.b_options.is_open_dispute;
-  //~ const isContractorAgreeWithDispute = order.b_options.is_contractor_agree_with_dispute;
-  // Получаем массив ссылок на фото
-  const photoUrls: string[] =
-    (order.b_options?.client_feedback_photo_urls as string[]) ||
-    (order.b_options?.photoUrls as string[]) ||
-    [];
+  const contractorReqData = { bind_amount: driverData?.price || 0 }; // Заглушка
+
+  // photoUrls теперь массив ID файлов из attachments
+  const photoUrls: number[] = order.attachments || [];
 
   return (
     <>
       {isVisibleAddFeedback && (
         <AddFeedbackModal
-          id={order.b_id}
+          id={order.id}
           setVisibleAddFeedback={setVisibleAddFeedback}
           setVisibleFinalOrder={() => {}}
         />
@@ -904,17 +317,17 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       to={'/contractor/requests'}
                       className={styles.block_bid__link}
                     >
-                      {order?.b_options?.title}
+                      {order.description} {/* Используем description как title */}
                     </Link>
                   </p>
                   {isRequestType && (
                     <p>
                       {text('Scope of work:')}
-                      <span>{order?.b_options?.title}</span>
+                      <span>{order.description}</span>
                     </p>
                   )}
                   <p>
-                    {text('Client description:')} {order?.b_options?.description}
+                    {text('Client description:')} {order.description}
                   </p>
                   <p>
                     {text('Contractor responded with an offer of')}{' '}
@@ -943,11 +356,12 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
               navigation={true}
               style={{ width: 300, height: 120 }}
             >
-              {photoUrls.map((url, idx) => (
+              {photoUrls.map((fileId, idx) => (
                 <LazySwiperSlide key={idx}>
-                  <DropboxImage
-                    url={typeof url === 'string' ? url : (url as any).url}
-                    alt={`${text('Photo')} ${idx + 1}`}
+                  <AnyMedia
+                    src={fileId}
+                    mediaType='image' // Указываем тип медиа как изображение
+                    imageProps={{alt: `${text('Photo')} ${idx + 1}`}}
                     style={{
                       width: '100%',
                       height: 120,
@@ -974,20 +388,19 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                 if (item.kind === 'chat') {
                   const m = (item as TimelineChatItem).msg;
                   // кто сейчас смотрит чат: мастер или клиент
-                  const viewerIsContractor =
-                    typeof window !== 'undefined' &&
-                    window.location.pathname.includes('/contractor/');
+                  // Используем роль пользователя из хука useUser
+                  const viewerIsContractor = currentUser.role === UserRole.Contractor;
 
-                  // у нас в истории авторы: 'client' и иногда 'contractor' или 'admin' (мастерские сообщения шлём как 'admin')
+                  // у нас в истории авторы: 'client' и иногда 'contractor'
                   // считаем "моё" по роли зрителя
                   const isMine = viewerIsContractor
-                    ? m.author === 'contractor' || m.author === 'admin'
+                    ? m.author === 'contractor'
                     : m.author === 'client';
                   const bubbleSide = isMine
                     ? styles.text_right
                     : styles.text_left;
 
-                  const renderFiles = (files?: string[]) => {
+                  const renderFiles = (files?: number[]) => { // Теперь файлы представлены числовыми ID
                     if (!files || !files.length) return null;
                     return (
                       <div
@@ -998,35 +411,96 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                           gap: 8,
                         }}
                       >
-                        {files.map((u, i) => {
-                          const isBlob = u.startsWith('blob:');
-                          const isDropbox = /\/dropbox\/file\/\d+/.test(u);
-
-                          if (isBlob || isDropbox) {
-                            return (
-                              <div
-                                key={i}
-                                style={{ width: 200, maxWidth: '100%' }}
-                              >
-                                <DropboxFilePreview
-                                  url={u}
-                                  style={{ width: '100%' }}
-                                />
-                              </div>
-                            );
-                          }
-                          return (
-                            <a
-                              key={i}
-                              href={u}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={styles.file_link}
+                        {files.map(fileId => (
+                          <div
+                            key={getKeyFor(fileId)}
+                            style={{ width: 200, maxWidth: '100%' }}
+                          >
+                            <AnyMedia
+                              src={fileId}
+                              style={{ width: '100%' }}
+                              imageProps={{
+                                style: {
+                                  height: 120,
+                                  objectFit: 'cover',
+                                  borderRadius: 8,
+                                  cursor: 'pointer',
+                                },
+                                alt: 'file'  // todo: подумать как получить сюда имя файла
+                              }}
+                              videoProps={{
+                                style: {
+                                  height: 120,
+                                  objectFit: 'cover',
+                                  borderRadius: 8,
+                                }
+                              }}
+                              iframeProps={{
+                                style: {
+                                  height: 300,
+                                  border: 'none',
+                                  borderRadius: 8,
+                                },
+                                title: text('Document')  // todo: подумать как получить сюда имя файла
+                              }}
+                              onClick={event => {
+                                if (event.currentTarget.tagName === 'IMG') {
+                                  setModalImage(fileId);
+                                }
+                              }}
+                            />
+                          </div>
+                        ))}
+                        {/* Модалка полноэкранного просмотра */}
+                        {modalImageID && (
+                          <div
+                            onClick={() => setModalImage(null)}
+                            style={{
+                              position: 'fixed',
+                              inset: 0,
+                              background: 'rgba(0,0,0,0.85)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              zIndex: 9999,
+                              cursor: 'zoom-out',
+                            }}
+                          >
+                            <AnyMedia
+                              src={modalImageID}
+                              mediaType='image'
+                              imageProps={{
+                                alt: text('File')  // todo: подумать как получить сюда имя файла
+                              }}
+                              style={{
+                                maxWidth: '95vw',
+                                maxHeight: '95vh',
+                                borderRadius: 10,
+                                boxShadow: '0 0 20px rgba(0,0,0,0.5)',
+                              }}
+                              onClick={(e) => e.stopPropagation()} // чтобы клик по самой картинке не закрывал
+                            />
+                            {/* Кнопка закрытия (опционально) */}
+                            <button
+                              onClick={() => setModalImage(null)}
+                              aria-label={text('Close')}
+                              style={{
+                                position: 'fixed',
+                                top: 16,
+                                right: 16,
+                                background: 'rgba(0,0,0,0.6)',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 8,
+                                padding: '8px 10px',
+                                fontSize: 14,
+                                cursor: 'pointer',
+                              }}
                             >
-                              {`${text('Attachment')} ${i + 1}`}
-                            </a>
-                          );
-                        })}
+                              {text('Close')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   };
@@ -1034,19 +508,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                   // показываем "Вы" только на своих сообщениях
                   const authorName = isMine
                     ? text('You')
-                    : viewerIsContractor
-                    ? currentUser.name || text('Client')
-                    : contractorUser?.name || text('Contractor');
+                    : partnerUser?.name || text(viewerIsContractor ? 'Client' : 'Contractor');
 
                   // аватар показываем у собеседника (слева), у своих можно не показывать
-                  const avatarSrc = viewerIsContractor
-                    ? isMine
-                      ? contractorUser?.avatar || '/img/img-camera.png'
-                      : currentUser.avatar || '/img/img-camera.png'
-                    : isMine
-                    ? currentUser.avatar || '/img/img-camera.png'
-                    : contractorUser?.avatar || '/img/img-camera.png';
-
                   return (
                     <div
                       key={m.id}
@@ -1061,7 +525,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                           {!isMine && (
                             <div className="ciril-img">
                               <img
-                                src={avatarSrc}
+                                src={partnerUser?.avatar || '/img/img-camera.png'}
                                 style={{
                                   width: 40,
                                   height: 40,
@@ -1137,7 +601,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                             isRequestType
                               ? text('Request created')
                               : text('Order created')
-                          } (№${order.b_id})`,
+                          } (№${order.id})`, // Используем order.id
                           '/img/icons/box.png',
                         )}
                       </div>
@@ -1157,6 +621,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       </div>
                     );
                   case 'cancel_contractor_accepted':
+                    // Заглушка, т.к. нет в OrderStatus
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1171,6 +636,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       </div>
                     );
                   case 'cancel_contractor_rejected':
+                    // Заглушка, т.к. нет в OrderStatus
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1199,6 +665,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       </div>
                     );
                   case 'dispute_contractor_accepted':
+                    // Заглушка, т.к. нет в OrderStatus
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1213,6 +680,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       </div>
                     );
                   case 'dispute_contractor_rejected':
+                    // Заглушка, т.к. нет в OrderStatus
                     return (
                       <div
                         key={`sys-${idx}`}
@@ -1255,10 +723,8 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
 
 function ChoiceOfReplenishmentMethodCard() {
   const text = useLanguage();
-  const { user } = useUser();
-  const isUserAuthorized = 'id' in user && !!user.id;
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [contractorUser, setContractorUser] = useState<any>(null);
+  const { user: currentUser } = useUser();
+  const isUserAuthorized = 'id' in currentUser && !!currentUser.id;
   const [isVisibleBlackList, setVisibleBlackList] = useState(false);
   const [isVisibleAddOrder, setVisibleAddOrder] = useState(false);
   const [isVisibleEmoji, setIsVisibleEmoji] = useState(false);
@@ -1273,71 +739,56 @@ function ChoiceOfReplenishmentMethodCard() {
     useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<number>(0);
   const { id } = useParams<{ id: string }>();
-  const userRequests = useService(
-    isUserAuthorized && user.role === UserRole.Contractor ? getContractorOrders : getAllClientRequests,
-    [],
-  );
 
-  const groupedChats = useMemo(() => {
-    const rawRequests =
-      userRequests?.data
-        ?.map((item: any) => Object.values(item?.data?.booking || {}))
-        .flat()
-        .filter((request: any) => request?.b_id)
-        .sort(
-          (a, b) =>
-            new Date(a.b_created).getTime() - new Date(b.b_created).getTime(),
-        ) || [];
-    const filteredRequests = rawRequests.filter(
-      (item: any) =>
-        item.b_options?.winnerContractor && item.drivers && item.drivers.length > 0,
-    );
-    const chatsByContractor = filteredRequests.reduce((acc: any, request: any) => {
-      const contractorId = request.b_options.winnerContractor;
-      if (!acc[contractorId]) {
-        acc[contractorId] = [];
-      }
-      acc[contractorId].push(request);
-      return acc;
-    }, {});
+  const [chatClientIdStr, chatContractorIdStr] = id?.split('_') ?? [];
+  const chatClientId = Number(chatClientIdStr);
+  const chatContractorId = Number(chatContractorIdStr);
 
-    return Object.values(chatsByContractor).map((orders: any): GroupedChat => {
-      const firstOrder = orders[0];
-      const winnerDriver = firstOrder.drivers.find(
-        (d: any) => d.u_id === firstOrder.b_options.winnerContractor,
+  // Проверяем, является ли текущий пользователь участником чата
+  const isCurrentUserClient = currentUser.id === chatClientId;
+  const isCurrentUserContractor = currentUser.id === chatContractorId;
+
+  const chatPartnerId = isCurrentUserClient ? chatContractorId : isCurrentUserContractor ? chatClientId : null;
+
+  // Загружаем данные второго участника чата
+  const { users: chatPartners } = useUsersByIds(chatPartnerId ? [chatPartnerId] : []);
+  const chatPartner = chatPartners[0]; // Может быть undefined или {} если не найден
+
+  // Получаем заказы в зависимости от роли текущего пользователя
+  const { orders: clientOrders, isLoading: clientOrdersLoading } = useClientOrders();
+  const { orders: contractorOrders, isLoading: contractorOrdersLoading } = useContractorOrders();
+
+  // Фильтруем заказы для текущего чата
+  const currentChatOrders = useMemo(() => {
+    if (currentUser.role === UserRole.Contractor) {
+      return contractorOrders.filter(
+        (order) =>
+          order.clientId === chatClientId &&
+          order.contractorId === chatContractorId &&
+          order.status !== OrderStatus.PUBLISHED // Фильтр для представления подрядчика
       );
-      return {
-        chatId: `${firstOrder.u_id}_${firstOrder.b_options.winnerContractor}`,
-        contractorInfo: winnerDriver?.c_options?.author || {},
-        orders: orders,
-      };
-    });
-  }, [userRequests.data]);
-
-  const currentChat = useMemo(() => {
-    if (!id) return null;
-    return groupedChats.find((chat) => chat.chatId === id) || null;
-  }, [id, groupedChats]);
-
-  useEffect(() => {
-    async function fetchChatParticipants() {
-      if (!currentChat) return;
-      const client_id = currentChat.chatId.split('_')[0];
-      const contractor_id = currentChat.chatId.split('_')[1];
-
-      appFetch(`user/${client_id}`, {}).then((v) =>
-        setCurrentUser(Object.values(v.data.user || {})[0] as object),
-      );
-      appFetch(`user/${contractor_id}`, {}).then((v) =>
-        setContractorUser(Object.values(v.data.user || {})[0] as object),
+    } else {
+      return clientOrders.filter(
+        (order) =>
+          order.clientId === chatClientId &&
+          order.contractorId === chatContractorId &&
+          order.status !== OrderStatus.DRAFT &&
+          order.status !== OrderStatus.PUBLISHED // Фильтр для представления клиента
       );
     }
-    fetchChatParticipants();
-  }, [currentChat]);
+  }, [currentUser.role, clientOrders, contractorOrders, chatClientId, chatContractorId]);
 
+  // Проверяем загрузку заказов
+  const isLoadingOrders = (currentUser.role === UserRole.Client && clientOrdersLoading) ||
+                         (currentUser.role === UserRole.Contractor && contractorOrdersLoading);
+
+  // Set document title and body overflow once relevant data is loaded
   useEffect(() => {
     document.title = text('Chat');
     document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto'; // Reset overflow on unmount
+    };
   }, [text]);
 
   const [answer, Isanswer] = useState(false);
@@ -1347,7 +798,7 @@ function ChoiceOfReplenishmentMethodCard() {
 
   // === предпросмотр выбранных файлов до отправки ===
   const [previewFiles, setPreviewFiles] = useState<
-    { file: File; url: string }[]
+    { file: File }[] // Теперь файлы хранятся как объекты File, без URL
   >([]);
 
   function addEmojiToMessage(emoji: EmojiClickData) {
@@ -1410,41 +861,6 @@ function ChoiceOfReplenishmentMethodCard() {
     scrollToBottomSoon();
   }, [isVisibleEmoji, previewFiles.length, measureFooter, scrollToBottomSoon]);
 
-  // ===== file -> base64
-  const fileToBase64 = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = (error) => reject(error);
-    });
-
-  // Исправленная функция для загрузки фото/файла
-  const uploadPhoto = async (file: File) => {
-    try {
-      const base64String = await fileToBase64(file);
-
-      const fileObject = {
-        file: JSON.stringify({
-          base64: base64String,
-          name: file.name,
-        }),
-      };
-      const response = await appFetch(
-        '/dropbox/file/',
-        {
-          method: 'POST',
-          body: fileObject,
-        }
-      );
-      const result = await response;
-      return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
-    } catch (error) {
-      console.error('Ошибка в функции uploadPhoto:', error);
-      throw error;
-    }
-  };
-
   // ===== выбор файлов (фото/видео/доки) — только предпросмотр, загрузка при отправке
   async function handlePickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -1452,18 +868,16 @@ function ChoiceOfReplenishmentMethodCard() {
 
     const previews = files.map((f) => ({
       file: f,
-      url: URL.createObjectURL(f),
     }));
     setPreviewFiles((prev) => [...prev, ...previews]);
 
     e.target.value = '';
   }
-  function removePreview(url: string) {
-    setPreviewFiles((prev) => prev.filter((p) => p.url !== url));
-    URL.revokeObjectURL(url);
+  function removePreview(fileToRemove: File) {
+    setPreviewFiles((prev) => prev.filter((p) => p.file !== fileToRemove));
   }
 
-  // ===== Микрофон (MediaRecorder) — формируем файл и тоже через uploadPhoto
+  // ===== Микрофон (MediaRecorder) — формируем файл
   const [recState, setRecState] = useState<'idle' | 'recording' | 'saving'>(
     'idle',
   );
@@ -1497,8 +911,7 @@ function ChoiceOfReplenishmentMethodCard() {
             const file = new File([blob], `audio_${Date.now()}.webm`, {
               type: blob.type || 'audio/webm',
             });
-            const url = URL.createObjectURL(file);
-            setPreviewFiles((prev) => [...prev, { file, url }]);
+            setPreviewFiles((prev) => [...prev, { file }]);
           } catch (e) {
             console.error('audio save error', e);
             alert(text('Failed to save audio.'));
@@ -1518,74 +931,60 @@ function ChoiceOfReplenishmentMethodCard() {
     }
   }
 
-  // ===== ЧАТ: отправка сообщения =====
+  // Заглушка для отправки сообщения чата
+  // В будущем эта функция будет использовать мутацию для обновления поля chat_history в заказе.
   async function sendChatMessage(
-    order: any,
+    order: Order, // Используем тип Order
     who: 'client' | 'contractor',
     messageText: string,
-    files?: string[],
-  ) {
-    const author: ChatAuthor = who === 'client' ? 'client' : 'admin';
-    const msg = makeMsg(author, messageText, files);
+    files?: File[], // Теперь принимаем File[]
+  ): Promise<number[]> { // Возвращаем массив ID файлов
+    console.warn('STUB: sendChatMessage is a stub. No actual message is sent or saved.');
 
-    try {
-      const prev: ChatMessage[] = Array.isArray(order?.b_options?.chat_history)
-        ? (order.b_options.chat_history as ChatMessage[])
-        : [];
-      const next = [...prev, msg];
-
-      order.b_options.chat_history = next;
-
-      if (who === 'client') {
-        await updateRequest(order.b_id, { chat_history: next });
-      } else {
-        await updateRequest(
-          order.b_id,
-          { chat_history: next },
-          true,
-          order.u_id,
-        );
+    // 1) Имитация загрузки файлов и получение их ID
+    const uploadedFileIds: number[] = [];
+    if (files) {
+      for (const file of files) {
+        // Заглушка для получения ID файла
+        // В реальной реализации здесь будет API-запрос на загрузку файла,
+        // который вернет его ID.
+        const fileId = Math.floor(Math.random() * 100000) + 1; // Просто случайный ID
+        uploadedFileIds.push(fileId);
+        console.log(`STUB: Uploaded file ${file.name} (type: ${file.type}) to ID: ${fileId}`);
       }
-    } catch (e) {
-      console.error('sendChatMessage error', e);
-      alert(text('Failed to send the message.'));
     }
+
+    // 2) Создание сообщения с использованием полученных ID файлов
+    const author: ChatAuthor = who === 'client' ? 'client' : 'admin';
+    const msg = makeMsg(author, messageText, uploadedFileIds.length ? uploadedFileIds : undefined);
+
+    // Пример логирования, имитирующий отправку
+    console.log(`STUB: Sent message for order ${order.id}:`, msg);
+    // Предполагается, что в будущем здесь будет мутация, которая также будет инвалидировать кэш
+    // Например: mutation.mutate({ orderId: order.id, chat_history: newChatHistory });
+    return uploadedFileIds;
   }
 
   const handleSend = async () => {
     const messageText = message.trim();
     const hasFiles = previewFiles.length > 0;
     if (!messageText && !hasFiles) return;
-    if (!currentChat?.orders?.length) return;
+    if (!currentChatOrders?.length) return; // Use the new currentChatOrders
 
-    const order = currentChat.orders[currentChat.orders.length - 1];
-    const role: 'client' | 'contractor' = isUserAuthorized && user.role === UserRole.Contractor ? 'contractor' : 'client';
+    const order = currentChatOrders[currentChatOrders.length - 1]; // Use the new currentChatOrders
+    const role: 'client' | 'contractor' = isUserAuthorized && currentUser.role === UserRole.Contractor ? 'contractor' : 'client';
 
-    // 1) загружаем все файлы → получаем постоянные URL
-    const uploadedUrls: string[] = [];
-    for (const { file, url } of previewFiles) {
-      try {
-        const permanentUrl = await uploadPhoto(file);
-        uploadedUrls.push(permanentUrl);
-      } catch (e) {
-        console.error('upload error', e);
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    }
-
-    // 2) отправляем сообщение
+    // 1) Отправляем сообщение, передавая File объекты напрямую
     await sendChatMessage(
       order,
       role,
       messageText,
-      uploadedUrls.length ? uploadedUrls : undefined,
+      previewFiles.map(({ file }) => file), // Передаем File объекты
     );
 
-    // 3) очистка и перерисовка
+    // 2) очистка и перерисовка
     setMessage('');
     setPreviewFiles([]);
-    userRequests.refetch();
     scrollToBottomSoon();
   };
 
@@ -1612,16 +1011,16 @@ function ChoiceOfReplenishmentMethodCard() {
 
   useEffect(() => {
     scrollToBottomSoon();
-  }, [userRequests.data, id, scrollToBottomSoon]);
+  }, [currentChatOrders, id, scrollToBottomSoon]); // Зависимость от currentChatOrders
 
   // Псевдо-вебсокет — опрос каждые 30 секунд
   useEffect(() => {
     const t = setInterval(() => {
-      userRequests.refetch();
+      // refetchMessages(); пока не реализовано
       scrollToBottomSoon();
     }, 30000);
     return () => clearInterval(t);
-  }, [userRequests, scrollToBottomSoon]);
+  }, [scrollToBottomSoon]);
 
   // Helpers last online
   const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {
@@ -1673,13 +1072,52 @@ function ChoiceOfReplenishmentMethodCard() {
     return text('days');
   };
 
-  if ((!currentUser || !contractorUser) && id) return <>{text('Loading...')}</>;
+  // Early return for no chat ID
+  if (!id) {
+    return (
+      <section className={styles.container}>
+        <FrameMessages />
+        <div className={styles.empty_chat}>
+          <img src="/img/empty_chat.png" alt="" />
+          <p>{text('Please select a conversation to view messages!')}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!isCurrentUserClient && !isCurrentUserContractor) {
+    return null; // Не рендерим компонент, если пользователь не участник чата
+  }
+
+  // Если данные второго участника еще не загружены
+  if (!chatPartner?.id && chatPartnerId) {
+    return (
+      <section className={styles.container}>
+        <FrameMessages />
+        <div className={styles.empty_chat}>
+          <img src="/img/empty_chat.png" alt="" />
+          <p>{text('Loading chat partner data...')}</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (isLoadingOrders || currentChatOrders.length === 0) {
+    return (
+      <section className={styles.container}>
+        <FrameMessages />
+        <div className={styles.empty_chat}>
+          <img src="/img/empty_chat.png" alt="" />
+          <p>{text('Loading orders or no messages in this conversation.')}</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <>
       {zayavka__isVisibleDispute ? (
         <DisputeModalV2
-          refetchRequests={userRequests.refetch}
           id={currentOrderId}
           setVisibleDispute={zayavka__setVisibleDispute}
           setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
@@ -1690,21 +1128,21 @@ function ChoiceOfReplenishmentMethodCard() {
           setVisibleDisputeFinal={zayavka__setisVisibleDisputeFinal}
         />
       ) : null}
-      {isOkModal ? <OkModal setVisibleBlackList={setVisibleOkModal} /> : null}
+      {isOkModal ? <OkModal setModalVisible={setVisibleOkModal} /> : null}
       {isDeleteBlockChat ? (
-        <DeleteChatModal setVisibleBlackList={setIsDeleteChat} />
+        <DeleteChatModal setModalVisible={setIsDeleteChat} />
       ) : null}
       {isVisibleBlock ? (
-        <BlockUser setVisibleBlackList={setIsVisibleBlock} />
+        <BlockUser setModalVisible={setIsVisibleBlock} />
       ) : null}
       {isVisibleBlackList ? (
-        <BlackListModal setVisibleBlackList={setVisibleBlackList} />
+        <BlackListModal setModalVisible={setVisibleBlackList} />
       ) : null}
       {isVisibleAddOrder ? (
         <AddOrderModal
           setVisibleAddOrder={setVisibleAddOrder}
           setVisibleOkModal={setVisibleOkModal}
-          currentOrder={currentChat?.orders[0] || {}}
+          currentOrder={currentChatOrders[0]}
         />
       ) : null}
 
@@ -1725,7 +1163,7 @@ function ChoiceOfReplenishmentMethodCard() {
           <FrameMessages />
         )}
 
-        {id && currentChat ? (
+        {id ? (
           <div className={`profil fchat__profile ${styles.profil}`}>
             <div
               className={`kiril_profil kiril_profil_fchat df font_inter ${styles.profile_top_row}`}
@@ -1772,11 +1210,11 @@ function ChoiceOfReplenishmentMethodCard() {
                     <div style={{ position: 'relative' }}>
                       <div className={styles.dotted_wrap}>
                         <OnlineDotted
-                          isVisible={contractorUser?.u_details?.isOnline}
+                          isVisible={chatPartner?.isOnline}
                         />
                       </div>
                       <img
-                        src={contractorUser?.avatar || '/img/img-camera.png'}
+                        src={chatPartner?.avatar || '/img/img-camera.png'}
                         alt="img absent"
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                       />
@@ -1784,14 +1222,14 @@ function ChoiceOfReplenishmentMethodCard() {
                   </div>
 
                   <div className="nik">
-                    <h2 className="eyrqwe">{contractorUser?.name}</h2>
+                    <h2 className="eyrqwe">{chatPartner?.name}</h2>
                     <div className="info_nik df">
                       <div className="kiril_info">
                         <h3>
-                          {contractorUser?.u_details?.isOnline
+                          {chatPartner?.isOnline
                             ? text('Online')
                             : `${text('Offline')} ${getTimeSinceLastOnline(
-                                contractorUser?.u_details?.lastTimeBeenOnline ||
+                                chatPartner?.lastTimeBeenOnline ||
                                   new Date().toISOString(),
                               )}`}
                         </h3>
@@ -1873,18 +1311,17 @@ function ChoiceOfReplenishmentMethodCard() {
               className={`awqervgg chat_block__ashd ${styles.chatt}`}
               ref={chatBlockRef}
             >
-              {currentChat.orders.map((order) => (
+              {currentChatOrders.map((order) => (
                 <OrderDetailsBlock
                   setBalanceErrorNum={setBalanceErrorNum}
                   setIsBalanceError={setIsBalanceError}
                   setOrderId={setCurrentOrderId}
                   setIsOpenDisput={zayavka__setVisibleDispute}
-                  key={order.b_id}
+                  key={order.id}
                   order={order}
                   currentUser={currentUser}
-                  contractorUser={contractorUser}
-                  refetchRequests={userRequests.refetch}
-                  viewerIsContractor={isUserAuthorized && user.role === UserRole.Contractor} // НОВОЕ
+                  partnerUser={chatPartner}
+                  viewerIsContractor={isUserAuthorized && currentUser.role === UserRole.Contractor}
                 />
               ))}
             </div>
@@ -1917,16 +1354,25 @@ function ChoiceOfReplenishmentMethodCard() {
                   </p>
                 ) : null}
 
-                {'blackList' in user && Array.isArray(user.blackList) && user.blackList.find(
-                  (item: any) => isUserAuthorized && item.id?.toString() === String(user.id),
-                ) ? (
+                {/* Заглушка для проверки черного списка.
+                    Проверяем, заблокировал ли текущий пользователь собеседника. */}
+                {isUserAuthorized && currentUser.blackList && currentUser.blackList.includes(chatPartner?.id) ? (
                   <div className={styles.chat_block_wrap}>
                     <img src="/img/icons/chat_block.png" alt="" />
                     <p>
-                      {text('You cannot contact this user because they blocked the conversation with you')}{' '}
+                      {text('You cannot contact this user because you have blocked them')}{' '}
                     </p>
                   </div>
                 ) : (
+                  // Проверяем, заблокировал ли собеседник текущего пользователя.
+                  isUserAuthorized && chatPartner?.blackList && chatPartner.blackList.includes(currentUser.id) ? (
+                    <div className={styles.chat_block_wrap}>
+                      <img src="/img/icons/chat_block.png" alt="" />
+                      <p>
+                        {text('You cannot contact this user because they blocked the conversation with you')}{' '}
+                      </p>
+                    </div>
+                  ) : (
                   <>
                     {/* Превью прикреплённых файлов перед отправкой */}
                     {previewFiles.length > 0 && (
@@ -1939,95 +1385,85 @@ function ChoiceOfReplenishmentMethodCard() {
                           gap: 10,
                         }}
                       >
-                        {previewFiles.map((p, idx) => {
-                          const isImage = p.file.type.startsWith('image/');
-                          const isVideo = p.file.type.startsWith('video/');
-                          return (
-                            <div
-                              key={idx}
+                        {previewFiles.map(p => (
+                          <div
+                            key={getKeyFor(p.file)}
+                            style={{
+                              position: 'relative',
+                              borderRadius: 8,
+                              overflow: 'hidden',
+                              background: '#f2f2f2',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => removePreview(p.file)}
+                              title={text('Remove')}
                               style={{
-                                position: 'relative',
-                                borderRadius: 8,
-                                overflow: 'hidden',
-                                background: '#f2f2f2',
+                                position: 'absolute',
+                                right: 6,
+                                top: 6,
+                                zIndex: 2,
+                                border: 0,
+                                background: 'rgba(0,0,0,0.55)',
+                                color: '#fff',
+                                width: 24,
+                                height: 24,
+                                borderRadius: 12,
+                                cursor: 'pointer',
+                                lineHeight: '24px',
+                                textAlign: 'center',
+                                fontWeight: 700,
                               }}
                             >
-                              <button
-                                type="button"
-                                onClick={() => removePreview(p.url)}
-                                title={text('Remove')}
-                                style={{
-                                  position: 'absolute',
-                                  right: 6,
-                                  top: 6,
-                                  zIndex: 2,
-                                  border: 0,
-                                  background: 'rgba(0,0,0,0.55)',
-                                  color: '#fff',
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: 12,
-                                  cursor: 'pointer',
-                                  lineHeight: '24px',
-                                  textAlign: 'center',
-                                  fontWeight: 700,
-                                }}
-                              >
-                                ×
-                              </button>
-
-                              {isImage ? (
-                                <img
-                                  src={p.url}
-                                  alt={p.file.name}
-                                  style={{
-                                    width: '100%',
-                                    height: 120,
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              ) : isVideo ? (
-                                <video
-                                  src={p.url}
-                                  controls
-                                  style={{
-                                    width: '100%',
-                                    height: 120,
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              ) : (
+                              ×
+                            </button>
+                            <AnyMedia
+                              src={p.file}
+                              style={{
+                                width: '100%',
+                                height: 120,
+                                objectFit: 'cover',
+                              }}
+                              imageProps={{ alt: p.file.name }}
+                              loadingElement={
                                 <div
                                   style={{
+                                    width: '100%',
                                     height: 120,
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     padding: 8,
                                     textAlign: 'center',
+                                    background: '#f2f2f2',
+                                    borderRadius: 8,
                                   }}
                                 >
-                                  <div>
-                                    <img
-                                      src="/img/chat_img/folder.png"
-                                      alt=""
-                                      style={{ width: 36, opacity: 0.7 }}
-                                    />
-                                    <div
-                                      style={{
-                                        fontSize: 12,
-                                        marginTop: 6,
-                                        wordBreak: 'break-all',
-                                      }}
-                                    >
-                                      {p.file.name}
-                                    </div>
-                                  </div>
+                                  {text('Loading...')}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
+                              }
+                              errorElement={
+                                <div
+                                  style={{
+                                    width: '100%',
+                                    height: 120,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 8,
+                                    textAlign: 'center',
+                                    background: '#f2f2f2',
+                                    borderRadius: 8,
+                                    color: 'red',
+                                  }}
+                                >
+                                  {text('Error loading file')}
+                                </div>
+                              }
+                            />
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -2174,6 +1610,7 @@ function ChoiceOfReplenishmentMethodCard() {
                       </div>
                     </div>
                   </>
+                  )
                 )}
               </div>
             </div>

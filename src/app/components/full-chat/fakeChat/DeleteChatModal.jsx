@@ -1,12 +1,13 @@
 import style from "./ConfirmOrder.module.css"
 
-
-export default function DeleteChatModal({ setVisibleBlackList }) {
+// todo: Пока кнопка ничего не делает.
+// todo: Чаты у нас создаются на основе активных заказов. Нужно продумать, как будет работать удаление чатов.
+export default function DeleteChatModal({ setModalVisible }) {
     return (
         <>
             <div className={style.wrap}>
                 <div className={style.block}>
-                    <div className={style.close} onClick={() => setVisibleBlackList(false)}>
+                    <div className={style.close} onClick={() => setModalVisible(false)}>
                         <img src="/img/close.svg" alt=""/>
                     </div>
                     <p className={style.message}>
@@ -15,14 +16,13 @@ export default function DeleteChatModal({ setVisibleBlackList }) {
 
                     <div className={style.buttons}>
                         <div className={style.button} onClick={() => {
-                            setVisibleBlackList(false);
+                            setModalVisible(false);
                         }}>Подтверждаю
                         </div>
-                        <div className={style.button_back} onClick={() => setVisibleBlackList(false)}>Отменить</div>
+                        <div className={style.button_back} onClick={() => setModalVisible(false)}>Отменить</div>
                     </div>
                 </div>
             </div>
-
         </>
     )
 }

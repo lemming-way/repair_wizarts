@@ -1,12 +1,12 @@
 import style from "./ConfirmOrder.module.css"
 
 
-export default function BlockUser({ setVisibleBlackList }) {
+export default function BlockUser({ setModalVisible }) {
     return (
         <>
             <div className={style.wrap}>
                 <div className={style.block}>
-                    <div className={style.close} onClick={() => setVisibleBlackList(false)}>
+                    <div className={style.close} onClick={() => setModalVisible(false)}>
                         <img src="/img/close.svg" alt=""/>
                     </div>
                     <p className={style.message}>
@@ -15,7 +15,7 @@ export default function BlockUser({ setVisibleBlackList }) {
 
                     <div className={style.buttons}>
                         <div className={style.button} onClick={() => {
-                            setVisibleBlackList(false);
+                            setModalVisible(false);
                         }}>Ок
                         </div>
                     </div>

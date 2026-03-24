@@ -1,14 +1,12 @@
 import { useState } from 'react';
 
 import style from './Dispute.module.css';
-import { updateRequest } from '../../../services/request.service';
 import { useLanguage } from '../../../state/language';
 
 export default function DisputeModal_v2({
   setVisibleDispute,
   setVisibleDisputeFinal,
   id,
-  refetchRequests,
 }) {
   const text = useLanguage();
   const [value, setValue] = useState('');
@@ -35,18 +33,9 @@ export default function DisputeModal_v2({
             <div
               className={style.button}
               onClick={async () => {
-                try {
-                  await updateRequest(id, {
-                    is_open_dispute: true,
-                    dispute_comment: value,
-                  });
-                  refetchRequests();
-                } catch (error) {
-                  console.error(text('Error canceling order:'), error);
-                } finally {
-                  setVisibleDispute(false);
-                  setVisibleDisputeFinal(true);
-                }
+                // todo: реализовать открытие спора
+                setVisibleDispute(false);
+                setVisibleDisputeFinal(true);
               }}
             >
               {text('Send')}

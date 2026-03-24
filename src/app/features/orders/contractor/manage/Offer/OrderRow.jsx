@@ -5,7 +5,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import ModalRevokeOffer from './ModalRevokeOffer';
 import style from './OrderRow.module.css';
 import { useLanguage } from 'app/state/language';
-import { AnyImage, getKeyFor } from 'app/shared/ui/AnyImage';
+import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useUser } from 'app/state/user';
 import { useRevokeOffer } from 'app/state/order';
 import { useServices } from 'app/state/site-data';

@@ -1,42 +1,8 @@
 import { useState } from 'react';
 
 import style from './AddFeedbackModal.module.css';
-import { createRequest } from '../../../services/request.service';
-import appFetch from '../../../utilities/appFetch';
 import { useLanguage } from '../../../state/language';
-
-// Вспомогательная функция для преобразования файла в base64
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-// Функция для загрузки фото
-const uploadPhoto = async (file) => {
-  try {
-    const base64String = await fileToBase64(file);
-    const fileObject = {
-      file: JSON.stringify({
-        base64: base64String,
-        name: file.name,
-      }),
-    };
-    const response = await appFetch(
-      '/dropbox/file/',
-      {
-        method: 'POST',
-        body: fileObject,
-      }
-    );
-    const result = await response;
-    return `https://ibronevik.ru/taxi/api/v1/dropbox/file/${result.data.dl_id}`;
-  } catch (error) {
-    console.error('Ошибка в функции uploadPhoto:', error);
-    throw error;
-  }
-};
+import { AnyImage, getKeyFor } from '../../../shared/ui';
 
 export default function AddFeedbackModal({
   setVisibleAddFeedback,
@@ -52,38 +18,20 @@ export default function AddFeedbackModal({
   const handleSubmit = async () => {
     setIsUploading(true);
     try {
-      // Загрузка всех фото
-      const photoUrls = [];
-      for (const photo of photos) {
-        if (photo.file) {
-          const url = await uploadPhoto(photo.file);
-          photoUrls.push(url);
-        }
-      }
-      const data = await appFetch(`drive/get/${id}`, {
-        body: {
-          u_a_role: 1,
-          action: 'set_rate',
-          value: countStar + 1,
-          comment,
-          photos: photoUrls,
-        },
+      // Заглушка для отправки отзыва и фото
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Отправка отзыва (заглушка):', {
+        orderId: id,
+        rating: countStar + 1,
+        comment,
+        photos: photos.map(file => file.name),
       });
-      createRequest(
-        {
-          client_feedback_photo_urls: photoUrls,
-        },
-        true,
-      );
-      if (data?.code === '200') {
-        setVisibleAddFeedback(false);
-        setVisibleFinalOrder(true);
-      } else {
-        alert(text('Error sending feedback'));
-      }
+
+      setVisibleAddFeedback(false);
+      setVisibleFinalOrder(true);
     } catch (error) {
       console.error(error);
-      alert(text('A network error has occurred'));
+      alert(text('Произошла ошибка при отправке отзыва.'));
     } finally {
       setIsUploading(false);
     }
@@ -137,11 +85,7 @@ export default function AddFeedbackModal({
                 style={{ display: 'none' }}
                 onChange={(e) => {
                   const files = Array.from(e.target.files);
-                  const newPhotos = files.map((file) => ({
-                    file,
-                    url: URL.createObjectURL(file),
-                  }));
-                  setPhotos((prev) => [...prev, ...newPhotos].slice(0, 10));
+                  setPhotos((prev) => [...prev, ...files].slice(0, 10));
                 }}
               />
             </label>
@@ -151,10 +95,11 @@ export default function AddFeedbackModal({
             style={{ display: 'flex', gap: 8, marginTop: 8 }}
           >
             {photos.map((photo, idx) => (
-              <div key={idx} style={{ position: 'relative' }}>
-                <img
-                  src={photo.url}
-                  alt="preview"
+              <div key={getKeyFor(photo)} style={{ position: 'relative' }}>
+                <AnyImage
+                  src={photo}
+                  alt={`preview ${idx}`}
+                  className={style.previewImage}
                   style={{
                     width: 60,
                     height: 60,
