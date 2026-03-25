@@ -215,6 +215,11 @@
     background-color: gray;
 }
 
+.swiperSlide {
+  position: relative;
+  left: 50px;
+}
+
 .flex_empty {
     display: none;
 }

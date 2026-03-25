@@ -5,73 +5,47 @@ import '../../scss/swiper.css';
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
 import style from './profileNumber.module.css';
-import appFetch from '../../utilities/appFetch';
 import ProfileSlider from '../profileNumberClient/ProfileSlider';
-import { useUser } from '../../state/user';
+//~ import { useUser } from '../../state/user';
 
 function App() {
-  const { user } = useUser();
-  const [feedback, setFeedback] = useState([]);
+  //~ const { user } = useUser();
   const [visibleModalDelete, setVisibleModalDelete] = useState(false);
   const [visibleModalAddComment, setVisibleModalAddComment] = useState(false);
 
-  useEffect(() => {
-    const getUserCommentsFromBookings = async (u_id) => {
-      try {
-        const res = await appFetch('drive/archive', {
-          method: 'POST',
-          body: {
-            ls: 9999999999999,
-          },
-        });
-
-        const allBookings = Object.values(res?.data?.booking || {});
-        const comments = allBookings.flatMap((booking) => {
-          if (!booking.b_rating) return [];
-          if (!booking.b_comments || booking.b_comments.length === 0) {
-            console.log(booking);
-            return [
-              {
-                booking_id: booking.b_id,
-                booking_title: booking.b_options?.title || '',
-                created_at: booking.b_created || '',
-                rating: booking.b_rating,
-                text: '',
-                comment: 'Комментарий не указан',
-                photos: [],
-                author: booking.b_options.author,
-              },
-            ];
-          }
-
-          return booking.b_comments.map((comment) => ({
-            booking_id: booking.b_id,
-            booking_title: booking.b_options?.title || '',
-            created_at: comment.created_at,
-            rating: comment.rating || null,
-            text: comment.text || '',
-            comment: comment.comment || 'Комментарий не указан',
-            photos: comment.photos || [],
-            author: comment.author || {},
-          }));
-        });
-
-        return comments;
-      } catch (err) {
-        console.error('Ошибка при получении отзывов из поездок:', err);
-        return [];
-      }
-    };
-
-    const fetchFeedback = async () => {
-      if (user.id) {
-        const comments = await getUserCommentsFromBookings(user.id);
-        setFeedback(comments);
-      }
-    };
-
-    fetchFeedback();
-  }, [user.id]);
+  // Заглушка для комментариев, todo: заменить на хук для получения реальных отзывов
+  const feedback = [
+    {
+      booking_id: 'stub_1',
+      booking_title: 'Тестовый заказ 1',
+      created_at: new Date().toISOString(),
+      rating: 5,
+      text: 'Отличная работа!',
+      comment: 'Очень доволен качеством выполненных работ и оперативностью.',
+      photos: [],
+      author: { u_name: 'Тестовый Клиент 1', u_photo: '/img/img-camera.png' },
+    },
+    {
+      booking_id: 'stub_2',
+      booking_title: 'Тестовый заказ 2',
+      created_at: new Date(Date.now() - 86400000).toISOString(), // Вчера
+      rating: 4,
+      text: 'Хорошо, но есть куда расти',
+      comment: 'В целом все устроило, но были небольшие задержки.',
+      photos: [],
+      author: { u_name: 'Тестовый Клиент 2', u_photo: '/img/img-camera.png' },
+    },
+    {
+      booking_id: 'stub_3',
+      booking_title: 'Тестовый заказ 3',
+      created_at: new Date(Date.now() - 2 * 86400000).toISOString(), // Позавчера
+      rating: 3,
+      text: '',
+      comment: 'Комментарий не указан',
+      photos: [],
+      author: { u_name: 'Тестовый Клиент 3', u_photo: '/img/img-camera.png' },
+    },
+  ];
 
   useEffect(() => {
     document.title = 'Отзывы';

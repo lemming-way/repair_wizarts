@@ -31,7 +31,7 @@ import ProfileNumber from './components/Chat/profileNumber';
 import AddDevices from './components/addDevices/AddDevices';
 import AddedDevices from './components/addDevices/AddedDevices';
 import TitleService from './components/addDevices/TitleService';
-//~ import Applications from './components/Applications/applications';
+import Applications from './components/Applications/applications';
 import LoginPage from './features/user/login/LoginPage';
 import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './components/Settings/Finance';
@@ -229,6 +229,7 @@ function App() {
                 <Route path="balance" element={<Balance />} />
                 <Route path="photo" element={<WalletFH />} />
               </Route>
+              <Route path="orders" element={<Applications />} />
               {/*<Route path="orders">
                 <Route index element={<Applications />} />
                 <Route path="completed" element={<Applications />} />

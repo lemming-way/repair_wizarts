@@ -1,115 +1,65 @@
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect } from 'react';
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { useNavigate } from 'react-router-dom';
 
 import '../../scss/applications.css';
-import { useNavigate } from 'react-router-dom';
+import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from '../../state/language';
+import { useAcceptInvoice, useAvailableOrders, OrderStatus } from '../../state/order';
+import { useUser, useUsersByIds } from '../../state/user';
+import { useServices } from '../../state/site-data';
 
 import style from './applications.module.css';
-import NavApplication from './NavApplication';
-import { useService } from '../../hooks/useService';
-import { getContractorOrders } from '../../services/order.service';
-import { useUser } from '../../state/user';
 
-const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
-//~ const statusEnum = {
-  //~ '#order': 'Активно',
-  //~ '#all': 'Активно',
-  //~ '#working': 'В работе',
-  //~ '#cancel': 'Отменено',
-//~ };
-const StylesStatusEnum = {
-  Активно: 'status_green',
-  'В работе': 'status_in_progress',
-  Пауза: 'status_stop',
-};
 function MyApplications() {
   const text = useLanguage();
   const { user } = useUser();
-  const navigator = useNavigate();
-  const orders = useService(getContractorOrders, []);
-  const rawRequests = [...Object.values(orders.data?.data?.booking || {})];
-  const filteredRequests = rawRequests.filter(
-    (item) => item.b_options.type === 'order' && item.u_id !== user.id,
-  );
-  //   // test
-  //   // const filteredOrders = [
-  //   //     {
-  //   //         "id": 1,
-  //   //         "order_id": "test",
-  //   //         "client_price": "test",
-  //   //         "client_id": "test",
-  //   //         "repairs": ["test1", "test2"],
-  //   //         "created_at": "test",
-  //   //         "client_message": "test",
-  //   //         "status": "статус"
-  //   //     }
-  //   // ]
+  const navigate = useNavigate();
 
-  //   const test_orders = [
-  //     {
-  //       orderid: 1,
-  //       clientprice: 250.0,
-  //       clientid: 101,
-  //       repairs: [{ name: 'Замена масла' }, { name: 'Проверка тормозов' }],
-  //       createdat: '2023-10-01T10:00:00Z',
-  //       clientmessage: 'Пожалуйста, позвоните перед выполнением работ.',
-  //       status: 'Ожидание',
-  //     },
-  //     {
-  //       orderid: 2,
-  //       clientprice: 150.5,
-  //       clientid: 102,
-  //       repairs: ['Ремонт подвески'],
-  //       createdat: '2023-10-02T12:30:00Z',
-  //       clientmessage: 'Нужна срочная замена деталей.',
-  //       status: 'В процессе',
-  //     },
-  //     {
-  //       orderid: 3,
-  //       clientprice: 75.0,
-  //       clientid: 103,
-  //       repairs: ['Замена стекла'],
-  //       createdat: '2023-10-03T14:15:00Z',
-  //       clientmessage: 'Работы должны быть выполнены не позже завтрашнего дня.',
-  //       status: 'Завершено',
-  //     },
-  //     {
-  //       orderid: 4,
-  //       clientprice: 300.0,
-  //       clientid: 104,
-  //       repairs: ['Полная диагностика', 'Замена аккумулятора'],
-  //       createdat: '2023-10-04T09:00:00Z',
-  //       clientmessage: 'Пожалуйста, проверьте все компоненты.',
-  //       status: 'Ожидание',
-  //     },
-  //     {
-  //       orderid: 5,
-  //       clientprice: 120.0,
-  //       clientid: 105,
-  //       repairs: ['Ремонт кузова'],
-  //       createdat: '2023-10-05T11:45:00Z',
-  //       client_message: 'Работы требуются срочно из-за ДТП.',
-  //       status: 'В процессе',
-  //     },
-  //   ];
+  const { orders, isLoading: isLoadingOrders } = useAvailableOrders();
+  const filteredOrders = orders.filter(order => order.status === OrderStatus.REQUESTED);
+
+  const clientIds = [...new Set(filteredOrders.map(order => order.clientId))];
+  const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
+  const clientsMap = new Map(clients.map(client => [client.id, client]));
+
+  const { services, isLoading: isLoadingServices } = useServices();
+
+  const { acceptInvoice } = useAcceptInvoice();
 
   useEffect(() => {
     document.title = text('Applications');
   }, [text]);
 
-  const [inputChat, setInputChat] = useState('');
-  const [isVisibleEmoji, setVisibleEmoji] = useState(false);
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      await acceptInvoice(orderId);
+      const order = filteredOrders.find(o => o.id === orderId);
+      if (order && user.id) {
+        navigate(`/contractor/chat/${order.clientId}_${user.id}`);
+      }
+    } catch (error) {
+      console.error('Error accepting order:', error);
+      // todo: Возможно, отобразить ошибку пользователю
+    }
+  };
 
-  function addEmojiToMessage(emoji) {
-    setInputChat((prevMessage) => prevMessage + emoji.emoji);
+  const handleDeclineOrder = (orderId) => {
+    // Заглушка для отказа от заказа
+    console.log(`Decline order with ID: ${orderId}`);
+  };
+
+  if (isLoadingOrders || isLoadingClients || isLoadingServices) {
+    return <div className="mini-text"><h1>{text('Loading applications...')}</h1></div>;
   }
+
   return (
     <>
       <div className="mini-text">
         <h1>{text('Applications')}</h1>
       </div>
-      <NavApplication />
-      {filteredRequests.length === 0 && (
+      {filteredOrders.length === 0 && (
         <div className={style.empty_orders}>
           <img src="/img/robot.png" alt="" />
           <p className={style.heading}>{text('You have no applications yet')}</p>
@@ -118,107 +68,70 @@ function MyApplications() {
       )}
 
       <div className={style.orders}>
-        {filteredRequests.map((item) => {
+        {filteredOrders.map((order) => {
+          const client = clientsMap.get(order.clientId);
+          const serviceName = services.services[order.serviceId]?.name || text('Unknown service');
+          const createdAt = new Date(order.createdAt).toLocaleDateString();
+
           return (
-            <details className={style.details}>
+            <details className={style.details} key={order.id}>
               <summary className={style.summary}>
                 <div className={style.summary_row}>
-                  <p>{item.b_options.author.name}</p>
-                  <p>{item.b_created}</p>
+                  <p>{client ? client.fullname : text('Unknown client')}</p>
+                  <p>{createdAt}</p>
                 </div>
                 <div className={style.summary_row}>
-                  <p>{item.b_options.title}</p>
+                  <p>{serviceName}</p>
                   <p>
                     {text('Cost')}:{' '}
                     <span className={style.price}>
-                      {item.b_options.client_price}₽
+                      {order.desiredPrice}₽
                     </span>
                   </p>
                 </div>
                 <div className={style.summary_row}>
-                  <div
-                    className={`${style.status} ${
-                      style[StylesStatusEnum[item.b_options.status]]
-                    }`}
-                  >
-                    {item.b_options.status}
-                  </div>
                   <div className={style.flex_empty}></div>
-                  <div className={style.miniSwiperWrap}>
-                    <div className="miniSlider">
-                      <img
-                        style={{ width: '40px' }}
-                        src="/img/sentence_img/iphone-x.png"
-                        alt=""
-                      />
-                    </div>
-                  </div>
                   <div>
                     <img className={style.arrow} src="/img/bot.png" alt="" />
                   </div>
                 </div>
               </summary>
               <div className={style.details_body}>
-                <p className={style.name_heading}>
-                  {item.b_options.author.name}
-                </p>
-                <p className={style.text}>{item.b_options.description}</p>
-                {/* <div className={style.alert}>чтобы взять новую заявку, пожалуйста подтвердите предыдущую которая в чате </div> */}
-                <div className={style.chat_wrap}>
-                  {isVisibleEmoji ? (
-                    <div className={style.emoji_pos}>
-                      <Suspense fallback={<div className="emoji-loading" />}>
-                        <EmojiPickerLazy onEmojiClick={addEmojiToMessage} />
-                      </Suspense>
-                    </div>
-                  ) : null}
-                  <input
-                    className={style.input_chat}
-                    value={inputChat}
-                    onChange={(event) => setInputChat(event.target.value)}
-                    placeholder={text('Message...')}
-                    type="text"
-                  />
-                  <img
-                    className={style.skrepka}
-                    src="/img/screpka.png"
-                    alt=""
-                  />
-                  <img
-                    className={style.smile}
-                    src="/img/smile.png"
-                    onClick={() => setVisibleEmoji((prev) => !prev)}
-                    alt=""
-                  />
+                <p className={style.text}>{order.description}</p>
+                <div className={style.miniSwiperWrap}>
+                  <Swiper
+                    slidesPerView={4}
+                    spaceBetween={30}
+                    navigation={true}
+                    modules={[Navigation]}
+                    className={"miniSlider"}
+                    breakpoints={{
+                      0: { slidesPerView: 1 },
+                      800: { slidesPerView: 1 },
+                      1124: { slidesPerView: 1 },
+                    }}
+                  >
+                    {order.attachments.map((id, index) => (
+                      <SwiperSlide key={getKeyFor(id)} className={style.swiperSlide}>
+                        <AnyImage src={id} alt={`${text('Image')} ${index + 1}`} />
+                      </SwiperSlide>
+                    ))}
+                  </Swiper>
                 </div>
                 <div className={style.buttons_row}>
                   <div className={style.buttons}>
                     <button
                       className={style.button}
-                      onClick={() => navigator('/contractor/chat/168789461')}
+                      onClick={() => handleAcceptOrder(order.id)}
                     >
                       {text('Agree')}
                     </button>
-                    <button className={style.button_back}>{text('Decline')}</button>
-                  </div>
-                  {/* <div style={{flex:1}}></div> */}
-                  <div className={style.timing_row}>
-                    <p>{text('Set time')}</p>
-                    <select className={style.select} name="" id="">
-                      <option value="" disabled>
-                        {text('Select')}
-                      </option>
-                      <option value="">{text('Ready to go')}</option>
-                      <option value="">{text('1 hour')}</option>
-                      <option value="">{text('2 hours')}</option>
-                      <option value="">{text('3 hours')}</option>
-                      <option value="">{text('4 hours')}</option>
-                      <option value="">{text('6 hours')}</option>
-                      <option value="">{text('8 hours')}</option>
-                      <option value="">{text('24 hours')}</option>
-                      <option value="">{text('3 days')}</option>
-                      <option value="">{text('7 days')}</option>
-                    </select>
+                    <button
+                      className={style.button_back}
+                      onClick={() => handleDeclineOrder(order.id)}
+                    >
+                      {text('Decline')}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -226,13 +139,6 @@ function MyApplications() {
           );
         })}
       </div>
-
-      {/* <div className="so_3"> */}
-      {/* {filteredOrders?.map((v) => ( */}
-      {/* {test_orders.map((v) => ( */}
-      {/* <Application {...v} order_id={v.id} key={v.id} status={v.status} /> */}
-      {/* // ))} */}
-      {/* </div> */}
     </>
   );
 }
