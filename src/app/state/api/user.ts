@@ -375,3 +375,20 @@ export function registerAsContractor(userData: RegisterUserData): Promise<Regist
 
   return postNoAuth<RegisterResult>('register', payload);
 }
+
+/**
+ * Помечает пользователя как прошедшего верификацию.
+ * ТОЛЬКО ДЛЯ ВНУТРЕННЕГО ИСПОЛЬЗОВАНИЯ В API.
+ * Вероятно, в будущем верификация пользователя будет проводиться через админпанель, и данная функция будет удалена.
+ * @returns Промис, который разрешается после выполнения операции.
+ */
+export function makeUserVerified() {
+  const data = {
+    action: "markUserAsVerified",
+  };
+  const payload = {
+    is_var: 1,
+    s_t_data: JSON.stringify(data)
+  };
+  return post('script/template/repair_api', payload);
+}

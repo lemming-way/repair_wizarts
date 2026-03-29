@@ -13,6 +13,7 @@
  */
 import CONFIG from 'config';
 import { AuthToken, getToken } from '../auth';
+import { randomString } from 'app/shared/lib/utilities';
 
 const serverURL = process.env.REACT_APP_API_URL || CONFIG.API?.url || '';
 export const API_BASE_URL = serverURL.endsWith('/') ? serverURL : `${serverURL}/`;
@@ -133,7 +134,7 @@ type APIPromise<T> = Promise<APIResponse<T>>;
  */
 async function request<T extends APIBaseType = Record<string, unknown>>(opts: RequestOptions): APIPromise<T> {
   const isDebug = process.env.NODE_ENV !== 'production';
-  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
+  const correlationId = isDebug ? randomString(8) : undefined;
 
   const method = opts.method || 'GET';
   let url = `${API_BASE_URL}${opts.path}`;

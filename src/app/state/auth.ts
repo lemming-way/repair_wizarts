@@ -1,7 +1,11 @@
+import { randomString } from 'app/shared/lib/utilities';
+
 /**
  * Результат успешной аутентификации пользователя.
  */
 export type AuthToken = {
+  /** ID пользователя. */
+  u_id: number;
   /** Токен аутентификации. */
   token: string;
   /** Хэш пользователя. */
@@ -26,14 +30,6 @@ function xorEncryptDecrypt(data: string, key: string): string {
     result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
   }
   return result;
-}
-
-/**
- * Генерирует случайный идентификатор сессии.
- * @returns Случайная строка идентификатора.
- */
-function generateRandomId(): string {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
 /**
@@ -117,10 +113,14 @@ if (typeof localStorage !== 'undefined') {
 
       // Базовая валидация структуры токена
       if (
-        parsedToken && !!parsedToken.token && !!parsedToken.u_hash &&
+        parsedToken && !!parsedToken.u_id && !!parsedToken.token && !!parsedToken.u_hash &&
         typeof parsedToken.token === 'string' && typeof parsedToken.u_hash === 'string'
       ) {
-        token = { token: parsedToken.token, u_hash: parsedToken.u_hash } = parsedToken; // Сохраняем в памяти
+        token = {
+          u_id: parsedToken.u_id,
+          token: parsedToken.token,
+          u_hash: parsedToken.u_hash
+        } = parsedToken; // Сохраняем в памяти
       }
     } catch (e) {
       console.error('Не удалось расшифровать или разобрать токен из localStorage:', e);
@@ -146,6 +146,14 @@ export function isUserAuthorized(): Boolean {
 }
 
 /**
+ * Проверяет наличие токена в памяти.
+ * @returns Статус токена.
+ */
+export function authorizedUserId(): number {
+  return token?.u_id ?? 0;
+}
+
+/**
  * Устанавливает токен аутентификации.
  * Если persist = true, токен сохраняется в localStorage в зашифрованном виде.
  * @param authToken Объект токена аутентификации.
@@ -160,7 +168,7 @@ export function setToken(authToken: AuthToken, persist: boolean = false): void {
       return; // Невозможно сохранить, если localStorage недоступен
     }
 
-    const sessionId = generateRandomId(); // Генерируем новый sessionId
+    const sessionId = randomString(24); // Генерируем новый sessionId
     try {
       const encryptionKey = getEncryptionKey(sessionId);
       const tokenString = JSON.stringify(authToken);

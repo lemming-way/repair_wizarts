@@ -13,7 +13,6 @@
  * acceptOffer, setArriveState, startTrip, finishTrip, scoreTrip
  */
 import { post, postWithAuthUser, getLongList } from './request';
-import { getDrivenCar } from './cars';
 
 // ==================== Типы данных ====================
 
@@ -366,10 +365,7 @@ export async function inviteDriver(tripId: number, userId: number): Promise<void
  * @param options - дополнительные параметры водителя в контексте поездки
  * @returns Промис, который разрешается после успешного обновления
  */
-export async function acceptInvoice(tripId: number, options?: Record<string, any>): Promise<void> {
-  const result = await getDrivenCar();
-  if (!result?.c_id) throw new Error('User has no car');
-  const carId = result.c_id;
+export async function acceptInvoice(tripId: number, carId: number, options?: Record<string, any>): Promise<void> {
   const data: any = {
     c_id: carId,
     c_payment_way: 1
@@ -384,10 +380,7 @@ export async function acceptInvoice(tripId: number, options?: Record<string, any
  * @param options - дополнительные параметры водителя в контексте поездки
  * @returns Промис, который разрешается после успешного обновления
  */
-export async function createOffer(tripId: number, options?: Record<string, any>): Promise<void> {
-  const result = await getDrivenCar();
-  if (!result?.c_id) throw new Error('User has no car');
-  const carId = result.c_id;
+export async function createOffer(tripId: number, carId: number, options?: Record<string, any>): Promise<void> {
   const data: any = {
     c_id: carId,
     c_payment_way: 1

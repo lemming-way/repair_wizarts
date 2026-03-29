@@ -11,6 +11,7 @@
 
 import CONFIG from 'config';
 import { get, getRawJSON, FetchError } from './request';
+import { randomString } from 'app/shared/lib/utilities';
 
 const CATEGORIES_URL = CONFIG.API?.categoriesUrl || '';
 
@@ -84,7 +85,7 @@ export type ServicesResponse = Array<{
  */
 export async function getServices(): Promise<ServicesResponse> {
   const isDebug = process.env.NODE_ENV !== 'production';
-  const correlationId = isDebug ? Math.random().toString(36).slice(2) : undefined;
+  const correlationId = isDebug ? randomString(8) : undefined;
 
   try {
     const response = await fetch(CATEGORIES_URL, {

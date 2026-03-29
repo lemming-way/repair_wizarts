@@ -16,9 +16,10 @@
 import { QueryClient, UseQueryResult, useQuery, useQueries, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
-import { setToken, clearToken, isUserAuthorized } from './auth';
-import { fileToBase64 } from '../shared/lib/utilities';
+import { setToken, clearToken, isUserAuthorized, authorizedUserId } from './auth';
+import { fileToBase64, randomString } from 'app/shared/lib/utilities';
 import * as UserAPI from './api/user';
+import * as CarAPI from './api/cars';
 
 /**
  * Пустой объект, используемый по умолчанию для предотвращения ошибок доступа к свойствам.
@@ -310,14 +311,59 @@ export async function login(
       throw new Error('Login failed: token or user hash is missing.');
     }
 
-    setToken({ token: authResult.token, u_hash: authResult.u_hash }, keepAuthorized);
-
+    setToken({
+      u_id: Number(authResult.auth_user?.u_id ?? 0),
+      token: authResult.token,
+      u_hash: authResult.u_hash
+    }, keepAuthorized);
     queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 
     // Заполняем данные пользователя в кэше, если auth_user присутствует
     if (authResult.auth_user) {
       const userProfile = fillUserProfile(authResult.auth_user);
       queryClient.setQueryData(['user', 'authorized'], userProfile);
+
+      // Дополнительная проверка для пользователя-мастера
+      if (userProfile.role === UserRole.Contractor) {
+        const userId = userProfile.id;
+        // Здесь и далее проверяем соответствие ID пользователя авторизованному пользователю в токене,
+        // потому что пользователь может смениться во время выполнения асинхронных операций
+        if (authorizedUserId() !== userId) return;
+
+        const checkState = Number(authResult.auth_user.u_check_state);
+        let userChecked = checkState === 2;
+        const userUnchecked = !checkState || !Number.isFinite(checkState) || checkState === 1;
+        const drivenCar = await CarAPI.getDrivenCar();
+        if (authorizedUserId() !== userId) return;
+
+        let carToDrive: number|null = null;
+        if (!drivenCar) {
+          const userCars = await CarAPI.getUserCars();
+          if (authorizedUserId() !== userId) return;
+
+          if (userCars.length === 0 && userUnchecked) {
+            const carData = {
+              seats: 1,
+              registration_plate: randomString(12)
+            };
+            carToDrive = Number(await CarAPI.createCar(carData));
+            if (authorizedUserId() !== userId) return;
+          }
+          else if (userCars.length > 0) {
+            carToDrive = Number(userCars[0].c_id);
+          }
+        }
+
+        if (userUnchecked) {
+          await UserAPI.makeUserVerified();
+          if (authorizedUserId() !== userId) return;
+          userChecked = true;
+        }
+
+        if (!drivenCar && userChecked && carToDrive && Number.isFinite(carToDrive)) {
+          CarAPI.driveCar(carToDrive);  // можно не ждать
+        }
+      }
     }
   } catch (error) {
     clearToken();
@@ -401,7 +447,7 @@ async function _registerUser(
   payload: RegisterPayload,
   registerApiFn: (registerData: UserAPI.RegisterUserData) => Promise<UserAPI.RegisterResult>,
   role: UserRole
-): Promise<void> {
+): Promise<number> {
   const {
     name,
     lastname,
@@ -443,8 +489,10 @@ async function _registerUser(
   if (!result.token || !result.u_hash) {
     throw new Error('Registration failed: token or user hash is missing.');
   }
-  setToken({ token: result.token, u_hash: result.u_hash }, keepAuthorized);
+  setToken({ u_id: Number(result.u_id), token: result.token, u_hash: result.u_hash }, keepAuthorized);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
+
+  return Number(result.u_id);
 }
 
 /**
@@ -453,8 +501,8 @@ async function _registerUser(
  * @param payload Объект с данными для регистрации.
  * @returns Промис, который разрешается после успешной регистрации.
  */
-export function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  return _registerUser(queryClient, payload, UserAPI.registerAsClient, UserRole.Client);
+export async function registerClient(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
+  await _registerUser(queryClient, payload, UserAPI.registerAsClient, UserRole.Client);
 }
 
 /**
@@ -479,16 +527,27 @@ export function useRegisterClient() {
  * @returns Промис, который разрешается после успешной регистрации.
  */
 export async function registerContractor(queryClient: QueryClient, payload: RegisterPayload): Promise<void> {
-  await _registerUser(queryClient, payload, UserAPI.registerAsContractor, UserRole.Contractor);
+  // todo: предусмотреть возобновление регистрации, если она прервана между запросами
+  const userId = await _registerUser(queryClient, payload, UserAPI.registerAsContractor, UserRole.Contractor);
   if (payload.locality || payload.description) {
     const updateData: UserAPI.UserUpdateData = {};
     if (payload.locality) updateData.u_city = payload.locality;
     if (payload.description) updateData.u_description = payload.description;
     await UserAPI.updateUser(updateData);
+    if (authorizedUserId() !== userId) return;
   }
-  // todo: создать машину водителю
-  // todo: пометить пользователя как прошедшего проверку (пока нет админки)
-  // todo: предусмотреть возобновление регистрации, если она прервана между запросами
+
+  const carData = {
+    seats: 1,
+    registration_plate: randomString(12)
+  }
+  const carId = Number(await CarAPI.createCar(carData));
+  if (authorizedUserId() !== userId) return;
+
+  await UserAPI.makeUserVerified();
+  if (authorizedUserId() !== userId) return;
+
+  if (carId) CarAPI.driveCar(carId);  // можно не ждать
 }
 
 /**

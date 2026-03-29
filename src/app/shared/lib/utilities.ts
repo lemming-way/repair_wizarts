@@ -17,3 +17,18 @@ export const IMAGE_TYPES = Object.freeze([ 'image/jpeg', 'image/png', 'image/gif
 export function isImage(mimeType: string) {
   return IMAGE_TYPES.includes(mimeType);
 }
+
+/**
+ * Генерирует случайную строку (буквы, цифры).
+ * @param length Длина строки.
+ * @returns Случайная строка.
+ */
+export function randomString(length: number): string {
+  const targetLength = length | 0;  // Отбрасываем дробную часть
+  if (targetLength <= 0) return '';
+  let result = '';
+  while (result.length < targetLength) {
+    result += Math.random().toString(36).substring(2, targetLength - result.length + 2);
+  }
+  return result;
+}
