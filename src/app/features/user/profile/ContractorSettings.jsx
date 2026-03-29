@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
-import '../../scss/profile.css';
 import 'swiper/css';
 import 'swiper/css/navigation';
-import { MultiSelect } from '../../shared/ui/';
-import style from './Profile.module.css';
-import { useLanguage } from '../../state/language';
-import { useUser, updateUser, BusinessModel } from '../../state/user';
-import { useServices } from '../../state/site-data';
+
+import 'app/scss/profile.css';
+import style from './ContractorSettings.module.css';
+import { MultiSelect } from 'app/shared/ui/';
+import { useLanguage } from 'app/state/language';
+import { useUser, updateUser, BusinessModel } from 'app/state/user';
+import { useServices, useCities } from 'app/state/site-data';
 
 const experienceOptions = [
   { value: 1, label: '1 year' },
@@ -18,7 +19,7 @@ const experienceOptions = [
   { value: 6, label: 'More than 5 years' },
 ];
 
-function Profile() {
+function ContractorSettings() {
   const text = useLanguage();
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
@@ -26,14 +27,13 @@ function Profile() {
   const [experience, setExperience] = useState(null);
 
   const { categories, subcategories, services } = useServices();
+  const { cities } = useCities();
   const queryClient = useQueryClient();
   const { user } = useUser();
 
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    name: '',
-    lastname: '',
     description: '',
     organizationName: '',
     address: '',
@@ -119,12 +119,10 @@ function Profile() {
     );
 
     setForm({
-      name: user.name,
-      lastname: user.lastname,
       description: user.description || '',
       organizationName: user.organizationName,
       address: user.address,
-      city: user.city,  // todo: Загрузить город по ID
+      city: String(user.locality || ''),
       experience: user.experience,
     });
 
@@ -144,7 +142,11 @@ function Profile() {
     e.preventDefault();
 
     const payload = {
-      ...form,
+      description: form.description,
+      organizationName: form.organizationName,
+      address: form.address,
+      experience: Number(form.experience),
+      locality: Number(form.city) || 0,
       businessModel,
       services: serviceOptionSelected.map(opt => opt.value) || [],
     };
@@ -195,6 +197,18 @@ function Profile() {
           )}
           {error && <div className="auth-err">{error}</div>}
 
+          {/*
+          <label className={style.checkboxLabel}>
+            <input
+              type="checkbox"
+              name="is_active"
+              checked={mainForm.is_active}
+              onChange={(e) => setMainForm(prev => ({ ...prev, is_active: e.target.checked }))}
+            />
+            {text('Receive orders')}
+          </label>
+          */}
+
           <div className={`custom_nvakasd ${style.wrap_custom_field}`}>
             <MultiSelect
               key="category_id"
@@ -238,13 +252,6 @@ function Profile() {
               isDisabled={!subcategoryOptionSelected.length}
             />
           </div>
-          <input type="text" placeholder={text('Name')} {...getFormAttrs('name')} />
-
-          <input
-            type="text"
-            placeholder={text('Lastname')}
-            {...getFormAttrs('lastname')}
-          />
 
           <input
             type="text"
@@ -252,12 +259,18 @@ function Profile() {
             id="offer-input"
             {...getFormAttrs('address')}
           />
-          <input
-            type="text"
-            placeholder={text('City')}
-            id="offer-input"
-            {...getFormAttrs('city')}
-          />
+          <select
+            className={style.selectField}
+            value={form.city}
+            onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+          >
+            <option value="">{text('Select city')}</option>
+            {Object.entries(cities).map(([id, name]) => (
+              <option key={id} value={id}>
+                {name}
+              </option>
+            ))}
+          </select>
 
           <input
             type="text"
@@ -333,4 +346,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default ContractorSettings;

@@ -79,20 +79,6 @@ export default function ContractorProfileNavigator({
         >
           Баланс
         </Link>
-        <Link
-          style={{
-            translate: `${-170 * offsetMenu}px`,
-            padding: '20px 30px 17px 30px',
-          }}
-          className={`${style.link}  ${
-            window.location.pathname === '/contractor/settings/photo'
-              ? 'active2'
-              : null
-          }`}
-          to="/contractor/settings/photo"
-        >
-          Фотография
-        </Link>
       </div>
 
       {/* <Swiper

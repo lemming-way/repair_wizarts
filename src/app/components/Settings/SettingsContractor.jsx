@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-
-import '../../scss/settings-all.css';
-import 'swiper/css';
-import 'swiper/css/navigation';
 import Popup from 'reactjs-popup';
 
+import 'swiper/css';
+import 'swiper/css/navigation';
+
+import '../../scss/settings-all.css';
 import style from './SettingsContractor.module.css';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';

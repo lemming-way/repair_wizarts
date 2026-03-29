@@ -4,10 +4,10 @@ import {useNavigate} from "react-router-dom";
 // import Error from "app/components/Error/Error";
 import { useLanguage } from 'app/state/language';
 import { useRegisterClient } from 'app/state/user';
-import { PhoneNumber } from '../shared/PhoneNumber';
-import { ConfirmPolitics } from "../shared/ConfirmPolitics";
+import { PhoneNumber } from '../profile/PhoneNumber';
+import { ConfirmPolitics } from "./ConfirmPolitics";
 import styles from './RegistrationUserPage.module.scss';
-import sharedStyles from '../shared/RegistrationPage.module.scss';
+import sharedStyles from './RegistrationPage.module.scss';
 
 const RegistrationUserPage = () => {
   const text = useLanguage();
@@ -41,22 +41,22 @@ const RegistrationUserPage = () => {
     setError(undefined); // Сброс предыдущих ошибок
 
     if (!accept) {
-      return setError('Чтобы продолжить необходимо принять политику конфиденциальности.');
+      return text('To continue, you must accept the privacy policy.');
     }
 
     if (password !== passwordVerification) {
-      setError('Пароли не совпадают.');
+      text('Passwords do not match.');
       return;
     }
 
     const uName = `${name.trim()} ${lastname.trim()}`.trim();
     if (!uName) {
-      setError('Имя и Фамилия должны быть заполнены.');
+      text('First and Last name must be filled in.');
       return;
     }
 
     if (phone.replace(/\D/g, '').length < 11) {
-      setError('Номер телефона введен не полностью.');
+      text('Phone number is incomplete.');
       return;
     }
 

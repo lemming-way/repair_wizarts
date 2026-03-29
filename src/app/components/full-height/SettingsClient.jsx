@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import VerificationInput from '../VerificationInput';
-import style from './ProfileFH.module.css';
+import style from './SettingsClient.module.css';
 import { useUser, updateUser, updateUserPassword } from '../../state/user';
 
-function ProfileFH() {
+function SettingsClient() {
   const { user } = useUser();
   // const listLinks = [
   //     "/client/settings",
@@ -212,4 +212,4 @@ function ProfileFH() {
   );
 }
 
-export default ProfileFH;
+export default SettingsClient;

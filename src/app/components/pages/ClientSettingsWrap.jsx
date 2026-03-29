@@ -9,7 +9,6 @@ import ClientProfileNavigator from '../full-height/ClientProfileNavigator';
 
 const listLinks = [
   '/client/settings',
-  '/client/settings/picture',
   '/client/settings/wallet',
   '/client/settings/finance',
   '/client/settings/balance',

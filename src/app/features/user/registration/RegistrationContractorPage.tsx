@@ -3,21 +3,29 @@ import { useNavigate } from 'react-router-dom';
 
 import { useLanguage } from 'app/state/language';
 import { MultiSelect, MultiSelectOption } from 'app/shared/ui';
-import { ConfirmPolitics } from '../shared/ConfirmPolitics';
-import { PhoneNumber } from '../shared/PhoneNumber';
+import { ConfirmPolitics } from './ConfirmPolitics';
+import { PhoneNumber } from '../profile/PhoneNumber';
 // import Error from "app/components/Error/Error"; // Assuming Error component exists for displaying errors
 
 import { useCities, useServices } from 'app/state/site-data';
-import { useRegisterContractor } from 'app/state/user';
+import { useRegisterContractor, BusinessModel } from 'app/state/user';
 import styles from './RegistrationContractorPage.module.scss';
-import sharedStyles from '../shared/RegistrationPage.module.scss';
+import sharedStyles from './RegistrationPage.module.scss';
+
+const experienceOptions = [
+  { value: 1, label: '1 year' },
+  { value: 2, label: '2 years' },
+  { value: 3, label: '3 years' },
+  { value: 5, label: '5 years' },
+  { value: 6, label: 'More than 5 years' },
+];
 
 const RegistrationContractorPage = () => {
   const text = useLanguage();
   const { categories, subcategories, services } = useServices();
   const { cities } = useCities();
   const navigate = useNavigate();
-  const registerContractorMutation = useRegisterContractor();
+  const { register, isPending } = useRegisterContractor();
 
   const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
@@ -27,6 +35,10 @@ const RegistrationContractorPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [description, setDescription] = useState('');
+  const [experience, setExperience] = useState<MultiSelectOption | null>(null);
+  const [organizationName, setOrganizationName] = useState('');
+  const [businessModel, setBusinessModel] = useState(BusinessModel.IndependentTechnician);
 
   const [error, setError] = useState('');
   const [keep, setKeep] = useState(false);
@@ -44,8 +56,8 @@ const RegistrationContractorPage = () => {
   const [serviceOptionSelected, setServiceOptionSelected] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
-    document.title = 'Регистрация мастера';
-  }, []);
+    document.title = text('Contractor Registration');
+  }, [text]);
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -53,30 +65,29 @@ const RegistrationContractorPage = () => {
 
     if (!accept) {
       setError(
-        'Чтобы продолжить необходимо принять политику конфиденциальности.',
+        text('To continue, you must accept the privacy policy.'),
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Пароли не совпадают.');
+      setError(text('Passwords do not match.'));
       return;
     }
 
     if (phone.replace(/\D/g, '').length < 11) {
-      setError('Номер телефона введен не полностью.');
+      setError(text('Phone number is incomplete.'));
       return;
     }
 
     const uName = `${name.trim()} ${lastname.trim()}`.trim();
-    if (!uName) { // Используем uName для проверки наличия имени и фамилии
-      setError('Имя и Фамилия должны быть заполнены.');
+    if (!uName) {
+      setError(text('First and Last name must be filled in.'));
       return;
     }
 
     try {
-      // todo: добавить дополнительные поля
-      await registerContractorMutation.register({
+      await register({
         name: name.trim(),
         lastname: lastname.trim(),
         phone: phone.replace(/\D/g, ''),
@@ -84,7 +95,11 @@ const RegistrationContractorPage = () => {
         locality: Number(city || 0),
         password,
         address: address.trim(),
+        experience: Number(experience?.value || 0),
         services: serviceOptionSelected?.map(opt => Number(opt.value)) || [],
+        businessModel: businessModel,
+        organizationName: organizationName.trim(),
+        description: description.trim(),
         keepAuthorized: keep,
       });
       navigate("/");
@@ -117,7 +132,7 @@ const RegistrationContractorPage = () => {
 
   return (
       <div className={`${styles.registrationContractorPage}`}>
-        <h1 className={styles.registrationContractorPage_title}>Регистрация</h1>
+        <h1 className={styles.registrationContractorPage_title}>{text('Registration')}</h1>
         <form
           className={styles.registrationContractorPage_form}
           onSubmit={onSubmit}
@@ -153,7 +168,7 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="text"
             name="address_form"
-            placeholder="Адрес (улица, дом)"
+            placeholder={text('Address (street, house)')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             required
@@ -163,7 +178,7 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="text"
             name="name_form"
-            placeholder="Имя"
+            placeholder={text('First name')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -172,14 +187,14 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="text"
             name="lastname_form"
-            placeholder="Фамилия"
+            placeholder={text('Last name')}
             value={lastname}
             onChange={(e) => setLastname(e.target.value)}
             required
           />
           <div className={styles.registrationContractorPage_input_phone_wrap}>
             <PhoneNumber
-              placeholder="Телефон"
+              placeholder={text('Phone')}
               className={`${styles.registrationContractorPage_form_input} ${
                 phone.length > 4 ? 'phone_input_accent' : 'phone_input_lite'
               }`}
@@ -191,7 +206,7 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="email"
             name="email_form"
-            placeholder="Электронная почта"
+            placeholder={text('Email')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -200,7 +215,7 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="password"
             name="password_form"
-            placeholder="Пароль"
+            placeholder={text('Password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -209,15 +224,49 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             type="password"
             name="confirm_password_form"
-            placeholder="Подтвердите пароль"
+            placeholder={text('Confirm password')}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
           />
 
+          <input
+            className={styles.registrationContractorPage_form_input}
+            type="text"
+            name="organization_name_form"
+            placeholder={text('Organization name (optional)')}
+            value={organizationName}
+            onChange={(e) => setOrganizationName(e.target.value)}
+          />
+
+          <MultiSelect
+            key="experience_id"
+            placeholder={text('Work experience')}
+            options={experienceOptions}
+            onChange={(selected: MultiSelectOption | null) => {
+              setExperience(selected);
+            }}
+            value={experience}
+            isMulti={false}
+            menuPlacement={'bottom'}
+          />
+
+          <textarea
+            className={styles.registrationContractorPage_form_input}
+            name="description_form"
+            placeholder={
+              businessModel === BusinessModel.IndependentTechnician
+                ? text('About me (optional)')
+                : text('About organization (optional)')
+            }
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={5}
+          />
+
           <MultiSelect
             key="category_main_id"
-            placeholder="Вид основной категории"
+            placeholder={text('Type of main category')}
             options={categoryOptions}
             onChange={(selected: MultiSelectOption[] | null) => {
               setCategoryOptionSelected(selected || []);
@@ -225,32 +274,32 @@ const RegistrationContractorPage = () => {
               setServiceOptionSelected([]); // Reset models
             }}
             value={categoryOptionSelected}
-            isMulti={true} // Allow multiple main categories if needed
+            isMulti={true}
             menuPlacement={'bottom'}
           />
           {categoryOptionSelected.length > 0 && (
-              <MultiSelect
-                key="categories_sub_id"
-                placeholder="Подкатегории"
-                options={subcategoryOptions}
-                onChange={(selected: MultiSelectOption[] | null) => {
-                  setSubcategoryOptionSelected(selected || []);
-                  setServiceOptionSelected([]); // Reset models on sub-category change
-                }}
-                value={subcategoryOptionSelected}
-                isSelectAll={true}
-                isMulti={true}
-                menuPlacement={'bottom'}
-                isDisabled={
-                  !categoryOptionSelected ||
-                  categoryOptionSelected.length === 0
-                }
-              />
-            )}
+            <MultiSelect
+              key="categories_sub_id"
+              placeholder={text('Subcategories')}
+              options={subcategoryOptions}
+              onChange={(selected: MultiSelectOption[] | null) => {
+                setSubcategoryOptionSelected(selected || []);
+                setServiceOptionSelected([]); // Reset models on sub-category change
+              }}
+              value={subcategoryOptionSelected}
+              isSelectAll={true}
+              isMulti={true}
+              menuPlacement={'bottom'}
+              isDisabled={
+                !categoryOptionSelected ||
+                categoryOptionSelected.length === 0
+              }
+            />
+          )}
           {subcategoryOptionSelected.length > 0 && (
             <MultiSelect
               key="model_phone_id"
-              placeholder="Наименование услуги"
+              placeholder={text('Service name')}
               options={serviceOptions}
               onChange={(selected: MultiSelectOption[] | null) =>
                 setServiceOptionSelected(selected || [])
@@ -271,9 +320,35 @@ const RegistrationContractorPage = () => {
               type="checkbox"
               onChange={(e) => setKeep(e.target.checked)}
             />
-            <label htmlFor="keep-authorized">
-               Оставаться в системе
-            </label>
+            <label htmlFor="keep-authorized">{text('Stay logged in')}</label>
+          </div>
+
+          <div className={sharedStyles.registrationPage_checkbox_container}>
+            <h4>{text('Business model')}:</h4>
+            <div>
+              <input
+                type="radio"
+                name="businessModel"
+                id="independentTechnician"
+                onChange={() => setBusinessModel(BusinessModel.IndependentTechnician)}
+                checked={businessModel === BusinessModel.IndependentTechnician}
+              />
+              <label htmlFor="independentTechnician">
+                <p>{text(BusinessModel.IndependentTechnician)}</p>
+              </label>
+            </div>
+            <div>
+              <input
+                type="radio"
+                name="businessModel"
+                id="serviceCenter"
+                onChange={() => setBusinessModel(BusinessModel.ServiceCenter)}
+                checked={businessModel === BusinessModel.ServiceCenter}
+              />
+              <label htmlFor="serviceCenter">
+                <p>{text(BusinessModel.ServiceCenter)}</p>
+              </label>
+            </div>
           </div>
 
           <ConfirmPolitics accept={accept} onChange={setAccept}/>
@@ -281,9 +356,9 @@ const RegistrationContractorPage = () => {
           <button
             className={styles.registrationContractorPage_form_button}
             type="submit"
-            disabled={registerContractorMutation.isPending}
+            disabled={isPending}
           >
-            {registerContractorMutation.isPending ? text("Registering...") : text("Register")}
+            {isPending ? text("Registering...") : text("Register")}
           </button>
         </form>
       </div>

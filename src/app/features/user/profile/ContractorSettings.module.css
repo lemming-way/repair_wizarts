@@ -1,0 +1,48 @@
+.wrap_custom_field {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 426px;
+}
+
+@media (max-width: 830px) {
+    .wrap_flex {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .wrap_check {
+        width: 100%;
+        max-width: 426px;
+    }
+}
+
+.selectField {
+    width: 100%;
+    max-width: 426px;
+    height: 40px;
+    background: #fff;
+    border-radius: 5px;
+    padding: 0 10px;
+    font-size: 14px;
+    line-height: 17px;
+    color: var(--black-text);
+    border: 1px solid var(--grey-border);
+    outline: none;
+    transition: all 0.2s ease;
+    -webkit-appearance: none; /* Для единообразия внешнего вида в разных браузерах */
+    -moz-appearance: none;
+    appearance: none;
+    /* Кастомная стрелка для select */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='%23666' d='M9.293 12.95l-.707-.707L4.757 8.586a1 1 0 011.414-1.414L10 10.828l3.828-3.656a1 1 0 011.414 1.414l-4.586 4.379a1 1 0 01-1.414 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+}
+
+@media (max-width: 470px) {
+    .wrap_custom_field {
+        width: 350px;
+    }
+}

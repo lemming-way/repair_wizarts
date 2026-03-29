@@ -12,7 +12,7 @@ import RegistrationContractorPage from './features/user/registration/Registratio
 import AllOrders from './components/Orders/Allorders';
 
 import SettingsAll from './components/Settings/Settings-all';
-import Profile from './components/Settings/Profile';
+import ContractorSettings from './features/user/profile/ContractorSettings';
 //~ import Services from './components/Settings/services';
 import Reviews from './components/Reviews';
 
@@ -20,8 +20,7 @@ import MyOffers from './features/orders/contractor/list/MyOffers';
 import Offer from './features/orders/contractor/manage/Offer';
 
 // after login
-import ProfileFH from './components/full-height/ProfileFH';
-import WalletFH from './components/full-height/WalletFH';
+import UserProfile from './features/user/profile/UserProfile';
 
 // after login end
 
@@ -49,7 +48,6 @@ import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistor
 import FChatKirill from './components/full-chat/fakeChat/Kirill';
 import Home from './components/Home';
 import FinanceClient from './components/Settings/FinanceClient';
-import SettingsContractor from './components/Settings/SettingsContractor';
 import ContractorChatWrap from './components/pages/ContractorChatWrap';
 import MyOffer from './components/myoffer';
 import MyOrder from './features/orders/client/manage/MyOrder';
@@ -164,8 +162,7 @@ function App() {
           </Route>
           <Route path="client">
             <Route path="settings" element={<ClientSettingsWrap />}>
-              <Route index element={<ProfileFH />} />
-              <Route path="picture" element={<WalletFH />} />
+              <Route index element={<UserProfile />} />
               <Route
                 path="wallet"
                 element={<ChoiceOfReplenishmentMethodClient />}
@@ -222,12 +219,11 @@ function App() {
               <Route path="wallet_history" element={<WalletHistory />} />
               <Route path="wallet/:id" element={<WalletConfirm />} />
               <Route path="settings" element={<SettingsAll />}>
-                <Route index element={<SettingsContractor />} />
-                <Route path="profile" element={<Profile />} />
+                <Route index element={<UserProfile />} />
+                <Route path="profile" element={<ContractorSettings />} />
                 <Route path="prices" element={null/*<Services />*/} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="balance" element={<Balance />} />
-                <Route path="photo" element={<WalletFH />} />
               </Route>
               <Route path="orders" element={<Applications />} />
               {/*<Route path="orders">
