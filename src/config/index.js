@@ -3,6 +3,7 @@
 const CONFIG = {
 	APP: {
 		language: 'ru',
+		currentCity: 169,  // Санкт-Петербург
 		'map:location': {
 			latitude: 59.9311,
 			longitude: 30.3609,

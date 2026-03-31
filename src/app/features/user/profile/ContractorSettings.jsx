@@ -265,7 +265,7 @@ function ContractorSettings() {
             onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
           >
             <option value="">{text('Select city')}</option>
-            {Object.entries(cities).map(([id, name]) => (
+            {Object.entries(cities).map(([id, { name }]) => (
               <option key={id} value={id}>
                 {name}
               </option>

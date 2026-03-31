@@ -10,7 +10,6 @@
     "src/features/HomePage/HomePage.tsx",
     "src/features/HomePage/WhyChooseUsBlock/components/WhyChooseUsBlockSwiper/WhyChooseUsBlockSwiper.tsx",
     "src/app/header/ToolbarSearchBar.tsx",
-    "src/components/dropdownCountry.jsx",
     "src/components/menu/Menu.tsx",
     "src/components/Notifications/Notifications.jsx",
   ],

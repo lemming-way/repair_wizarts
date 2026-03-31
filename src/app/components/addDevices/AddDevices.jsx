@@ -9,11 +9,13 @@ import 'swiper/css/navigation';
 import style from './AddDevices.module.css';
 import { AnyImage, getKeyFor } from '../../shared/ui';
 import { useLanguage } from '../../state/language';
+import { useGlobalState } from '../../state/global';
 import { useServices } from '../../state/site-data';
 import { useCreateOrder } from '../../state/order';
 
 function AddDevices() {
   const text = useLanguage();
+  const currentCity = useGlobalState('currentCity');
   const fileInputRef = useRef();
   const navigate = useNavigate();
   const [error, setError] = useState('');
@@ -71,10 +73,6 @@ function AddDevices() {
     e.preventDefault();
     setError('');
 
-    // Используем заглушку для cityId
-    // todo: получить город из блока выбора города
-    const cityId = 105;
-
     if (!address || !selectedService || !description || !price) {
         setError(text('Mandatory parameter is empty.'));
         return;
@@ -82,7 +80,7 @@ function AddDevices() {
 
     try {
       await createOrder({
-        cityId: cityId,
+        cityId: currentCity,
         address: address,
         serviceId: Number(selectedService),
         description: description,

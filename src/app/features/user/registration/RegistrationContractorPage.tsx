@@ -159,7 +159,7 @@ const RegistrationContractorPage = () => {
           >
             <option value='' disabled>{text('Choose city...')}</option>
             {
-              Object.entries(cities).map(([ id, name ]) =>
+              Object.entries(cities).map(([ id, { name } ]) =>
                 <option key={id} value={id}>{name}</option>
               )
             }

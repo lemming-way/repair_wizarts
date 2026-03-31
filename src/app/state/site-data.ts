@@ -23,7 +23,10 @@ async function fetchSiteData({ client }) {
   catch {}
 
   const data = await getSiteData();
-  client.invalidateQueries({ queryKey: [ SITE_DATA_FILTERED_QUERY_KEY ], exact: false });
+  setTimeout(
+    () => client.invalidateQueries({ queryKey: [ SITE_DATA_FILTERED_QUERY_KEY ], exact: false }),
+    0
+  );
   if (data && 'object' === typeof data && !Array.isArray(data)) {
     const partialData = {
       version: data.version || '',
@@ -42,6 +45,12 @@ async function fetchSiteData({ client }) {
   }
 }
 
+export type CityData = {
+  name: string;
+  latitude?: number;
+  longitude?: number;
+};
+
 function filterCities(siteData: SiteData, language: string, country: string) {
   if (!siteData) return {};
   const defaultLanguageId = Number(siteData.default_lang || 0);
@@ -51,8 +60,15 @@ function filterCities(siteData: SiteData, language: string, country: string) {
     Object.entries(siteData.data.cities).forEach(([ key, city ]) => {
       const cityName = city?.[language] || city?.[defaultLanguage];
       const cityCountry = city?.country;
+      const coords = city?.json?.coordinates as any;  // обходим "бюрократию" Typescript
+      const lat = Number(coords?.latitude);
+      const lng = Number(coords?.longitude);
       if (cityCountry === country && cityName && 'string' === typeof cityName) {
-        cities[ Number(key) ] = cityName;
+        cities[ Number(key) ] = {
+          name: cityName,
+          latitude: Number.isFinite(lat) ? lat : undefined,
+          longitude: Number.isFinite(lng) ? lng : undefined,
+        };
       }
     });
   }
@@ -61,23 +77,29 @@ function filterCities(siteData: SiteData, language: string, country: string) {
 
 const EMPTY_OBJECT = Object.freeze({});
 
+function useSiteData() {
+  return useQuery<SiteData>({
+    queryKey: [ SITE_DATA_QUERY_KEY ],
+    queryFn: fetchSiteData,
+    staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
+  });
+}
+
 export function useCities(country: string = 'ru') {
   const queryClient = useQueryClient();
   const language = useGlobalState('language');
+  const primary = useSiteData();
   const queryResult = useQuery({
-    queryKey: [ SITE_DATA_FILTERED_QUERY_KEY, 'cities', country ],
+    queryKey: [ SITE_DATA_FILTERED_QUERY_KEY, 'cities', country, language ],
     queryFn: async () => {
-      const siteData = await queryClient.fetchQuery<SiteData>({
-        queryKey: [ SITE_DATA_QUERY_KEY ],
-        queryFn: fetchSiteData,
-        staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
-      });
-      return filterCities(siteData, language, country);
+      const siteData = queryClient.getQueryData<SiteData>([ SITE_DATA_QUERY_KEY ]);
+      return siteData ? filterCities(siteData, language, country) : {};
     },
+    enabled: !!primary.data,
     staleTime: Infinity
   });
   const { data, ...ret } = queryResult;
-  const cities: Record<number, string> = data || EMPTY_OBJECT;
+  const cities: Record<number, CityData> = data || EMPTY_OBJECT;
   return {
     ...ret,
     cities

@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 import style from './ServiceDetail.module.scss';
 import { useLanguage } from '../../state/language';
+import { useGlobalState } from '../../state/global';
 import { useUser } from '../../state/user';
 import { useServices } from '../../state/site-data';
 import { useContractors, useCreateOrder } from '../../state/order';
@@ -19,6 +20,7 @@ import ServiceMainContent from './ServiceMainContent';
 
 function ServiceDetail() {
   const text = useLanguage();
+  const currentCity = useGlobalState('currentCity');
   const [selectedServices, setSelectedServices] = useState([]);
 
   const [visibleConfirm, setVisibleConfirm] = useState(false);
@@ -48,9 +50,7 @@ function ServiceDetail() {
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
-  // todo: получить город из блока выбора города
-  const selectedCity = 105;
-  const { contractors } = useContractors({ service: serviceId, city: selectedCity });
+  const { contractors } = useContractors({ service: serviceId, city: currentCity });
   const { createOrder } = useCreateOrder();
 
   const onSelectContractor = async (contractorData) => {
@@ -81,7 +81,7 @@ function ServiceDetail() {
     }
 
     const orderData = {
-      cityId: selectedCity,
+      cityId: currentCity,
       address,
       serviceId,
       description,

@@ -27,6 +27,7 @@ export type CityData = {
   ar?: string;
   fr?: string;
   es?: string;
+  json?: Record<string, unknown>
 }
 
 export type LanguageData = {
