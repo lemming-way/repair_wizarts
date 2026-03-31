@@ -1,7 +1,6 @@
 import { Rating } from 'react-simple-star-rating'
 
 import styles from './Reviews.module.css'
-import SERVER_PATH from '../../../config/SERVER_PATH'
 import formatDate from '../../utilities/formatDate'
 import { useLanguage } from '../../state/language'
 
@@ -19,7 +18,7 @@ const ReviewsReview = (props) => {
             <div className={styles.reviewHeader}>
                 <img
                     alt="client"
-                    src={SERVER_PATH + "/files/user.png"}
+                    src="/img/profile__image.png"
                     className={styles.reviewHeaderImage}
                 />
                 <div className={styles.reviewHeaderInfo}>

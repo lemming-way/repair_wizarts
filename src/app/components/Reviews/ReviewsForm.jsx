@@ -3,17 +3,17 @@ import { Rating } from 'react-simple-star-rating'
 import { Popup } from 'reactjs-popup'
 
 import styles from './Reviews.module.css'
-import { createReview } from '../../services/reviews.service'
+//~ import { createReview } from '../../services/reviews.service'
 import { useLanguage } from '../../state/language'
-import { useUser } from '../../state/user'
+//~ import { useUser } from '../../state/user'
 
 const ReviewsForm = (props) => {
     const text = useLanguage()
-    const { user } = useUser()
-    const senderName = [
-        user.name ?? '',
-        user.lastname ?? '',
-    ].filter(Boolean).join(' ').trim()
+    //~ const { user } = useUser()
+    //~ const senderName = [
+        //~ user.name ?? '',
+        //~ user.lastname ?? '',
+    //~ ].filter(Boolean).join(' ').trim()
 
     const [modalOpen, setModalOpen] = useState(false)
     const openModal = () => setModalOpen(true)
@@ -27,11 +27,12 @@ const ReviewsForm = (props) => {
     const onSubmit = (e) => {
         e.preventDefault()
 
-        return createReview({
-            rating,
-            message,
-            sender: senderName
-        }).then(() => openModal())
+        //~ return createReview({
+            //~ rating,
+            //~ message,
+            //~ sender: senderName
+        //~ }).then(() => openModal())
+        openModal()
     }
 
     return (

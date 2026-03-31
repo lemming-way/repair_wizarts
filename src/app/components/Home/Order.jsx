@@ -1,4 +1,4 @@
-import { useService } from "../../hooks/useService";
+//~ import { useService } from "../../hooks/useService";
 
 import { Link } from "react-router-dom"
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,11 +9,26 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Rating } from "react-simple-star-rating";
 
-import SERVER_PATH from "../../../config/SERVER_PATH";
-import { getReviews } from "../../services/reviews.service";
+//~ import { getReviews } from "../../services/reviews.service";
 
+// todo: Компонент называется Order, но показывает отзывы - нужно исправить
 function Order() {
-    const reviews = useService(getReviews, [])
+    //~ const reviews = useService(getReviews, [])
+    // todo: Заглушка. Нужно добавить получение реальных отзывов с сервера
+    const reviews = {data: [
+        {
+            id: 1234,
+            sender: "Иван Иванович",
+            rating: 5,
+            message: "Здесь будет отзыв"
+        },
+        {
+            id: 8764,
+            sender: "Яков Петрович",
+            rating: 4,
+            message: "Зашёл проверить — всё грузится. Думаю, ну где подвох? А подвоха нет. Даже странно. Работает как часы. Вернусь, когда бэкенд допилят — тогда и поворчу, если что. Но пока — твёрдая пятёрка."
+        }
+    ]};
 
     return (
         <section className="order">
@@ -50,7 +65,7 @@ function Order() {
                                 <SwiperSlide className="swiper-slier order__card" key={v.id}>
                                     <div className="order__card">
                                         <div className="order__card__content">
-                                            <img style={{width: '103px'}} src={SERVER_PATH + "/files/user.png"} alt="" />
+                                            <img style={{width: '103px'}} src="/img/profile__image.png" alt="" />
                                             <div className="order__card__title">
                                                 <h3>{v.sender}</h3>
                                                 <div className="mark__stars">
