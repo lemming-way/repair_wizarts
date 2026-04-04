@@ -13,7 +13,7 @@ import AllOrders from './components/Orders/Allorders';
 
 import SettingsAll from './components/Settings/Settings-all';
 import ContractorSettings from './features/user/profile/ContractorSettings';
-//~ import Services from './components/Settings/services';
+import Services from './features/user/profile/Services';
 import Reviews from './components/Reviews';
 
 import MyOffers from './features/orders/contractor/list/MyOffers';
@@ -221,7 +221,7 @@ function App() {
               <Route path="settings" element={<SettingsAll />}>
                 <Route index element={<UserProfile />} />
                 <Route path="profile" element={<ContractorSettings />} />
-                <Route path="prices" element={null/*<Services />*/} />
+                <Route path="services" element={<Services />} />
                 <Route path="finance" element={<Finance />} />
                 <Route path="balance" element={<Balance />} />
               </Route>

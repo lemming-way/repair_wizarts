@@ -12,7 +12,7 @@ import ContractorProfileNavigator from '../full-height/ContractorProfileNavigato
 const listLinks = [
   '/contractor/settings',
   '/contractor/settings/profile',
-  '/contractor/settings/prices',
+  '/contractor/settings/services',
   '/contractor/settings/finance',
   '/contractor/settings/balance',
 ];

@@ -43,11 +43,11 @@ export default function ContractorProfileNavigator({
             padding: '20px 30px 17px 30px',
           }}
           className={`${style.link}  ${
-            window.location.pathname === '/contractor/settings/prices'
+            window.location.pathname === '/contractor/settings/services'
               ? 'active2'
               : null
           }`}
-          to="/contractor/settings/prices"
+          to="/contractor/settings/services"
         >
           Прайс
         </Link>

@@ -1,9 +1,8 @@
 <?php
 
-$out = null;
 ini_set( 'display_errors', 0 );
 
-call_user_func(function() use(&$out) {
+$out = call_user_func(function() {
   $sql_queries = [
     'getContractorsByService' => [
       'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND ' .
@@ -97,4 +96,6 @@ call_user_func(function() use(&$out) {
   elseif ($query_type === 'insert') {
     $out = [ 'id' => insert_id() ];
   }
+  
+  return $out;
 });
