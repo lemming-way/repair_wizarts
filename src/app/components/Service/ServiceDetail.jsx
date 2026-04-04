@@ -10,7 +10,7 @@ import style from './ServiceDetail.module.scss';
 import { useLanguage } from '../../state/language';
 import { useGlobalState } from '../../state/global';
 import { useUser } from '../../state/user';
-import { useServices } from '../../state/site-data';
+import { useOfferings } from '../../state/site-data';
 import { useContractors, useCreateOrder } from '../../state/order';
 
 import PaymentBlock from './PaymentBlock';
@@ -21,22 +21,22 @@ import ServiceMainContent from './ServiceMainContent';
 function ServiceDetail() {
   const text = useLanguage();
   const currentCity = useGlobalState('currentCity');
-  const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedContractorServices, setSelectedContractorServices] = useState([]);
 
   const [visibleConfirm, setVisibleConfirm] = useState(false);
-  const [ignoreSelectedServices, setIgnoreSelectedServices] = useState([]);
+  const [ignoreContractorServices, setIgnoreContractorServices] = useState([]);
   const { id } = useParams();
 
-  const { categories, subcategories, services } = useServices();
+  const { categories, subcategories, offerings } = useOfferings();
   const { user } = useUser();
 
-  const serviceId = isFinite(id) ? Number(id) : 0;
-  const subcategoryId = services[serviceId]?.parent || 0;
+  const offeringId = isFinite(id) ? Number(id) : 0;
+  const subcategoryId = offerings[offeringId]?.parent || 0;
   const categoryId = subcategories[subcategoryId]?.parent || 0;
 
-  const currentServiceDetails = {
-    id: serviceId,
-    name: services[serviceId]?.name || text('Unknown service'),
+  const currentOfferingDetails = {
+    id: offeringId,
+    name: offerings[offeringId]?.name || text('Unknown service'),
     subcategoryName: subcategories[subcategoryId]?.name || text('Unknown subcategory'),
     categoryName: categories[categoryId]?.name || text('Unknown category'),
   };
@@ -50,19 +50,27 @@ function ServiceDetail() {
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
-  const { contractors } = useContractors({ service: serviceId, city: currentCity });
+  const { contractors } = useContractors({ offering: offeringId, city: currentCity });
   const { createOrder } = useCreateOrder();
 
   const onSelectContractor = async (contractorData) => {
     setSelectedContractor(contractorData);
     setShowSmallModal(true);
     setShowBigModal(false);
+
+    const servicesForOffering = contractorData.services?.[offeringId] || [];
+    const serviceNames = servicesForOffering.map(s => s.service);
+    setSelectedContractorServices(serviceNames);
+    setIgnoreContractorServices(serviceNames);
   };
 
   const handleCloseModals = () => {
     setShowSmallModal(false);
     setShowBigModal(false);
     setSelectedContractor({});
+    setSelectedContractorServices([]);
+    setIgnoreContractorServices([]);
+    setFormError('');
   };
 
   const handleShowBigModal = () => {
@@ -75,19 +83,35 @@ function ServiceDetail() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (selectedServices.length === 0) {
-      setFormError('Select services');
+    setFormError('');
+
+    if (!selectedContractor.id) {
+      setFormError(text('Please select a contractor.'));
+      return;
+    }
+
+    // Фильтруем игнорируемые услуги и формируем список для отправки
+    const servicesToOrder = selectedContractorServices
+      .filter(serviceName => !ignoreContractorServices.includes(serviceName))
+      .map(serviceName => ({
+        service: serviceName,
+        price: prices[serviceName]?.price || 0
+      }));
+
+    if (servicesToOrder.length === 0) {
+      setFormError(text('Please select at least one service.'));
       return;
     }
 
     const orderData = {
       cityId: currentCity,
       address,
-      serviceId,
+      offeringId,
       description,
       price: getSumPrice(),
+      contractorId: selectedContractor.id,
+      services: servicesToOrder,
     };
-    if (selectedContractor?.id) orderData.contractorId = selectedContractor.id;
     // todo: Добавить загрузку изображений в форму
     //~ attachments?: File[];
 
@@ -109,27 +133,26 @@ function ServiceDetail() {
   };
 
   useEffect(() => {
-    document.title = currentServiceDetails.name;
-  }, [currentServiceDetails.name]);
+    document.title = currentOfferingDetails.name;
+  }, [currentOfferingDetails.name]);
 
   function getSumPrice() {
     let sum = 0;
-    selectedServices.forEach(id => {
-      if (!ignoreSelectedServices.includes(id)) {
-        sum += prices[id]?.price || 0;
+    selectedContractorServices.forEach(serviceName => {
+      if (!ignoreContractorServices.includes(serviceName)) {
+        sum += prices[serviceName]?.price || 0;
       }
     });
     return sum;
   }
 
-  function addRemoveIgnoreService(id) {
-    let list = [...ignoreSelectedServices];
-    if (list.includes(id)) {
-      list = list.filter((number) => number !== id);
-    } else {
-      list.push(id);
-    }
-    setIgnoreSelectedServices(list);
+  function addRemoveIgnoreService(serviceName) {
+    const list =
+      ignoreContractorServices.includes(serviceName) ?
+        ignoreContractorServices.filter((name) => name !== serviceName)
+      :
+        [...ignoreContractorServices, serviceName];
+    setIgnoreContractorServices(list);
   }
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,40 +166,31 @@ function ServiceDetail() {
     setIsModalOpen(false);
   };
 
-  function addRemoveService(id) {
-    let list = [...selectedServices];
-    if (list.includes(id)) {
-      list = list.filter((number) => number !== id);
-    } else {
-      list.push(id);
-    }
-    setSelectedServices(list);
+  function addRemoveService(serviceName) {
+    const list = 
+      selectedContractorServices.includes(serviceName) ?
+        selectedContractorServices.filter((name) => name !== serviceName)
+      :
+        [...selectedContractorServices, serviceName];
+    setSelectedContractorServices(list);
   }
 
-  // todo: доработать логику выбора цены
-  // Dynamically generate prices based on selected category/subcategory/service
+  // Динамически генерируем цены на основе услуг выбранного мастера
   const prices = useMemo(() => {
-    const servicePrice = 100; // Default price, can be dynamic if available from API
+    const contractorOfferingServices = selectedContractor.services?.[offeringId] || [];
+    const pricesMap = {};
+    contractorOfferingServices.forEach(serviceDetail => {
+      pricesMap[serviceDetail.service] = {
+        name: serviceDetail.service,
+        price: serviceDetail.price,
+        category: currentOfferingDetails.name,
+        delivery: `${text('From')} ${serviceDetail.durationFrom.value} ${text(serviceDetail.durationFrom.unit)}` +
+          (serviceDetail.durationTo ? ` ${text('to')} ${serviceDetail.durationTo.value} ${text(serviceDetail.durationTo.unit)}` : ''),
+      };
+    });
+    return pricesMap;
+  }, [selectedContractor, offeringId, currentOfferingDetails.name, text]);
 
-    const servicesForSubcategory = {};
-    const subcategory = subcategories[subcategoryId];
-
-    if (subcategory) {
-      subcategory.services.forEach(srvId => {
-        const serviceName = services[srvId]?.name;
-        if (serviceName) {
-          servicesForSubcategory[srvId] = {
-            price: servicePrice,
-            category: subcategory.name,
-            delivery: 'From 30 minutes',
-            name: serviceName,
-            img: 'https://cdn-icons-png.flaticon.com/512/10473/10473245.png', // Placeholder image
-          };
-        }
-      });
-    }
-    return servicesForSubcategory;
-  }, [subcategoryId, subcategories, services]);
 
   return <>
     {/* блок с оплатой */}
@@ -196,9 +210,9 @@ function ServiceDetail() {
 
     <ServiceMainContent
       text={text}
-      currentServiceDetails={currentServiceDetails}
+      currentServiceDetails={currentOfferingDetails}
       prices={prices}
-      selectedServices={selectedServices}
+      selectedServices={selectedContractorServices}
       addRemoveService={addRemoveService}
       selectedContractor={selectedContractor}
       onSelectContractor={onSelectContractor}
@@ -209,7 +223,7 @@ function ServiceDetail() {
       setFormError={setFormError}
       user={user}
       getSumPrice={getSumPrice}
-      ignoreSelectedServices={ignoreSelectedServices}
+      ignoreSelectedServices={ignoreContractorServices}
       addRemoveIgnoreService={addRemoveIgnoreService}
       description={description}
       setDescription={setDescription}

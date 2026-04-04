@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import style from '../../../OrderModals.module.css';
 import { useLanguage } from 'app/state/language';
-import { useCreateOffer, useUpdateOffer, TimeUnit } from 'app/state/order';
-import { useUser, UserRole } from 'app/state/user';
+import { useCreateOffer, useUpdateOffer } from 'app/state/order';
+import { useUser, UserRole, TimeUnit } from 'app/state/user';
 
 // Вспомогательная функция для преобразования offer.readyIn в значение для select
 function getReadyInSelectValue(readyIn) {

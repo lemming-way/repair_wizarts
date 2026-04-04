@@ -8,7 +8,7 @@ import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from '../../state/language';
 import { useAcceptInvoice, useAvailableOrders, OrderStatus } from '../../state/order';
 import { useUser, useUsersByIds } from '../../state/user';
-import { useServices } from '../../state/site-data';
+import { useOfferings } from '../../state/site-data';
 
 import style from './applications.module.css';
 
@@ -24,7 +24,7 @@ function MyApplications() {
   const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
   const clientsMap = new Map(clients.map(client => [client.id, client]));
 
-  const { services, isLoading: isLoadingServices } = useServices();
+  const { offerings, isLoading: isLoadingOfferings } = useOfferings();
 
   const { acceptInvoice } = useAcceptInvoice();
 
@@ -50,7 +50,7 @@ function MyApplications() {
     console.log(`Decline order with ID: ${orderId}`);
   };
 
-  if (isLoadingOrders || isLoadingClients || isLoadingServices) {
+  if (isLoadingOrders || isLoadingClients || isLoadingOfferings) {
     return <div className="mini-text"><h1>{text('Loading applications...')}</h1></div>;
   }
 
@@ -70,7 +70,7 @@ function MyApplications() {
       <div className={style.orders}>
         {filteredOrders.map((order) => {
           const client = clientsMap.get(order.clientId);
-          const serviceName = services.services[order.serviceId]?.name || text('Unknown service');
+          const offeringName = offerings[order.offeringId]?.name || text('Unknown service');
           const createdAt = new Date(order.createdAt).toLocaleDateString();
 
           return (
@@ -81,7 +81,7 @@ function MyApplications() {
                   <p>{createdAt}</p>
                 </div>
                 <div className={style.summary_row}>
-                  <p>{serviceName}</p>
+                  <p>{offeringName}</p>
                   <p>
                     {text('Cost')}:{' '}
                     <span className={style.price}>
@@ -97,6 +97,11 @@ function MyApplications() {
                 </div>
               </summary>
               <div className={style.details_body}>
+                {
+                  order.services?.map(item => 
+                    <p className={style.text}>{item.service}</p>
+                  )
+                }
                 <p className={style.text}>{order.description}</p>
                 <div className={style.miniSwiperWrap}>
                   <Swiper

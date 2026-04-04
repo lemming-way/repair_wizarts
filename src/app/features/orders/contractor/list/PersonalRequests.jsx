@@ -2,11 +2,11 @@ import { Link } from "react-router-dom"
 
 import { useAvailableOrders, OrderStatus } from "app/state/order"
 import { useUsersByIds } from "app/state/user"
-import { useServices } from "app/state/site-data"
+import { useOfferings } from "app/state/site-data"
 
 const PersonalRequests = () => {
     const { orders: availableOrders, isLoading: isLoadingOrders } = useAvailableOrders();
-    const { services, isLoading: isLoadingServices } = useServices();
+    const { offerings, isLoading: isLoadingOfferings } = useOfferings();
 
     const requests = availableOrders.filter(order => order.status === OrderStatus.REQUESTED);
 
@@ -28,7 +28,7 @@ const PersonalRequests = () => {
         }
     }
 
-    if (isLoadingOrders || isLoadingServices || isLoadingClients) {
+    if (isLoadingOrders || isLoadingOfferings || isLoadingClients) {
         return <div>Загрузка...</div>;
     }
 
@@ -66,7 +66,7 @@ const PersonalRequests = () => {
                         </div>
                         {requests.map((order) => {
                             const client = clientsMap.get(order.clientId);
-                            const serviceName = services[order.serviceId]?.name || 'Неизвестная услуга';
+                            const offeringName = offerings[order.offeringId]?.name || 'Неизвестная услуга';
                             // Заглушка, так как number_of_submissions нет в UserProfile
                             const numberOfSubmissions = 0;
 
@@ -75,7 +75,7 @@ const PersonalRequests = () => {
                                     <div className="archive-hee sewreqwreqw">
                                         <div className="nav_applications-3 fasfXf nav_applications-3-gee fsdfsaooo big_nav-device df align mobile-nav_applications-3">
                                             <div className="all-requests-title-container">
-                                                <h2>{serviceName}</h2>
+                                                <h2>{offeringName}</h2>
                                             </div>
                                             <div className="client__order">
                                                 <img

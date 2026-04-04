@@ -13,13 +13,13 @@ import StatsBlock from './StatsBlock';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-import { useServices } from '../../state/site-data';
+import { useOfferings } from '../../state/site-data';
 import { useUsersByIds } from '../../state/user';
 import { useAvailableOrders, useContractorOrders, OrderStatus, orderStatusString } from '../../state/order';
 
 function AllOrders() {
   const text = useLanguage();
-  const { categories, subcategories, services } = useServices();
+  const { categories, subcategories, offerings } = useOfferings();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [ordersPerPage, setOrdersPerPage] = useState(10);
@@ -98,7 +98,7 @@ function AllOrders() {
     if (selectValue === 'Viewed' && isNew(order)) return false;
 
     // Фильтрация по категории
-    if (categoryFilter && subcategories?.[ services?.[order.serviceId]?.parent ]?.parent !== categoryFilter) {
+    if (categoryFilter && subcategories?.[ offerings?.[order.offeringId]?.parent ]?.parent !== categoryFilter) {
       return false;
     }
 
@@ -262,11 +262,11 @@ function AllOrders() {
                     <div className={style.block_title}>
                       <Link to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
-                          {services?.[order.serviceId]?.name || text('Untitled')}
+                          {offerings?.[order.offeringId]?.name || text('Untitled')}
                         </h3>
                       </Link>
                       <p className={style.text_navigation}>
-                        {categories?.[ subcategories?.[ services?.[order.serviceId]?.parent ]?.parent ]?.name ?? ''}
+                        {categories?.[ subcategories?.[ offerings?.[order.offeringId]?.parent ]?.parent ]?.name ?? ''}
                       </p>
                       <div
                         className={style.row}

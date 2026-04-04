@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 
 import 'app/scss/orders.css';
 import style from './ContractorsOffers.module.css';
-import { useServices } from 'app/state/site-data';
+import { useOfferings } from 'app/state/site-data';
 import { useClientOrders, OrderStatus, orderStatusString } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import PaginationPages from 'app/components/Settings/PaginationPages';
 
 function ContractorsOffers() {
   const { user } = useUser();
-  const { services } = useServices();
+  const { offerings } = useOfferings();
   const { orders } = useClientOrders();
   const [contentCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,7 +73,7 @@ function ContractorsOffers() {
 
                     return (
                       <tr key={`${item.order.id}-${item.offer.contractorId}`}>
-                        <td>{services[item.order.serviceId] ?? 'Неизвестная услуга'}</td>
+                        <td>{offerings[item.order.offeringId] ?? 'Неизвестная услуга'}</td>
                         <td>
                           <img
                             src={ item.contractor?.avatar || '/img/img-camera.png' }
@@ -129,7 +129,7 @@ function ContractorsOffers() {
                 return (
                   <div className={style.card_block} key={`${item.order.id}-${item.offer.contractorId}`}>
                     <Link to={`/client/requests/my_order/${item.order.id}`}>
-                      {services[item.order.serviceId] ?? 'Неизвестная услуга'}
+                      {offerings[item.order.offeringId] ?? 'Неизвестная услуга'}
                     </Link>
                     <p className={style.card__date}>
                       {new Intl.DateTimeFormat('ru-RU', {

@@ -107,12 +107,12 @@ import { Link } from 'react-router-dom';
 import styles from './ServiceDropdown.module.scss';
 import arrowDown from '../img/header/icons/arrow-down-icon.svg';
 import { useLanguage } from '../state/language';
-import { useServices } from '../state/site-data';
+import { useOfferings } from '../state/site-data';
 
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const { categories, subcategories, services } = useServices();
+  const { categories, subcategories, offerings } = useOfferings();
 
   return (
     <Dropdown
@@ -170,19 +170,19 @@ const ServiceDropdown = () => {
                         position="right-top"
                         className={styles.Submenu_submenu}
                       >
-                        {subcategory.services
+                        {subcategory.offerings
                           .slice(0, 5)
-                          .map(serviceId =>
-                            services[serviceId] ?
+                          .map(offeringId =>
+                            offerings[offeringId] ?
                             (
                               <Dropdown.Item
                                 className={`${styles.serviceDropdown_item} ${styles.serviceDropdown_item_lvl3}`}
-                                key={serviceId}
+                                key={offeringId}
                               >
                                 <Link
-                                  to={`/services/${serviceId}`}
+                                  to={`/services/${offeringId}`}
                                 >
-                                  <span>{services[serviceId].name}</span>
+                                  <span>{offerings[offeringId].name}</span>
                                 </Link>
                               </Dropdown.Item>
                             ) :

@@ -1,5 +1,5 @@
 import style from './Allorders.module.css';
-import { useServices } from '../../state/site-data';
+import { useOfferings } from '../../state/site-data';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
 // todo: оставлять только категории, релевантные для мастера
@@ -13,7 +13,7 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { categories, subcategories, services } = useServices();
+  const { categories, subcategories, offerings } = useOfferings();
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {
@@ -84,10 +84,10 @@ export default function FilterBlock({
                   <details key={subId}>
                     <summary>{sub.name}</summary>
                     <div className={style.filter__details_data}>
-                      {sub.services.map(serviceId =>
-                        services[serviceId] ?
-                        <details key={serviceId}>
-                          <summary>{services[serviceId].name}</summary>
+                      {sub.offerings.map(offeringId =>
+                        offerings[offeringId] ?
+                        <details key={offeringId}>
+                          <summary>{offerings[offeringId].name}</summary>
                         </details> :
                         null
                       )}

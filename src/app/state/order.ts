@@ -26,9 +26,15 @@ import * as FileAPI from './api/dropbox';
 import * as TripAPI from './api/trips';
 import { getDrivenCar } from './api/cars';
 import { authorizedUserId } from './auth';
-import { UserProfile, UserRole, useUser, useUsersByIds } from './user';
+import type { ServicesMap, UserProfile } from './user';
+import { UserRole, TimeUnit, useUser, useUsersByIds, getUserById } from './user';
 
 // ==================== Типы данных ====================
+
+export type OrderServiceDetails = {
+  service: string;
+  price: number
+};
 
 export type Order = {
   id: number;
@@ -36,7 +42,8 @@ export type Order = {
   contractorId?: number;
   city: number;
   address: string;
-  serviceId: number;
+  offeringId: number;
+  services?: OrderServiceDetails[];
   status: OrderStatus;
   description: string;
   agreedPrice?: number;
@@ -46,13 +53,6 @@ export type Order = {
   updatedAt: Date;
   attachments: number[];
   contractorOffers: Offer[];
-}
-
-export enum TimeUnit {
-  MINUTES = 'minutes',
-  HOURS = 'hours',
-  DAYS = 'days',
-  WEEKS = 'weeks'
 }
 
 export type Offer = {
@@ -106,23 +106,23 @@ const EMPTY_ARRAY = Object.freeze([]);
 
 /**
  * Получить список мастеров по конкретной услуге
- * @param service - ID услуги
+ * @param offering - ID услуги
  * @param city - ID города
  * @param rating - минимальный рейтинг мастера (не реализовано)
  * @param isOnline - возвращать только пользователей онлайн
  * @returns Объект, содержащий объединенное состояние запросов React Query и массив `users` с данными
  *          успешно полученных мастеров, оказывающих данную услугу
  */
-export function useContractors({ service, city, rating, isOnline }: {
-  service: number;
+export function useContractors({ offering, city, rating, isOnline }: {
+  offering: number;
   city: number;
   rating?: number;
   isOnline?: boolean;
 }) {
   const { user } = useUser() as { user: UserProfile };
   const queryResult = useQuery({
-    queryKey: [ 'contractors', service, city, rating, isOnline ],
-    queryFn: () => TripAPI.getContractorsByService({ serviceId: service, cityId: city, minRating: rating, isOnline }),
+    queryKey: [ 'contractors', offering, city, rating, isOnline ],
+    queryFn: () => TripAPI.getContractorsByService({ serviceId: offering, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
     // Здесь и далее проверяем соответствие ID пользователя авторизованному пользователю в токене,
     // потому что пользователь может смениться во время выполнения асинхронных операций
@@ -154,9 +154,11 @@ export type OrderCreationData = {
   /** адрес выполнения работ */
   address: string;
   /** ID заказанной услуги */
-  serviceId: number;
+  offeringId: number;
   /** ID выбранного мастера */
   contractorId?: number;
+  /** выбранные услуги */
+  services?: OrderServiceDetails[];
   /** Комментарий к заказу */
   description: string;
   /** Фотографии к заказу */
@@ -178,8 +180,9 @@ export type OrderUpdateData = {
  * @param userId - ID пользователя
  * @param cityId - ID города
  * @param address - адрес выполнения работ
- * @param serviceId - ID заказанной услуги
+ * @param offeringId - ID заказанной услуги
  * @param contractorId - ID выбранного мастера
+ * @param services - выбранные услуги
  * @param description - Комментарий к заказу
  * @param attachments - Фотографии к заказу
  * @param price - Предложенная стоимость работ
@@ -190,18 +193,23 @@ async function createOrder(
   {
     cityId,
     address,
-    serviceId,
+    offeringId,
     contractorId,
+    services,
     description,
     attachments,
     price
   }: OrderCreationData
 ): Promise<number | null> {
   const orderOptions: Record<string, any> = {
-    service: serviceId,
+    offering: offeringId,
     description,
     desiredPrice: price
   };
+  
+  if (contractorId) {
+    orderOptions.services = services;
+  }
 
   // todo: Здесь возможно появление файлов, не связанных с заказами. Нужно предусмотреть очистку.
   if (attachments?.length) {
@@ -228,6 +236,7 @@ async function createOrder(
     b_only_offer: contractorId ? 1 : 0
   }
 
+  // todo: сделать подобие транзакции или перенести на бэкенд
   const orderId = await TripAPI.createTrip(orderCreationData);
   if (userId !== authorizedUserId()) throw new Error('User was changed.');
   if (contractorId && orderId) {
@@ -248,7 +257,24 @@ export function useCreateOrder() {
       if (!user.id) throw new Error('User must be authorized.');
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
       if (user.role !== UserRole.Client) throw new Error('User must be a client.');
-      if (!orderData.cityId || !orderData.address || !orderData.serviceId) throw new Error('Mandatory parameter is empty.');
+      if (!orderData.cityId || !orderData.address || !orderData.offeringId) throw new Error('Mandatory parameter is empty.');
+      if (orderData.contractorId && !orderData.services?.length) throw new Error('Mandatory parameter is empty.');
+      
+      if (orderData.contractorId) {
+        const contractorUser = (await getUserById(client, orderData.contractorId)) as { services?: ServicesMap };
+        if (!contractorUser.services?.[orderData.offeringId]) throw new Error('Bad contractor');
+        const contractorServices = contractorUser.services[orderData.offeringId];
+        let validServices = 0;
+        for (const orderService of orderData.services!) {
+          for (const contractorService of contractorServices) {
+            if (orderService.service === contractorService.service && orderService.price === contractorService.price) {
+              validServices++;
+              break;
+            }
+          }
+        }
+        if (orderData.services!.length !== validServices) throw new Error('Bad services data');
+      }
 
       const ret = await createOrder(user.id, orderData);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
@@ -284,7 +310,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         clientId: Number(trip.u_id),
         city: Number(trip.city_start ?? 0),
         address: String(trip.b_start_address ?? ''),
-        serviceId: Number(trip.b_options?.service ?? 0),
+        offeringId: Number(trip.b_options?.offering ?? 0),
         description: String(trip.b_options?.description ?? ''),
         desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
         createdAt: new Date(String(trip.b_created ?? '')),
@@ -292,7 +318,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         contractorOffers: []
       };
       // отбрасываем бракованные данные
-      if (!order.id || !order.clientId || !order.serviceId || !order.city) {
+      if (!order.id || !order.clientId || !order.offeringId || !order.city) {
         return ret;
       }
       order.updatedAt = order.createdAt;  // начальное значение, будет меняться
@@ -334,9 +360,12 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         }
       }
       // проверяем, предложен ли заказ конкретному мастеру
-      if (!order.contractorId) {
-        if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
-        else if (trip.b_offer) order.contractorId = userId;
+      if (trip.b_offers?.[0]?.u_id || trip.b_offer) {
+        if (!order.contractorId) {
+          if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
+          else order.contractorId = userId;
+        }
+        order.services = Array.isArray(trip.b_options?.services) ? trip.b_options.services : [];
       }
 
       // маппинг статусов
@@ -1000,7 +1029,7 @@ export function useContractorOrders() {
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
 export function useAvailableOrders() {
-  const { user } = useUser() as { user: UserProfile & { services: number[] } };
+  const { user } = useUser() as { user: UserProfile & { services: ServicesMap } };
   const queryResult = useQuery({
     queryKey: [ 'orders', user.id, 'available' ],
     queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.New),
@@ -1010,7 +1039,7 @@ export function useAvailableOrders() {
   });
 
   const { data, ...ret } = queryResult;
-  const filteredData = data?.filter(order => user.services?.includes(order.serviceId));
+  const filteredData = data?.filter(order => !!user.services?.[order.offeringId]);
   const orders = filteredData?.length ? filteredData : EMPTY_ARRAY;
   return {
     ...ret,

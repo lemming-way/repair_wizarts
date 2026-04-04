@@ -9,7 +9,7 @@ import style from './ContractorSettings.module.css';
 import { MultiSelect } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
 import { useUser, updateUser, BusinessModel } from 'app/state/user';
-import { useServices, useCities } from 'app/state/site-data';
+import { useOfferings, useCities } from 'app/state/site-data';
 
 const experienceOptions = [
   { value: 1, label: '1 year' },
@@ -23,10 +23,10 @@ function ContractorSettings() {
   const text = useLanguage();
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
-  const [serviceOptionSelected, setServiceOptionSelected] = useState([]);
+  const [offeringOptionSelected, setOfferingOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
 
-  const { categories, subcategories, services } = useServices();
+  const { categories, subcategories, offerings } = useOfferings();
   const { cities } = useCities();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -74,39 +74,37 @@ function ContractorSettings() {
   useEffect(() => {
     if (!user.id) return;
 
-    const selectedServiceIds = Array.isArray(user.services)
-      ? user.services
-      : [];
+    const userServicesMap = user.services || {};
 
-    const initialServiceOptions = [];
+    const initialOfferingOptions = [];
     const initialSubcategoryOptions = [];
     const initialCategoryOptions = [];
 
     const categoryIds = {};
     const subcategoryIds = {};
 
-    selectedServiceIds.forEach(serviceId => {
-      const serviceName = services[serviceId].name;
-      if (serviceName) {
-        initialServiceOptions.push({ label: serviceName, value: serviceId });
-      }
+    Object.keys(userServicesMap).forEach(offeringIdStr => {
+      const offeringId = Number(offeringIdStr);
+      if (offerings[offeringId]?.name) {
+        initialOfferingOptions.push({ label: offerings[offeringId].name, value: offeringId });
 
-      const subId = services[serviceId].parent;
-      if (subId && !subcategoryIds[subId]) {
-        initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
-        subcategoryIds[subId] = true;
+        const subId = offerings[offeringId].parent;
+        if (subId && subcategories[subId] && !subcategoryIds[subId]) {
+          initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
+          subcategoryIds[subId] = true;
 
-        const secId = subcategories[subId].parent;
-        if (secId && !categoryIds[secId]) {
-          initialCategoryOptions.push({ label: categories[secId].name, value: secId });
-          categoryIds[secId] = true;
+          const secId = subcategories[subId].parent;
+          if (secId && categories[secId] && !categoryIds[secId]) {
+            initialCategoryOptions.push({ label: categories[secId].name, value: secId });
+            categoryIds[secId] = true;
+          }
         }
       }
     });
 
     setCategoryOptionSelected(initialCategoryOptions);
     setSubcategoryOptionSelected(initialSubcategoryOptions);
-    setServiceOptionSelected(initialServiceOptions);
+    setOfferingOptionSelected(initialOfferingOptions);
 
     setExperience(
       user.experience
@@ -127,7 +125,7 @@ function ContractorSettings() {
     });
 
     setBusiness(user.businessModel);
-  }, [user, categories, subcategories, services]);
+  }, [user, categories, subcategories, offerings]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -141,6 +139,20 @@ function ContractorSettings() {
   const onSubmit = async (e) => {
     e.preventDefault();
 
+    const newServicesMap = {};
+    const currentServicesMap = user.services || {};
+
+    offeringOptionSelected.forEach(opt => {
+      const offeringId = Number(opt.value);
+      // Сохраняем существующие данные услуги, если она уже была выбрана
+      if (currentServicesMap[offeringId]) {
+        newServicesMap[offeringId] = currentServicesMap[offeringId];
+      } else {
+        // Для вновь выбранных услуг инициализируем пустым массивом
+        newServicesMap[offeringId] = [];
+      }
+    });
+
     const payload = {
       description: form.description,
       organizationName: form.organizationName,
@@ -148,7 +160,7 @@ function ContractorSettings() {
       experience: Number(form.experience),
       locality: Number(form.city) || 0,
       businessModel,
-      services: serviceOptionSelected.map(opt => opt.value) || [],
+      services: newServicesMap,
     };
 
     try {
@@ -177,12 +189,12 @@ function ContractorSettings() {
     }
   }
 
-  const serviceOptions = [];
+  const offeringOptions = [];
   for (const { value: id } of subcategoryOptionSelected) {
     const subcategory = subcategories[id];
     if (subcategory) {
-      serviceOptions.push(...subcategory.services.map(srvId => ({
-        label: services[srvId].name,
+      offeringOptions.push(...subcategory.offerings.map(srvId => ({
+        label: offerings[srvId].name,
         value: srvId
       })));
     }
@@ -219,7 +231,7 @@ function ContractorSettings() {
               onChange={(selected) => {
                 setCategoryOptionSelected(selected);
                 setSubcategoryOptionSelected([]);
-                setServiceOptionSelected([]);
+                setOfferingOptionSelected([]);
               }}
               value={categoryOptionSelected}
               menuPlacement="bottom"
@@ -232,7 +244,7 @@ function ContractorSettings() {
               options={subcategoryOptions}
               onChange={(selected) => {
                 setSubcategoryOptionSelected(selected);
-                setServiceOptionSelected([]);
+                setOfferingOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               menuPlacement="bottom"
@@ -243,11 +255,11 @@ function ContractorSettings() {
               isSelectAll={true}
               isMulti={true}
               placeholder={text('Services')}
-              options={serviceOptions}
+              options={offeringOptions}
               onChange={(selected) =>
-                setServiceOptionSelected(selected)
+                setOfferingOptionSelected(selected)
               }
-              value={serviceOptionSelected}
+              value={offeringOptionSelected}
               menuPlacement="bottom"
               isDisabled={!subcategoryOptionSelected.length}
             />

@@ -59,7 +59,7 @@ import { ServiceDetail } from './components/Service';
 import BalanceClient from './components/Settings/BalanceClient';
 import { Footer } from './footer';
 import { Toolbar } from './header';
-import { useServices } from './state/site-data';
+import { useOfferings } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
 
@@ -71,7 +71,7 @@ function App() {
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
 
-  const { categories, isLoading: areServicesLoading } = useServices();
+  const { categories, isLoading: areOfferingsLoading } = useOfferings();
 
   // Add visibility change tracking
   useEffect(() => {
@@ -129,7 +129,7 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (Object.keys(categories).length === 0 && areServicesLoading) {
+  if (Object.keys(categories).length === 0 && areOfferingsLoading) {
     return 'Loading...';
   }
 

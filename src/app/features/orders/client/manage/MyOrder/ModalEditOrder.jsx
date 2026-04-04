@@ -4,7 +4,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 
 import style from '../../../OrderModals.module.css';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
-import { useServices } from 'app/state/site-data';
+import { useOfferings } from 'app/state/site-data';
 import { useUpdateOrder } from 'app/state/order';
 import { useLanguage } from 'app/state/language';
 
@@ -19,7 +19,7 @@ export default function ModalEditOrder({
   const [desiredPrice, setDesiredPrice] = useState(order?.desiredPrice || '');
   const [attachments, setAttachments] = useState(Object.values(order?.attachments || {}));
 
-  const { services } = useServices();
+  const { offerings } = useOfferings();
   const { updateOrder } = useUpdateOrder();
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function ModalEditOrder({
               />
             </p>
             <p className={style.modal_edit_order__input_small_width_margin_bottom}>
-              {services?.[order.serviceId]?.name ?? ''}
+              {offerings?.[order.offeringId]?.name ?? ''}
             </p>
 
             <p className={style.modal_edit_order__form_light_text}>

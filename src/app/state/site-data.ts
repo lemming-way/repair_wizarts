@@ -7,8 +7,8 @@ import { SiteData, getSiteData, getSiteDataVersion, getServices } from './api/si
 const SITE_DATA_LS_KEY = 'site_data';
 const SITE_DATA_QUERY_KEY = 'site_data';
 const SITE_DATA_FILTERED_QUERY_KEY = 'site_data_filtered';
-const SERVICES_LS_KEY = 'services';
-const SERVICES_QUERY_KEY = 'services';
+const OFFERINGS_LS_KEY = 'offerings';
+const OFFERINGS_QUERY_KEY = 'offerings';
 
 async function fetchSiteData({ client }) {
   try {
@@ -114,34 +114,34 @@ export type Categories = Record<number, {
 export type Subcategories = Record<number, {
   name: string;
   parent: number;
-  services: number[];
+  offerings: number[];
 }>;
 
-export type Services = Record<number, {
+export type Offerings = Record<number, {
   name: string;
   parent: number;
 }>;
 
-export type ServicesData = {
+export type OfferingsData = {
   categories: Categories;
   subcategories: Subcategories;
-  services: Services;
+  offerings: Offerings;
 };
 
-async function fetchServices() {
+async function fetchOfferings() {
   try {
-    const cachedServices = JSON.parse(localStorage.getItem(SERVICES_LS_KEY) ?? 'null');
-    if (cachedServices && cachedServices.categories && cachedServices.subcategories && cachedServices.services) {
-      return cachedServices;
+    const cachedOfferings = JSON.parse(localStorage.getItem(OFFERINGS_LS_KEY) ?? 'null');
+    if (cachedOfferings && cachedOfferings.categories && cachedOfferings.subcategories && cachedOfferings.offerings) {
+      return cachedOfferings;
     }
   }
   catch (e) {}
 
   const data = await getServices();
-  const servicesData = {
+  const offeringsData = {
     categories: {},
     subcategories: {},
-    services: {}
+    offerings: {}
   };
   if (data && Array.isArray(data)) {
     for (const section of data) {
@@ -149,27 +149,27 @@ async function fetchServices() {
       const name = String(section?.name || '');
       const subsections = section?.subsections;
       if (Number.isFinite(secId) && secId > 0 && name && Array.isArray(subsections)) {
-        servicesData.categories[secId] = {
+        offeringsData.categories[secId] = {
           name,
           subcategories: []
         };
         for (const subsection of subsections) {
           const subId = Number(subsection?.id);
           const name = String(subsection?.name || '');
-          const services = subsection?.services;
-          if (Number.isFinite(subId) && subId > 0 && !servicesData.subcategories[subId] && name && Array.isArray(services)) {
-            servicesData.categories[secId].subcategories.push(subId);
-            servicesData.subcategories[subId] = {
+          const offerings = subsection?.services;
+          if (Number.isFinite(subId) && subId > 0 && !offeringsData.subcategories[subId] && name && Array.isArray(offerings)) {
+            offeringsData.categories[secId].subcategories.push(subId);
+            offeringsData.subcategories[subId] = {
               name,
               parent: secId,
-              services: []
+              offerings: []
             };
-            for (const service of services) {
-              const srvId = Number(service?.id);
-              const name = String(service?.name || '');
-              if (Number.isFinite(srvId) && srvId > 0 && !servicesData.services[srvId] && name) {
-                servicesData.subcategories[subId].services.push(srvId);
-                servicesData.services[srvId] = {
+            for (const offering of offerings) {
+              const srvId = Number(offering?.id);
+              const name = String(offering?.name || '');
+              if (Number.isFinite(srvId) && srvId > 0 && !offeringsData.offerings[srvId] && name) {
+                offeringsData.subcategories[subId].offerings.push(srvId);
+                offeringsData.offerings[srvId] = {
                   name,
                   parent: subId
                 };
@@ -179,26 +179,26 @@ async function fetchServices() {
         }
       }
     }
-    localStorage.setItem(SERVICES_LS_KEY, JSON.stringify(servicesData));
+    localStorage.setItem(OFFERINGS_LS_KEY, JSON.stringify(offeringsData));
   }
   else {
-    localStorage.removeItem(SERVICES_LS_KEY);
+    localStorage.removeItem(OFFERINGS_LS_KEY);
   }
-  return servicesData;
+  return offeringsData;
 }
 
-const emptyServicesData = { categories: {}, subcategories: {}, services: {} };
+const emptyOfferingsData = { categories: {}, subcategories: {}, offerings: {} };
 
-export function useServices() {
+export function useOfferings() {
   const queryResult = useQuery({
-    queryKey: [ SERVICES_QUERY_KEY ],
-    queryFn: fetchServices,
+    queryKey: [ OFFERINGS_QUERY_KEY ],
+    queryFn: fetchOfferings,
     staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
   });
   const { data, ...ret } = queryResult;
-  const servicesData: ServicesData = data || emptyServicesData;
+  const offeringsData: OfferingsData = data || emptyOfferingsData;
   return {
     ...ret,
-    ...servicesData
+    ...offeringsData
   }
 }

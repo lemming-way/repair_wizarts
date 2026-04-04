@@ -3,10 +3,10 @@
  *
  * @summary
  * **Типы данных:**
- * UserRole, UserProfile, RegisterPayload, UserUpdatePayload, BusinessModel
+ * TimeUnit, UserRole, UserProfile, RegisterPayload, UserUpdatePayload, BusinessModel
  *
  * **Функции, влияющие на глобальное состояние:**
- * useUser, useUsersByIds, login, logout, useLogin,
+ * useUser, useUsersByIds, getUserById, login, logout, useLogin,
  * registerClient, useRegisterClient, registerContractor, useRegisterContractor,
  * updateUser, useUpdateUser, updateUserAvatar, useUpdateUserAvatar,
  *
@@ -44,6 +44,16 @@ export enum BusinessModel {
   IndependentTechnician = 'Independent technician',
   /** Сервисный центр */
   ServiceCenter = 'Service center'
+}
+
+/**
+ * Единицы времени.
+ */
+export enum TimeUnit {
+  MINUTES = 'minutes',
+  HOURS = 'hours',
+  DAYS = 'days',
+  WEEKS = 'weeks'
 }
 
 /**
@@ -85,6 +95,21 @@ interface UserBaseData {
 interface ClientUserProfile extends UserBaseData {
 }
 
+export type ServiceDetails = {
+  service: string;
+  durationFrom: {
+    value: number,
+    unit: TimeUnit
+  };
+  durationTo?: {
+    value: number,
+    unit: TimeUnit
+  };
+  price: number
+};
+
+export type ServicesMap = Record<number, ServiceDetails[]>;
+
 interface ContractorUserProfile extends UserBaseData {
   /** Описание пользователя. */
   description: string;
@@ -101,7 +126,7 @@ interface ContractorUserProfile extends UserBaseData {
   /** Опыт */
   experience: number;
   /** Услуги */
-  services: number[];
+  services: ServicesMap;
   /** Бизнес-модель */
   businessModel: BusinessModel;
   /** Название организации */
@@ -138,7 +163,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     experience: 'number' === typeof u_details?.experience ? u_details.experience : 0,
     isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
     lastTimeBeenOnline: 'string' === typeof u_details?.lastTimeBeenOnline ? u_details.lastTimeBeenOnline : '',
-    services: Array.isArray(u_details?.services) ? u_details.services : [],
+    services: Array.isArray(u_details?.services) ? u_details.services : {},
     businessModel: u_details?.businessModel === BusinessModel.ServiceCenter ? BusinessModel.ServiceCenter : BusinessModel.IndependentTechnician,
     organizationName: 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
   };
@@ -264,6 +289,22 @@ function combineFetchUserResults(results: UseQueryResult<Awaited<UserProfile | {
   }
 
   return ret;
+}
+
+/**
+ * Получить данные пользователя по ID.
+ * Только для внутреннего использования в API. Для UI рекомендуется использовать хук `useUsersByIds`.
+ * @internal
+ * @param userId ID пользователя.
+ * @returns Промис, разрешающийся с данными запрошенного пользователя.
+ */
+export async function getUserById(queryClient: QueryClient, userId: number) {
+  if (!userId) return {};
+  return (await queryClient.ensureQueryData({
+    queryKey: ['user', userId],
+    queryFn: fetchUserById,
+    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
+  })) ?? {};
 }
 
 /**
@@ -428,7 +469,7 @@ export type RegisterPayload = {
   password: string;
   address?: string;
   experience?: number;
-  services?: number[];
+  offerings?: number[];
   businessModel?: BusinessModel;
   organizationName?: string;
   keepAuthorized: boolean;
@@ -456,7 +497,7 @@ async function _registerUser(
     password,
     address,
     experience,
-    services,
+    offerings,
     businessModel,
     organizationName,
     keepAuthorized
@@ -475,11 +516,13 @@ async function _registerUser(
     u_email,
     password,
   };
+  
   if (role === UserRole.Contractor) {
+    const services = Object.fromEntries((offerings || []).map(id => [id, []]));
     registerData.u_details = {
       address: address || '',
       experience: experience || 0,
-      services: services || [],
+      services,
       businessModel: businessModel || BusinessModel.IndependentTechnician,
       organizationName: organizationName || ''
     };
@@ -584,7 +627,7 @@ export type UserUpdatePayload = {
   experience?: number;
   isOnline?: boolean;
   lastTimeBeenOnline?: string;
-  services?: number[];
+  services?: ServicesMap;
   businessModel?: BusinessModel;
   organizationName?: string;
 }

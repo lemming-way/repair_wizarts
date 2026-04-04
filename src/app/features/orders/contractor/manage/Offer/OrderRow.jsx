@@ -8,7 +8,7 @@ import { useLanguage } from 'app/state/language';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useUser } from 'app/state/user';
 import { useRevokeOffer } from 'app/state/order';
-import { useServices } from 'app/state/site-data';
+import { useOfferings } from 'app/state/site-data';
 import ModalEditOffer from './ModalEditOffer';
 
 export default function OrderRow({
@@ -24,7 +24,7 @@ export default function OrderRow({
   const [isOpenCommentWrap, setIsOpenCommentWrap] = useState(false);
 
   const { user } = useUser();
-  const { services } = useServices();
+  const { offerings } = useOfferings();
   const { revokeOffer, isPending: isRevoking } = useRevokeOffer();
 
   const currentOffer = order.contractorOffers.find(offer => offer.contractorId === user.id);
@@ -105,7 +105,7 @@ export default function OrderRow({
           <div style={{ flex: 1 }}></div>
 
           <p className={style.description}>
-            {services[ order.serviceId ]?.name ?? text('Unknown service')}
+            {offerings[ order.offeringId ]?.name ?? text('Unknown service')}
           </p>
           <p className={style.description}>
             {order.description || text('Problem description')}
@@ -184,7 +184,7 @@ export default function OrderRow({
               </thead>
               <tbody>
                 <tr className={style.line}>
-                  <td>{services[ order.serviceId ]?.name ?? text('Unknown service')}</td>
+                  <td>{offerings[ order.offeringId ]?.name ?? text('Unknown service')}</td>
                   <td>
                     {currentOffer?.readyIn?.value || '-'} {text(currentOffer?.readyIn?.unit || 'hour')}
                   </td>

@@ -32,6 +32,9 @@ function ServiceMainContent({
 }) {
   const [search, setSearch] = useState('');
 
+  const isContractorSelected = !!selectedContractor.id;
+  const isOrderButtonActive = isContractorSelected && selectedServices.length > 0;
+
   return (
     <div>
       <section
@@ -39,7 +42,7 @@ function ServiceMainContent({
       >
         <div className="main__info__content">
           <h1>
-            {text('Repair service cost for')}{' '}
+            {text('Service cost for')}{' '}
             <strong>{currentServiceDetails.name}</strong>
           </h1>
           <div className="df align-center">
@@ -53,7 +56,7 @@ function ServiceMainContent({
             />
           </div>
 
-          {/* блок с iphone */}
+          {/* блок с iphone 
           <div className={`main__info__image ${style.iphone_mobile}`}>
             <img
               className={style.iphone_mobile__img}
@@ -64,22 +67,25 @@ function ServiceMainContent({
               {text('Spare parts for the repair are already included in the service cost. This is the final price')}
             </p>
           </div>
-          {/* блок, если не выбраны услуги */}
-          {Object.keys(prices).length === 0 && (
+          */}
+          {/* Отображается, если нет выбранного мастера */}
+          {!isContractorSelected && (
             <div className="order__no-cards">
               <img src="/img/many_people.png" alt="" />
               <p>
-                {text('Please select the organization closest to your home on the map below and place an order by choosing the services you need.')}
+                {text('Please select a contractor on the map to view their services and place an order.')}
               </p>
             </div>
           )}
 
-          {/* список услуг */}
-          <div className={`order__cards__to__scrolls ${style.orders_list}`}>
-            {Object.keys(prices).length > 0 &&
-              Object.entries(prices).map(([id, obj]) => (
+          {/* список услуг - Отображается только если выбран мастер и есть цены */}
+          {isContractorSelected && Object.keys(prices).length > 0 && (
+            <div className={`order__cards__to__scrolls ${style.orders_list}`}>
+              {Object.entries(prices).filter(([serviceName, obj]) =>
+                obj.name.toLowerCase().includes(search.toLowerCase())
+              ).map(([serviceName, obj]) => (
                 <div
-                  key={id}
+                  key={serviceName}
                   className={`first__s__card ${style.order_row}`}
                 >
                   <div className="main__info__content__card">
@@ -100,16 +106,16 @@ function ServiceMainContent({
                       <p>{obj['delivery']}</p>
                       <button
                         className="pickfaf"
-                        onClick={() => addRemoveService(id)}
+                        onClick={() => addRemoveService(serviceName)}
                       >
-                        {selectedServices.includes(id)
+                        {selectedServices.includes(serviceName)
                           ? text('Remove')
                           : text('Select')}
                       </button>
                     </div>
                     <div
                       className={`main__card__third ${
-                        selectedServices.includes(id)
+                        selectedServices.includes(serviceName)
                           ? 'main__card__third--active'
                           : null
                       }`}
@@ -118,15 +124,16 @@ function ServiceMainContent({
                   <div className="main__card__third activeijpqwothweoruh"></div>
                 </div>
               ))}
-          </div>
+            </div>
+          )}
 
-          {/* todo: Перебрасывать на форму входа/регистрации, если пользователь не авторизован */}
           <div className={style.button_wrap}>
             <button
               className={style.button_services}
               onClick={() => {
                 setShowOrderForm(true);
               }}
+              disabled={!isOrderButtonActive}
             >
               {text('Place an order')}
             </button>
@@ -167,45 +174,47 @@ function ServiceMainContent({
         </div>
       </section>
 
-      {/* цены */}
-      <section className="detail__price">
-        <div className="container detail-price-container">
-          <Swiper
-            slidesPerView={4}
-            spaceBetween={30}
-            navigation={true}
-            modules={[Navigation]}
-            className={style.swiper_price}
-            breakpoints={{
-              0: {
-                slidesPerView: 2,
-              },
-              800: {
-                slidesPerView: 3,
-              },
-              1124: {
-                slidesPerView: 4,
-              },
-            }}
-          >
-            {Object.entries(prices).map(([id, obj]) => (
-              <SwiperSlide key={id} className="sliderr">
-                <div
-                  className={`detail__price__card ${
-                    !selectedServices.includes(id) ? 'red' : null
-                  }`}
-                >
-                  <div className="price">
-                    <h1>{obj['price']}</h1>
-                    <img width="10px" src="/img/rubl.png" alt="" />
+      {/* цены - Отображается только если выбран мастер и есть цены */}
+      {isContractorSelected && Object.keys(prices).length > 0 && (
+        <section className="detail__price">
+          <div className="container detail-price-container">
+            <Swiper
+              slidesPerView={4}
+              spaceBetween={30}
+              navigation={true}
+              modules={[Navigation]}
+              className={style.swiper_price}
+              breakpoints={{
+                0: {
+                  slidesPerView: 2,
+                },
+                800: {
+                  slidesPerView: 3,
+                },
+                1124: {
+                  slidesPerView: 4,
+                },
+              }}
+            >
+              {Object.entries(prices).map(([serviceName, obj]) => (
+                <SwiperSlide key={serviceName} className="sliderr">
+                  <div
+                    className={`detail__price__card ${
+                      !selectedServices.includes(serviceName) ? 'red' : null
+                    }`}
+                  >
+                    <div className="price">
+                      <h1>{obj['price']}</h1>
+                      <img width="10px" src="/img/rubl.png" alt="" />
+                    </div>
+                    <p>{obj['category']}</p>
                   </div>
-                  <p>{obj['category']}</p>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
-      </section>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </section>
+      )}
 
       <section className="map">
         <YMap

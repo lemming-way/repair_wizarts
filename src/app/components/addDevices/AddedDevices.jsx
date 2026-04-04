@@ -12,6 +12,9 @@ function AddedDevices() {
   const { orders: activeOrders } = useClientOrders();
   const { orders: archiveOrders } = useFinishedOrders();
   const tabsFilter = window.location.hash;
+  
+  const activeOrdersFiltered = activeOrders.filter(order => !order.services);
+  const archiveOrdersFiltered = archiveOrders.filter(order => !order.services);
 
   useEffect(() => {
     document.title = text('Added devices');
@@ -41,7 +44,7 @@ function AddedDevices() {
                   <h2>{text('Current')}</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{activeOrders.length ?? ''}</span>
+                  <span>{activeOrdersFiltered.length ?? ''}</span>
                 </div>
               </div>
               <div
@@ -53,7 +56,7 @@ function AddedDevices() {
                   <h2>{text('Archive')}</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{archiveOrders.length ?? ''}</span>
+                  <span>{archiveOrdersFiltered.length ?? ''}</span>
                 </div>
               </div>
             </div>
@@ -81,10 +84,10 @@ function AddedDevices() {
                 </div>
               </div>
             </div>
-            {(tabsFilter === '#archive' ? archiveOrders : activeOrders)
+            {(tabsFilter === '#archive' ? archiveOrdersFiltered : activeOrdersFiltered)
               .map((v) =>
                 <AddedDevice
-                  serviceId={v.serviceId}
+                  offeringId={v.offeringId}
                   desiredPrice={v.desiredPrice}
                   agreedPrice={v.agreedPrice}
                   description={v.description}

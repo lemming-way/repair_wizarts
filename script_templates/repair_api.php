@@ -7,8 +7,8 @@ call_user_func(function() use(&$out) {
   $sql_queries = [
     'getContractorsByService' => [
       'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND ' .
-                '`active`>0 AND JSON_CONTAINS(`json`,":serviceId","$.services") AND ' .
-                '(:isOnline=0 OR `json`->"isOnline"=TRUE)'
+                '`active`>0 AND JSON_LENGTH(`json`->\'$.services.":serviceId"\') AND ' .
+                '(:isOnline=0 OR `json`->"$.isOnline"=TRUE)'
     ],
     'markUserAsVerified' => [
       'sql' => 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id'
