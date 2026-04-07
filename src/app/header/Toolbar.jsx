@@ -24,6 +24,7 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const { user } = useUser();
+
   const isContractor = user.role === UserRole.Contractor;
 
   const [isOpen, setIsOpen] = useState(false);
@@ -51,22 +52,23 @@ const Toolbar = () => {
   return (
     <header className={styles['toolbar-header']}>
       <div className={`${styles.toolbar} appContainer`}>
-        {/*Заменила лого по требованию ТЗ*/}
         <Link to="/" className={styles.toolbar_logo}>
           <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
         </Link>
-        {/*Добавила поиск услуг*/}
-        {/* <ToolbarSearchBar /> */}
         <ul className={styles.toolbar_lists}>
-          <li className={styles.toolbar_lists_item}>
-            {/*Вынесла в отдельный компонент, что бы лучше ориентироваться по коду*/}
-            <ServiceDropdown />
-          </li>
-          {/* город */}
-          <li className={styles.toolbar_lists_item}>
-            <ServiceDropdownCities />
-          </li>
-          {/*Что бы сократить код и переиспользовать в будущем создала компонент ListItem*/}
+          {!isContractor && (
+            <>
+              {/*Добавила поиск услуг*/}
+              {/* <ToolbarSearchBar /> */}
+              <li className={styles.toolbar_lists_item}>
+                <ServiceDropdown />
+              </li>
+              {/* город */}
+              <li className={styles.toolbar_lists_item}>
+                <ServiceDropdownCities />
+              </li>
+            </>
+          )}
           <ListItem
             link="/articles"
             className={styles.toolbar_lists_item_link}
@@ -87,16 +89,9 @@ const Toolbar = () => {
         <div className="header__profile">
           {!!user.id ? (
             <div className="header__profile">
-              {isContractor ? (
+              {!isContractor && (
                 <Link
-                  to={'/client/requests/create/title'}
-                  className="header__button"
-                >
-                   {text('give_task')}
-                </Link>
-              ) : (
-                <Link
-                  to={'/client/requests/create/title'}
+                  to={'/client/requests/create/data'}
                   className="header__button"
                 >
                     {text('order_on_exchange')}

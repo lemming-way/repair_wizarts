@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
@@ -29,7 +29,7 @@ import ProfileNumber from './components/Chat/profileNumber';
 // import OfferAService from './components/Orders/OfferAService';
 import AddDevices from './components/addDevices/AddDevices';
 import AddedDevices from './components/addDevices/AddedDevices';
-import TitleService from './components/addDevices/TitleService';
+//~ import TitleService from './components/addDevices/TitleService';
 import Applications from './components/Applications/applications';
 import LoginPage from './features/user/login/LoginPage';
 import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfirm';
@@ -37,8 +37,8 @@ import Finance from './components/Settings/Finance';
 import Balance from './components/Settings/Balance';
 import Article from './components/Article';
 import { getLocation } from './services/location.service';
-import { useUser, updateUser } from './state/user';
-import PersonalRequests from './features/orders/contractor/list/PersonalRequests';
+import { useUser, updateUser, UserRole } from './state/user';
+//~ import PersonalRequests from './features/orders/contractor/list/PersonalRequests';
 import Articles from './components/Article/Articles';
 import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
 import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
@@ -72,6 +72,9 @@ function App() {
   const queryClient = useQueryClient();
 
   const { categories, isLoading: areOfferingsLoading } = useOfferings();
+  
+  const isAuthorized = !!user.id;
+  const isContractor = user.role === UserRole.Contractor;
 
   // Add visibility change tracking
   useEffect(() => {
@@ -140,7 +143,11 @@ function App() {
       <main>
         <Routes>
           <Route>
-            <Route index element={<Home />} />
+            {isContractor ?
+              <Route index element={<Navigate to='/contractor/wallet' replace />} />
+            :
+              <Route index element={<Home />} />
+            }
             <Route
               path="categories/:id"
               element={<Remont />}
@@ -160,92 +167,106 @@ function App() {
               <Route path="client" element={<RegistrationUserPage />} />
             </Route>
           </Route>
-          <Route path="client">
-            <Route path="settings" element={<ClientSettingsWrap />}>
-              <Route index element={<UserProfile />} />
-              <Route
-                path="wallet"
-                element={<ChoiceOfReplenishmentMethodClient />}
-              />
-              <Route
-                path="wallet_history"
-                element={<WalletHistoryClient />}
-              />
-              <Route path="finance" element={<FinanceClient />} />
-              <Route path="balance" element={<BalanceClient />} />
-            </Route>
-
-            <Route path="requests">
-              <Route index element={<AddedDevices />} />
-              {/* <Route path="archived" element={<Archive />} /> */}
-              <Route path="my_orders" element={<ContractorsOffers />} />
-              <Route path="my_order/:id" element={<MyOrder />} />
-              <Route path="create">
-                <Route path="title" element={<TitleService />} />
-                <Route path="data" element={<AddDevices />} />
-              </Route>
-            </Route>
-            <Route path="offers/:id" element={<MyOffer />} />
-            {/* клиент на странице мастера может оставить отзыв */}
-            <Route
-              path="feedback/:id"
-              element={<ProfileFeedbackContractor />}
-            />
-            {/* чат связан с бэком */}
-            {/* <Route path="chat" element={<FChat />} /> */}
-            {/* <Route path="chat/:id" element={<FChat />} /> */}
-            {/* Чат без связи с бэком, только заготовка */}
-            <Route path="chat" element={<FChatKirill />} />
-            <Route path="chat/:id" element={<FChatKirill />} />
-
-            {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
-            {/* <Route path="feedback/:username" element={<ReviewsContractor />} /> */}
-          </Route>
-
-          <Route basename="contractor" path="contractor">
-            {/* Чат без связи с бэком, только заготовка */}
-            <Route element={<ContractorChatWrap />}>
-              <Route path="chat" element={<FChatKirill />} />
-              <Route path="chat/:id" element={<FChatKirill />} />
-              {/* прежний чат, был связана с бэком */}
-              {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
-                        <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
-            </Route>
-            <Route element={<ContractorSettingsWrap />}>
-              <Route
-                path="wallet"
-                element={<ChoiceOfReplenishmentMethod />}
-              />
-              <Route path="wallet_history" element={<WalletHistory />} />
-              <Route path="wallet/:id" element={<WalletConfirm />} />
-              <Route path="settings" element={<SettingsAll />}>
-                <Route index element={<UserProfile />} />
-                <Route path="profile" element={<ContractorSettings />} />
-                <Route path="services" element={<Services />} />
-                <Route path="finance" element={<Finance />} />
-                <Route path="balance" element={<Balance />} />
-              </Route>
-              <Route path="orders" element={<Applications />} />
-              {/*<Route path="orders">
-                <Route index element={<Applications />} />
-                <Route path="completed" element={<Applications />} />
-                <Route path="canceled" element={<Applications />} />
-                <Route path="all" element={<Applications />} />
-              </Route>
-              */}
-
-              <Route path="feedback" element={<ProfileNumber />} />
+          {!isContractor && (
+            <Route path="client">
+              {isAuthorized && (
+                <Route path="settings" element={<ClientSettingsWrap />}>
+                  <Route index element={<UserProfile />} />
+                  <Route
+                    path="wallet"
+                    element={<ChoiceOfReplenishmentMethodClient />}
+                  />
+                  <Route
+                    path="wallet_history"
+                    element={<WalletHistoryClient />}
+                  />
+                  <Route path="finance" element={<FinanceClient />} />
+                  <Route path="balance" element={<BalanceClient />} />
+                </Route>
+              )}
 
               <Route path="requests">
-                <Route index element={<AllOrders />} />
-                <Route path="offer/:id" element={<Offer />} />
-                <Route path="orders" element={<MyOffers />} />
-                <Route path="personal" element={<PersonalRequests />} />
-                {/* <Route path=":id" element={<MyOrders />} /> */}
+                {isAuthorized && (
+                  <>
+                    <Route index element={<AddedDevices />} />
+                    {/* <Route path="archived" element={<Archive />} /> */}
+                    <Route path="my_orders" element={<ContractorsOffers />} />
+                    <Route path="my_order/:id" element={<MyOrder />} />
+                  </>
+                )}
+                <Route path="create">
+                  {/*<Route path="title" element={<TitleService />} />*/}
+                  <Route path="data" element={<AddDevices />} />
+                </Route>
               </Route>
-              {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
+              {isAuthorized && (
+                <>
+                  <Route path="offers/:id" element={<MyOffer />} />
+                  {/* клиент на странице мастера может оставить отзыв */}
+                  <Route
+                    path="feedback/:id"
+                    element={<ProfileFeedbackContractor />}
+                  />
+                  {/* чат связан с бэком */}
+                  {/* <Route path="chat" element={<FChat />} /> */}
+                  {/* <Route path="chat/:id" element={<FChat />} /> */}
+                  {/* Чат без связи с бэком, только заготовка */}
+                  <Route path="chat" element={<FChatKirill />} />
+                  <Route path="chat/:id" element={<FChatKirill />} />
+
+                  {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
+                  {/* <Route path="feedback/:username" element={<ReviewsContractor />} /> */}
+                </>
+              )}
             </Route>
-          </Route>
+          )}
+
+          {isContractor && (
+            <Route basename="contractor" path="contractor">
+              {/* Чат без связи с бэком, только заготовка */}
+              <Route element={<ContractorChatWrap />}>
+                <Route path="chat" element={<FChatKirill />} />
+                <Route path="chat/:id" element={<FChatKirill />} />
+                {/* прежний чат, был связана с бэком */}
+                {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
+                          <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
+              </Route>
+              <Route element={<ContractorSettingsWrap />}>
+                <Route
+                  path="wallet"
+                  element={<ChoiceOfReplenishmentMethod />}
+                />
+                <Route path="wallet_history" element={<WalletHistory />} />
+                <Route path="wallet/:id" element={<WalletConfirm />} />
+                <Route path="settings" element={<SettingsAll />}>
+                  <Route index element={<UserProfile />} />
+                  <Route path="profile" element={<ContractorSettings />} />
+                  <Route path="services" element={<Services />} />
+                  <Route path="finance" element={<Finance />} />
+                  <Route path="balance" element={<Balance />} />
+                </Route>
+                <Route path="orders" element={<Applications />} />
+                {/*<Route path="orders">
+                  <Route index element={<Applications />} />
+                  <Route path="completed" element={<Applications />} />
+                  <Route path="canceled" element={<Applications />} />
+                  <Route path="all" element={<Applications />} />
+                </Route>
+                */}
+
+                <Route path="feedback" element={<ProfileNumber />} />
+
+                <Route path="requests">
+                  <Route index element={<AllOrders />} />
+                  <Route path="offer/:id" element={<Offer />} />
+                  <Route path="orders" element={<MyOffers />} />
+                  {/*<Route path="personal" element={<PersonalRequests />} />*/}
+                  {/* <Route path=":id" element={<MyOrders />} /> */}
+                </Route>
+                {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
+              </Route>
+            </Route>
+          )}
         </Routes>
       </main>
       {location.pathname.includes('/chat') || <Footer />}
