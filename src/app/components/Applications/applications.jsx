@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import '../../scss/applications.css';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from '../../state/language';
-import { useAcceptInvoice, useAvailableOrders, OrderStatus } from '../../state/order';
+import { useAcceptInvoice, useAvailableOrders } from '../../state/order';
 import { useUser, useUsersByIds } from '../../state/user';
 import { useOfferings } from '../../state/site-data';
 
@@ -17,10 +17,9 @@ function MyApplications() {
   const { user } = useUser();
   const navigate = useNavigate();
 
-  const { orders, isLoading: isLoadingOrders } = useAvailableOrders();
-  const filteredOrders = orders.filter(order => order.status === OrderStatus.REQUESTED);
+  const { orders, isLoading: isLoadingOrders } = useAvailableOrders(false, true);
 
-  const clientIds = [...new Set(filteredOrders.map(order => order.clientId))];
+  const clientIds = [...new Set(orders.map(order => order.clientId))];
   const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
   const clientsMap = new Map(clients.map(client => [client.id, client]));
 
@@ -35,7 +34,7 @@ function MyApplications() {
   const handleAcceptOrder = async (orderId) => {
     try {
       await acceptInvoice(orderId);
-      const order = filteredOrders.find(o => o.id === orderId);
+      const order = orders.find(o => o.id === orderId);
       if (order && user.id) {
         navigate(`/contractor/chat/${order.clientId}_${user.id}`);
       }
@@ -59,7 +58,7 @@ function MyApplications() {
       <div className="mini-text">
         <h1>{text('Applications')}</h1>
       </div>
-      {filteredOrders.length === 0 && (
+      {orders.length === 0 && (
         <div className={style.empty_orders}>
           <img src="/img/robot.png" alt="" />
           <p className={style.heading}>{text('You have no applications yet')}</p>
@@ -68,7 +67,7 @@ function MyApplications() {
       )}
 
       <div className={style.orders}>
-        {filteredOrders.map((order) => {
+        {orders.map((order) => {
           const client = clientsMap.get(order.clientId);
           const offeringName = offerings[order.offeringId]?.name || text('Unknown service');
           const createdAt = new Date(order.createdAt).toLocaleDateString();

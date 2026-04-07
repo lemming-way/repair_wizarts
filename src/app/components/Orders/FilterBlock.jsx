@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
+
 import style from './Allorders.module.css';
 import { useOfferings } from '../../state/site-data';
+import { useUser } from '../../state/user';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
 // todo: оставлять только категории, релевантные для мастера
@@ -13,7 +16,29 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { categories, subcategories, offerings } = useOfferings();
+  const { categories: allCategories, subcategories: allSubcategories, offerings: allOfferings } = useOfferings();
+  const { user } = useUser();
+
+  const { categories, subcategories, offerings } = useMemo(() => {
+    const offerings = {};
+    for (const id of Object.keys(user.services || {})) {
+      if (allOfferings[id]) offerings[id] = allOfferings[id];
+    }
+
+    const subcategoryIds = [...new Set(Object.values(offerings).map(offering => offering.parent))];
+    const subcategories = {};
+    for (const id of subcategoryIds) {
+      if (allSubcategories[id]) subcategories[id] = allSubcategories[id];
+    }
+
+    const categoryIds = [...new Set(Object.values(subcategories).map(subcategory => subcategory.parent))];
+    const categories = {};
+    for (const id of categoryIds) {
+      if (allCategories[id]) categories[id] = allCategories[id];
+    }
+
+    return { categories, subcategories, offerings };
+  }, [ user.services, allCategories, allSubcategories, allOfferings ]);
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {

@@ -23,7 +23,7 @@ export const MultiSelect = (props: any) => {
     (v1.value as number) - (v2.value as number);
 
   const filteredOptions = filterOptions(props.options, selectInput);
-  const filteredSelectedOptions = filterOptions(props.value, selectInput);
+  const filteredSelectedOptions = filterOptions(!props.value || props.isMulti ? props.value : [props.value], selectInput);
 
   const Option = (props: any) => (
     <components.Option {...props}>

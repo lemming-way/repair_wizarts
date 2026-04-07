@@ -14,12 +14,13 @@ import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
 import { useOfferings } from '../../state/site-data';
-import { useUsersByIds } from '../../state/user';
-import { useAvailableOrders, useContractorOrders, OrderStatus, orderStatusString } from '../../state/order';
+import { useUser, useUsersByIds } from '../../state/user';
+import { useAvailableOrders, OrderType, orderStatusString } from '../../state/order';
 
 function AllOrders() {
   const text = useLanguage();
-  const { categories, subcategories, offerings } = useOfferings();
+  const { user } = useUser();
+  const { categories, subcategories, offerings } = useOfferings();  
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [ordersPerPage, setOrdersPerPage] = useState(10);
@@ -33,39 +34,12 @@ function AllOrders() {
     max: '',
   });
 
-  const {
-    orders: availableOrders,
-    isLoading: isLoadingAvailable,
-    isError: isErrorAvailable,
-    error: errorAvailable,
-  } = useAvailableOrders();
+  const { orders, isLoading, isError: isFetchError, error: fetchError } = useAvailableOrders(true, true);
 
-  const {
-    orders: contractorOrders,
-    isLoading: isLoadingContractor,
-    isError: isErrorContractor,
-    error: errorContractor,
-  } = useContractorOrders();
-
-  const isLoading = isLoadingAvailable || isLoadingContractor;
-  const isFetchError = isErrorAvailable || isErrorContractor;
-  const fetchError = errorAvailable || errorContractor;
-
-  const pendingContractorOrders = contractorOrders.filter(
-    (o) =>
-      o.status === OrderStatus.PUBLISHED ||
-      o.status === OrderStatus.REQUESTED
-  );
-
-  const allOrders = [
-    ...availableOrders,
-    ...pendingContractorOrders,
-  ];
-
-  const clientIds = Array.from(new Set(allOrders.map(o => o.clientId)));  // список уникальных id
+  const clientIds = Array.from(new Set(orders.map(o => o.clientId)));  // список уникальных id
   const { users: clients } = useUsersByIds(clientIds);
   const clientsById = new Map();
-  for (const user of clients) clientsById.set(user.id, user);
+  for (const client of clients) clientsById.set(client.id, client);
   const getClient = (order) =>
     clientsById.get(order.clientId) ?? null;
 
@@ -78,8 +52,8 @@ function AllOrders() {
     return true;
   };
 
-  const userOrderReqs = contractorOrders.filter(
-    (o) => o.status === OrderStatus.PUBLISHED
+  const userOrderReqs = orders.filter(
+    (o) => o.type === OrderType.Market && o.contractorOffers.some(offer => offer.contractorId === user.id)
   ).length;
 
   // Заглушка для статистики
@@ -92,7 +66,7 @@ function AllOrders() {
 
   // --- Логика фильтрации ---
   // Этот блок будет пересчитываться при каждом рендере
-  const filteredOrders = allOrders.filter((order) => {
+  const filteredOrders = orders.filter((order) => {
     // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'New' && !isNew(order)) return false;
     if (selectValue === 'Viewed' && isNew(order)) return false;

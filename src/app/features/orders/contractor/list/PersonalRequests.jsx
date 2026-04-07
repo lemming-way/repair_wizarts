@@ -5,12 +5,10 @@ import { useUsersByIds } from "app/state/user"
 import { useOfferings } from "app/state/site-data"
 
 const PersonalRequests = () => {
-    const { orders: availableOrders, isLoading: isLoadingOrders } = useAvailableOrders();
+    const { orders, isLoading: isLoadingOrders } = useAvailableOrders(false, true);
     const { offerings, isLoading: isLoadingOfferings } = useOfferings();
 
-    const requests = availableOrders.filter(order => order.status === OrderStatus.REQUESTED);
-
-    const clientIds = [ ...new Set(requests.map(order => order.clientId))];
+    const clientIds = [ ...new Set(orders.map(order => order.clientId))];
     const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
     const clientsMap = new Map(clients.map(client => [client.id, client]));
 
@@ -55,7 +53,7 @@ const PersonalRequests = () => {
 
             <div className="allorders">
                 <div>
-                    <h1 className="allorder__title inter">Новое на бирже - <span>{requests.length} проект{getEndingOfDigit(requests.length)}</span> </h1>
+                    <h1 className="allorder__title inter">Новое на бирже - <span>{orders.length} проект{getEndingOfDigit(orders.length)}</span> </h1>
                     <div className="h bbbmt hbb mobile-h">
                         <div className="big_nav-device big_nav-devicefsdafstX df align mobile-big_nav-device">
                             <div className="fsdfsaooo mobile-big_nav-text_1">
@@ -64,7 +62,7 @@ const PersonalRequests = () => {
                                 <h2 className="inter-header-right inter">Цена</h2>
                             </div>
                         </div>
-                        {requests.map((order) => {
+                        {orders.map((order) => {
                             const client = clientsMap.get(order.clientId);
                             const offeringName = offerings[order.offeringId]?.name || 'Неизвестная услуга';
                             // Заглушка, так как number_of_submissions нет в UserProfile

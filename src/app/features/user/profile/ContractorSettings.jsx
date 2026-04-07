@@ -75,6 +75,7 @@ function ContractorSettings() {
     if (!user.id) return;
 
     const userServicesMap = user.services || {};
+console.log(user);
 
     const initialOfferingOptions = [];
     const initialSubcategoryOptions = [];

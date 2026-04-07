@@ -27,18 +27,14 @@ function ServiceDetail() {
   const [ignoreContractorServices, setIgnoreContractorServices] = useState([]);
   const { id } = useParams();
 
-  const { categories, subcategories, offerings } = useOfferings();
+  const { offerings } = useOfferings();
   const { user } = useUser();
 
   const offeringId = isFinite(id) ? Number(id) : 0;
-  const subcategoryId = offerings[offeringId]?.parent || 0;
-  const categoryId = subcategories[subcategoryId]?.parent || 0;
 
   const currentOfferingDetails = {
     id: offeringId,
     name: offerings[offeringId]?.name || text('Unknown service'),
-    subcategoryName: subcategories[subcategoryId]?.name || text('Unknown subcategory'),
-    categoryName: categories[categoryId]?.name || text('Unknown category'),
   };
 
   const [formError, setFormError] = useState('');
@@ -58,10 +54,8 @@ function ServiceDetail() {
     setShowSmallModal(true);
     setShowBigModal(false);
 
-    const servicesForOffering = contractorData.services?.[offeringId] || [];
-    const serviceNames = servicesForOffering.map(s => s.service);
-    setSelectedContractorServices(serviceNames);
-    setIgnoreContractorServices(serviceNames);
+    setSelectedContractorServices([]);
+    setIgnoreContractorServices([]);
   };
 
   const handleCloseModals = () => {
@@ -167,7 +161,11 @@ function ServiceDetail() {
   };
 
   function addRemoveService(serviceName) {
-    const list = 
+    if (ignoreContractorServices.includes(serviceName)) {
+      setIgnoreContractorServices(ignoreContractorServices.filter((name) => name !== serviceName));
+    }
+
+    const list =
       selectedContractorServices.includes(serviceName) ?
         selectedContractorServices.filter((name) => name !== serviceName)
       :
@@ -183,13 +181,12 @@ function ServiceDetail() {
       pricesMap[serviceDetail.service] = {
         name: serviceDetail.service,
         price: serviceDetail.price,
-        category: currentOfferingDetails.name,
         delivery: `${text('From')} ${serviceDetail.durationFrom.value} ${text(serviceDetail.durationFrom.unit)}` +
           (serviceDetail.durationTo ? ` ${text('to')} ${serviceDetail.durationTo.value} ${text(serviceDetail.durationTo.unit)}` : ''),
       };
     });
     return pricesMap;
-  }, [selectedContractor, offeringId, currentOfferingDetails.name, text]);
+  }, [selectedContractor, offeringId, text]);
 
 
   return <>

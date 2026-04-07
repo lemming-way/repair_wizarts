@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import '../../../scss/chat.css';
 import { Link } from 'react-router-dom';
 
-import { Order, OrderStatus, useClientOrders, useContractorOrders } from 'app/state/order';
+import { Order, useClientOrders, useContractorOrders } from 'app/state/order';
 import { useUser, useUsersByIds, UserRole } from 'app/state/user';
 
 // Тип для отдельного чата
@@ -34,29 +34,25 @@ function getLastMessageFromOrder(order: Order): { text: string; ts: string } {
 
 function FrameMessages() {
   const { user } = useUser();
-  const isUserAuthorized = 'id' in user && !!user.id;
-  const userRole = isUserAuthorized ? user.role : 0;
 
   // Используем новые хуки для получения заказов
-  const { orders: contractorOrders, isLoading: isLoadingContractorOrders } = useContractorOrders();
-  const { orders: clientOrders, isLoading: isLoadingClientOrders } = useClientOrders();
+  const { orders: contractorOrders, isLoading: isLoadingContractorOrders } = useContractorOrders(true, true);
+  const { orders: clientOrders, isLoading: isLoadingClientOrders } = useClientOrders(true, true);
 
-  const userRequests = useMemo(() => {
-    if (userRole === UserRole.Contractor) {
-      return contractorOrders.filter(order => order.status !== OrderStatus.PUBLISHED);
-    } else {
-      return clientOrders.filter(order => order.status !== OrderStatus.DRAFT && order.status !== OrderStatus.PUBLISHED);
-    }
-  }, [userRole, contractorOrders, clientOrders]);
-
-  const isLoadingOrders = userRole === UserRole.Contractor ? isLoadingContractorOrders : isLoadingClientOrders;
+  const isLoadingOrders = user.role === UserRole.Contractor ? isLoadingContractorOrders : isLoadingClientOrders;
 
   const groupedChats = useMemo(() => {
-    if (!userRequests.length || !user.id || !user.role) return [];
+    const userOrders = 
+      user.role === UserRole.Contractor ?
+        contractorOrders
+      :
+        clientOrders.filter(order => !!order.contractorId);
+
+    if (!userOrders.length || !user.id || !user.role) return [];
 
     const chatsMap = new Map<number, { orders: Order[]; otherUserId: number }>();
 
-    for (const order of userRequests) {
+    for (const order of userOrders) {
         if (!order.id) continue;
 
         let otherUserId: number | undefined;
@@ -104,7 +100,7 @@ function FrameMessages() {
     });
 
     return chats;
-  }, [userRequests, user.id, user.role]);
+  }, [clientOrders, contractorOrders, user.id, user.role]);
 
   // Собираем уникальные ID других пользователей для получения их профилей
   const uniqueOtherUserIds = useMemo(() => {

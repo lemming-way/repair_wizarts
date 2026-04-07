@@ -4,25 +4,22 @@ import { Link } from 'react-router-dom';
 import 'app/scss/orders.css';
 import style from './ContractorsOffers.module.css';
 import { useOfferings } from 'app/state/site-data';
-import { useClientOrders, OrderStatus, orderStatusString } from 'app/state/order';
+import { useClientOrders, orderStatusString } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import PaginationPages from 'app/components/Settings/PaginationPages';
 
 function ContractorsOffers() {
   const { user } = useUser();
   const { offerings } = useOfferings();
-  const { orders } = useClientOrders();
+  const { orders } = useClientOrders(true, false);
   const [contentCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Фильтруем заказы только со статусом PUBLISHED
-  const publishedOrders = orders.filter(
-    (order) => order.status === OrderStatus.PUBLISHED
-  );
+console.log(orders);
 
-  // Собираем все уникальные ID клиентов и подрядчиков из предложений
+  // Собираем все уникальные ID подрядчиков из предложений
   const allContractorIds = [...new Set(
-    publishedOrders.flatMap((order) => order.contractorOffers.map((offer) => offer.contractorId))
+    orders.flatMap((order) => order.contractorOffers.map((offer) => offer.contractorId))
   )];
 
   // Загружаем профили всех необходимых пользователей
@@ -30,7 +27,7 @@ function ContractorsOffers() {
   const userMap = new Map(fetchedUsers.map((user) => [user.id, user]));
 
   // Формируем список элементов для отображения, разворачивая заказы по их предложениям
-  const itemsToDisplay = publishedOrders.flatMap((order) => {
+  const itemsToDisplay = orders.flatMap((order) => {
     return order.contractorOffers.map((offer) => {
       const contractor = userMap.get(offer.contractorId);
       return {

@@ -133,7 +133,7 @@ const Article = (props) => {
                     </div>
                 : null}
                 <div className={styles.bodyActions}>
-                    <Link to={user.id ? "/client/requests/create/title" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
+                    <Link to={user.id ? "/client/requests/create/data" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
                 </div>
             </div>
             <ArticleComments

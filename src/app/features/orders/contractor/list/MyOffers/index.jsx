@@ -8,18 +8,17 @@ import EmptyOrder from './EmptyOrder';
 import OrderRow from '../../manage/Offer/OrderRow';
 import style from './MyOffers.module.css';
 import { useLanguage } from 'app/state/language';
-import { OrderStatus, useAvailableOrders } from 'app/state/order';
+import { useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds, UserRole } from 'app/state/user';
 
 function MyOffers() {
   const text = useLanguage();
 
   const { user, isLoading: isUserLoading } = useUser();
-  const { orders, isLoading: isOrdersLoading } = useAvailableOrders();
+  const { orders, isLoading: isOrdersLoading } = useAvailableOrders(true, false);
 
   const filteredOrders = orders.filter(order => {
-    return order.status === OrderStatus.PUBLISHED &&
-      order.contractorOffers.some(offer => offer.contractorId === user.id);
+    return order.contractorOffers.some(offer => offer.contractorId === user.id);
   });
 
   const clientIds = [...new Set(filteredOrders.map(order => order.clientId))];

@@ -9,13 +9,10 @@ import { useLanguage } from '../../state/language';
 
 function AddedDevices() {
   const text = useLanguage();
-  const { orders: activeOrders } = useClientOrders();
-  const { orders: archiveOrders } = useFinishedOrders();
+  const { orders: activeOrders } = useClientOrders(true, false);
+  const { orders: archiveOrders } = useFinishedOrders(true, false);
   const tabsFilter = window.location.hash;
   
-  const activeOrdersFiltered = activeOrders.filter(order => !order.services);
-  const archiveOrdersFiltered = archiveOrders.filter(order => !order.services);
-
   useEffect(() => {
     document.title = text('Added devices');
   }, [text]);
@@ -44,7 +41,7 @@ function AddedDevices() {
                   <h2>{text('Current')}</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{activeOrdersFiltered.length ?? ''}</span>
+                  <span>{activeOrders.length ?? ''}</span>
                 </div>
               </div>
               <div
@@ -56,11 +53,11 @@ function AddedDevices() {
                   <h2>{text('Archive')}</h2>
                 </Link>
                 <div className={styles.counter}>
-                  <span>{archiveOrdersFiltered.length ?? ''}</span>
+                  <span>{archiveOrders.length ?? ''}</span>
                 </div>
               </div>
             </div>
-            <Link className={styles.button} to="/client/requests/create/title">
+            <Link className={styles.button} to="/client/requests/create/data">
               {text('Add device')}
             </Link>
           </div>
@@ -84,7 +81,7 @@ function AddedDevices() {
                 </div>
               </div>
             </div>
-            {(tabsFilter === '#archive' ? archiveOrdersFiltered : activeOrdersFiltered)
+            {(tabsFilter === '#archive' ? archiveOrders : activeOrders)
               .map((v) =>
                 <AddedDevice
                   offeringId={v.offeringId}

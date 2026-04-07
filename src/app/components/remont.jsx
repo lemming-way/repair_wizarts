@@ -36,7 +36,7 @@ function Remont() {
       <h1>{search || selectedSubcategory?.name || ''}</h1>
       <p>{text('Select an iPhone model to find out the cost of repair.')  /* todo: Изменить текст */}</p>
       <Link
-        to={'/client/requests/create/title'}
+        to={'/client/requests/create/data'}
         className="header__button"
         style={{ padding: '15px 40px' }}
       >

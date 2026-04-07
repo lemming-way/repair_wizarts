@@ -151,7 +151,11 @@ function OrderFormBlock({
               cols="30"
               rows="10"
             />
-            <button className={`done ${style.fix_btn}`} type="submit" disabled={selectedServices.length === 0}>
+            <button
+              className={`done ${style.fix_btn}`}
+              type="submit"
+              disabled={selectedServices.length === 0 || selectedServices.length === ignoreSelectedServices.length}
+            >
               {text('Submit')}
             </button>
           </form>

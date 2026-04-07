@@ -20,9 +20,9 @@ function DropdownService() {
     //~ setUserMode(false);
   //~ };
 
-  const handleLogout = (e) => {
+  const handleLogout = async (e) => {
     e.preventDefault(); // Предотвращаем дефолтное поведение ссылки
-    logout(queryClient); // Используем функцию logout из state/user.ts
+    await logout(queryClient); // Используем функцию logout из state/user.ts
     navigate('/');
   };
 
@@ -33,8 +33,8 @@ function DropdownService() {
         <div className="client__dropdown">
           <div className="recent">
             <Link
-              to="/client/settings"
-              onClick={/*switchMode*/null}
+              to={/*"/client/settings" todo: Сделать переключение на клиента*/ null}
+              onClick={/*switchMode*/ e => e.preventDefault()}
               className="repair__phone"
             >
               <h4>{text("I am a client")}</h4>
@@ -59,8 +59,8 @@ function DropdownService() {
         <div className="contractor__dropdown">
           <div className="recent">
             <Link
-              to="/contractor/wallet"
-              onClick={/*switchMode*/null}
+              to={/*"/contractor/wallet" todo: Сделать переключение на мастера*/ null}
+              onClick={/*switchMode*/ e => e.preventDefault()}
               className="repair__phone"
             >
               <h4>{text("Become a contractor")}</h4>

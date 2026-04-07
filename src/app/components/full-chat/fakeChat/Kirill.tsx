@@ -755,27 +755,17 @@ function ChoiceOfReplenishmentMethodCard() {
   const chatPartner = chatPartners[0]; // Может быть undefined или {} если не найден
 
   // Получаем заказы в зависимости от роли текущего пользователя
-  const { orders: clientOrders, isLoading: clientOrdersLoading } = useClientOrders();
-  const { orders: contractorOrders, isLoading: contractorOrdersLoading } = useContractorOrders();
+  const { orders: clientOrders, isLoading: clientOrdersLoading } = useClientOrders(true, true);
+  const { orders: contractorOrders, isLoading: contractorOrdersLoading } = useContractorOrders(true, true);
 
   // Фильтруем заказы для текущего чата
   const currentChatOrders = useMemo(() => {
-    if (currentUser.role === UserRole.Contractor) {
-      return contractorOrders.filter(
-        (order) =>
-          order.clientId === chatClientId &&
-          order.contractorId === chatContractorId &&
-          order.status !== OrderStatus.PUBLISHED // Фильтр для представления подрядчика
-      );
-    } else {
-      return clientOrders.filter(
-        (order) =>
-          order.clientId === chatClientId &&
-          order.contractorId === chatContractorId &&
-          order.status !== OrderStatus.DRAFT &&
-          order.status !== OrderStatus.PUBLISHED // Фильтр для представления клиента
-      );
-    }
+    const userOrders = currentUser.role === UserRole.Contractor ? contractorOrders : clientOrders;
+    return userOrders.filter(
+      order =>
+        order.clientId === chatClientId &&
+        order.contractorId === chatContractorId
+    );
   }, [currentUser.role, clientOrders, contractorOrders, chatClientId, chatContractorId]);
 
   // Проверяем загрузку заказов

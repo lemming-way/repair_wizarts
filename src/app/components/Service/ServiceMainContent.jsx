@@ -92,7 +92,7 @@ function ServiceMainContent({
                     <div className="main__card__first">
                       <h4>{text('Service')}</h4>
                       <p>
-                        {obj['name']} {obj['category']}
+                        {obj['name']}
                       </p>
                     </div>
                     <div style={{ flex: 1 }}></div>
@@ -207,7 +207,7 @@ function ServiceMainContent({
                       <h1>{obj['price']}</h1>
                       <img width="10px" src="/img/rubl.png" alt="" />
                     </div>
-                    <p>{obj['category']}</p>
+                    <p>{obj['name']}</p>
                   </div>
                 </SwiperSlide>
               ))}
