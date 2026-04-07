@@ -3,7 +3,7 @@
  *
  * @summary
  * **Типы данных:**
- * Order, TimeUnit, Offer, OrderStatus, OrderCreationData, OrderUpdateData, CreateOfferData
+ * Order, TimeUnit, Offer, OrderType, OrderStatus, OrderCreationData, OrderUpdateData, CreateOfferData
  *
  * **Функции, влияющие на глобальное состояние:**
  * useCreateOrder, useUpdateOrder, useCancelOrder, useCreateOffer, useUpdateOffer, useAcceptOffer,
@@ -13,7 +13,6 @@
  * useContractors, useClientOrders, useFinishedOrders, useOrdersByIds, useContractorOrders, useAvailableOrders
  */
 import {
-  QueryClient,
   UseQueryResult,
   useQuery,
   useQueries,
@@ -31,13 +30,9 @@ import { UserRole, TimeUnit, useUser, useUsersByIds, getUserById } from './user'
 
 // ==================== Типы данных ====================
 
-export type OrderServiceDetails = {
-  service: string;
-  price: number
-};
-
 export type Order = {
   id: number;
+  type: OrderType;
   clientId: number;
   contractorId?: number;
   city: number;
@@ -53,7 +48,17 @@ export type Order = {
   updatedAt: Date;
   attachments: number[];
   contractorOffers: Offer[];
+};
+
+export enum OrderType {
+  Market = 'market',
+  Direct = 'direct'
 }
+
+export type OrderServiceDetails = {
+  service: string;
+  price: number
+};
 
 export type Offer = {
   contractorId: number;
@@ -64,7 +69,7 @@ export type Offer = {
     unit: TimeUnit
   };
   createdAt: Date;
-}
+};
 
 //~ export type Review = {
   //~ id: number;
@@ -120,7 +125,7 @@ export function useContractors({ offering, city, rating, isOnline }: {
   isOnline?: boolean;
 }) {
   const { user } = useUser() as { user: UserProfile };
-  const queryResult = useQuery({
+  const { data, ...rest } = useQuery({
     queryKey: [ 'contractors', offering, city, rating, isOnline ],
     queryFn: () => TripAPI.getContractorsByService({ serviceId: offering, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
@@ -129,8 +134,9 @@ export function useContractors({ offering, city, rating, isOnline }: {
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
 
-  const contractors = queryResult.data || [];
-  return useUsersByIds(contractors);
+  const { users: contractors, ...rest2 } = useUsersByIds(data || []);
+  if (rest.isSuccess) return { ...rest2, contractors };
+  else return { ...rest, contractors: EMPTY_ARRAY };
 }
 
 //~ /**
@@ -146,7 +152,269 @@ export function useContractors({ offering, city, rating, isOnline }: {
   //~ limit?: number
 //~ ): Promise<{ reviews: Review[]; total: number; page: number }>;
 
-// ==================== 2. Управление заказами (клиентская сторона) ====================
+// ======================= 2. Получение заказов (общие функции) ========================
+
+/**
+ * Преобразует сырые данные API в структуру Order
+ * @param rawData Данные поездок от API
+ * @returns Список заказов
+ */
+function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTripsByIds>>): Order[] {
+console.log(rawData);
+  const result = rawData.reduce((ret, trip) => {
+console.log('>>>>');
+    if (trip.b_id && trip.u_id) {
+console.log(trip);
+      let c_state = 0;  // статус назначенного исполнителя, если есть
+      // очищаем список прикреплённых файлов
+      const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
+      const attachments = images
+        .map(id => Number(id || 0))
+        .filter(Number.isFinite);
+
+      // заполняем основные свойства заказа
+      const order: Partial<Order> = {
+        id: Number(trip.b_id),
+        type: Number(trip.b_only_offer) === 1 ? OrderType.Direct : OrderType.Market,
+        clientId: Number(trip.u_id),
+        city: Number(trip.city_start ?? 0),
+        address: String(trip.b_start_address ?? ''),
+        offeringId: Number(trip.b_options?.offering ?? 0),
+        description: String(trip.b_options?.description ?? ''),
+        desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
+        createdAt: new Date(String(trip.b_created ?? '')),
+        attachments,
+        contractorOffers: []
+      };
+      // отбрасываем бракованные данные
+      if (!order.id || !order.clientId || !order.offeringId || !order.city) {
+console.log(order);
+        return ret;
+      }
+      order.updatedAt = order.createdAt;  // начальное значение, будет меняться
+      const b_state = Number(trip.b_state);  // внутренний статус заказа в API
+      // обрабатываем исполнителей, откликнувшихся на заказ
+      if (trip.drivers?.length) {
+        for (const driver of trip.drivers) {
+          const d_id = Number(driver.u_id);
+          const d_state = Number(driver.c_state ?? 0);
+          const d_price = Number(driver.c_options?.price ?? 0);
+          if (d_state === TripAPI.DriverState.Offering) {
+            // не назначенный исполнитель
+            order.contractorOffers!.push({
+              contractorId: d_id,
+              price: d_price,
+              comment: String(driver.c_options?.comment ?? ''),
+              readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
+                driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
+                { value: 0, unit: TimeUnit.HOURS },
+              createdAt: new Date(String(driver.c_becomed_candidate ?? ''))
+            });
+            if (d_id === userId && b_state === TripAPI.TripState.New) {
+              // текущий пользователь является мастером, откликнувшимся на заказ
+              order.contractorPrice = d_price;
+            }
+          }
+          else if (
+            d_state === TripAPI.DriverState.Assigned || d_state === TripAPI.DriverState.Waiting ||
+            d_state === TripAPI.DriverState.Driving || d_state === TripAPI.DriverState.Completed
+          ) {
+            // назначенный исполнитель
+            c_state = d_state;
+
+            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(String(driver.c_appointed ?? ''));
+            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(String(driver.c_arrived ?? ''));
+            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(String(driver.c_started ?? ''));
+            else order.updatedAt = new Date(String(driver.c_completed ?? ''));
+
+            order.contractorId = d_id;
+            order.contractorPrice = d_price;
+          }
+        }
+      }
+      // проверяем, предложен ли заказ конкретному мастеру
+      if (order.type === OrderType.Direct) {
+        if (!order.contractorId) {
+          if (trip.b_offer) order.contractorId = userId;
+          else if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
+        }
+        order.services = Array.isArray(trip.b_options?.services) ? trip.b_options.services : [];
+      }
+
+      // маппинг статусов
+      if (b_state === TripAPI.TripState.New) order.status = OrderStatus.PUBLISHED;
+      else if (b_state === TripAPI.TripState.Offering) order.status = OrderStatus.REQUESTED;
+      else if (b_state === TripAPI.TripState.Assigned) {
+        if (c_state === TripAPI.DriverState.Waiting) order.status = OrderStatus.IN_PROGRESS;
+        if (c_state === TripAPI.DriverState.Driving) order.status = OrderStatus.COMPLETED;
+        else order.status = OrderStatus.CONTRACTOR_CONFIRMED;
+        order.agreedPrice = order.contractorPrice;
+      }
+      else if (b_state === TripAPI.TripState.Cancelled) {
+        order.status = OrderStatus.CANCELLED;
+        order.updatedAt = new Date(String(trip.b_canceled ?? ''));
+      }
+      else if (b_state === TripAPI.TripState.Completed) {
+        order.status = OrderStatus.CLOSED;
+        order.agreedPrice = order.contractorPrice;
+      }
+
+console.log(order);
+      ret.push(order as Order);
+    }
+
+    return ret;
+  }, [] as Order[]);
+
+  return result;
+}
+
+// Группы заказов для выборки
+type OrderStage = 'new' | 'active' | 'finished';
+
+/**
+ * Получить список заказов с фильтрацией по статусу
+ * @param userRole Роль пользователя для запроса
+ * @param types Виды заказов
+ * @param stages Состояния заказов
+ * @returns Список заказов
+ */
+function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[]) {
+  const { user } = useUser() as { user: UserProfile };
+
+  let filter = 0;
+  for (const type of types) {
+    if (type === OrderType.Market) filter |= TripAPI.TripFilter.public;
+    else if (type === OrderType.Direct) filter |= TripAPI.TripFilter.offer;
+  }
+
+  for (const stage of stages) {
+    if (stage === 'new') filter |= TripAPI.TripFilter.now;
+    else if (stage === 'active') filter |= TripAPI.TripFilter.current;
+    else if (stage === 'finished') filter |= TripAPI.TripFilter.archive;
+  }
+
+  const { data, ...rest } = useQuery({
+    queryKey: [ 'orders', user.id, types, stages ],
+    queryFn: () => TripAPI.getTripIds(filter),
+    staleTime: CONFIG.API?.ordersListStaleTime ?? 120000,
+    refetchInterval: CONFIG.API?.ordersListRefetchTime ?? 120000,
+    enabled: !!user.id && user.role === userRole &&  // Доступно только пользователю с заданной ролью
+             user.id === authorizedUserId() &&   // Авторизованный пользователь не изменился
+             !!(filter & 3) && !!(filter & 28)   // Хотя бы один фильтр каждого типа
+  });
+
+  const result = useOrdersByIds(data || []);
+
+  if (rest.isSuccess) return result;
+  else return { ...rest, orders: EMPTY_ARRAY };
+}
+
+let ordersToFetch: {
+  userId: number;
+  orderId: number;
+  resolve: (order: Order | null) => void;
+  reject: (error: unknown) => void;
+}[] = [];
+let ordersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Получить заказ пользователя по ID
+ * Использует батчинг для объединения нескольких запросов в один API вызов.
+ * @param orderId ID заказа
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param queryKey Ключ запроса, содержащий ID пользователя и ID заказа (например, ['orders', 8, 123]).
+ * @returns Промис, который разрешается с объектом Order или null
+ * @throws {Error} Если произошла ошибка при запросе к API или заказ не найден.
+ */
+function getOrderById({ queryKey }: { queryKey: (string | number)[] }): Promise<Order | null> {
+  const userId = Number(queryKey[1]);
+  const orderId = Number(queryKey[2]);
+  if (!userId || !orderId) return Promise.resolve(null);
+
+  if (ordersFetchTimeout) clearTimeout(ordersFetchTimeout);
+  ordersFetchTimeout = setTimeout(async () => {
+    const resolvers = ordersToFetch;
+    ordersToFetch = [];
+    ordersFetchTimeout = null;
+
+    const orderIdsToFetch = [...new Set(resolvers.map(item => item.orderId))];
+
+    if (orderIdsToFetch.length === 0) {
+      return;
+    }
+
+    try {
+      const authUserId = authorizedUserId();
+      const data = authUserId ? (await TripAPI.getTripsByIds(orderIdsToFetch)) : null;
+      const orders = data ? parseOrders(authUserId, data) : [];
+      const ordersMap = Object.fromEntries(orders.map(order => [order.id, order]));
+      resolvers.forEach(item => {
+        const order = ordersMap[item.orderId];
+        if (order && authUserId === item.userId) {
+          item.resolve(order);
+        } else {
+          item.resolve(null);
+        }
+      });
+    } catch (error) {
+      resolvers.forEach(item => item.reject(error));
+    }
+  }, 10);
+
+  return new Promise((resolve, reject) => {
+    ordersToFetch.push({ userId, orderId, resolve, reject });
+  });
+}
+
+function combineFetchOrderResults(results: UseQueryResult<Awaited<Order | null>, unknown>[]) {
+  // Агрегируем состояния загрузки и ошибок
+  const ret = {
+    isLoading: false,
+    isFetching: false,
+    isError: false,
+    error: null as unknown,
+    isSuccess: true,
+    orders: [] as Order[]
+  };
+
+  for (const query of results) {
+    ret.isLoading ||= query.isLoading;
+    ret.isFetching ||= query.isFetching;
+    if (query.isError && !ret.error) {
+      ret.isError = true;
+      ret.error = query.error;
+    }
+    ret.isSuccess &&= query.isSuccess;
+    if (query.data) ret.orders.push(query.data as Order);
+  }
+
+  return ret;
+}
+
+/**
+ * Получить список заказов пользователя по ID (в роли как клиента, так и мастера)
+ * @param ids Список ID заказов
+ * @returns Объект, содержащий объединенное состояние запросов React Query
+ *          и массив `orders` с данными успешно полученных заказов.
+ */
+export function useOrdersByIds(ids: number[]) {
+  const { user } = useUser() as { user: UserProfile };
+  const queries = ids.map(orderId => ({
+    queryKey: [ 'orders', user.id, orderId ],
+    queryFn: getOrderById,
+    staleTime: CONFIG.API?.ordersDataStaleTime ?? 600000,
+    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 600000,
+    enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
+  }));
+
+  return useQueries({
+    queries,
+    combine: combineFetchOrderResults
+  });
+}
+
+// ==================== 3. Управление заказами (клиентская сторона) ====================
 
 export type OrderCreationData = {
   /** ID города */
@@ -206,7 +474,7 @@ async function createOrder(
     description,
     desiredPrice: price
   };
-  
+
   if (contractorId) {
     orderOptions.services = services;
   }
@@ -259,7 +527,7 @@ export function useCreateOrder() {
       if (user.role !== UserRole.Client) throw new Error('User must be a client.');
       if (!orderData.cityId || !orderData.address || !orderData.offeringId) throw new Error('Mandatory parameter is empty.');
       if (orderData.contractorId && !orderData.services?.length) throw new Error('Mandatory parameter is empty.');
-      
+
       if (orderData.contractorId) {
         const contractorUser = (await getUserById(client, orderData.contractorId)) as { services?: ServicesMap };
         if (!contractorUser.services?.[orderData.offeringId]) throw new Error('Bad contractor');
@@ -290,271 +558,29 @@ export function useCreateOrder() {
 }
 
 /**
- * Преобразует сырые данные API в структуру Order
- * @param rawData Данные поездок от API
- * @returns Список заказов
- */
-function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTrips>>): Order[] {
-  const result = rawData.reduce((ret, trip) => {
-    if (trip.b_id && trip.u_id) {
-      let c_state = 0;  // статус назначенного исполнителя исполнителя, если есть
-      // очищаем список прикреплённых файлов
-      const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
-      const attachments = images
-        .map(id => Number(id || 0))
-        .filter(Number.isFinite);
-
-      // запоняем основные свойства заказа
-      const order: Partial<Order> = {
-        id: Number(trip.b_id),
-        clientId: Number(trip.u_id),
-        city: Number(trip.city_start ?? 0),
-        address: String(trip.b_start_address ?? ''),
-        offeringId: Number(trip.b_options?.offering ?? 0),
-        description: String(trip.b_options?.description ?? ''),
-        desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
-        createdAt: new Date(String(trip.b_created ?? '')),
-        attachments,
-        contractorOffers: []
-      };
-      // отбрасываем бракованные данные
-      if (!order.id || !order.clientId || !order.offeringId || !order.city) {
-        return ret;
-      }
-      order.updatedAt = order.createdAt;  // начальное значение, будет меняться
-      const b_state = Number(trip.b_state);  // внутренний статус заказа в API
-      // обрабатываем исполнителей, откликнувшихся на заказ
-      if (trip.drivers?.length) {
-        for (const driver of trip.drivers) {
-          const d_id = Number(driver.u_id);
-          const d_state = Number(driver.c_state ?? 0);
-          const d_price = Number(driver.c_options?.price ?? 0);
-          if (d_state === 1) {
-            // не назначенный исполнитель
-            order.contractorOffers!.push({
-              contractorId: d_id,
-              price: d_price,
-              comment: String(driver.c_options?.comment ?? ''),
-              readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
-                driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
-                { value: 0, unit: TimeUnit.HOURS },
-              createdAt: new Date(String(driver.c_becomed_candidate ?? ''))
-            });
-            if (d_id === userId && b_state === 1) {
-              // текущий пользователь является мастером, откликнувшимся на заказ
-              order.contractorPrice = d_price;
-            }
-          }
-          else if (d_state === 3 || d_state === 4 || d_state === 5 || d_state === 6) {
-            // назначенный исполнитель
-            c_state = d_state;
-
-            if (d_state === 3) order.updatedAt = new Date(String(driver.c_appointed ?? ''));
-            else if (d_state === 4) order.updatedAt = new Date(String(driver.c_arrived ?? ''));
-            else if (d_state === 5) order.updatedAt = new Date(String(driver.c_started ?? ''));
-            else order.updatedAt = new Date(String(driver.c_completed ?? ''));
-
-            order.contractorId = d_id;
-            order.contractorPrice = d_price;
-          }
-        }
-      }
-      // проверяем, предложен ли заказ конкретному мастеру
-      if (trip.b_offers?.[0]?.u_id || trip.b_offer) {
-        if (!order.contractorId) {
-          if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
-          else order.contractorId = userId;
-        }
-        order.services = Array.isArray(trip.b_options?.services) ? trip.b_options.services : [];
-      }
-
-      // маппинг статусов
-      if (b_state === 1) order.status = OrderStatus.PUBLISHED;
-      else if (b_state === 6) order.status = OrderStatus.REQUESTED;
-      else if (b_state === 2) {
-        if (c_state === 4) order.status = OrderStatus.IN_PROGRESS;
-        if (c_state === 5) order.status = OrderStatus.COMPLETED;
-        else order.status = OrderStatus.CONTRACTOR_CONFIRMED;
-        order.agreedPrice = order.contractorPrice;
-      }
-      else if (b_state === 3) {
-        order.status = OrderStatus.CANCELLED;
-        order.updatedAt = new Date(String(trip.b_canceled ?? ''));
-      }
-      else if (b_state === 4) {
-        order.status = OrderStatus.CLOSED;
-        order.agreedPrice = order.contractorPrice;
-      }
-
-      ret.push(order as Order);
-    }
-
-    return ret;
-  }, [] as Order[]);
-
-  return result;
-}
-
-/**
- * Получить список заказов с фильтрацией по статусу
- * @param status Статус заказов для фильтрации
- * @returns Список заказов
- */
-async function getOrders(client: QueryClient, userId: number, status: TripAPI.GetTripsState): Promise<Order[]> {
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
-  const rawData = await TripAPI.getTrips(status);
-  const orders = parseOrders(userId, rawData);
-  for (const order of orders) {
-    client.setQueryData([ 'orders', userId, order.id ], order);
-  }
-  return orders;
-}
-
-/**
  * Получить список активных заказов клиента
+ * @param includeMarket - включить заказы на бирже.
+ * @param includeDirect - включить персональные заказы.
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
-export function useClientOrders() {
-  const { user } = useUser() as { user: UserProfile };
-  const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'active' ],
-    queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.Current),
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
-    enabled: !!user.id && user.role === UserRole.Client && user.id === authorizedUserId()  // Доступно только клиенту
-  });
-
-  const { data, ...ret } = queryResult;
-  const orders = data?.filter(order => order.clientId === user.id) || EMPTY_ARRAY;
-  return {
-    ...ret,
-    orders
-  };
+export function useClientOrders(includeMarket: boolean, includeDirect: boolean) {
+  const types = [] as OrderType[];
+  if (includeMarket) types.push(OrderType.Market);
+  if (includeDirect) types.push(OrderType.Direct);
+  return useOrders(UserRole.Client, types, ['new', 'active']);
 }
 
 /**
  * Получить список завершённых и отменённых заказов пользователя (в роли как клиента, так и мастера)
+ * @param includeMarket - включить заказы на бирже.
+ * @param includeDirect - включить персональные заказы.
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
-export function useFinishedOrders() {
-  const { user } = useUser() as { user: UserProfile };
-  const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'finished' ],
-    queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.Finished),
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
-    enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
-  });
-
-  const { data, ...ret } = queryResult;
-  const orders = data || EMPTY_ARRAY;
-  return {
-    ...ret,
-    orders
-  };
-}
-
-let ordersToFetch: {
-  userId: number;
-  orderId: number;
-  resolve: (order: Order | null) => void;
-  reject: (error: unknown) => void;
-}[] = [];
-let ordersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-/**
- * Получить заказ пользователя по ID
- * Использует батчинг для объединения нескольких запросов в один API вызов.
- * @param orderId ID заказа
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param queryKey Ключ запроса, содержащий ID пользователя и ID заказа (например, ['orders', 8, 123]).
- * @returns Промис, который разрешается с объектом Order или null
- * @throws {Error} Если произошла ошибка при запросе к API или заказ не найден.
- */
-function fetchOrderById({ queryKey }: { queryKey: (string | number)[] }): Promise<Order | null> {
-  const userId = Number(queryKey[1]);
-  const orderId = Number(queryKey[2]);
-  if (!userId || !orderId) return Promise.resolve(null);
-
-  if (ordersFetchTimeout) clearTimeout(ordersFetchTimeout);
-  ordersFetchTimeout = setTimeout(async () => {
-    const resolvers = ordersToFetch;
-    ordersToFetch = [];
-    ordersFetchTimeout = null;
-
-    const orderIdsToFetch = [...new Set(resolvers.map(item => item.orderId))];
-
-    if (orderIdsToFetch.length === 0) {
-      return;
-    }
-
-    try {
-      const { data, authUserId } = await TripAPI.getTripsById(orderIdsToFetch);
-      const orders = data && authUserId ? parseOrders(authUserId, data) : [];
-      const ordersMap = Object.fromEntries(orders.map(order => [order.id, order]));
-      resolvers.forEach(item => {
-        const order = ordersMap[item.orderId];
-        if (order && authUserId === item.userId) {
-          item.resolve(order);
-        } else {
-          item.resolve(null);
-        }
-      });
-    } catch (error) {
-      resolvers.forEach(item => item.reject(error));
-    }
-  }, 10);
-
-  return new Promise((resolve, reject) => {
-    ordersToFetch.push({ userId, orderId, resolve, reject });
-  });
-}
-
-function combineFetchOrderResults(results: UseQueryResult<Awaited<Order | null>, unknown>[]) {
-  // Агрегируем состояния загрузки и ошибок
-  const ret = {
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    isSuccess: true,
-    orders: [] as Order[]
-  };
-
-  for (const query of results) {
-    ret.isLoading ||= query.isLoading;
-    ret.isFetching ||= query.isFetching;
-    if (query.isError && !ret.error) {
-      ret.isError = true;
-      ret.error = query.error;
-    }
-    ret.isSuccess &&= query.isSuccess;
-    if (query.data) ret.orders.push(query.data as Order);
-  }
-
-  return ret;
-}
-
-/**
- * Получить список заказов пользователя по ID (в роли как клиента, так и мастера)
- * @param ids Список ID заказов
- * @returns Объект, содержащий объединенное состояние запросов React Query
- *          и массив `orders` с данными успешно полученных заказов.
- */
-export function useOrdersByIds(ids: number[]) {
-  const { user } = useUser() as { user: UserProfile };
-  const queries = ids.map(orderId => ({
-    queryKey: [ 'orders', user.id, orderId ],
-    queryFn: fetchOrderById,
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
-    enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
-  }));
-
-  return useQueries({
-    queries,
-    combine: combineFetchOrderResults
-  });
+export function useFinishedOrders(includeMarket: boolean, includeDirect: boolean) {
+  const types = [] as OrderType[];
+  if (includeMarket) types.push(OrderType.Market);
+  if (includeDirect) types.push(OrderType.Direct);
+  return useOrders(UserRole.Client, types, ['finished']);
 }
 
 /**
@@ -578,7 +604,7 @@ async function updateOrder(userId, { orderId, address, description, attachments,
       const fileAttachments = attachments.filter(file => file instanceof File);
       const idAttachments = attachments.filter(file => 'number' === typeof file);
 
-      const oldData = await TripAPI.getTripsById([ orderId ]);
+      const oldData = await TripAPI.getTripsByIds([ orderId ]);
       if (userId !== authorizedUserId()) throw new Error('User was changed.');
 
       let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
@@ -650,7 +676,7 @@ export function useUpdateOrder() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -728,7 +754,7 @@ export function useCancelOrder() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -763,7 +789,7 @@ export function useCancelOrder() {
   }
 }
 
-// ==================== 3. Работа с предложениями (откликами мастеров) ====================
+// ==================== 4. Работа с предложениями (откликами мастеров) ====================
 
 export type CreateOfferData = {
   orderId: number,
@@ -812,7 +838,7 @@ export function useCreateOffer() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -869,7 +895,7 @@ export function useUpdateOffer() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -925,7 +951,7 @@ export function useAcceptOffer() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -973,7 +999,7 @@ export function useRevokeOffer() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -996,55 +1022,45 @@ export function useRevokeOffer() {
   }
 }
 
-// ==================== 4. Управление заказами (сторона мастера) ====================
+// ==================== 5. Управление заказами (сторона мастера) ====================
 
 /**
  * Получить список активных заказов для мастера
+ * @param includeMarket - включить заказы на бирже.
+ * @param includeDirect - включить персональные заказы.
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
-export function useContractorOrders() {
-  const { user } = useUser() as { user: UserProfile };
-  const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'contractor' ],
-    queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.Current),
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
-    enabled: !!user.id && user.role === UserRole.Contractor && user.id === authorizedUserId()  // Доступно только мастеру
-  });
-
-  const { data, ...ret } = queryResult;
-  const orders = data?.filter(order =>
-    order.status === OrderStatus.PUBLISHED ?
-      order.contractorOffers.some(offer => offer.contractorId === user.id) :
-      order.contractorId === user.id
-  ) || EMPTY_ARRAY;
-  return {
-    ...ret,
-    orders
-  };
+export function useContractorOrders(includeMarket: boolean, includeDirect: boolean) {
+  const types = [] as OrderType[];
+  if (includeMarket) types.push(OrderType.Market);
+  if (includeDirect) types.push(OrderType.Direct);
+  return useOrders(UserRole.Contractor, types, ['active']);
 }
 
 /**
  * Получить список доступных заказов для мастера
+ * @param includeMarket - включить заказы на бирже.
+ * @param includeDirect - включить персональные заказы.
  * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
  */
-export function useAvailableOrders() {
-  const { user } = useUser() as { user: UserProfile & { services: ServicesMap } };
-  const queryResult = useQuery({
-    queryKey: [ 'orders', user.id, 'available' ],
-    queryFn: ({ client }) => getOrders(client, user.id, TripAPI.GetTripsState.New),
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 120000,
-    enabled: !!user.id && user.role === UserRole.Contractor && user.id === authorizedUserId()  // Доступно только мастеру
-  });
+export function useAvailableOrders(includeMarket: boolean, includeDirect: boolean) {
+  const types = [] as OrderType[];
+  if (includeMarket) types.push(OrderType.Market);
+  if (includeDirect) types.push(OrderType.Direct);
+  return useOrders(UserRole.Contractor, types, ['new']);
+}
 
-  const { data, ...ret } = queryResult;
-  const filteredData = data?.filter(order => !!user.services?.[order.offeringId]);
-  const orders = filteredData?.length ? filteredData : EMPTY_ARRAY;
-  return {
-    ...ret,
-    orders
-  };
+/**
+ * Получить список завершённых заказов для мастера
+ * @param includeMarket - включить заказы на бирже.
+ * @param includeDirect - включить персональные заказы.
+ * @returns Объект с состоянием запроса React Query и объектом `orders`, содержащим список заказов.
+ */
+export function useContractorFinishedOrders(includeMarket: boolean, includeDirect: boolean) {
+  const types = [] as OrderType[];
+  if (includeMarket) types.push(OrderType.Market);
+  if (includeDirect) types.push(OrderType.Direct);
+  return useOrders(UserRole.Contractor, types, ['finished']);
 }
 
 //~ /**
@@ -1085,7 +1101,7 @@ export function useAcceptInvoice() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -1131,7 +1147,7 @@ export function useStartOrderWork() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -1177,7 +1193,7 @@ export function useCompleteOrderByContractor() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -1199,7 +1215,7 @@ export function useCompleteOrderByContractor() {
   }
 }
 
-// ==================== 5. Подтверждение и завершение (клиент) ====================
+// ==================== 6. Подтверждение и завершение (клиент) ====================
 
 /**
  * Подтвердить выполнение заказа (для клиента)
@@ -1225,7 +1241,7 @@ export function useVerifyOrderCompletion() {
 
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
-        queryFn: fetchOrderById,
+        queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
       });
 
@@ -1262,7 +1278,7 @@ export function useVerifyOrderCompletion() {
   //~ }
 //~ ): Promise<{ success: boolean; disputeId: number }>;
 
-// ==================== 6. Вспомогательные и системные ====================
+// ==================== 7. Вспомогательные и системные ====================
 
 export function useFileById(fileId: number | null) {
   const queryResult = useQuery({

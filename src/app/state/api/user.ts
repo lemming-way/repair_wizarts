@@ -18,7 +18,7 @@
  * recoverPassword, sendVerification
  */
 
-import { post, postNoAuth, authWithAuthUser } from './request';
+import { post, postWithAuthUser, postNoAuth, authWithAuthUser } from './request';
 import { AuthToken } from '../auth';
 
 /**
@@ -147,7 +147,8 @@ export async function login(
  * @returns Промис, который разрешается после успешного выхода.
  */
 export function logout(): Promise<void> {
-  return post<void>('auth/logout');
+  // Этот запрос ожидаемо падает с ошибкой, но на всякий случай отправляем
+  return postNoAuth<void>('auth/logout');
 }
 
 /**
@@ -155,7 +156,7 @@ export function logout(): Promise<void> {
  * @returns Промис, который разрешается с объектом UserData или пустой объект, если данные не найдены.
  */
 export async function getAuthUser(): Promise<UserData> {
-  const result = await post<{ user?: Record<string, UserData>; auth_user?: { u_id?: unknown } }>('user/authorized');
+  const result = await postWithAuthUser<{ user?: Record<string, UserData>; auth_user?: { u_id?: unknown } }>('user/authorized');
   const uid = 'string' === typeof result.auth_user?.u_id || 'number' === typeof result.auth_user?.u_id ? result.auth_user.u_id : undefined;
   if (uid && result.user?.[uid]) return result.user[uid];
   else return {};
@@ -169,7 +170,7 @@ export async function getAuthUser(): Promise<UserData> {
 export async function getUsers(userIds: number[]): Promise<Record<string, UserData>> {
   if (!userIds.length) return {};
   const result = await post<{ user?: Record<string, UserData> }>(`user/${userIds}`);
-  if ('object' === typeof result.user && !result.user === null) return result.user;
+  if ('object' === typeof result.user && result.user !== null) return result.user;
   else return {};
 }
 

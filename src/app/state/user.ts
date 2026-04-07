@@ -143,7 +143,7 @@ export type UserProfile = ClientUserProfile | ContractorUserProfile;
 function fillUserProfile(data: UserAPI.UserData): UserProfile {
   const numId = Number(data.u_id);
   const u_details = data.u_details as Record<string, unknown> || undefined;
-  const ret: UserProfile = {
+  const baseProfile: UserBaseData = {
     id: Number.isFinite(numId) ? numId : 0,
     name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
     lastname: String(data.u_family || ''),
@@ -156,18 +156,35 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     currency: String(data.u_currency || ''),
     isPhoneVerified: Number( data.u_phone_checked ) === 1,
     isEmailVerified: Number( data.u_email_checked) === 1,
-    description: String(data.u_description || ''),
-    locality: Number(data.u_city) || 0,
     blackList: Array.isArray(u_details?.blackList) ? u_details.blackList : [],
-    address: 'string' === typeof u_details?.address ? u_details.address : '',
-    experience: 'number' === typeof u_details?.experience ? u_details.experience : 0,
     isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
     lastTimeBeenOnline: 'string' === typeof u_details?.lastTimeBeenOnline ? u_details.lastTimeBeenOnline : '',
-    services: Array.isArray(u_details?.services) ? u_details.services : {},
+  };
+
+  if (baseProfile.role === UserRole.Client) {
+    return baseProfile;
+  }
+
+  const contractorServices = {} as ServicesMap;
+  if (u_details?.services && 'object' === typeof u_details.services) {
+    for (const key in u_details.services) {
+      const offeringId = Number(key);
+      if (Number.isFinite(offeringId) && Array.isArray(u_details.services[key])) {
+        contractorServices[offeringId] = u_details.services[key];
+      }
+    }
+  }
+
+  return {
+    ...baseProfile,
+    description: String(data.u_description || ''),
+    locality: Number(data.u_city) || 0,
+    address: 'string' === typeof u_details?.address ? u_details.address : '',
+    experience: 'number' === typeof u_details?.experience ? u_details.experience : 0,
+    services: contractorServices,
     businessModel: u_details?.businessModel === BusinessModel.ServiceCenter ? BusinessModel.ServiceCenter : BusinessModel.IndependentTechnician,
     organizationName: 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
   };
-  return ret;
 }
 
 /**
@@ -217,7 +234,7 @@ type UserResolver = {
   reject: (error: unknown) => void;
 };
 
-let usersToFetch: UserResolver[];
+let usersToFetch: UserResolver[] = [];
 let usersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 /**
@@ -357,10 +374,12 @@ export async function login(
       token: authResult.token,
       u_hash: authResult.u_hash
     }, keepAuthorized);
-    queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 
     // Заполняем данные пользователя в кэше, если auth_user присутствует
-    if (authResult.auth_user) {
+    if (!authResult.auth_user) {
+      queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
+    }
+    else {
       const userProfile = fillUserProfile(authResult.auth_user);
       queryClient.setQueryData(['user', 'authorized'], userProfile);
 
@@ -422,7 +441,7 @@ export async function logout(queryClient: QueryClient): Promise<void> {
   try {
     await UserAPI.logout(); // Вызов API функции выхода
   } catch (error) {
-    console.error('Logout API call failed, but clearing token anyway:', error);
+    console.warn('Logout API call failed, but clearing token anyway:', error);
   } finally {
     clearToken();
     queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] }); // Очищаем кэш пользователя
@@ -516,7 +535,7 @@ async function _registerUser(
     u_email,
     password,
   };
-  
+
   if (role === UserRole.Contractor) {
     const services = Object.fromEntries((offerings || []).map(id => [id, []]));
     registerData.u_details = {
@@ -590,6 +609,7 @@ export async function registerContractor(queryClient: QueryClient, payload: Regi
   await UserAPI.makeUserVerified();
   if (authorizedUserId() !== userId) return;
 
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
   if (carId) CarAPI.driveCar(carId);  // можно не ждать
 }
 

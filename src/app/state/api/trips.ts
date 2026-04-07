@@ -6,13 +6,13 @@
  * TripState, DriverState, GetTripsState, TripData, DriverData, DriverOffer, TripCreationData, TripEditData
  *
  * **Получение данных:**
- * getContractorsByService, getTrips, getTripsById
+ * getContractorsByService, getTripIds, getTripsByIds
  *
  * **Изменение данных:**
  * createTrip, updateTrip, cancelTripByClient, cancelTripByDriver, inviteDriver, acceptInvoice, createOffer,
  * acceptOffer, setArriveState, startTrip, finishTrip, scoreTrip
  */
-import { post, postWithAuthUser, getLongList } from './request';
+import { post } from './request';
 
 // ==================== Типы данных ====================
 
@@ -21,7 +21,7 @@ export enum TripState {
   Assigned,
   Cancelled,
   Completed,
-  Waiting,
+  Inactive,
   Offering
 }
 
@@ -39,11 +39,11 @@ export enum DriverState {
  */
 export type TripData = {
   /** Идентификатор поездки */
-  b_id: string;
+  b_id: number;
   /** Идентификатор клиента */
-  u_id: string;
+  u_id: number;
   /** ID города начала поездки */
-  city_start?: number | null;
+  city_start: number | null;
   /** Адрес начальной точки поездки */
   b_start_address: string | null;
   /** Широта начальной точки поездки */
@@ -55,7 +55,9 @@ export type TripData = {
   /** Пользовательские комментарии, отсутствующие в справочнике */
   b_custom_comment: string | null;
   /** Идентификатор статуса поездки */
-  b_state: string;
+  b_state: number;
+  /** Поездка доступна только назначенным водителям */
+  b_only_offer: 0 | 1;
   /** Оценка поездки клиентом */
   b_rating: number | null;
   /** Дата и время создания поездки */
@@ -78,24 +80,16 @@ export type TripData = {
   b_price_estimate: number | null;
   /** Валюта поездки */
   b_currency: string | null;
-  /** Является ли поездка ночной (1, 0 или null) */
-  b_night: number | null;
   /** Список водителей, связанных с поездкой */
   drivers: DriverData[] | null;
-  /** Список идентификаторов комментариев к поездкам */
-  b_comments: string[] | null;
-  /** Список идентификаторов услуг при перевозке */
-  b_services: string[] | null;
-  /** Является ли поездка голосованием (1 или отсутствует) */
-  b_voting?: number;
   /** Идентификатор способа оплаты (для клиента) */
-  b_payment_way?: string;
+  b_payment_way: number | null;
   /** Идентификатор платежной карты (для клиента) */
-  b_payment_card?: string;
+  b_payment_card: number | null;
   /** Список предложений водителям */
-  b_offers?: DriverOffer[];
+  b_offers: DriverOffer[] | null;
   /** Предложена ли поездка для этого водителя (1 или 0) */
-  b_offer?: number;
+  b_offer: 0 | 1 | null;
 }
 
 /**
@@ -103,15 +97,15 @@ export type TripData = {
  */
 export type DriverData = {
   /** Идентификатор водителя */
-  u_id: string;
+  u_id: number;
   /** Идентификатор машины */
-  c_id: string;
+  c_id: number;
   /** Идентификатор статуса водителя в поездке */
-  c_state: string;
+  c_state: number;
   /** Идентификатор способа оплаты (для этого водителя) */
-  c_payment_way?: string;
+  c_payment_way: number;
   /** Идентификатор платежной карты (для этого водителя) */
-  c_payment_card?: string | null;
+  c_payment_card: number | null;
   /** Причина отмены поездки водителем */
   c_cancel_reason: string | null;
   /** Оценка поездки водителем */
@@ -137,7 +131,7 @@ export type DriverData = {
  */
 export interface DriverOffer {
   /** Идентификатор водителя */
-  u_id: string;
+  u_id: number;
   /** Дата добавления предложения */
   created: string;
 }
@@ -186,13 +180,14 @@ export type TripEditData = {
   c_options?: Record<string, unknown>;
 }
 
-/** Статус поездки для запроса списка поездок */
-export enum GetTripsState {
-  Any,
-  New,
-  Current,
-  Finished
-}
+/** Параметр для выборки поездок */
+export const TripFilter = {
+  public: 1,
+  offer: 2,
+  now: 4,
+  current: 8,
+  archive: 16
+};
 
 // ==================== 1. Выбор мастера ====================
 
@@ -253,33 +248,23 @@ export async function createTrip(data: TripCreationData): Promise<number | null>
  * @param status - Статус заказов для фильтрации
  * @returns Промис, который разрешается со списком поездок
  */
-export function getTrips(status: GetTripsState): Promise<TripData[]> {
-  const path = [
-    "get",
-    "now",
-    "",
-    "archive"
-  ];
-  return getLongList<TripData>(`drive/${path}`, { fields: '000000006' }, 'booking');
+export function getTripIds(filter: number): Promise<number[]> {
+  return post<number[]>('script/template/repair_api', { action: 'getTripIds', flags: filter });
 }
 
 /**
  * Получить список поездок по их ID
  * @param tripIds - массив ID поездок
- * @returns Промис, который разрешается со списком поездок и ID авторизованного пользователя
+ * @returns Промис, который разрешается со списком поездок
  */
-export async function getTripsById(tripIds: number[]): Promise<{ data: TripData[], authUserId: number }> {
-  if (!tripIds.length) return { data: [], authUserId: 0 };
-  const result = await postWithAuthUser<{booking: Record<number, TripData>}>(
-    `drive/get/${tripIds}`,
-    { fields: '000000006' }
+export async function getTripsByIds(tripIds: number[]): Promise<TripData[]> {
+  if (!tripIds.length) return [];
+  const result = await post<TripData[]>(
+    'script/template/repair_api',
+    { action: 'getTripsByIds', order_ids: tripIds }
   );
-  const data =
-    result?.booking && 'object' === typeof result.booking ?
-    Object.values(result.booking) : [];
-  const auth_user = result?.auth_user as { u_id: string };
-  const authUserId = Number(auth_user?.u_id ?? 0);
-  return { data, authUserId };
+  const data = result && Array.isArray(result) ? result : [];
+  return data;
 }
 
 /**

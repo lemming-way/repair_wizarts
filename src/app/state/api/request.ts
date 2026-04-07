@@ -77,7 +77,7 @@ function appendFormValue(formData: FormData, key: string, value: unknown) {
  */
 function prepareFormDataBody(
   data: RequestOptions['data'],
-  withAuthUser: boolean,
+  withFullAuthUser: boolean,
   includeAuth: AuthToken | null
 ): FormData {
   const formData = new FormData();
@@ -92,7 +92,7 @@ function prepareFormDataBody(
   }
   // Если data не FormData и не Object, оно игнорируется
 
-  if (withAuthUser) {
+  if (withFullAuthUser) {
       formData.append('au', 'f');
   }
 
@@ -144,9 +144,9 @@ async function request<T extends APIBaseType = Record<string, unknown>>(opts: Re
   if (method === 'POST') {
     const token = getToken();
     const includeAuth = opts.noAuth !== true && !!token?.token && !!token?.u_hash ? token : null;
-    formDataBody = prepareFormDataBody(opts.data, opts.withAuthUser === true, includeAuth);
+    formDataBody = prepareFormDataBody(opts.data, opts.withAuthUser === true && opts.noAuth === true, includeAuth);
   } else if (method === 'GET') {
-    if (opts.withAuthUser === true) {
+    if (opts.withAuthUser === true && opts.noAuth === true) {
       if (url.includes('?')) url += '&au=f';
       else url += '?au=f';
     }
@@ -273,6 +273,7 @@ export async function getLongList<T>(path: string, data: RequestOptions['data'],
     if (result?.[fieldName] && 'object' === typeof result[fieldName]) {
       const values = Object.values(result[fieldName]);
       ret = ret.concat(values);
+      if (values.length < 30) break;
       if (payload instanceof FormData) payload.set('lo', String(Number(payload.get('lo')) + 30));
       else payload.lo += 30;
     }
