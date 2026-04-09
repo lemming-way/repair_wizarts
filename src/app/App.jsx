@@ -59,7 +59,7 @@ import { ServiceDetail } from './components/Service';
 import BalanceClient from './components/Settings/BalanceClient';
 import { Footer } from './footer';
 import { Toolbar } from './header';
-import { useOfferings } from './state/site-data';
+import { useProducts } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
 
@@ -71,7 +71,7 @@ function App() {
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
 
-  const { categories, isLoading: areOfferingsLoading } = useOfferings();
+  const { categories, isLoading: areProductsLoading } = useProducts();
   
   const isAuthorized = !!user.id;
   const isContractor = user.role === UserRole.Contractor;
@@ -132,7 +132,7 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (Object.keys(categories).length === 0 && areOfferingsLoading) {
+  if (Object.keys(categories).length === 0 && areProductsLoading) {
     return 'Loading...';
   }
 

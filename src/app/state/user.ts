@@ -168,9 +168,9 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
   const contractorServices = {} as ServicesMap;
   if (u_details?.services && 'object' === typeof u_details.services) {
     for (const key in u_details.services) {
-      const offeringId = Number(key);
-      if (Number.isFinite(offeringId) && Array.isArray(u_details.services[key])) {
-        contractorServices[offeringId] = u_details.services[key];
+      const productId = Number(key);
+      if (Number.isFinite(productId) && Array.isArray(u_details.services[key])) {
+        contractorServices[productId] = u_details.services[key];
       }
     }
   }
@@ -488,7 +488,7 @@ export type RegisterPayload = {
   password: string;
   address?: string;
   experience?: number;
-  offerings?: number[];
+  products?: number[];
   businessModel?: BusinessModel;
   organizationName?: string;
   keepAuthorized: boolean;
@@ -516,7 +516,7 @@ async function _registerUser(
     password,
     address,
     experience,
-    offerings,
+    products,
     businessModel,
     organizationName,
     keepAuthorized
@@ -537,7 +537,7 @@ async function _registerUser(
   };
 
   if (role === UserRole.Contractor) {
-    const services = Object.fromEntries((offerings || []).map(id => [id, []]));
+    const services = Object.fromEntries((products || []).map(id => [id, []]));
     registerData.u_details = {
       address: address || '',
       experience: experience || 0,

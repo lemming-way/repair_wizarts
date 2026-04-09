@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import style from './Allorders.module.css';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 import { useUser } from '../../state/user';
 
 // Принимаем все состояния и сеттеры как props из родительского компонента
@@ -16,16 +16,16 @@ export default function FilterBlock({
   customPriceRange,
   setCustomPriceRange,
 }) {
-  const { categories: allCategories, subcategories: allSubcategories, offerings: allOfferings } = useOfferings();
+  const { categories: allCategories, subcategories: allSubcategories, products: allProducts } = useProducts();
   const { user } = useUser();
 
-  const { categories, subcategories, offerings } = useMemo(() => {
-    const offerings = {};
+  const { categories, subcategories, products } = useMemo(() => {
+    const products = {};
     for (const id of Object.keys(user.services || {})) {
-      if (allOfferings[id]) offerings[id] = allOfferings[id];
+      if (allProducts[id]) products[id] = allProducts[id];
     }
 
-    const subcategoryIds = [...new Set(Object.values(offerings).map(offering => offering.parent))];
+    const subcategoryIds = [...new Set(Object.values(products).map(product => product.parent))];
     const subcategories = {};
     for (const id of subcategoryIds) {
       if (allSubcategories[id]) subcategories[id] = allSubcategories[id];
@@ -37,8 +37,8 @@ export default function FilterBlock({
       if (allCategories[id]) categories[id] = allCategories[id];
     }
 
-    return { categories, subcategories, offerings };
-  }, [ user.services, allCategories, allSubcategories, allOfferings ]);
+    return { categories, subcategories, products };
+  }, [ user.services, allCategories, allSubcategories, allProducts ]);
 
   // Универсальный обработчик для чекбоксов, которые управляют массивами (бюджет, предложения)
   const handleArrayFilterChange = (setter, currentArray, value) => {
@@ -109,10 +109,10 @@ export default function FilterBlock({
                   <details key={subId}>
                     <summary>{sub.name}</summary>
                     <div className={style.filter__details_data}>
-                      {sub.offerings.map(offeringId =>
-                        offerings[offeringId] ?
-                        <details key={offeringId}>
-                          <summary>{offerings[offeringId].name}</summary>
+                      {sub.products.map(productId =>
+                        products[productId] ?
+                        <details key={productId}>
+                          <summary>{products[productId].name}</summary>
                         </details> :
                         null
                       )}

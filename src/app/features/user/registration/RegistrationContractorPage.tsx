@@ -7,7 +7,7 @@ import { ConfirmPolitics } from './ConfirmPolitics';
 import { PhoneNumber } from '../profile/PhoneNumber';
 // import Error from "app/components/Error/Error"; // Assuming Error component exists for displaying errors
 
-import { useCities, useOfferings } from 'app/state/site-data';
+import { useCities, useProducts } from 'app/state/site-data';
 import { useRegisterContractor, BusinessModel } from 'app/state/user';
 import styles from './RegistrationContractorPage.module.scss';
 import sharedStyles from './RegistrationPage.module.scss';
@@ -22,7 +22,7 @@ const experienceOptions = [
 
 const RegistrationContractorPage = () => {
   const text = useLanguage();
-  const { categories, subcategories, offerings } = useOfferings();
+  const { categories, subcategories, products } = useProducts();
   const { cities } = useCities();
   const navigate = useNavigate();
   const { register, isPending } = useRegisterContractor();
@@ -53,7 +53,7 @@ const RegistrationContractorPage = () => {
 
   const [categoryOptionSelected, setCategoryOptionSelected] = useState<MultiSelectOption[]>([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState<MultiSelectOption[]>([]);
-  const [offeringOptionSelected, setOfferingOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [productOptionSelected, setProductOptionSelected] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
     document.title = text('Contractor Registration');
@@ -96,7 +96,7 @@ const RegistrationContractorPage = () => {
         password,
         address: address.trim(),
         experience: Number(experience?.value || 0),
-        offerings: offeringOptionSelected?.map(opt => Number(opt.value)) || [],
+        products: productOptionSelected?.map(opt => Number(opt.value)) || [],
         businessModel: businessModel,
         organizationName: organizationName.trim(),
         description: description.trim(),
@@ -122,10 +122,10 @@ const RegistrationContractorPage = () => {
     })));
   }
 
-  const offeringOptions: MultiSelectOption[] = [];
+  const productOptions: MultiSelectOption[] = [];
   for (const { value: id } of subcategoryOptionSelected) {
-    offeringOptions.push(...subcategories[id].offerings.map(id => ({
-      label: offerings[id].name,
+    productOptions.push(...subcategories[id].products.map(id => ({
+      label: products[id].name,
       value: id
     })));
   }
@@ -271,7 +271,7 @@ const RegistrationContractorPage = () => {
             onChange={(selected: MultiSelectOption[] | null) => {
               setCategoryOptionSelected(selected || []);
               setSubcategoryOptionSelected([]); // Reset sub-categories
-              setOfferingOptionSelected([]); // Reset models
+              setProductOptionSelected([]); // Reset models
             }}
             value={categoryOptionSelected}
             isMulti={true}
@@ -284,7 +284,7 @@ const RegistrationContractorPage = () => {
               options={subcategoryOptions}
               onChange={(selected: MultiSelectOption[] | null) => {
                 setSubcategoryOptionSelected(selected || []);
-                setOfferingOptionSelected([]); // Reset models on sub-category change
+                setProductOptionSelected([]); // Reset models on sub-category change
               }}
               value={subcategoryOptionSelected}
               isSelectAll={true}
@@ -300,11 +300,11 @@ const RegistrationContractorPage = () => {
             <MultiSelect
               key="model_phone_id"
               placeholder={text('Service name')}
-              options={offeringOptions}
+              options={productOptions}
               onChange={(selected: MultiSelectOption[] | null) =>
-                setOfferingOptionSelected(selected || [])
+                setProductOptionSelected(selected || [])
               }
-              value={offeringOptionSelected}
+              value={productOptionSelected}
               isSelectAll={true}
               isMulti={true}
               menuPlacement={'bottom'}

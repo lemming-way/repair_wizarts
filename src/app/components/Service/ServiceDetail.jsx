@@ -10,7 +10,7 @@ import style from './ServiceDetail.module.scss';
 import { useLanguage } from '../../state/language';
 import { useGlobalState } from '../../state/global';
 import { useUser } from '../../state/user';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 import { useContractors, useCreateOrder } from '../../state/order';
 
 import PaymentBlock from './PaymentBlock';
@@ -27,14 +27,14 @@ function ServiceDetail() {
   const [ignoreContractorServices, setIgnoreContractorServices] = useState([]);
   const { id } = useParams();
 
-  const { offerings } = useOfferings();
+  const { products } = useProducts();
   const { user } = useUser();
 
-  const offeringId = isFinite(id) ? Number(id) : 0;
+  const productId = isFinite(id) ? Number(id) : 0;
 
-  const currentOfferingDetails = {
-    id: offeringId,
-    name: offerings[offeringId]?.name || text('Unknown service'),
+  const currentProductDetails = {
+    id: productId,
+    name: products[productId]?.name || text('Unknown service'),
   };
 
   const [formError, setFormError] = useState('');
@@ -46,7 +46,7 @@ function ServiceDetail() {
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
 
-  const { contractors } = useContractors({ offering: offeringId, city: currentCity });
+  const { contractors } = useContractors({ product: productId, city: currentCity });
   const { createOrder } = useCreateOrder();
 
   const onSelectContractor = async (contractorData) => {
@@ -100,7 +100,7 @@ function ServiceDetail() {
     const orderData = {
       cityId: currentCity,
       address,
-      offeringId,
+      productId,
       description,
       price: getSumPrice(),
       contractorId: selectedContractor.id,
@@ -127,8 +127,8 @@ function ServiceDetail() {
   };
 
   useEffect(() => {
-    document.title = currentOfferingDetails.name;
-  }, [currentOfferingDetails.name]);
+    document.title = currentProductDetails.name;
+  }, [currentProductDetails.name]);
 
   function getSumPrice() {
     let sum = 0;
@@ -175,9 +175,9 @@ function ServiceDetail() {
 
   // Динамически генерируем цены на основе услуг выбранного мастера
   const prices = useMemo(() => {
-    const contractorOfferingServices = selectedContractor.services?.[offeringId] || [];
+    const contractorProductServices = selectedContractor.services?.[productId] || [];
     const pricesMap = {};
-    contractorOfferingServices.forEach(serviceDetail => {
+    contractorProductServices.forEach(serviceDetail => {
       pricesMap[serviceDetail.service] = {
         name: serviceDetail.service,
         price: serviceDetail.price,
@@ -186,7 +186,7 @@ function ServiceDetail() {
       };
     });
     return pricesMap;
-  }, [selectedContractor, offeringId, text]);
+  }, [selectedContractor, productId, text]);
 
 
   return <>
@@ -207,7 +207,7 @@ function ServiceDetail() {
 
     <ServiceMainContent
       text={text}
-      currentServiceDetails={currentOfferingDetails}
+      currentServiceDetails={currentProductDetails}
       prices={prices}
       selectedServices={selectedContractorServices}
       addRemoveService={addRemoveService}

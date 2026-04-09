@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 import arrowRight from '../img/header/icons/arrow-right-icon.svg';
 import styles from './ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './ServiceCategoriesDropdown';
-import { useOfferings } from '../state/site-data';
+import { useProducts } from '../state/site-data';
 
 const ServiceDropdownMobile = () => {
   
-  const { categories, subcategories } = useOfferings();
+  const { categories, subcategories } = useProducts();
   const [openItem, setOpenItem] = useState<string | null>(null);
 
   return (

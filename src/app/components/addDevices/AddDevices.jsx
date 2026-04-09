@@ -10,7 +10,7 @@ import style from './AddDevices.module.css';
 import { AnyImage, getKeyFor } from '../../shared/ui';
 import { useLanguage } from '../../state/language';
 import { useGlobalState } from '../../state/global';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 import { useCreateOrder } from '../../state/order';
 
 function AddDevices() {
@@ -26,10 +26,10 @@ function AddDevices() {
 
   const { createOrder } = useCreateOrder();
 
-  const { categories, subcategories, offerings } = useOfferings();
+  const { categories, subcategories, products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
-  const [selectedOffering, setSelectedOffering] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState('');
 
   const categoriesOptions = Object.entries(categories).map(([id, category]) => ({
       value: String(id),
@@ -43,11 +43,11 @@ function AddDevices() {
         .map(subId => ({ value: String(subId), label: subcategories[subId].name }))
     : [];
 
-  const offeringsOptions =
-    selectedSubcategory && subcategories && offerings
+  const productsOptions =
+    selectedSubcategory && subcategories && products
     ? subcategories[selectedSubcategory]
-        .offerings
-        .map(offeringId => ({ value: String(offeringId), label: offerings[offeringId].name }))
+        .products
+        .map(productId => ({ value: String(productId), label: products[productId].name }))
     : [];
 
   // загрузка фото
@@ -73,7 +73,7 @@ function AddDevices() {
     e.preventDefault();
     setError('');
 
-    if (!address || !selectedOffering || !description || !price) {
+    if (!address || !selectedProduct || !description || !price) {
         setError(text('Mandatory parameter is empty.'));
         return;
     }
@@ -82,7 +82,7 @@ function AddDevices() {
       await createOrder({
         cityId: currentCity,
         address: address,
-        offeringId: Number(selectedOffering),
+        productId: Number(selectedProduct),
         description: description,
         attachments: photos,
         price: Number(price),
@@ -218,7 +218,7 @@ function AddDevices() {
                         onChange={(e) => {
                           setSelectedCategory(Number(e.target.value));
                           setSelectedSubcategory('');
-                          setSelectedOffering('');
+                          setSelectedProduct('');
                         }}
                       >
                         <option value="" disabled>
@@ -236,7 +236,7 @@ function AddDevices() {
                         disabled={!selectedCategory}
                         onChange={(e) => {
                           setSelectedSubcategory(Number(e.target.value));
-                          setSelectedOffering('');
+                          setSelectedProduct('');
                         }}
                       >
                         <option value="" disabled>
@@ -251,16 +251,16 @@ function AddDevices() {
                       <select
                         required
                         className="pick__price"
-                        value={selectedOffering}
+                        value={selectedProduct}
                         onChange={(e) =>
-                          setSelectedOffering(Number(e.target.value))
+                          setSelectedProduct(Number(e.target.value))
                         }
                         disabled={!selectedSubcategory}
                       >
                         <option value="" disabled>
                           Бренд
                         </option>
-                        {offeringsOptions.map((item) => (
+                        {productsOptions.map((item) => (
                           <option value={item.value} key={item.value}>
                             {item.label}
                           </option>

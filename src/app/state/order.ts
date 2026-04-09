@@ -37,7 +37,7 @@ export type Order = {
   contractorId?: number;
   city: number;
   address: string;
-  offeringId: number;
+  productId: number;
   services?: OrderServiceDetails[];
   status: OrderStatus;
   description: string;
@@ -111,23 +111,23 @@ const EMPTY_ARRAY = Object.freeze([]);
 
 /**
  * Получить список мастеров по конкретной услуге
- * @param offering - ID услуги
+ * @param product - ID услуги
  * @param city - ID города
  * @param rating - минимальный рейтинг мастера (не реализовано)
  * @param isOnline - возвращать только пользователей онлайн
  * @returns Объект, содержащий объединенное состояние запросов React Query и массив `users` с данными
  *          успешно полученных мастеров, оказывающих данную услугу
  */
-export function useContractors({ offering, city, rating, isOnline }: {
-  offering: number;
+export function useContractors({ product, city, rating, isOnline }: {
+  product: number;
   city: number;
   rating?: number;
   isOnline?: boolean;
 }) {
   const { user } = useUser() as { user: UserProfile };
   const { data, ...rest } = useQuery({
-    queryKey: [ 'contractors', offering, city, rating, isOnline ],
-    queryFn: () => TripAPI.getContractorsByService({ serviceId: offering, cityId: city, minRating: rating, isOnline }),
+    queryKey: [ 'contractors', product, city, rating, isOnline ],
+    queryFn: () => TripAPI.getContractorsByService({ serviceId: product, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
     // Здесь и далее проверяем соответствие ID пользователя авторизованному пользователю в токене,
     // потому что пользователь может смениться во время выполнения асинхронных операций
@@ -179,7 +179,7 @@ console.log(trip);
         clientId: Number(trip.u_id),
         city: Number(trip.city_start ?? 0),
         address: String(trip.b_start_address ?? ''),
-        offeringId: Number(trip.b_options?.offering ?? 0),
+        productId: Number(trip.b_options?.product ?? 0),
         description: String(trip.b_options?.description ?? ''),
         desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
         createdAt: new Date(String(trip.b_created ?? '')),
@@ -187,7 +187,7 @@ console.log(trip);
         contractorOffers: []
       };
       // отбрасываем бракованные данные
-      if (!order.id || !order.clientId || !order.offeringId || !order.city) {
+      if (!order.id || !order.clientId || !order.productId || !order.city) {
 console.log(order);
         return ret;
       }
@@ -422,7 +422,7 @@ export type OrderCreationData = {
   /** адрес выполнения работ */
   address: string;
   /** ID заказанной услуги */
-  offeringId: number;
+  productId: number;
   /** ID выбранного мастера */
   contractorId?: number;
   /** выбранные услуги */
@@ -448,7 +448,7 @@ export type OrderUpdateData = {
  * @param userId - ID пользователя
  * @param cityId - ID города
  * @param address - адрес выполнения работ
- * @param offeringId - ID заказанной услуги
+ * @param productId - ID заказанной услуги
  * @param contractorId - ID выбранного мастера
  * @param services - выбранные услуги
  * @param description - Комментарий к заказу
@@ -461,7 +461,7 @@ async function createOrder(
   {
     cityId,
     address,
-    offeringId,
+    productId,
     contractorId,
     services,
     description,
@@ -470,7 +470,7 @@ async function createOrder(
   }: OrderCreationData
 ): Promise<number | null> {
   const orderOptions: Record<string, any> = {
-    offering: offeringId,
+    product: productId,
     description,
     desiredPrice: price
   };
@@ -525,13 +525,13 @@ export function useCreateOrder() {
       if (!user.id) throw new Error('User must be authorized.');
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
       if (user.role !== UserRole.Client) throw new Error('User must be a client.');
-      if (!orderData.cityId || !orderData.address || !orderData.offeringId) throw new Error('Mandatory parameter is empty.');
+      if (!orderData.cityId || !orderData.address || !orderData.productId) throw new Error('Mandatory parameter is empty.');
       if (orderData.contractorId && !orderData.services?.length) throw new Error('Mandatory parameter is empty.');
 
       if (orderData.contractorId) {
         const contractorUser = (await getUserById(client, orderData.contractorId)) as { services?: ServicesMap };
-        if (!contractorUser.services?.[orderData.offeringId]) throw new Error('Bad contractor');
-        const contractorServices = contractorUser.services[orderData.offeringId];
+        if (!contractorUser.services?.[orderData.productId]) throw new Error('Bad contractor');
+        const contractorServices = contractorUser.services[orderData.productId];
         let validServices = 0;
         for (const orderService of orderData.services!) {
           for (const contractorService of contractorServices) {

@@ -5,7 +5,7 @@ import style from './remont.module.css';
 import { useLanguage } from '../state/language';
 
 import '../scss/remont.css';
-import { useOfferings } from '../state/site-data';
+import { useProducts } from '../state/site-data';
 
 function Remont() {
   const text = useLanguage();
@@ -15,15 +15,15 @@ function Remont() {
   const [ searchParams ] = useSearchParams();
   const search = searchParams.get('search');
 
-  const { subcategories, offerings } = useOfferings();
+  const { subcategories, products } = useProducts();
 
   const selectedSubcategory = subcategories[subcategoryId];
-  const offeringIds = selectedSubcategory?.offerings || [];
-  const subcategoryOfferings = offeringIds.map( id => ({
+  const productIds = selectedSubcategory?.products || [];
+  const subcategoryProducts = productIds.map( id => ({
     id,
-    name: offerings[id].name
+    name: products[id].name
   }) );
-  const currentOfferings = search ? subcategoryOfferings.filter( item => item.name === search ) : subcategoryOfferings;
+  const currentProducts = search ? subcategoryProducts.filter( item => item.name === search ) : subcategoryProducts;
 
   useEffect(() => {
     document.title = text('iPhone repair');  // todo: Изменить текст
@@ -44,12 +44,12 @@ function Remont() {
       </Link>
 
       <div className="remont__card__list" style={{ marginTop: 100 }}>
-        {currentOfferings.length === 0
+        {currentProducts.length === 0
           ? text('Nothing found')
-          : currentOfferings.map(offering => (
-              <div className="remont__card" key={offering.id}>
+          : currentProducts.map(product => (
+              <div className="remont__card" key={product.id}>
                 <Link
-                  to={`/services/${offering.id}`}
+                  to={`/services/${product.id}`}
                   style={{ textDecoration: 'none' }}
                 >
                   <div className="remont__card__image">
@@ -63,7 +63,7 @@ function Remont() {
                       }}
                     />
                   </div>
-                  <p>{offering.name}</p>
+                  <p>{product.name}</p>
                 </Link>
               </div>
             ))}

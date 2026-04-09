@@ -14,7 +14,7 @@ import ModalOfferGo from './ModalOfferGo';
 import { useLanguage } from 'app/state/language';
 import { useOrdersByIds } from 'app/state/order';
 import { useUsersByIds } from 'app/state/user';
-import { useOfferings } from 'app/state/site-data';
+import { useProducts } from 'app/state/site-data';
 
 function Offer() {
   const text = useLanguage();
@@ -26,7 +26,7 @@ function Offer() {
   // Получаем данные клиента, если order существует
   const { users: [ client ], isLoading: isLoadingClient, isError: isErrorClient } = useUsersByIds(order?.clientId ? [order.clientId] : []);
 
-  const { offerings } = useOfferings();
+  const { products } = useProducts();
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [modalImage, setModalImage] = useState(null);
@@ -64,7 +64,7 @@ function Offer() {
     // createdAt, // todo: createdAt может быть использовано для расчета timeLeft, если есть соответствующая логика
   } = order;
 
-  const offering = offerings?.[order?.offeringId]?.name || text('Unknown service');
+  const product = products?.[order?.productId]?.name || text('Unknown service');
   const clientName = client?.fullname || text('Unknown user');
   const clientProfileImage = client?.avatar || '/img/profil_img/1.png';
 
@@ -99,7 +99,7 @@ function Offer() {
             </div>
           </div>
           <div style={{ flex: 1 }}></div>
-          <p className={style.description}>{offering}</p>
+          <p className={style.description}>{product}</p>
           <p className={style.description}>{description}</p>
           <p className={style.small_text}>
             <span>{text('remaining')} {timeLeft}</span> {/* todo: Заглушка */}

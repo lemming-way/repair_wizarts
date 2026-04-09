@@ -7,8 +7,8 @@ import { SiteData, getSiteData, getSiteDataVersion, getServices } from './api/si
 const SITE_DATA_LS_KEY = 'site_data';
 const SITE_DATA_QUERY_KEY = 'site_data';
 const SITE_DATA_FILTERED_QUERY_KEY = 'site_data_filtered';
-const OFFERINGS_LS_KEY = 'offerings';
-const OFFERINGS_QUERY_KEY = 'offerings';
+const OFFERINGS_LS_KEY = 'products';
+const OFFERINGS_QUERY_KEY = 'products';
 
 async function fetchSiteData({ client }) {
   try {
@@ -114,34 +114,34 @@ export type Categories = Record<number, {
 export type Subcategories = Record<number, {
   name: string;
   parent: number;
-  offerings: number[];
+  products: number[];
 }>;
 
-export type Offerings = Record<number, {
+export type Products = Record<number, {
   name: string;
   parent: number;
 }>;
 
-export type OfferingsData = {
+export type ProductsData = {
   categories: Categories;
   subcategories: Subcategories;
-  offerings: Offerings;
+  products: Products;
 };
 
-async function fetchOfferings() {
+async function fetchProducts() {
   try {
-    const cachedOfferings = JSON.parse(localStorage.getItem(OFFERINGS_LS_KEY) ?? 'null');
-    if (cachedOfferings && cachedOfferings.categories && cachedOfferings.subcategories && cachedOfferings.offerings) {
-      return cachedOfferings;
+    const cachedProducts = JSON.parse(localStorage.getItem(OFFERINGS_LS_KEY) ?? 'null');
+    if (cachedProducts && cachedProducts.categories && cachedProducts.subcategories && cachedProducts.products) {
+      return cachedProducts;
     }
   }
   catch (e) {}
 
   const data = await getServices();
-  const offeringsData = {
+  const productsData = {
     categories: {},
     subcategories: {},
-    offerings: {}
+    products: {}
   };
   if (data && Array.isArray(data)) {
     for (const section of data) {
@@ -149,27 +149,27 @@ async function fetchOfferings() {
       const name = String(section?.name || '');
       const subsections = section?.subsections;
       if (Number.isFinite(secId) && secId > 0 && name && Array.isArray(subsections)) {
-        offeringsData.categories[secId] = {
+        productsData.categories[secId] = {
           name,
           subcategories: []
         };
         for (const subsection of subsections) {
           const subId = Number(subsection?.id);
           const name = String(subsection?.name || '');
-          const offerings = subsection?.services;
-          if (Number.isFinite(subId) && subId > 0 && !offeringsData.subcategories[subId] && name && Array.isArray(offerings)) {
-            offeringsData.categories[secId].subcategories.push(subId);
-            offeringsData.subcategories[subId] = {
+          const products = subsection?.services;
+          if (Number.isFinite(subId) && subId > 0 && !productsData.subcategories[subId] && name && Array.isArray(products)) {
+            productsData.categories[secId].subcategories.push(subId);
+            productsData.subcategories[subId] = {
               name,
               parent: secId,
-              offerings: []
+              products: []
             };
-            for (const offering of offerings) {
-              const srvId = Number(offering?.id);
-              const name = String(offering?.name || '');
-              if (Number.isFinite(srvId) && srvId > 0 && !offeringsData.offerings[srvId] && name) {
-                offeringsData.subcategories[subId].offerings.push(srvId);
-                offeringsData.offerings[srvId] = {
+            for (const product of products) {
+              const prodId = Number(product?.id);
+              const name = String(product?.name || '');
+              if (Number.isFinite(prodId) && prodId > 0 && !productsData.products[prodId] && name) {
+                productsData.subcategories[subId].products.push(prodId);
+                productsData.products[prodId] = {
                   name,
                   parent: subId
                 };
@@ -179,26 +179,26 @@ async function fetchOfferings() {
         }
       }
     }
-    localStorage.setItem(OFFERINGS_LS_KEY, JSON.stringify(offeringsData));
+    localStorage.setItem(OFFERINGS_LS_KEY, JSON.stringify(productsData));
   }
   else {
     localStorage.removeItem(OFFERINGS_LS_KEY);
   }
-  return offeringsData;
+  return productsData;
 }
 
-const emptyOfferingsData = { categories: {}, subcategories: {}, offerings: {} };
+const emptyProductsData = { categories: {}, subcategories: {}, products: {} };
 
-export function useOfferings() {
+export function useProducts() {
   const queryResult = useQuery({
     queryKey: [ OFFERINGS_QUERY_KEY ],
-    queryFn: fetchOfferings,
+    queryFn: fetchProducts,
     staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
   });
   const { data, ...ret } = queryResult;
-  const offeringsData: OfferingsData = data || emptyOfferingsData;
+  const productsData: ProductsData = data || emptyProductsData;
   return {
     ...ret,
-    ...offeringsData
+    ...productsData
   }
 }

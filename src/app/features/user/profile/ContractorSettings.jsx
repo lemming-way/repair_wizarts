@@ -9,7 +9,7 @@ import style from './ContractorSettings.module.css';
 import { MultiSelect } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
 import { useUser, updateUser, BusinessModel } from 'app/state/user';
-import { useOfferings, useCities } from 'app/state/site-data';
+import { useProducts, useCities } from 'app/state/site-data';
 
 const experienceOptions = [
   { value: 1, label: '1 year' },
@@ -23,10 +23,10 @@ function ContractorSettings() {
   const text = useLanguage();
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
-  const [offeringOptionSelected, setOfferingOptionSelected] = useState([]);
+  const [productOptionSelected, setProductOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
 
-  const { categories, subcategories, offerings } = useOfferings();
+  const { categories, subcategories, products } = useProducts();
   const { cities } = useCities();
   const queryClient = useQueryClient();
   const { user } = useUser();
@@ -77,19 +77,19 @@ function ContractorSettings() {
     const userServicesMap = user.services || {};
 console.log(user);
 
-    const initialOfferingOptions = [];
+    const initialProductOptions = [];
     const initialSubcategoryOptions = [];
     const initialCategoryOptions = [];
 
     const categoryIds = {};
     const subcategoryIds = {};
 
-    Object.keys(userServicesMap).forEach(offeringIdStr => {
-      const offeringId = Number(offeringIdStr);
-      if (offerings[offeringId]?.name) {
-        initialOfferingOptions.push({ label: offerings[offeringId].name, value: offeringId });
+    Object.keys(userServicesMap).forEach(productIdStr => {
+      const productId = Number(productIdStr);
+      if (products[productId]?.name) {
+        initialProductOptions.push({ label: products[productId].name, value: productId });
 
-        const subId = offerings[offeringId].parent;
+        const subId = products[productId].parent;
         if (subId && subcategories[subId] && !subcategoryIds[subId]) {
           initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
           subcategoryIds[subId] = true;
@@ -105,7 +105,7 @@ console.log(user);
 
     setCategoryOptionSelected(initialCategoryOptions);
     setSubcategoryOptionSelected(initialSubcategoryOptions);
-    setOfferingOptionSelected(initialOfferingOptions);
+    setProductOptionSelected(initialProductOptions);
 
     setExperience(
       user.experience
@@ -126,7 +126,7 @@ console.log(user);
     });
 
     setBusiness(user.businessModel);
-  }, [user, categories, subcategories, offerings]);
+  }, [user, categories, subcategories, products]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -143,14 +143,14 @@ console.log(user);
     const newServicesMap = {};
     const currentServicesMap = user.services || {};
 
-    offeringOptionSelected.forEach(opt => {
-      const offeringId = Number(opt.value);
+    productOptionSelected.forEach(opt => {
+      const productId = Number(opt.value);
       // Сохраняем существующие данные услуги, если она уже была выбрана
-      if (currentServicesMap[offeringId]) {
-        newServicesMap[offeringId] = currentServicesMap[offeringId];
+      if (currentServicesMap[productId]) {
+        newServicesMap[productId] = currentServicesMap[productId];
       } else {
         // Для вновь выбранных услуг инициализируем пустым массивом
-        newServicesMap[offeringId] = [];
+        newServicesMap[productId] = [];
       }
     });
 
@@ -190,13 +190,13 @@ console.log(user);
     }
   }
 
-  const offeringOptions = [];
+  const productOptions = [];
   for (const { value: id } of subcategoryOptionSelected) {
     const subcategory = subcategories[id];
     if (subcategory) {
-      offeringOptions.push(...subcategory.offerings.map(srvId => ({
-        label: offerings[srvId].name,
-        value: srvId
+      productOptions.push(...subcategory.products.map(prodId => ({
+        label: products[prodId].name,
+        value: prodId
       })));
     }
   }
@@ -232,7 +232,7 @@ console.log(user);
               onChange={(selected) => {
                 setCategoryOptionSelected(selected);
                 setSubcategoryOptionSelected([]);
-                setOfferingOptionSelected([]);
+                setProductOptionSelected([]);
               }}
               value={categoryOptionSelected}
               menuPlacement="bottom"
@@ -245,7 +245,7 @@ console.log(user);
               options={subcategoryOptions}
               onChange={(selected) => {
                 setSubcategoryOptionSelected(selected);
-                setOfferingOptionSelected([]);
+                setProductOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               menuPlacement="bottom"
@@ -256,11 +256,11 @@ console.log(user);
               isSelectAll={true}
               isMulti={true}
               placeholder={text('Services')}
-              options={offeringOptions}
+              options={productOptions}
               onChange={(selected) =>
-                setOfferingOptionSelected(selected)
+                setProductOptionSelected(selected)
               }
-              value={offeringOptionSelected}
+              value={productOptionSelected}
               menuPlacement="bottom"
               isDisabled={!subcategoryOptionSelected.length}
             />

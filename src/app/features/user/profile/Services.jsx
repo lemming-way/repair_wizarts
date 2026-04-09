@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUser, useUpdateUser, TimeUnit } from 'app/state/user';
-import { useOfferings } from 'app/state/site-data';
+import { useProducts } from 'app/state/site-data';
 import { useLanguage } from 'app/state/language';
 import ServiceDetailItem from './ServiceDetailItem';
 import style from './Services.module.css';
@@ -20,10 +20,10 @@ function Services() {
     const queryClient = useQueryClient();
     const { user, isSuccess: isUserLoaded, isLoading: isUserLoading } = useUser();
     const { save: saveUserProfile, isPending: isSavingUserProfile } = useUpdateUser();
-    const { offerings: allOfferings } = useOfferings();
+    const { products: allProducts } = useProducts();
 
-    const [selectedOfferingId, setSelectedOfferingId] = useState(0);
-    const [editingServices, setEditingServices] = useState({}); // Map of offeringId to ServiceDetails[]
+    const [selectedProductId, setSelectedProductId] = useState(0);
+    const [editingServices, setEditingServices] = useState({}); // Map of productId to ServiceDetails[]
     const [succeeded, setSucceeded] = useState('');
     const [error, setError] = useState('');
 
@@ -34,74 +34,74 @@ function Services() {
     useEffect(() => {
         if (isUserLoaded && user.id && user.services) {
             // Deep copy to ensure local state is mutable and independent
-            const userServicesCopy = Object.entries(user.services).reduce((acc, [offeringId, details]) => {
-                acc[Number(offeringId)] = details.map(detail => ({ ...detail }));
+            const userServicesCopy = Object.entries(user.services).reduce((acc, [productId, details]) => {
+                acc[Number(productId)] = details.map(detail => ({ ...detail }));
                 return acc;
             }, {});
             setEditingServices(userServicesCopy);
 
-            // Set initial selected offering if there are any
-            const firstOfferingId = Object.keys(userServicesCopy)[0];
-            if (firstOfferingId) {
-                setSelectedOfferingId(Number(firstOfferingId));
+            // Set initial selected product if there are any
+            const firstProductId = Object.keys(userServicesCopy)[0];
+            if (firstProductId) {
+                setSelectedProductId(Number(firstProductId));
             }
         }
     }, [isUserLoaded, user]);
 
-    const offeringOptions = useMemo(() => {
+    const productOptions = useMemo(() => {
         if (!user.services || !Object.keys(user.services).length) {
             return [];
         }
         return Object.keys(user.services)
-            .filter(id => allOfferings[id]) // Only include offerings that exist in site data
+            .filter(id => allProducts[id]) // Only include products that exist in site data
             .map(id => ({
                 value: Number(id),
-                label: allOfferings[id].name
+                label: allProducts[id].name
             }));
-    }, [user.services, allOfferings]);
+    }, [user.services, allProducts]);
 
-    const currentServiceDetails = editingServices[selectedOfferingId] || [];
+    const currentServiceDetails = editingServices[selectedProductId] || [];
 
-    const handleSelectOffering = useCallback((e) => {
-        setSelectedOfferingId(Number(e.target.value));
+    const handleSelectProduct = useCallback((e) => {
+        setSelectedProductId(Number(e.target.value));
     }, []);
 
     const handleAddServiceDetail = useCallback(() => {
-        if (!selectedOfferingId) return;
+        if (!selectedProductId) return;
 
         setEditingServices(prev => ({
             ...prev,
-            [selectedOfferingId]: [
-                ...(prev[selectedOfferingId] || []),
+            [selectedProductId]: [
+                ...(prev[selectedProductId] || []),
                 { ...defaultServiceDetail }
             ]
         }));
-    }, [selectedOfferingId]);
+    }, [selectedProductId]);
 
     const handleUpdateServiceDetail = useCallback((index, updatedDetail) => {
-        if (!selectedOfferingId) return;
+        if (!selectedProductId) return;
 
         setEditingServices(prev => {
-            const newDetails = [...(prev[selectedOfferingId] || [])];
+            const newDetails = [...(prev[selectedProductId] || [])];
             newDetails[index] = updatedDetail;
             return {
                 ...prev,
-                [selectedOfferingId]: newDetails
+                [selectedProductId]: newDetails
             };
         });
-    }, [selectedOfferingId]);
+    }, [selectedProductId]);
 
     const handleDeleteServiceDetail = useCallback((index) => {
-        if (!selectedOfferingId) return;
+        if (!selectedProductId) return;
 
         setEditingServices(prev => {
-            const newDetails = (prev[selectedOfferingId] || []).filter((_, i) => i !== index);
+            const newDetails = (prev[selectedProductId] || []).filter((_, i) => i !== index);
             return {
                 ...prev,
-                [selectedOfferingId]: newDetails
+                [selectedProductId]: newDetails
             };
         });
-    }, [selectedOfferingId]);
+    }, [selectedProductId]);
 
     const onSubmit = async (e) => {
         e.preventDefault();
@@ -140,23 +140,23 @@ function Services() {
             <form onSubmit={onSubmit} className={style.form}>
                 <select
                     className={style.selectField}
-                    value={selectedOfferingId}
-                    onChange={handleSelectOffering}
-                    disabled={!offeringOptions.length}
+                    value={selectedProductId}
+                    onChange={handleSelectProduct}
+                    disabled={!productOptions.length}
                 >
-                    <option value="0" disabled>{text('Select a service offering')}</option>
-                    {offeringOptions.map(option => (
+                    <option value="0" disabled>{text('Select a service product')}</option>
+                    {productOptions.map(option => (
                         <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                 </select>
 
-                {selectedOfferingId !== 0 && (
+                {selectedProductId !== 0 && (
                     <>
                         <ul className={style.serviceList}>
                             {currentServiceDetails.length > 0 ? (
                                 currentServiceDetails.map((detail, index) => (
                                     <ServiceDetailItem
-                                        key={`${selectedOfferingId}-${index}`}
+                                        key={`${selectedProductId}-${index}`}
                                         serviceDetail={detail}
                                         index={index}
                                         onUpdate={handleUpdateServiceDetail}
@@ -164,7 +164,7 @@ function Services() {
                                     />
                                 ))
                             ) : (
-                                <p>{text('No services added for this offering yet. Add one below.')}</p>
+                                <p>{text('No services added for this product yet. Add one below.')}</p>
                             )}
                         </ul>
                         <button

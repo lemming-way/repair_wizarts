@@ -8,20 +8,20 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import style from './AddedDevice.module.css';
 import formatDate from '../../utilities/formatDate';
 import { AnyImage, getKeyFor } from '../../shared/ui';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 import { OrderStatus, orderStatusString, useUpdateOrder, useCancelOrder } from '../../state/order';
 import { useLanguage } from '../../state/language';
 
 const AddedDevice = (props) => {
   const text = useLanguage();
-  const { categories, subcategories, offerings } = useOfferings();
+  const { categories, subcategories, products } = useProducts();
   const {
     id,
     desiredPrice,
     description,
     contractorOffers,
     status,
-    offeringId,
+    productId,
     createdAt,
     attachments,
   } = props;
@@ -29,22 +29,22 @@ const AddedDevice = (props) => {
   const { updateOrder } = useUpdateOrder();
   const { cancelOrder } = useCancelOrder();
 
-  const subcategoryIdFromOffering = offerings?.[offeringId]?.parent ?? '';
-  const categoryIdFromSubcategory = subcategories?.[subcategoryIdFromOffering]?.parent ?? '';
+  const subcategoryIdFromProduct = products?.[productId]?.parent ?? '';
+  const categoryIdFromSubcategory = subcategories?.[subcategoryIdFromProduct]?.parent ?? '';
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(categoryIdFromSubcategory);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(subcategoryIdFromOffering);
-  const [selectedOfferingId, setSelectedOfferingId] = useState(offeringId);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(subcategoryIdFromProduct);
+  const [selectedProductId, setSelectedProductId] = useState(productId);
 
   useEffect(() => {
-    if (offeringId && !selectedSubcategoryId) {
-      const subId = offerings[offeringId]?.parent;
+    if (productId && !selectedSubcategoryId) {
+      const subId = products[productId]?.parent;
       setSelectedSubcategoryId(subId);
       if (subId && !selectedCategoryId) {
         setSelectedCategoryId(subcategories[subId]?.parent);
       }
     }
-  }, [subcategories, offerings, offeringId, selectedSubcategoryId, selectedCategoryId]);
+  }, [subcategories, products, productId, selectedSubcategoryId, selectedCategoryId]);
 
   const [photos, setPhotos] = useState(attachments);
 
@@ -79,7 +79,7 @@ const AddedDevice = (props) => {
   const [price, setPrice] = useState(desiredPrice);
   const [message, setMessage] = useState(description);
 
-  const title = offerings?.[offeringId]?.name || '';
+  const title = products?.[productId]?.name || '';
   const isEditable = status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED;
   const isCancellable =
     status === OrderStatus.DRAFT ||
@@ -275,7 +275,7 @@ const AddedDevice = (props) => {
                               onChange={(e) => {
                                 setSelectedCategoryId(Number(e.target.value));
                                 setSelectedSubcategoryId('');
-                                setSelectedOfferingId('');
+                                setSelectedProductId('');
                               }}
                             >
                               <option value="" disabled>
@@ -293,7 +293,7 @@ const AddedDevice = (props) => {
                               disabled={!selectedCategoryId}
                               onChange={(e) => {
                                 setSelectedSubcategoryId(Number(e.target.value));
-                                setSelectedOfferingId('');
+                                setSelectedProductId('');
                               }}
                             >
                               <option value="" disabled>
@@ -310,18 +310,18 @@ const AddedDevice = (props) => {
                             </select>
                             <select
                               className="pick__price"
-                              value={selectedOfferingId}
-                              onChange={(e) => setSelectedOfferingId(Number(e.target.value))}
+                              value={selectedProductId}
+                              onChange={(e) => setSelectedProductId(Number(e.target.value))}
                               disabled={!selectedSubcategoryId}
                             >
                               <option value="" disabled>
                                 {text('Service')}
                               </option>
-                              {selectedSubcategoryId && subcategories[Number(selectedSubcategoryId)]?.offerings.map(srvId => {
-                                const offering = offerings[srvId];
-                                return offering ? (
-                                  <option key={srvId} value={srvId}>
-                                    {offering.name}
+                              {selectedSubcategoryId && subcategories[Number(selectedSubcategoryId)]?.products.map(prodId => {
+                                const product = products[prodId];
+                                return product ? (
+                                  <option key={prodId} value={prodId}>
+                                    {product.name}
                                   </option>
                                 ) : null;
                               })}

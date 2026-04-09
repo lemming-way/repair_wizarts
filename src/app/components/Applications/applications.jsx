@@ -8,7 +8,7 @@ import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from '../../state/language';
 import { useAcceptInvoice, useAvailableOrders } from '../../state/order';
 import { useUser, useUsersByIds } from '../../state/user';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 
 import style from './applications.module.css';
 
@@ -23,7 +23,7 @@ function MyApplications() {
   const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
   const clientsMap = new Map(clients.map(client => [client.id, client]));
 
-  const { offerings, isLoading: isLoadingOfferings } = useOfferings();
+  const { products, isLoading: isLoadingProducts } = useProducts();
 
   const { acceptInvoice } = useAcceptInvoice();
 
@@ -49,7 +49,7 @@ function MyApplications() {
     console.log(`Decline order with ID: ${orderId}`);
   };
 
-  if (isLoadingOrders || isLoadingClients || isLoadingOfferings) {
+  if (isLoadingOrders || isLoadingClients || isLoadingProducts) {
     return <div className="mini-text"><h1>{text('Loading applications...')}</h1></div>;
   }
 
@@ -69,7 +69,7 @@ function MyApplications() {
       <div className={style.orders}>
         {orders.map((order) => {
           const client = clientsMap.get(order.clientId);
-          const offeringName = offerings[order.offeringId]?.name || text('Unknown service');
+          const productName = products[order.productId]?.name || text('Unknown service');
           const createdAt = new Date(order.createdAt).toLocaleDateString();
 
           return (
@@ -80,7 +80,7 @@ function MyApplications() {
                   <p>{createdAt}</p>
                 </div>
                 <div className={style.summary_row}>
-                  <p>{offeringName}</p>
+                  <p>{productName}</p>
                   <p>
                     {text('Cost')}:{' '}
                     <span className={style.price}>

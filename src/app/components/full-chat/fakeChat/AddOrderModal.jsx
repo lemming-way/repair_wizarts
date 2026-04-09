@@ -4,7 +4,7 @@ import style from './AddOrderModal.module.css';
 import { useLanguage } from '../../../state/language';
 import { useUser, UserRole } from '../../../state/user';
 import { useCreateOrder } from '../../../state/order';
-import { useOfferings } from '../../../state/site-data';
+import { useProducts } from '../../../state/site-data';
 import { AnyImage, getKeyFor } from '../../../shared/ui';
 
 export default function AddOrderModal({
@@ -15,7 +15,7 @@ export default function AddOrderModal({
   const text = useLanguage();
   const { user } = useUser();
   const { createOrder, isLoading } = useCreateOrder();
-  const { offerings } = useOfferings();
+  const { products } = useProducts();
 
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
@@ -28,11 +28,11 @@ export default function AddOrderModal({
     return null;
   }
 
-  const offeringId = currentOrder.offeringId;
+  const productId = currentOrder.productId;
   const cityId = currentOrder.city;
   const address = currentOrder.address;
   const contractorId = currentOrder.contractorId;
-  const offeringName = offerings[offeringId]?.name || text('Unknown Service');
+  const productName = products[productId]?.name || text('Unknown Service');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,7 +62,7 @@ export default function AddOrderModal({
       await createOrder({
         cityId,
         address,
-        offeringId,
+        productId,
         contractorId,
         description: fullDescription,
         attachments: photos,
@@ -100,7 +100,7 @@ export default function AddOrderModal({
             className={style.input_heading}
             type="text"
             placeholder={text('Service')}
-            value={offeringName}
+            value={productName}
             readOnly
           />
         </div>

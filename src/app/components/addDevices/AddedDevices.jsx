@@ -84,7 +84,7 @@ function AddedDevices() {
             {(tabsFilter === '#archive' ? archiveOrders : activeOrders)
               .map((v) =>
                 <AddedDevice
-                  offeringId={v.offeringId}
+                  productId={v.productId}
                   desiredPrice={v.desiredPrice}
                   agreedPrice={v.agreedPrice}
                   description={v.description}

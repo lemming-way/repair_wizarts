@@ -12,7 +12,7 @@ import styles from './MyOrder.module.css';
 import { useLanguage } from 'app/state/language';
 import { UserRole, BusinessModel, useUser, useUsersByIds } from 'app/state/user';
 import { useOrdersByIds, useCancelOrder, useAcceptOffer, OrderStatus, orderStatusString } from 'app/state/order';
-import { useOfferings } from 'app/state/site-data';
+import { useProducts } from 'app/state/site-data';
 import commonStyle from 'app/components/Service/ServiceDetail.module.scss';
 
 function MyOrder() {
@@ -30,8 +30,8 @@ function MyOrder() {
   } = useOrdersByIds([orderId]);
 
   // Fetch services data for order title
-  const { offerings } = useOfferings();
-  const offeringName = currentOrder?.offeringId ? offerings[currentOrder.offeringId]?.name : text('Unknown Service');
+  const { products } = useProducts();
+  const productName = currentOrder?.productId ? products[currentOrder.productId]?.name : text('Unknown Service');
 
   // Fetch contractor profiles for offers
   const contractorIds = currentOrder?.contractorOffers.map(offer => offer.contractorId) || [];
@@ -230,7 +230,7 @@ function MyOrder() {
               </div>
             </div>
             <div className={styles.description}>
-              <p>{offeringName}</p>
+              <p>{productName}</p>
               <p>{currentOrder.description}</p>
             </div>
             <div className={styles.left_row_bottom}>
@@ -311,7 +311,7 @@ function MyOrder() {
               const contractorProfile = contractorsProfiles.find(p => p.id === offer.contractorId);
               if (!contractorProfile) return null; // Skip if profile not found
               
-              const contractorOfferings = Object.keys(contractorProfile.services);
+              const contractorProducts = Object.keys(contractorProfile.services);
 
               const businessModelText = contractorProfile.businessModel === BusinessModel.ServiceCenter
                 ? text('Service center')
@@ -419,8 +419,8 @@ function MyOrder() {
                         <tr>
                           <td className={styles.light_text}>{text('Services')}:</td>
                           <td>
-                            {contractorOfferings.length > 0
-                              ? contractorOfferings.map(offeringId => offerings[offeringId]?.name).filter(Boolean).join(', ')
+                            {contractorProducts.length > 0
+                              ? contractorProducts.map(productId => products[productId]?.name).filter(Boolean).join(', ')
                               : text('not specified')}
                           </td>
                         </tr>
@@ -435,7 +435,7 @@ function MyOrder() {
                   <section className={styles.order_block}>
                     <h2>{text('What is included in the offer')}</h2>
                     <div className={styles.order_block__row}>
-                      <p>{offeringName}</p>
+                      <p>{productName}</p>
                       <div className={styles.flexGrow1} />
                       <p>
                         {text('Ready to start up in')} <br />

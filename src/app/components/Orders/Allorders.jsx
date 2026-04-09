@@ -13,14 +13,14 @@ import StatsBlock from './StatsBlock';
 import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
-import { useOfferings } from '../../state/site-data';
+import { useProducts } from '../../state/site-data';
 import { useUser, useUsersByIds } from '../../state/user';
 import { useAvailableOrders, OrderType, orderStatusString } from '../../state/order';
 
 function AllOrders() {
   const text = useLanguage();
   const { user } = useUser();
-  const { categories, subcategories, offerings } = useOfferings();  
+  const { categories, subcategories, products } = useProducts();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [ordersPerPage, setOrdersPerPage] = useState(10);
@@ -72,7 +72,7 @@ function AllOrders() {
     if (selectValue === 'Viewed' && isNew(order)) return false;
 
     // Фильтрация по категории
-    if (categoryFilter && subcategories?.[ offerings?.[order.offeringId]?.parent ]?.parent !== categoryFilter) {
+    if (categoryFilter && subcategories?.[ products?.[order.productId]?.parent ]?.parent !== categoryFilter) {
       return false;
     }
 
@@ -236,11 +236,11 @@ function AllOrders() {
                     <div className={style.block_title}>
                       <Link to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
-                          {offerings?.[order.offeringId]?.name || text('Untitled')}
+                          {products?.[order.productId]?.name || text('Untitled')}
                         </h3>
                       </Link>
                       <p className={style.text_navigation}>
-                        {categories?.[ subcategories?.[ offerings?.[order.offeringId]?.parent ]?.parent ]?.name ?? ''}
+                        {categories?.[ subcategories?.[ products?.[order.productId]?.parent ]?.parent ]?.name ?? ''}
                       </p>
                       <div
                         className={style.row}

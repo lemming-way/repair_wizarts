@@ -2,11 +2,11 @@ import { Link } from "react-router-dom"
 
 import { useAvailableOrders, OrderStatus } from "app/state/order"
 import { useUsersByIds } from "app/state/user"
-import { useOfferings } from "app/state/site-data"
+import { useProducts } from "app/state/site-data"
 
 const PersonalRequests = () => {
     const { orders, isLoading: isLoadingOrders } = useAvailableOrders(false, true);
-    const { offerings, isLoading: isLoadingOfferings } = useOfferings();
+    const { products, isLoading: isLoadingProducts } = useProducts();
 
     const clientIds = [ ...new Set(orders.map(order => order.clientId))];
     const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
@@ -26,7 +26,7 @@ const PersonalRequests = () => {
         }
     }
 
-    if (isLoadingOrders || isLoadingOfferings || isLoadingClients) {
+    if (isLoadingOrders || isLoadingProducts || isLoadingClients) {
         return <div>Загрузка...</div>;
     }
 
@@ -64,7 +64,7 @@ const PersonalRequests = () => {
                         </div>
                         {orders.map((order) => {
                             const client = clientsMap.get(order.clientId);
-                            const offeringName = offerings[order.offeringId]?.name || 'Неизвестная услуга';
+                            const productName = products[order.productId]?.name || 'Неизвестная услуга';
                             // Заглушка, так как number_of_submissions нет в UserProfile
                             const numberOfSubmissions = 0;
 
@@ -73,7 +73,7 @@ const PersonalRequests = () => {
                                     <div className="archive-hee sewreqwreqw">
                                         <div className="nav_applications-3 fasfXf nav_applications-3-gee fsdfsaooo big_nav-device df align mobile-nav_applications-3">
                                             <div className="all-requests-title-container">
-                                                <h2>{offeringName}</h2>
+                                                <h2>{productName}</h2>
                                             </div>
                                             <div className="client__order">
                                                 <img
