@@ -26,8 +26,8 @@ const CONFIG = {
 		userDataStaleTime: 15 * 60000,
 		ordersListStaleTime: 2 * 60000,
 		ordersListRefetchTime: 2 * 60000,
-		ordersDataStaleTime: 10 * 60000,
-		ordersDataRefetchTime: 10 * 60000,
+		ordersDataStaleTime: 5 * 60000,
+		ordersDataRefetchTime: 5 * 60000,
 		filesStaleTime: 30 * 60000
 		// queryDefaultStaleTime,
 		// queryDefaultRetry

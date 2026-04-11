@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 
-import { useAvailableOrders, OrderStatus } from "app/state/order"
+import { useAvailableOrders } from "app/state/order"
 import { useUsersByIds } from "app/state/user"
 import { useProducts } from "app/state/site-data"
 

@@ -92,7 +92,7 @@ function AddedDevices() {
                   createdAt={v.createdAt}
                   key={v.id}
                   id={v.id}
-                  contractorOffers={v.contractorOffers}
+                  contractorsCount={v.contractorOffersCount}
                   attachments={v.attachments}
                 />
               )

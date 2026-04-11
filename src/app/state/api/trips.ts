@@ -6,7 +6,7 @@
  * TripState, DriverState, GetTripsState, TripData, DriverData, DriverOffer, TripCreationData, TripEditData
  *
  * **Получение данных:**
- * getContractorsByService, getTripIds, getTripsByIds
+ * getContractorsByProduct, getTripIds, getTripsByIds
  *
  * **Изменение данных:**
  * createTrip, updateTrip, cancelTripByClient, cancelTripByDriver, inviteDriver, acceptInvoice, createOffer,
@@ -82,6 +82,10 @@ export type TripData = {
   b_currency: string | null;
   /** Список водителей, связанных с поездкой */
   drivers: DriverData[] | null;
+  /** Количество водителей, связанных с поездкой. Возвращается для пользователя-водителя,
+   *  потому что массив drivers не будет содержать данных других водителей.
+   */
+  drivers_count: number | null;
   /** Идентификатор способа оплаты (для клиента) */
   b_payment_way: number | null;
   /** Идентификатор платежной карты (для клиента) */
@@ -193,27 +197,27 @@ export const TripFilter = {
 
 /**
  * Получить список мастеров по конкретной услуге
- * @param serviceId - ID услуги
+ * @param productId - ID услуги
  * @param cityId - ID города
  * @param minRating - минимальный рейтинг мастера (не реализовано)
  * @param isOnline - возвращать только пользователей онлайн
  * @returns Промис, который разрешается со списком ID мастеров, оказывающих данную услугу
  */
-export async function getContractorsByService({ serviceId, cityId, minRating, isOnline }: {
-  serviceId: number;
+export async function getContractorsByProduct({ productId, cityId, minRating, isOnline }: {
+  productId: number;
   cityId: number;
   minRating?: number;
   isOnline?: boolean;
 }): Promise<number[]> {
   const data = {
-    action: "getContractorsByService",
-    serviceId,
+    action: "getContractorsByProduct",
+    productId,
     cityId,
     isOnline: isOnline ? 1 : 0
   };
   const payload = {
     is_var: 1,
-    s_t_data: JSON.stringify(data)
+    s_t_data: data
   };
   const result = await post('script/template/repair_api', payload);
   if (Array.isArray(result)) {
@@ -249,7 +253,7 @@ export async function createTrip(data: TripCreationData): Promise<number | null>
  * @returns Промис, который разрешается со списком поездок
  */
 export function getTripIds(filter: number): Promise<number[]> {
-  return post<number[]>('script/template/repair_api', { action: 'getTripIds', flags: filter });
+  return post<number[]>('script/template/repair_api', { is_var: 1, s_t_data: { action: 'getTripIds', flags: filter } });
 }
 
 /**
@@ -261,7 +265,7 @@ export async function getTripsByIds(tripIds: number[]): Promise<TripData[]> {
   if (!tripIds.length) return [];
   const result = await post<TripData[]>(
     'script/template/repair_api',
-    { action: 'getTripsByIds', order_ids: tripIds }
+    { is_var: 1, s_t_data: { action: 'getTripsByIds', order_ids: tripIds } }
   );
   const data = result && Array.isArray(result) ? result : [];
   return data;
@@ -295,6 +299,7 @@ export async function updateTrip(tripId: number, updates: TripEditData): Promise
     formattedData.c_options = formattedDetails;
   }
 
+console.log('drive/get', tripId, 'edit', formattedData);
   return post<void>(`drive/get/${tripId}`, { action: 'edit', data: formattedData });
 }
 

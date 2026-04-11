@@ -19,7 +19,7 @@ const AddedDevice = (props) => {
     id,
     desiredPrice,
     description,
-    contractorOffers,
+    contractorsCount,
     status,
     productId,
     createdAt,
@@ -125,11 +125,11 @@ const AddedDevice = (props) => {
                 to={'/client/requests/my_order/' + id}
                 className={style.desktop__count}
               >
-                <h3>{contractorOffers?.length || 0}</h3>
+                <h3>{contractorsCount || 0}</h3>
               </Link>
             ) : (
               <h3 className={`number-of-offers ${style.desktop__count}`}>
-                {contractorOffers?.length || 0}
+                {contractorsCount || 0}
               </h3>
             )}
 
@@ -143,7 +143,7 @@ const AddedDevice = (props) => {
 
             <div className={style.card__count}>
               <Link to={'/client/requests/my_order/' + id}>
-                {text('Offers')}: {contractorOffers?.length || 0}
+                {text('Offers')}: {contractorsCount || 0}
               </Link>
             </div>
 

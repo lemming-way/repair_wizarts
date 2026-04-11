@@ -237,7 +237,7 @@ function MyOrder() {
               <p>{text('5 days left')} </p> {/* Todo: calculate remaining time */}
               <p className={styles.view}>
                 <img src="/img/icons/eye.png" alt="" />
-                {currentOrder.contractorOffers.length || 0} {text('offers received')}
+                {currentOrder.contractorOffersCount || 0} {text('offers received')}
               </p>
             </div>
           </div>
@@ -304,7 +304,7 @@ function MyOrder() {
 
         {currentOrder.contractorOffers.length > 0 && (
           <section>
-            <h2>{currentOrder.contractorOffers.length} {text('Offers')}</h2>
+            <h2>{currentOrder.contractorOffersCount} {text('Offers')}</h2>
             {currentOrder.contractorOffers.map((offer) => {
               if (isContractorsLoading) return <div key={offer.contractorId}>{text('Loading...')}</div>;
 

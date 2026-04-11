@@ -14,12 +14,11 @@ import OnlineDotted from '../onlineDotted/OnlineDotted';
 import PaginationPages from '../Settings/PaginationPages';
 import { useLanguage } from '../../state/language';
 import { useProducts } from '../../state/site-data';
-import { useUser, useUsersByIds } from '../../state/user';
-import { useAvailableOrders, OrderType, orderStatusString } from '../../state/order';
+import { useUsersByIds } from '../../state/user';
+import { useAvailableOrders, orderStatusString } from '../../state/order';
 
 function AllOrders() {
   const text = useLanguage();
-  const { user } = useUser();
   const { categories, subcategories, products } = useProducts();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
@@ -34,14 +33,7 @@ function AllOrders() {
     max: '',
   });
 
-  const { orders, isLoading, isError: isFetchError, error: fetchError } = useAvailableOrders(true, true);
-
-  const clientIds = Array.from(new Set(orders.map(o => o.clientId)));  // список уникальных id
-  const { users: clients } = useUsersByIds(clientIds);
-  const clientsById = new Map();
-  for (const client of clients) clientsById.set(client.id, client);
-  const getClient = (order) =>
-    clientsById.get(order.clientId) ?? null;
+  const { orders, isLoading, isError: isFetchError, error: fetchError } = useAvailableOrders(true, false);
 
   const getPrice = (order) => {
     return order.contractorPrice ?? order.desiredPrice;
@@ -52,9 +44,7 @@ function AllOrders() {
     return true;
   };
 
-  const userOrderReqs = orders.filter(
-    (o) => o.type === OrderType.Market && o.contractorOffers.some(offer => offer.contractorId === user.id)
-  ).length;
+  const userOrderReqs = orders.filter(o => o.contractorOffers.length > 0).length;
 
   // Заглушка для статистики
   // todo: получить реальную статистику с бэка
@@ -67,6 +57,9 @@ function AllOrders() {
   // --- Логика фильтрации ---
   // Этот блок будет пересчитываться при каждом рендере
   const filteredOrders = orders.filter((order) => {
+    // Отбрасываем заказы, для которых уже сделано предложение
+    if (order.contractorOffers.length > 0) return false;
+
     // Фильтр "Новые" / "Просмотренные"
     if (selectValue === 'New' && !isNew(order)) return false;
     if (selectValue === 'Viewed' && isNew(order)) return false;
@@ -77,8 +70,8 @@ function AllOrders() {
     }
 
     // Фильтрация по количеству предложений (откликов от мастеров)
+    const offersCount = order.contractorOffersCount;
     if (offersCountFilter.length > 0) {
-      const offersCount = order.contractorOffers.length ?? 0;
       const match = offersCountFilter.some((range) => {
         const [min, max] = range;
         if (max === null) return offersCount >= min;
@@ -107,6 +100,13 @@ function AllOrders() {
 
     return true;
   });
+
+  const clientIds = Array.from(new Set(filteredOrders.map(o => o.clientId)));  // список уникальных id
+  const { users: clients } = useUsersByIds(clientIds);
+  const clientsById = new Map();
+  for (const client of clients) clientsById.set(client.id, client);
+  const getClient = (order) =>
+    clientsById.get(order.clientId) ?? null;
 
   useEffect(() => {
     setCurrentPage(1);
@@ -251,7 +251,7 @@ function AllOrders() {
                         }}
                       >
                         <p>{text('3 days left')}</p>
-                        <p>{text('offers')} {order.contractorOffers.length}</p>
+                        <p>{text('offers')} {order.contractorOffersCount}</p>
                       </div>
                     </div>
 
@@ -278,7 +278,7 @@ function AllOrders() {
                       <div className={style.block_price}>
                         <p className={style.price}>
                           {getPrice(order)
-                            ? `${order.b_options.client_price} ₽`
+                            ? `${getPrice(order)} ₽`
                             : text('Price not specified')}
                         </p>
                         <p className={style.status}>

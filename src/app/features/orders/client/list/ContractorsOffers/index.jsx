@@ -15,8 +15,6 @@ function ContractorsOffers() {
   const [contentCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
-console.log(orders);
-
   // Собираем все уникальные ID подрядчиков из предложений
   const allContractorIds = [...new Set(
     orders.flatMap((order) => order.contractorOffers.map((offer) => offer.contractorId))
@@ -66,11 +64,11 @@ console.log(orders);
                     currentPage * contentCount,
                   )
                   .map((item) => {
-                    const currentStatusStyleClass = style.status_ok; // Для статуса PUBLISHED всегда будет "Активно"
+                    const currentStatusStyleClass = style.status_ok; // Здесь можно добавить другие цвета
 
                     return (
                       <tr key={`${item.order.id}-${item.offer.contractorId}`}>
-                        <td>{products[item.order.productId] ?? 'Неизвестная услуга'}</td>
+                        <td>{products[item.order.productId]?.name ?? 'Неизвестная услуга'}</td>
                         <td>
                           <img
                             src={ item.contractor?.avatar || '/img/img-camera.png' }
@@ -126,7 +124,7 @@ console.log(orders);
                 return (
                   <div className={style.card_block} key={`${item.order.id}-${item.offer.contractorId}`}>
                     <Link to={`/client/requests/my_order/${item.order.id}`}>
-                      {products[item.order.productId] ?? 'Неизвестная услуга'}
+                      {products[item.order.productId]?.name ?? 'Неизвестная услуга'}
                     </Link>
                     <p className={style.card__date}>
                       {new Intl.DateTimeFormat('ru-RU', {

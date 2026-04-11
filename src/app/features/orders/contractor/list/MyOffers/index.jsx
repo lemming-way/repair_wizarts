@@ -18,7 +18,7 @@ function MyOffers() {
   const { orders, isLoading: isOrdersLoading } = useAvailableOrders(true, false);
 
   const filteredOrders = orders.filter(order => {
-    return order.contractorOffers.some(offer => offer.contractorId === user.id);
+    return order.contractorOffers.length > 0;
   });
 
   const clientIds = [...new Set(filteredOrders.map(order => order.clientId))];

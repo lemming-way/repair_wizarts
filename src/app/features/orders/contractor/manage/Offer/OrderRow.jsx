@@ -27,7 +27,7 @@ export default function OrderRow({
   const { products } = useProducts();
   const { revokeOffer, isPending: isRevoking } = useRevokeOffer();
 
-  const currentOffer = order.contractorOffers.find(offer => offer.contractorId === user.id);
+  const currentOffer = order.contractorOffers[0];   // Для мастера всегда заполняется только его предложение
 
   // Функция для открытия модального окна
   const openModal = imageId => {

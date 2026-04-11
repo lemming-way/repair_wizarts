@@ -389,7 +389,7 @@ export function makeUserVerified() {
   };
   const payload = {
     is_var: 1,
-    s_t_data: JSON.stringify(data)
+    s_t_data: data
   };
   return post('script/template/repair_api', payload);
 }

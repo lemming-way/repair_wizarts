@@ -4,14 +4,12 @@ ini_set( 'display_errors', 0 );
 
 $out = call_user_func(function() {
   $sql_queries = [
-    'getContractorsByService' => [
-      'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND ' .
-                '`active`>0 AND JSON_LENGTH(`json`->\'$.services.":serviceId"\') AND ' .
+    'getContractorsByProduct' => [
+      'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND `active`>0 AND ' .
+                'JSON_LENGTH(JSON_EXTRACT(`json`,CONCAT(\'$.services."\',:productId,\'"\')))>0 AND ' .
                 '(:isOnline=0 OR `json`->"$.isOnline"=TRUE)',
       'fields' => [
-        'numeric' => [
-          'id_user'
-        ]
+        'numeric' => [ 'id_user' ]
       ]
     ],
     'markUserAsVerified' => [
@@ -39,7 +37,7 @@ $out = call_user_func(function() {
                 'AND (' .
                   '((:flags & 4) AND (`o`.`id_order_status`=1 OR `o`.`id_order_status`=6)) ' .
                   'OR((:flags & 8) AND `o`.`id_order_status`=2) ' .
-                  'OR((:flags & 1) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
+                  'OR((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
                 ')' .
                 'AND (' .
                   '(:u_role=1 AND `o`.`client`=:u_id) ' .
@@ -50,8 +48,8 @@ $out = call_user_func(function() {
                         '`id_order_status`=1 ' .
                         'AND `u`.`id_city`=`o`.`city_from` ' .
                         'AND IF(' .
-                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.offering" REGEXP "^[0-9]+$",' .
-                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.service.\"",`o`.`options`->>"$.offering","\"")),' .
+                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$",' .
+                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")),' .
                           '0' .
                         ')' .
                       ') ' .
@@ -62,9 +60,7 @@ $out = call_user_func(function() {
                 ')' .
               'ORDER BY `o`.`create_datetime` DESC',
       'fields' => [
-        'numeric' => [
-          'id_order'
-        ]
+        'numeric' => [ 'id_order' ]
       ]
     ],
     'getTripsByIds' => [
@@ -96,8 +92,9 @@ $out = call_user_func(function() {
                 '`o`.`id_payment_method` AS `b_payment_way`,' .
                 '`o`.`id_payment_card` AS `b_payment_card`,    ' .
                 '`drivers`,' .
+                'IF(:u_role=2,IFNULL(`drivers_count`,0),NULL) AS `drivers_count`,' .
                 '`b_cancel_states`,' .
-                'IF(:u_role=2,IF(`ods2`.`id_order` IS NULL, 0, 1),NULL) AS `b_offer`,' .
+                'IF(:u_role=2,IF(`ods2`.`id_order` IS NULL,0,1),NULL) AS `b_offer`,' .
                 '`b_offers` ' .
               'FROM `order` `o` ' .
               'LEFT JOIN (' .
@@ -150,7 +147,7 @@ $out = call_user_func(function() {
                       '"c_arrived",NULLIF(`arrive_datetime`,0),' .
                       '"c_started",NULLIF(`start_datetime`,0),' .
                       '"c_completed",NULLIF(`complete_datetime`,0),' .
-                      '"c_options",NULLIF(`options`,"")' .
+                      '"c_options",CAST(NULLIF(`options`,"") AS JSON)' .
                     ')' .
                   ') AS `drivers`,' .
                   'MAX(IF(:u_role=2 AND `id_user`=:u_id AND `id_order_driver_status` IN(3,4,5,6),1,0)) AS `driving` ' .
@@ -158,6 +155,14 @@ $out = call_user_func(function() {
                 'WHERE `not_deleted`=1 AND (:u_role=1 OR `id_user`=:u_id) ' .
                 'GROUP BY `id_order` ' .
               ') `od` ON `od`.`id_order`=`o`.`id_order` ' .
+              'LEFT JOIN (' .
+                'SELECT ' .
+                  '`id_order`,' .
+                  'COUNT(1) AS `drivers_count` ' .
+                'FROM `order_driver` ' .
+                'WHERE `not_deleted`=1 ' .
+                'GROUP BY `id_order` ' .
+              ') `odc` ON :u_role=2 AND `odc`.`id_order`=`o`.`id_order` ' .
               'LEFT JOIN `users` `u` ON :u_role=2 AND `id_user`=:u_id ' .
               'WHERE `o`.`id_order` IN(:order_ids) ' .
                 'AND (' .
@@ -169,8 +174,8 @@ $out = call_user_func(function() {
                         '`id_order_status`=1 ' .
                         'AND `u`.`id_city`=`o`.`city_from`' .
                         'AND IF(' .
-                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.offering" REGEXP "^[0-9]+$",' .
-                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.service.\"",`o`.`options`->>"$.offering","\"")),' .
+                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$",' .
+                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")),' .
                           '0' .
                         ')' .
                       ')' .

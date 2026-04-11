@@ -48,6 +48,7 @@ export type Order = {
   updatedAt: Date;
   attachments: number[];
   contractorOffers: Offer[];
+  contractorOffersCount: number;
 };
 
 export enum OrderType {
@@ -127,7 +128,7 @@ export function useContractors({ product, city, rating, isOnline }: {
   const { user } = useUser() as { user: UserProfile };
   const { data, ...rest } = useQuery({
     queryKey: [ 'contractors', product, city, rating, isOnline ],
-    queryFn: () => TripAPI.getContractorsByService({ serviceId: product, cityId: city, minRating: rating, isOnline }),
+    queryFn: () => TripAPI.getContractorsByProduct({ productId: product, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
     // Здесь и далее проверяем соответствие ID пользователя авторизованному пользователю в токене,
     // потому что пользователь может смениться во время выполнения асинхронных операций
@@ -160,11 +161,8 @@ export function useContractors({ product, city, rating, isOnline }: {
  * @returns Список заказов
  */
 function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTripsByIds>>): Order[] {
-console.log(rawData);
   const result = rawData.reduce((ret, trip) => {
-console.log('>>>>');
     if (trip.b_id && trip.u_id) {
-console.log(trip);
       let c_state = 0;  // статус назначенного исполнителя, если есть
       // очищаем список прикреплённых файлов
       const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
@@ -188,7 +186,6 @@ console.log(trip);
       };
       // отбрасываем бракованные данные
       if (!order.id || !order.clientId || !order.productId || !order.city) {
-console.log(order);
         return ret;
       }
       order.updatedAt = order.createdAt;  // начальное значение, будет меняться
@@ -232,6 +229,8 @@ console.log(order);
           }
         }
       }
+      // общее количество откликнувшихся водителей
+      order.contractorOffersCount = trip.drivers_count != null ? Number(trip.drivers_count) : order.contractorOffers!.length;
       // проверяем, предложен ли заказ конкретному мастеру
       if (order.type === OrderType.Direct) {
         if (!order.contractorId) {
@@ -295,7 +294,7 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
   }
 
   const { data, ...rest } = useQuery({
-    queryKey: [ 'orders', user.id, types, stages ],
+    queryKey: [ 'orders', user.id, 'list', types, stages ],
     queryFn: () => TripAPI.getTripIds(filter),
     staleTime: CONFIG.API?.ordersListStaleTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersListRefetchTime ?? 120000,
@@ -306,8 +305,12 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
 
   const result = useOrdersByIds(data || []);
 
-  if (rest.isSuccess) return result;
-  else return { ...rest, orders: EMPTY_ARRAY };
+  if (!rest.isSuccess) return { ...rest, orders: EMPTY_ARRAY };
+
+  // todo: Нужно обновить данные заказов, если статус заказа на сервере изменился, а в кэше - нет
+  // todo: Подумать, как это сделать
+
+  return result;
 }
 
 let ordersToFetch: {
@@ -403,8 +406,8 @@ export function useOrdersByIds(ids: number[]) {
   const queries = ids.map(orderId => ({
     queryKey: [ 'orders', user.id, orderId ],
     queryFn: getOrderById,
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 600000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 600000,
+    staleTime: CONFIG.API?.ordersDataStaleTime ?? 300000,
+    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 300000,
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   }));
 
@@ -545,7 +548,21 @@ export function useCreateOrder() {
       }
 
       const ret = await createOrder(user.id, orderData);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
+      // Инвалидация списка новых заказов
+      const orderType = orderData.contractorId ? OrderType.Direct : OrderType.Market;
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
+        queryKey[0] === 'orders' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'list' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(orderType) &&
+        queryKey[4].includes('new')
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
       return ret;
     }
   });
@@ -706,7 +723,6 @@ export function useUpdateOrder() {
         client.invalidateQueries({ queryKey: [ 'files', id ] });
       }
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
       return;
     }
   });
@@ -769,15 +785,45 @@ export function useCancelOrder() {
 
       if (user.role === UserRole.Contractor) {
         await cancelOrderByContractor(orderId, reason);
-        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
-        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
       }
       else {
         await cancelOrderByClient(orderId, reason);
-        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
-        client.invalidateQueries({ queryKey: [ 'orders', user.id, 'finished' ] });
       }
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      // Инвалидация списков заказов
+      // - заказ может быть либо в списке "new", либо в списке "active"
+      // - при отмене заказчиком перемещается в "завершённые"
+      // - при отмене мастером перемещается в "новые"
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey, state: {data} }) => (
+        queryKey[0] === 'orders' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'list' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(order.type) &&
+        queryKey[4].some(stage =>
+          (
+            stage === 'new' &&
+            (
+              user.role === UserRole.Contractor ||
+              (Array.isArray(data) && data.includes(orderId))
+            )
+          ) ||
+          (
+            stage === 'active' &&
+            Array.isArray(data) &&
+            data.includes(orderId)
+          ) ||
+          (
+            stage === 'finished' &&
+            user.role === UserRole.Client
+          )
+        )
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
       return;
     }
   });
@@ -849,8 +895,7 @@ export function useCreateOffer() {
 
       await createOffer({ orderId, price, comment, readyIn });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
+
       return;
     }
   });
@@ -904,8 +949,8 @@ export function useUpdateOffer() {
       const offer = order.contractorOffers.find(offer => offer.contractorId === user.id);
       if (order.status !== OrderStatus.PUBLISHED || !offer) throw new Error('Incorrect order state.');
       if (
-        (price === undefined || offer.price === price) ||
-        (comment === undefined || offer.comment === comment) ||
+        (price === undefined || offer.price === price) &&
+        (comment === undefined || offer.comment === comment) &&
         (readyIn === undefined || (offer.readyIn.value === readyIn.value && offer.readyIn.unit === readyIn.unit))
       ) {
         return;
@@ -913,7 +958,7 @@ export function useUpdateOffer() {
 
       await updateOffer({ orderId, price, comment, readyIn });
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+
       return;
     }
   });
@@ -962,7 +1007,21 @@ export function useAcceptOffer() {
 
       await acceptOffer(orderId, contractorId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
+      // Инвалидация списков новых и активных заказов
+      // - заказ перемещается из "новых" в "активные"
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
+        queryKey[0] === 'orders' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'list' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(OrderType.Market) &&
+        queryKey[4].some(stage => stage === 'new' || stage === 'active')
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
       return;
     }
   });
@@ -1009,8 +1068,7 @@ export function useRevokeOffer() {
 
       await revokeOffer(orderId, reason);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'available' ] });
+
       return;
     }
   });
@@ -1111,7 +1169,21 @@ export function useAcceptInvoice() {
 
       await acceptInvoice(orderId, order.desiredPrice);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+      // Инвалидация списков новых и активных заказов
+      // - заказ перемещается из "новых" в "активные"
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
+        queryKey[0] === 'orders' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'list' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(OrderType.Direct) &&
+        queryKey[4].some(stage => stage === 'new' || stage === 'active')
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
       return;
     }
   });
@@ -1157,7 +1229,7 @@ export function useStartOrderWork() {
 
       await startOrderWork(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+
       return;
     }
   });
@@ -1203,7 +1275,7 @@ export function useCompleteOrderByContractor() {
 
       await completeOrderByContractor(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'contractor' ] });
+
       return;
     }
   });
@@ -1251,7 +1323,21 @@ export function useVerifyOrderCompletion() {
 
       await verifyOrderCompletion(orderId);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, 'active' ] });
+      // Инвалидация списков активных и завершённых заказов
+      // - заказ перемещается из "активных" в "завершённые"
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
+        queryKey[0] === 'orders' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'list' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(order.type) &&
+        queryKey[4].some(stage => stage === 'active' || stage === 'finished')
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
       return;
     }
   });
