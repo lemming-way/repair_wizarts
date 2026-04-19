@@ -3,34 +3,33 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import WalletHistoryClient from './components/ChoiceOfReplenishmentMethod/WalletHistoryClient';
-import ClientSettingsWrap from './components/pages/ClientSettingsWrap';
-import ContractorSettingsWrap from './components/pages/ContractorSettingsWrap';
+import ClientSettingsNavigator from './features/user/settings/Client';
 
 import RegistrationContractorPage from './features/user/registration/RegistrationContractorPage';
 
 // Order imports
-import AllOrders from './components/Orders/Allorders';
+import ContractorMarketOrders from './features/orders/contractor/list/MarketOrders';
 
-import SettingsAll from './components/Settings/Settings-all';
-import ContractorSettings from './features/user/profile/ContractorSettings';
-import Services from './features/user/profile/Services';
+import ContractorSettingsNavigator from './features/user/settings/Contractor';
+import ContractorSettings from './features/user/settings/contractor/ContractorSettings';
+import Services from './features/user/settings/contractor/Services';
 import Reviews from './components/Reviews';
 
-import MyOffers from './features/orders/contractor/list/MyOffers';
-import Offer from './features/orders/contractor/manage/Offer';
+import ContractorOffers from './features/orders/contractor/list/Offers';
+import ContractorOffer from './features/orders/contractor/manage/Offer';
 
 // after login
-import UserProfile from './features/user/profile/UserProfile';
+import UserProfile from './features/user/settings/profile/UserProfile';
 
 // after login end
 
 import MapContractor from './components/Pick-contractor/contractors';
 import ProfileNumber from './components/Chat/profileNumber';
 // import OfferAService from './components/Orders/OfferAService';
-import AddDevices from './components/addDevices/AddDevices';
-import AddedDevices from './components/addDevices/AddedDevices';
+import CreateMarket from './features/orders/client/create/CreateMarket';
+import MarketOrders from './features/orders/client/list/MarketOrders';
 //~ import TitleService from './components/addDevices/TitleService';
-import Applications from './components/Applications/applications';
+import DirectOrders from './features/orders/contractor/list/DirectOrders';
 import LoginPage from './features/user/login/LoginPage';
 import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfirm';
 import Finance from './components/Settings/Finance';
@@ -42,23 +41,23 @@ import { useUser, updateUser, UserRole } from './state/user';
 import Articles from './components/Article/Articles';
 import ChoiceOfReplenishmentMethod from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethod';
 import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmentMethod/ChoiceOfReplenishmentMethodClient';
-import ContractorsOffers from './features/orders/client/list/ContractorsOffers';
+import Offers from './features/orders/client/list/Offers';
 import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './components/Orders/AddedDevicesPage';
 import FChatKirill from './components/full-chat/fakeChat/Kirill';
 import Home from './components/Home';
 import FinanceClient from './components/Settings/FinanceClient';
-import ContractorChatWrap from './components/pages/ContractorChatWrap';
-import MyOffer from './components/myoffer';
-import MyOrder from './features/orders/client/manage/MyOrder';
+import ContractorLayout from './layout/ContractorLayout';
+//~ import MyOffer from './components/myoffer';
+import Order from './features/orders/client/manage/Order';
 import ProfileFeedbackContractor from './components/profileNumberClient/ProfileFeedbackContractor';
 import RegistrationPickPage from './features/user/registration/RegistrationPickPage';
 import RegistrationUserPage from './features/user/registration/RegistrationUserPage';
-import Remont from './components/remont';
-import { ServiceDetail } from './components/Service';
+import ServicesPage from './features/orders/client/create/ServicesPage';
+import CreateDirect from './features/orders/client/create/CreateDirect';
 import BalanceClient from './components/Settings/BalanceClient';
-import { Footer } from './footer';
-import { Toolbar } from './header';
+import Footer from './layout/Footer';
+import Toolbar from './layout/Header';
 import { useProducts } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
@@ -148,17 +147,11 @@ function App() {
             :
               <Route index element={<Home />} />
             }
-            <Route
-              path="categories/:id"
-              element={<Remont />}
-            />
-            <Route
-              path="services/:id"
-              element={<ServiceDetail />}
-            />
-            <Route path="articles/:id" element={<Article />} />
+            <Route path="categories/:id" element={<ServicesPage />} />
+            <Route path="services/:id" element={<CreateDirect />} />
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
+            <Route path="articles/:id" element={<Article />} />
             <Route path="contact" element={<MapContractor />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register">
@@ -170,16 +163,10 @@ function App() {
           {!isContractor && (
             <Route path="client">
               {isAuthorized && (
-                <Route path="settings" element={<ClientSettingsWrap />}>
+                <Route path="settings" element={<ClientSettingsNavigator />}>
                   <Route index element={<UserProfile />} />
-                  <Route
-                    path="wallet"
-                    element={<ChoiceOfReplenishmentMethodClient />}
-                  />
-                  <Route
-                    path="wallet_history"
-                    element={<WalletHistoryClient />}
-                  />
+                  <Route path="wallet" element={<ChoiceOfReplenishmentMethodClient />} />
+                  <Route path="wallet_history" element={<WalletHistoryClient />} />
                   <Route path="finance" element={<FinanceClient />} />
                   <Route path="balance" element={<BalanceClient />} />
                 </Route>
@@ -188,25 +175,22 @@ function App() {
               <Route path="requests">
                 {isAuthorized && (
                   <>
-                    <Route index element={<AddedDevices />} />
+                    <Route index element={<MarketOrders />} />
                     {/* <Route path="archived" element={<Archive />} /> */}
-                    <Route path="my_orders" element={<ContractorsOffers />} />
-                    <Route path="my_order/:id" element={<MyOrder />} />
+                    <Route path="my_orders" element={<Offers />} />
+                    <Route path="my_order/:id" element={<Order />} />
                   </>
                 )}
                 <Route path="create">
                   {/*<Route path="title" element={<TitleService />} />*/}
-                  <Route path="data" element={<AddDevices />} />
+                  <Route path="data" element={<CreateMarket />} />
                 </Route>
               </Route>
               {isAuthorized && (
                 <>
-                  <Route path="offers/:id" element={<MyOffer />} />
+                  {/*<Route path="offers/:id" element={<MyOffer />} />*/}
                   {/* клиент на странице мастера может оставить отзыв */}
-                  <Route
-                    path="feedback/:id"
-                    element={<ProfileFeedbackContractor />}
-                  />
+                  <Route path="feedback/:id" element={<ProfileFeedbackContractor />} />
                   {/* чат связан с бэком */}
                   {/* <Route path="chat" element={<FChat />} /> */}
                   {/* <Route path="chat/:id" element={<FChat />} /> */}
@@ -222,49 +206,42 @@ function App() {
           )}
 
           {isContractor && (
-            <Route basename="contractor" path="contractor">
+            <Route path="contractor" element={<ContractorLayout />}>
               {/* Чат без связи с бэком, только заготовка */}
-              <Route element={<ContractorChatWrap />}>
-                <Route path="chat" element={<FChatKirill />} />
-                <Route path="chat/:id" element={<FChatKirill />} />
-                {/* прежний чат, был связана с бэком */}
-                {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
-                          <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
+              <Route path="chat" element={<FChatKirill />} />
+              <Route path="chat/:id" element={<FChatKirill />} />
+              {/* прежний чат, был связана с бэком */}
+              {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
+                        <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
+              <Route path="wallet" element={<ChoiceOfReplenishmentMethod />} />
+              <Route path="wallet_history" element={<WalletHistory />} />
+              <Route path="wallet/:id" element={<WalletConfirm />} />
+              <Route path="settings" element={<ContractorSettingsNavigator />}>
+                <Route index element={<UserProfile />} />
+                <Route path="profile" element={<ContractorSettings />} />
+                <Route path="services" element={<Services />} />
+                <Route path="finance" element={<Finance />} />
+                <Route path="balance" element={<Balance />} />
               </Route>
-              <Route element={<ContractorSettingsWrap />}>
-                <Route
-                  path="wallet"
-                  element={<ChoiceOfReplenishmentMethod />}
-                />
-                <Route path="wallet_history" element={<WalletHistory />} />
-                <Route path="wallet/:id" element={<WalletConfirm />} />
-                <Route path="settings" element={<SettingsAll />}>
-                  <Route index element={<UserProfile />} />
-                  <Route path="profile" element={<ContractorSettings />} />
-                  <Route path="services" element={<Services />} />
-                  <Route path="finance" element={<Finance />} />
-                  <Route path="balance" element={<Balance />} />
-                </Route>
-                <Route path="orders" element={<Applications />} />
-                {/*<Route path="orders">
-                  <Route index element={<Applications />} />
-                  <Route path="completed" element={<Applications />} />
-                  <Route path="canceled" element={<Applications />} />
-                  <Route path="all" element={<Applications />} />
-                </Route>
-                */}
-
-                <Route path="feedback" element={<ProfileNumber />} />
-
-                <Route path="requests">
-                  <Route index element={<AllOrders />} />
-                  <Route path="offer/:id" element={<Offer />} />
-                  <Route path="orders" element={<MyOffers />} />
-                  {/*<Route path="personal" element={<PersonalRequests />} />*/}
-                  {/* <Route path=":id" element={<MyOrders />} /> */}
-                </Route>
-                {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
+              <Route path="orders" element={<DirectOrders />} />
+              {/*<Route path="orders">
+                <Route index element={<Applications />} />
+                <Route path="completed" element={<Applications />} />
+                <Route path="canceled" element={<Applications />} />
+                <Route path="all" element={<Applications />} />
               </Route>
+              */}
+
+              <Route path="feedback" element={<ProfileNumber />} />
+
+              <Route path="requests">
+                <Route index element={<ContractorMarketOrders />} />
+                <Route path="offer/:id" element={<ContractorOffer />} />
+                <Route path="orders" element={<ContractorOffers />} />
+                {/*<Route path="personal" element={<PersonalRequests />} />*/}
+                {/* <Route path=":id" element={<MyOrders />} /> */}
+              </Route>
+              {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
             </Route>
           )}
         </Routes>

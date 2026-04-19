@@ -3,7 +3,7 @@ import {useQueryClient} from '@tanstack/react-query';
 import {Link, useNavigate} from "react-router-dom";
 
 import styles from './LoginPage.module.scss';
-import { PhoneNumber } from '../profile/PhoneNumber';
+import { PhoneNumber } from '../PhoneNumber';
 import { useLanguage } from 'app/state/language';
 import { login } from "app/state/user";
 import PasswordRecoveryModal from './PasswordRecoveryModal';

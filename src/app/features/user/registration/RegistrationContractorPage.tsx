@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from 'app/state/language';
 import { MultiSelect, MultiSelectOption } from 'app/shared/ui';
 import { ConfirmPolitics } from './ConfirmPolitics';
-import { PhoneNumber } from '../profile/PhoneNumber';
+import { PhoneNumber } from '../PhoneNumber';
 // import Error from "app/components/Error/Error"; // Assuming Error component exists for displaying errors
 
 import { useCities, useProducts } from 'app/state/site-data';

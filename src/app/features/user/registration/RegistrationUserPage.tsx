@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom";
 // import Error from "app/components/Error/Error";
 import { useLanguage } from 'app/state/language';
 import { useRegisterClient } from 'app/state/user';
-import { PhoneNumber } from '../profile/PhoneNumber';
+import { PhoneNumber } from '../PhoneNumber';
 import { ConfirmPolitics } from "./ConfirmPolitics";
 import styles from './RegistrationUserPage.module.scss';
 import sharedStyles from './RegistrationPage.module.scss';

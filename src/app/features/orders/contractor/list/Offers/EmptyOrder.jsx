@@ -1,0 +1,17 @@
+import { Link } from "react-router-dom"
+
+import style from "./Offers.module.css"
+
+
+export default function EmptyOrder () {
+    return (
+        <>
+            <div className={style.empty_block}>
+                <img src="/img/meeting.png" alt="" />
+                <p className={style.large_text}>У вас пока нет откликов </p>
+                <p className={style.empty__text}>Отслеживайте новые проекты от заказчиков на Бирже и откликайтесь на те, которые готовы выполнить. Ваши отклики будут отображаться на этой странице.</p>
+                <Link className={style.button} to="/contractor/requests">Смотрите предложение</Link>
+            </div>
+        </>
+    )
+}
