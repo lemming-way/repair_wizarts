@@ -2,8 +2,8 @@ import React, { useMemo, useState, useRef } from 'react';
 import ReactDom from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import { useLanguage } from '../../state/language';
-import { useGlobalState } from '../../state/global';
+import { useLanguage } from 'app/state/language';
+import { useGlobalState } from 'app/state/global';
 import { ContractorDetails } from './ContractorDetails';
 
 function queryYMaps() {
@@ -40,7 +40,11 @@ function Map(props) {
     selectContractor, // Функция из родителя для выбора мастера
   } = props;
   const text = useLanguage();
-  const YMaps = useQuery( { queryKey: [ 'YMaps' ], queryFn: queryYMaps, placeholderData: null } ).data;
+  const { data: YMaps } = useQuery({
+    queryKey: [ 'YMaps' ],
+    queryFn: queryYMaps,
+    placeholderData: null
+  });
   const mapLocation = useGlobalState( 'map:location' );
 
   const [hoveredContractor, setHoveredContractor] = useState(null);

@@ -14,7 +14,7 @@ import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
 import { useService } from "../../hooks/useService";
 import { getContractorRepairs } from "../../services/service.service";
 import { getContractorByUsername } from "../../services/user.service";
-import YMap from '../Map'
+import YMap from '../../shared/maps/yandex/MapBase'
 import { useLanguage } from "../../state/language";
 
 

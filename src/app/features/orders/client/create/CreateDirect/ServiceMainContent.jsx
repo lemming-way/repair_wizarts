@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import YMap from 'app/components/Map';
+import YMap from 'app/shared/maps/yandex/MapBase';
 import OrderFormBlock from './OrderFormBlock';
 import style from './CreateDirect.module.scss';
 
