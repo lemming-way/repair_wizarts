@@ -112,7 +112,7 @@ import { useProducts } from 'app/state/site-data';
 const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const { categories, subcategories, products } = useProducts();
+  const { categories, subcategories } = useProducts();
 
   return (
     <Dropdown
@@ -166,30 +166,6 @@ const ServiceDropdown = () => {
                       >
                         <span>{subcategory.name}</span>
                       </Link>
-                      <Dropdown.Submenu
-                        position="right-top"
-                        className={styles.Submenu_submenu}
-                      >
-                        {subcategory.products
-                          .slice(0, 5)
-                          .map(productId =>
-                            products[productId] ?
-                            (
-                              <Dropdown.Item
-                                className={`${styles.serviceDropdown_item} ${styles.serviceDropdown_item_lvl3}`}
-                                key={productId}
-                              >
-                                <Link
-                                  to={`/services/${productId}`}
-                                >
-                                  <span>{products[productId].name}</span>
-                                </Link>
-                              </Dropdown.Item>
-                            ) :
-                            null
-                          )
-                        }
-                      </Dropdown.Submenu>
                     </Dropdown.Item>
                   );
                 },
