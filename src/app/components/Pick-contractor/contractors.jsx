@@ -14,7 +14,7 @@ import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
 import { useService } from "../../hooks/useService";
 import { getContractorRepairs } from "../../services/service.service";
 import { getContractorByUsername } from "../../services/user.service";
-import YMap from '../../shared/maps/yandex/MapBase'
+import ContractorsMap from '../../shared/maps/yandex/ContractorsMap'
 import { useLanguage } from "../../state/language";
 
 
@@ -190,7 +190,7 @@ function App() {
             <HeroSection />
             <section className="contractor__map">
                 <h1 className="contractor__map__title">{text('Map of our contractors')}</h1>
-                <YMap
+                <ContractorsMap
                     contractors={contractors}
                     selectedContractor={contractor}
                     selectContractor={onContractorSelect}

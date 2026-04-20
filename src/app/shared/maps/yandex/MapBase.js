@@ -1,10 +1,8 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React from 'react';
 import ReactDom from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 
 import { useLanguage } from 'app/state/language';
-import { useGlobalState } from 'app/state/global';
-import { ContractorDetails } from './ContractorDetails';
 
 function queryYMaps() {
   if (window.ymaps3) {
@@ -13,14 +11,12 @@ function queryYMaps() {
 
     return Promise.all([
       ymaps3.import('@yandex/ymaps3-reactify'),
-      ymaps3.import( '@yandex/ymaps3-controls@0.0.1' ),
       ymaps3.import('@yandex/ymaps3-default-ui-theme'),
       ymaps3.ready
     ]).then( results => {
         const reactify = results[0].reactify.bindTo( React, ReactDom );
         const { YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapFeature, YMapControls, YMapScaleControl } = reactify.module( ymaps3 );
-        const { YMapZoomControl, YMapGeolocationControl } = reactify.module( results[1] );
-        const { YMapDefaultMarker } = reactify.module( results[2] );
+        const { YMapZoomControl, YMapGeolocationControl, YMapDefaultMarker } = reactify.module( results[1] );
         return {
           YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapFeature, YMapControls, YMapScaleControl,
           YMapZoomControl, YMapGeolocationControl,
@@ -33,92 +29,34 @@ function queryYMaps() {
   }
 }
 
-function Map(props) {
-  const {
-    contractors,
-    // selectedContractor, // Временно не используется внутри этого компонента
-    selectContractor, // Функция из родителя для выбора мастера
-  } = props;
-  const text = useLanguage();
+function useYMaps() {
   const { data: YMaps } = useQuery({
     queryKey: [ 'YMaps' ],
     queryFn: queryYMaps,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+    notifyOnChangeProps: ['data'],
     placeholderData: null
   });
-  const mapLocation = useGlobalState( 'map:location' );
+  return YMaps;
+}
 
-  const [hoveredContractor, setHoveredContractor] = useState(null);
-  const hoverTimeoutRef = useRef(null);
-
-  // useMemo для стабилизации ссылки
-  const mapDefaultLocation = useMemo( () => {
-    return {
-      center: [ mapLocation.longitude, mapLocation.latitude ],
-      zoom: 10
-    };
-  }, [ mapLocation.latitude, mapLocation.longitude ] );
-
-  // todo: это временный блок для назначения фиктивных координат пользователям
-  // позже его нужно будет удалить
-  const contractorsFiction = useMemo( () => {
-    return contractors?.map( contractor => {
-      const longitude = mapDefaultLocation.center[0] + Math.round( 10000 * ( Math.random() * 0.3 - 0.15 ) ) / 10000;
-      const latitude = mapDefaultLocation.center[1] + Math.round( 10000 * ( Math.random() * 0.3 - 0.15 ) ) / 10000;
-
-      return {
-        ...contractor,
-        coordinates: { latitude, longitude }
-      };
-    } );
-  }, [ contractors, mapDefaultLocation ] );
-
-  const handleMouseEnter = id => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = null;
-    setHoveredContractor(id);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredContractor(null);
-    }, 300); // небольшая задержка перед скрытием
-  };
-
+function YMap({
+  location,
+  children
+}) {
+  const YMaps = useYMaps();
+  const text = useLanguage();
   return (
     <div style={{ width: '100%', height: '500px' }}>
     { YMaps ?
-      <YMaps.YMap location={mapDefaultLocation}>
+      <YMaps.YMap location={location}>
         <YMaps.YMapDefaultSchemeLayer />
         <YMaps.YMapDefaultFeaturesLayer />
-
-        <YMaps.YMapDefaultMarker
-          coordinates={mapDefaultLocation.center}
-          iconName='fallback'
-          size='normal'
-          title={text('You are here')}
-          color='red'
-        />
-        {/* Перебираем мастеров и создаем для каждого метку */}
-        {contractorsFiction
-          ?.filter(v => !!v.coordinates)
-          .map((v) => (
-            <YMaps.YMapDefaultMarker
-              key={`${v.id} ${v.coordinates.longitude} ${v.coordinates.latitude}`}
-              coordinates={[v.coordinates.longitude, v.coordinates.latitude]}
-              iconName='auto_parts'
-              size='small'
-              color='green'
-              popup={{
-                content: () => <ContractorDetails contractor={v} />,
-                position: 'bottom',
-                offset: 16,
-                show: hoveredContractor === v.id
-              }}
-              onMouseEnter={() => handleMouseEnter(v.id)}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => selectContractor(v)}
-            />
-        ))}
+        {children}
       </YMaps.YMap>
       :
       text('Yandex maps not loaded')
@@ -127,4 +65,23 @@ function Map(props) {
   );
 }
 
-export default Map;
+const exportNames = [ 'YMapFeature', 'YMapControls', 'YMapDefaultMarker' ];
+const exports = {};
+for (const name of exportNames) {
+  exports[name] = ({children, ...props}) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const YMaps = useYMaps();
+    const Component = YMaps?.[name];
+    return Component ?
+      <Component {...props}>
+        {children}
+      </Component>
+      : null;
+  }
+}
+
+export const YMapFeature = exports.YMapFeature;
+export const YMapControls = exports.YMapControls;
+export const YMapDefaultMarker = exports.YMapDefaultMarker;
+
+export default YMap;

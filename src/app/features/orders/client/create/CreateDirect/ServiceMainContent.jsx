@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import YMap from 'app/shared/maps/yandex/MapBase';
+import ContractorsMap from 'app/shared/maps/yandex/ContractorsMap';
 import OrderFormBlock from './OrderFormBlock';
 import style from './CreateDirect.module.scss';
 
@@ -216,7 +216,7 @@ function ServiceMainContent({
       )}
 
       <section className="map">
-        <YMap
+        <ContractorsMap
           contractors={contractors}
           selectedContractor={selectedContractor}
           selectContractor={onSelectContractor}
