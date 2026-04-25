@@ -110,6 +110,7 @@ export function deleteFile(fileId: number) {
  * @returns Информация о файлах
  */
 export async function getFilesInfo(fileIds: number[]): Promise<DropboxFileInfo[]> {
+  if (!fileIds.length) return [];
   const ret = await post<{ 'dropbox files': Record<string, DropboxFileInfo> }>(`dropbox/file/${fileIds}/select`);
   if (ret?.['dropbox files'] && 'object' === typeof ret['dropbox files']) return Object.values(ret['dropbox files']);
   else return [];

@@ -18,26 +18,6 @@ function ClientSettingsNavigator() {
   const text = useLanguage();
   const navigate = useNavigate();
 
-  // const [succeeded, setSucceeded] = useState(false)
-  // const [error, setError] = useState("")
-
-  // const getFormAttrs = (field) => {
-  //      const attrs = { }
-
-  //     attrs.value = form[field]
-  //     attrs.onChange = (e) =>
-  //         setForm((prev) => ({ ...prev, [field]: e.target.value }))
-
-  //     return attrs
-  // }
-
-  // const onSubmit = (e) => {
-  //     e.preventDefault()
-  //     updateUser(form, user.id)
-  //         .then(() => { setSucceeded(true); setError("") })
-  //         .catch((err) => { setSucceeded(false); setError(err.message) })
-  // }
-
   useEffect(() => {
     document.title = text('Settings');
   }, [text]);

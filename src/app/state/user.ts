@@ -17,9 +17,10 @@ import { QueryClient, UseQueryResult, useQuery, useQueries, useMutation } from '
 
 import CONFIG from 'config';
 import { setToken, clearToken, isUserAuthorized, authorizedUserId } from './auth';
-import { fileToBase64, randomString } from 'app/shared/lib/utilities';
+import { fileToBase64, isImage, randomString } from 'app/shared/lib/utilities';
 import * as UserAPI from './api/user';
 import * as CarAPI from './api/cars';
+import * as FileAPI from './api/dropbox';
 
 /**
  * Пустой объект, используемый по умолчанию для предотвращения ошибок доступа к свойствам.
@@ -131,6 +132,12 @@ interface ContractorUserProfile extends UserBaseData {
   businessModel: BusinessModel;
   /** Название организации */
   organizationName: string;
+  /** Фотографии мастера */
+  photos?: Array<File | number>;
+  /** Активный - пользователь готов принимать заказы */
+  active: boolean;
+  /** Дата регистрации */
+  registrationDate: Date;
 }
 
 export type UserProfile = ClientUserProfile | ContractorUserProfile;
@@ -183,7 +190,10 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     experience: 'number' === typeof u_details?.experience ? u_details.experience : 0,
     services: contractorServices,
     businessModel: u_details?.businessModel === BusinessModel.ServiceCenter ? BusinessModel.ServiceCenter : BusinessModel.IndependentTechnician,
-    organizationName: 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
+    organizationName: u_details?.businessModel === BusinessModel.ServiceCenter && 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
+    photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isFinite(id) && id > 0) : [],
+    active: Number(data.u_active) === 1,
+    registrationDate: new Date(String(u_details?.registrationDate ?? ''))
   };
 }
 
@@ -543,8 +553,11 @@ async function _registerUser(
       experience: experience || 0,
       services,
       businessModel: businessModel || BusinessModel.IndependentTechnician,
-      organizationName: organizationName || ''
+      registrationDate: (new Date()).toISOString()
     };
+    if (businessModel === BusinessModel.ServiceCenter) {
+      registerData.u_details.organizationName = organizationName || '';
+    }
   }
 
   const result = await registerApiFn(registerData);
@@ -650,6 +663,7 @@ export type UserUpdatePayload = {
   services?: ServicesMap;
   businessModel?: BusinessModel;
   organizationName?: string;
+  photos?: Array<File | number>;
 }
 
 /**
@@ -658,9 +672,14 @@ export type UserUpdatePayload = {
  * @param payload Объект с данными для обновления, использующий логические имена полей.
  * @returns Промис, который разрешается после успешного обновления.
  */
-export async function updateUser(queryClient: QueryClient, payload: UserUpdatePayload): Promise<void> {
+export async function updateUser(queryClient: QueryClient, userId: number | undefined, payload: UserUpdatePayload): Promise<void> {
+  if (!userId) throw new Error('User must be authorized.');
+  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+
   // todo: Может быть, добавить полную проверку для phone, email, language, currency, locality
-  const apiUserData: UserAPI.UserUpdateData = {};
+  const updatedFiles = [] as number[];
+  const deletedFiles = [] as number[];
+  const apiUserData = {} as UserAPI.UserUpdateData;
 
   if (payload.name !== undefined) {
     const name = payload.name.trim();
@@ -718,17 +737,73 @@ export async function updateUser(queryClient: QueryClient, payload: UserUpdatePa
   if (payload.organizationName !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
   }
+  if (payload.photos !== undefined) {
+    const filePhotos = payload.photos.filter(file => file instanceof File);
+    const idPhotos = payload.photos.filter(file => 'number' === typeof file);
 
-  await UserAPI.updateUser(apiUserData, 1);
+    const oldData = await UserAPI.getAuthUser();
+    if (Number(oldData.u_id) !== userId || userId !== authorizedUserId()) throw new Error('User was changed.');
+
+    let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
+    if (Array.isArray(oldData.u_details?.photos)) {
+      const oldIds = (oldData.u_details.photos ?? [])
+        .map(Number)
+        .filter(id => !!id && Number.isFinite(id) && !idPhotos.includes(id));
+      oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
+      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+    }
+    // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
+    //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
+    const newPhotos = idPhotos;
+    if (filePhotos.length) {
+      const photos = await Promise.all(
+        filePhotos
+          .filter(file => isImage(file.type))
+          .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
+      );
+      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+
+      const uploads = photos.map(image => {
+        const fileIndex = oldFilesInfo.findIndex(file => file?.json?.name === image.name);
+        if (fileIndex >= 0) {
+          const oldId = Number(oldFilesInfo[fileIndex]!.dl_id || 0);
+          oldFilesInfo[fileIndex] = null;
+          updatedFiles.push(oldId);
+          return FileAPI.updateFile(oldId, image.data);
+        }
+        return FileAPI.uploadFile(image.name, image.data, 0);
+      });
+      const deletedIds = oldFilesInfo.filter(Boolean).map(file => Number(file!.dl_id));
+      if (deletedIds.length) deletedFiles.push(...deletedIds);
+      const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
+      if (deletes.length) {
+        await Promise.all(deletes);
+        if (userId !== authorizedUserId()) throw new Error('User was changed.');
+      }
+      const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
+      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+      newPhotos.push(...uploaded);
+      apiUserData.u_details = { ...apiUserData.u_details, photos: newPhotos };
+    }
+  }
+
+  await UserAPI.updateUser(apiUserData, UserRole.Client);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
+  for (const id of deletedFiles) {
+    queryClient.removeQueries({ queryKey: [ 'files', id ] });
+  }
+  for (const id of updatedFiles) {
+    queryClient.invalidateQueries({ queryKey: [ 'files', id ] });
+  }
 }
 
 /**
  * Хук для обновления основных данных профиля пользователя.
  */
 export function useUpdateUser() {
+  const { user } = useUser();
   const mutation = useMutation({
-    mutationFn: (payload: UserUpdatePayload, { client }) => updateUser(client, payload),
+    mutationFn: (payload: UserUpdatePayload, { client }) => updateUser(client, user.id, payload),
   });
 
   const { mutateAsync, ...ret } = mutation;
@@ -744,9 +819,12 @@ export function useUpdateUser() {
  * @param photoFile Объект File для новой фотографии.
  * @returns Промис, который разрешается после успешного обновления.
  */
-export async function updateUserAvatar(queryClient: QueryClient, photoFile: File): Promise<void> {
+export async function updateUserAvatar(queryClient: QueryClient, userId: number, photoFile: File): Promise<void> {
+  if (!userId) throw new Error('User must be authorized.');
+  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+
   const base64Photo = await fileToBase64(photoFile);
-  await UserAPI.updateUser({ u_photo: base64Photo }, 1);
+  await UserAPI.updateUser({ u_photo: base64Photo }, UserRole.Client);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
 }
 
@@ -754,8 +832,9 @@ export async function updateUserAvatar(queryClient: QueryClient, photoFile: File
  * Хук для обновления фотографии профиля пользователя.
  */
 export function useUpdateUserAvatar() {
+  const { user } = useUser();
   const mutation = useMutation({
-    mutationFn: (photoFile: File, { client }) => updateUserAvatar(client, photoFile),
+    mutationFn: (photoFile: File, { client }) => updateUserAvatar(client, user.id, photoFile),
   });
 
   const { mutateAsync, ...ret } = mutation;
@@ -766,12 +845,49 @@ export function useUpdateUserAvatar() {
 }
 
 /**
+ * Обновляет статус активности для мастера.
+ * @param queryClient Инстанс QueryClient для управления кэшем.
+ * @param isActive Новый статус активности.
+ * @returns Промис, который разрешается после успешного обновления.
+ */
+export async function setContractorActive(queryClient: QueryClient, userId: number, isActive: boolean): Promise<void> {
+  if (!userId) throw new Error('User must be authorized.');
+  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+
+  await UserAPI.updateUser({ u_active: isActive ? 1 : 0 });
+  queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
+}
+
+/**
+ * Хук для обновления статуса активности мастера.
+ */
+export function useSetContractorActive() {
+  const { user } = useUser();
+
+  const mutation = useMutation({
+    mutationFn: (isActive: boolean, { client }) => {
+      if (user.role !== UserRole.Contractor) throw new Error('User must be a contractor');
+      return setContractorActive(client, user.id, isActive);
+    },
+  });
+
+  const { mutateAsync, ...ret } = mutation;
+  return {
+    ...ret,
+    setContractorActive: mutateAsync
+  }
+}
+
+/**
  * Обновляет пароль пользователя.
  * @param oldPassword Текущий пароль.
  * @param newPassword Новый пароль.
  * @returns Промис, который разрешается после успешного обновления.
  */
-export async function updateUserPassword(oldPassword: string, newPassword: string): Promise<void> {
+export async function updateUserPassword(userId: number, oldPassword: string, newPassword: string): Promise<void> {
+  if (!userId) throw new Error('User must be authorized.');
+  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+
   await UserAPI.updatePassword(oldPassword, newPassword);
 }
 
@@ -779,9 +895,10 @@ export async function updateUserPassword(oldPassword: string, newPassword: strin
  * Хук для обновления пароля пользователя.
  */
 export function useUpdateUserPassword() {
+  const { user } = useUser();
   const mutation = useMutation({
     mutationFn: ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) =>
-      updateUserPassword(oldPassword, newPassword),
+      updateUserPassword(user.id, oldPassword, newPassword),
   });
 
   const { mutateAsync, ...ret } = mutation;

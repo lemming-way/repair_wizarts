@@ -1,13 +1,17 @@
 import React from 'react';
-//~ import { Link } from 'react-router-dom';
-//~ import { Rating } from 'react-simple-star-rating';
+import { Link } from 'react-router-dom';
+import { Rating } from 'react-simple-star-rating';
 import { Navigation } from 'swiper';
 import { Swiper, /* SwiperSlide */ } from 'swiper/react';
 import { useLanguage } from 'app/state/language';
+import { BusinessModel } from 'app/state/user'
 import style from './CreateDirect.module.scss';
 
 function ContractorInfoModals({
   selectedContractor,
+  categories,
+  subcategories,
+  products,
   showSmallModal,
   showBigModal,
   handleCloseModals,
@@ -18,6 +22,10 @@ function ContractorInfoModals({
   if (!selectedContractor.id) {
     return null;
   }
+
+  const contractorProducts = Object.keys(selectedContractor.services || {}).map(id => products[id]).filter(Boolean);
+  const contractorSubcategories = [...new Set(contractorProducts.map(p => subcategories[p.parent]).filter(Boolean))];
+  const contractorCategories = [...new Set(contractorSubcategories.map(s => categories[s.parent]).filter(Boolean))];
 
   return (
     <div style={{ display: 'flex', position: 'absolute' }}>
@@ -38,32 +46,28 @@ function ContractorInfoModals({
               onClick={handleCloseModals}
               style={{ cursor: 'pointer' }}
             >
-              <img src="/img/close.svg" alt="" />
+              <img src="/img/close.svg" alt={text("Close")} />
             </div>
 
             <div className="info_contractor__row1">
-              <img src={selectedContractor.avatar || "/img/profile__image.png"} alt="" />
+              <img className={style.avatarImg} src={selectedContractor.avatar || "/img/user_avatar.png"} alt="" />
               <div className="info_contractor__about">
-                <p>{selectedContractor.name}</p>
-                <p>{selectedContractor.description}</p>
-                {/*
+                <p>{selectedContractor.fullname}</p>
+                <p>{text(selectedContractor.businessModel)}</p>
                 <div className="info_contractor__stars">
                   <Rating
                     size={18}
                     readonly
-                    initialValue={selectedContractor.rating}
+                    initialValue={4.2/* selectedContractor.rating  todo: Добавить загрузку рейтинга */}
                     allowFraction
                     fillColor="#FFC107"
                     emptyColor="#E4E5E9"
                   />
                 </div>
-                */}
                 <div className="info_contractor__row-links">
-                  {/*
                   <Link to={`/client/feedback/${selectedContractor.id}`}>
-                    {selectedContractor.reviews} {text('reviews received')}
+                    {11/* selectedContractor.reviews  todo: Добавить загрузку отзывов*/} {text('reviews received')}
                   </Link>
-                  */}
                   <button
                     type="button"
                     className="info_contractor__row-link"
@@ -75,68 +79,54 @@ function ContractorInfoModals({
               </div>
             </div>
 
-            <p className="info_contractor__info">{selectedContractor.address}</p>
-            <p className="info_contractor__info">{text('Open: from 9 to 21')}</p>
+            <p className="info_contractor__info">
+              <span className="info_contractor__text-about-light">
+                {text('Address')}
+              </span>
+              {selectedContractor.address}
+            </p>
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('Organization name')}
               </span>
-              {selectedContractor.organizationName}
+              {(selectedContractor.businessModel === BusinessModel.ServiceCenter && selectedContractor.organizationName) || text('No organization')}
             </p>
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('Experience')}
               </span>
-              {selectedContractor.experience}
+              {selectedContractor.experience} {text('year(s)')}
             </p>
-            {/* Поле 'On the platform since' отсутствует в UserProfile
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('On the platform')}
               </span>
-              {text('since')} {selectedContractor.onSiteSince}
+              {text('since')} {selectedContractor.registrationDate.getFullYear()}
             </p>
-            */}
-            {/* Поле 'Status' отсутствует в UserProfile
             <p className="info_contractor__text-about">
               <span className="info_contractor__text-about-light">
                 {text('Status')}
               </span>
-              {text(selectedContractor.status)}
+              {text(selectedContractor.isOnline ? 'Online' : 'Offline')}
             </p>
-            */}
-            {/* Рейтинг закомментирован по запросу
-            <p className="info_contractor__text-about--accent">
-              <span className="info_contractor__text-about-light">
-                {text('Rating')}
-              </span>
-              {selectedContractor.rating}
-            </p>
-            */}
-            {/* Поле 'Orders completed' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Orders completed')}
               </span>
-              {selectedContractor.ordersCompleted}
+              {22/* selectedContractor.ordersCompleted  todo: Добавить реальную статистику */}
             </p>
-            */}
-            {/* Поле 'Orders delivered successfully' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Orders delivered successfully')}
               </span>
-              {selectedContractor.successRate}
+              {18/* selectedContractor.successRate  todo: Добавить реальную статистику */}
             </p>
-            */}
-            {/* Поле 'Repeat orders' отсутствует в UserProfile
             <p className="info_contractor__text-about--accent">
               <span className="info_contractor__text-about-light">
                 {text('Repeat orders')}
               </span>
-              {selectedContractor.repeatOrders}
+              {2/* selectedContractor.repeatOrders  todo: Добавить реальную статистику */}
             </p>
-            */}
           </div>
         )}
         {showBigModal && (
@@ -150,56 +140,38 @@ function ContractorInfoModals({
                 <img src="/img/close.svg" alt="" />
               </div>
 
-              {/* Поля 'Category type', 'Category', 'Brands', 'Your activity', 'Main focus', 'About the organization' отсутствуют в UserProfile */}
-              {/*
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
                   {text('Category type')}
                 </span>
-                {selectedContractor.categoryView}
+                {contractorCategories.map(item => item.name).join(', ')}
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
                   {text('Category')}
                 </span>
-                {selectedContractor.categories}
+                {contractorSubcategories.map(item => item.name).join(', ')}
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
-                  {text('Brands')}
+                  {text('Offerings')}
                 </span>
-                {selectedContractor.brands}
+                {contractorProducts.map(item => item.name).join(', ')}
               </p>
-              <p className="info_contractor_big__text-about">
-                <span className="info_contractor_big__text-about-light">
-                  {text('Your activity')}
-                </span>
-                {selectedContractor.activity}
-              </p>
-
-              <p className="info_contractor_big__text-about">
-                <span className="info_contractor_big__text-about-light">
-                  {text('Main focus')}
-                </span>
-                {selectedContractor.mainFocus}
-              </p>
-              */}
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
                   {text('Business model')}
                 </span>
                 {text(selectedContractor.businessModel)}
               </p>
-              {/*
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
-                  {text('About the organization:')}{' '}
+                  {text(selectedContractor.businessModel === BusinessModel.ServiceCenter ? 'About the organization' : 'About me')}:
                 </span>
               </p>
               <p className="info_contractor_big__text">
-                {selectedContractor.aboutOrg}
+                {selectedContractor.description || text('No description')}
               </p>
-              */}
 
               <div>
                 <Swiper

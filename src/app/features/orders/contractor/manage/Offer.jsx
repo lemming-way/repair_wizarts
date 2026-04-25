@@ -71,7 +71,7 @@ function Offer() {
 
   const product = products?.[order.productId]?.name || text('Unknown service');
   const clientName = client?.fullname || text('Unknown user');
-  const clientProfileImage = client?.avatar || '/img/profil_img/1.png';
+  const clientProfileImage = client?.avatar || '/img/user_avatar.png';
 
   const projectsPosted = 1; // todo: Заглушка
   const hiredPercent = 100; // todo: Заглушка

@@ -98,7 +98,7 @@ const RegistrationContractorPage = () => {
         experience: Number(experience?.value || 0),
         products: productOptionSelected?.map(opt => Number(opt.value)) || [],
         businessModel: businessModel,
-        organizationName: organizationName.trim(),
+        organizationName: businessModel === BusinessModel.ServiceCenter ? organizationName.trim() : '',
         description: description.trim(),
         keepAuthorized: keep,
       });
@@ -230,14 +230,44 @@ const RegistrationContractorPage = () => {
             required
           />
 
-          <input
-            className={styles.registrationContractorPage_form_input}
-            type="text"
-            name="organization_name_form"
-            placeholder={text('Organization name (optional)')}
-            value={organizationName}
-            onChange={(e) => setOrganizationName(e.target.value)}
-          />
+          <div className={sharedStyles.registrationPage_checkbox_container}>
+            <h4>{text('Business model')}:</h4>
+            <div>
+              <input
+                type="radio"
+                name="businessModel"
+                id="independentTechnician"
+                onChange={() => setBusinessModel(BusinessModel.IndependentTechnician)}
+                checked={businessModel === BusinessModel.IndependentTechnician}
+              />
+              <label htmlFor="independentTechnician">
+                <p>{text(BusinessModel.IndependentTechnician)}</p>
+              </label>
+            </div>
+            <div>
+              <input
+                type="radio"
+                name="businessModel"
+                id="serviceCenter"
+                onChange={() => setBusinessModel(BusinessModel.ServiceCenter)}
+                checked={businessModel === BusinessModel.ServiceCenter}
+              />
+              <label htmlFor="serviceCenter">
+                <p>{text(BusinessModel.ServiceCenter)}</p>
+              </label>
+            </div>
+          </div>
+
+          {businessModel === BusinessModel.ServiceCenter &&
+            <input
+              className={styles.registrationContractorPage_form_input}
+              type="text"
+              name="organization_name_form"
+              placeholder={text('Organization name')}
+              value={organizationName}
+              onChange={(e) => setOrganizationName(e.target.value)}
+            />
+          }
 
           <MultiSelect
             key="experience_id"
@@ -255,9 +285,10 @@ const RegistrationContractorPage = () => {
             className={styles.registrationContractorPage_form_input}
             name="description_form"
             placeholder={
-              businessModel === BusinessModel.IndependentTechnician
-                ? text('About me (optional)')
-                : text('About organization (optional)')
+              (businessModel === BusinessModel.IndependentTechnician
+                ? text('About me')
+                : text('About organization'))
+              + ` (${text('optional')})`
             }
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -321,34 +352,6 @@ const RegistrationContractorPage = () => {
               onChange={(e) => setKeep(e.target.checked)}
             />
             <label htmlFor="keep-authorized">{text('Stay logged in')}</label>
-          </div>
-
-          <div className={sharedStyles.registrationPage_checkbox_container}>
-            <h4>{text('Business model')}:</h4>
-            <div>
-              <input
-                type="radio"
-                name="businessModel"
-                id="independentTechnician"
-                onChange={() => setBusinessModel(BusinessModel.IndependentTechnician)}
-                checked={businessModel === BusinessModel.IndependentTechnician}
-              />
-              <label htmlFor="independentTechnician">
-                <p>{text(BusinessModel.IndependentTechnician)}</p>
-              </label>
-            </div>
-            <div>
-              <input
-                type="radio"
-                name="businessModel"
-                id="serviceCenter"
-                onChange={() => setBusinessModel(BusinessModel.ServiceCenter)}
-                checked={businessModel === BusinessModel.ServiceCenter}
-              />
-              <label htmlFor="serviceCenter">
-                <p>{text(BusinessModel.ServiceCenter)}</p>
-              </label>
-            </div>
           </div>
 
           <ConfirmPolitics accept={accept} onChange={setAccept}/>

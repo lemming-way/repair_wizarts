@@ -164,7 +164,7 @@ function FrameMessages() {
               if (!otherUserInfo) return null; // Этого не должно произойти, если данные согласованы
 
               const displayName = otherUserInfo.fullname || otherUserInfo.name || 'Неизвестный пользователь';
-              const avatarSrc = otherUserInfo.avatar || '/img/img-camera.png';
+              const avatarSrc = otherUserInfo.avatar || '/img/user_avatar.png';
 
               return (
                 <div className="big_messages" key={chat.chatId}>

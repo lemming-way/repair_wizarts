@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-
+import { useEffect, useState, useRef } from 'react';
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
+import { MultiSelect, AnyImage, getKeyFor } from 'app/shared/ui/';
+import { useLanguage } from 'app/state/language';
+import { useUser, useUpdateUser, useSetContractorActive, BusinessModel } from 'app/state/user';
+import { useProducts, useCities } from 'app/state/site-data';
 import 'app/scss/profile.css';
 import style from './ContractorSettings.module.css';
-import { MultiSelect } from 'app/shared/ui/';
-import { useLanguage } from 'app/state/language';
-import { useUser, updateUser, BusinessModel } from 'app/state/user';
-import { useProducts, useCities } from 'app/state/site-data';
 
 const experienceOptions = [
   { value: 1, label: '1 year' },
@@ -21,26 +21,32 @@ const experienceOptions = [
 
 function ContractorSettings() {
   const text = useLanguage();
+
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
   const [productOptionSelected, setProductOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
+  const [photos, setPhotos] = useState([]);
+  const [swiper, setSwiper] = useState(null);
+  const swiperObserver = useRef(null);
 
   const { categories, subcategories, products } = useProducts();
   const { cities } = useCities();
-  const queryClient = useQueryClient();
   const { user } = useUser();
+  const { save : saveUpdates } = useUpdateUser();
+  const { setContractorActive } = useSetContractorActive();
 
   const [suceeded, setSuceeded] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    description: '',
+    //~ description: '',
     organizationName: '',
     address: '',
     experience: '',
     city: '',
   });
   const [businessModel, setBusiness] = useState(BusinessModel.IndependentTechnician);
+  const [isActive, setIsActive] = useState(true);
 
   const getFormAttrs = (field) => {
     const value = field.split('.').reduce((obj, key) => obj?.[key], form);
@@ -75,7 +81,6 @@ function ContractorSettings() {
     if (!user.id) return;
 
     const userServicesMap = user.services || {};
-console.log(user);
 
     const initialProductOptions = [];
     const initialSubcategoryOptions = [];
@@ -118,7 +123,7 @@ console.log(user);
     );
 
     setForm({
-      description: user.description || '',
+      //~ description: user.description || '',
       organizationName: user.organizationName,
       address: user.address,
       city: String(user.locality || ''),
@@ -126,7 +131,16 @@ console.log(user);
     });
 
     setBusiness(user.businessModel);
+    setIsActive(user.active);
+    setPhotos(user.photos || []);
   }, [user, categories, subcategories, products]);
+
+  // Нужно для корректного обновления свайпера
+  useEffect(() => {
+    const observer = new ResizeObserver(() => swiper?.update());
+    swiperObserver.current = observer;
+    return () => observer.disconnect();
+  }, [ swiper ]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -136,6 +150,29 @@ console.log(user);
   if (!user.id) {
     return null;
   }
+
+  // загрузка фото
+  const handleImageChange = (event) => {
+    const files = Array.from(event.target.files);
+    const newPhotos = files
+      .filter(file => photos.every(existing => {
+        return !(existing instanceof File) ||
+               existing.name !== file.name ||
+               existing.size !== file.size ||
+               existing.type !== file.type ||
+               existing.lastModified !== file.lastModified;
+      }));
+    if (photos.length + newPhotos.length > 10) {
+      setError(text('You can upload no more than 10 files.'));
+      return;
+    }
+    setError('');
+    setPhotos((prev) => [...prev, ...newPhotos]);
+  };
+
+  const removeImage = (imageToRemove) => {
+    setPhotos(prev => prev.filter(image => image !== imageToRemove));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -155,17 +192,21 @@ console.log(user);
     });
 
     const payload = {
-      description: form.description,
+      //~ description: form.description,
       organizationName: form.organizationName,
       address: form.address,
       experience: Number(form.experience),
       locality: Number(form.city) || 0,
       businessModel,
       services: newServicesMap,
+      photos
     };
 
     try {
-      await updateUser(queryClient, payload);
+      await saveUpdates(payload);
+      if (isActive !== user.active) {
+        await setContractorActive(isActive);
+      }
       setError('');
       setSuceeded(true);
     } catch (err) {
@@ -204,23 +245,11 @@ console.log(user);
   return (
     <>
       <div className={`mini-main-2 df ${style.wrap_flex}`}>
-        <form className="input-wrap-2" onSubmit={onSubmit}>
+        <form id="contractor-settings-form" className="input-wrap-2" onSubmit={onSubmit}>
           {suceeded && (
             <div className="succeed-v">{text('Data updated successfully')}</div>
           )}
           {error && <div className="auth-err">{error}</div>}
-
-          {/*
-          <label className={style.checkboxLabel}>
-            <input
-              type="checkbox"
-              name="is_active"
-              checked={mainForm.is_active}
-              onChange={(e) => setMainForm(prev => ({ ...prev, is_active: e.target.checked }))}
-            />
-            {text('Receive orders')}
-          </label>
-          */}
 
           <div className={`custom_nvakasd ${style.wrap_custom_field}`}>
             <MultiSelect
@@ -285,11 +314,13 @@ console.log(user);
             ))}
           </select>
 
-          <input
-            type="text"
-            placeholder={text('Organization name')}
-            {...getFormAttrs('organizationName')}
-          />
+          {businessModel === BusinessModel.ServiceCenter &&
+            <input
+              type="text"
+              placeholder={text('Organization name')}
+              {...getFormAttrs('organizationName')}
+            />
+          }
 
           <div className={`custom_nvakasd ${style.wrap_custom_field}`}>
             <MultiSelect
@@ -310,32 +341,42 @@ console.log(user);
             />
           </div>
 
+          {/* В настоящее время не сработает из-за ограничений API
           <textarea
             placeholder={
               businessModel === BusinessModel.IndependentTechnician ? text('About me') : text('About organization')
             }
             {...getFormAttrs('description')}
           />
-
-          <div>
-            <button type="submit" className="goooSaveButton">
-              {text('Save')}
-            </button>
-          </div>
+          */}
         </form>
 
         <div className={`check-input-content ${style.wrap_check}`}>
           <div className="second-check">
+            <h4>{text('Activeness')}:</h4>
+            <div className="first_check df" style={{ gap: '0' }}>
+              <input
+                type="checkbox"
+                id="is-active"
+                name="is_active"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+              />
+              <label htmlFor="is-active">
+                <p>{text('Receive orders')}</p>
+              </label>
+            </div>
+
             <h4>{text('Business model')}:</h4>
             <div className="first_check df" style={{ gap: '0' }}>
               <input
                 type="radio"
                 name="select__service"
-                id="yesornow"
+                id="business-model-independent"
                 onChange={() => setBusiness(BusinessModel.IndependentTechnician)}
                 checked={businessModel === BusinessModel.IndependentTechnician}
               />
-              <label htmlFor="yesornow">
+              <label htmlFor="business-model-independent">
                 <p>{text(BusinessModel.IndependentTechnician)}</p>
               </label>
             </div>
@@ -344,16 +385,72 @@ console.log(user);
               <input
                 type="radio"
                 name="select__service"
-                id="inputradioservicebtn"
+                id="business-model-service"
                 onChange={() => setBusiness(BusinessModel.ServiceCenter)}
                 checked={businessModel === BusinessModel.ServiceCenter}
               />
-              <label htmlFor="inputradioservicebtn">
+              <label htmlFor="business-model-service">
                 <p>{text(BusinessModel.ServiceCenter)}</p>
               </label>
             </div>
           </div>
         </div>
+      </div>
+
+      <div className={style.photo_block}>
+        <div className="accom_2 mobile-accom_2">
+          <h2>Фотографии</h2>
+          <h3>Загрузите до 10 изображений</h3>
+        </div>
+        <div className={style.photo_upload}>
+          <div className={`photo_upload-img mobile-photo_upload-img ${style.photo_upload_img}`}>
+            <label htmlFor="upimg">
+              <img
+                src="/img/accommodation_img/photo.png"
+                alt="img absent"
+              />
+            </label>
+            <input
+              type="file"
+              onChange={handleImageChange}
+              accept="image/png, image/jpeg"
+              multiple
+              id="upimg"
+              style={{ display: 'none' }}
+            />
+          </div>
+          {photos.length > 0 &&
+            <Swiper
+              slidesPerView="auto"
+              spaceBetween={20}
+              navigation={true}
+              modules={[Navigation]}
+              className="mySwiper"
+              onSwiper={setSwiper}
+            >
+              {photos.map((photo, index) => (
+                <SwiperSlide key={getKeyFor(photo)} style={{width: 'max-content'}} ref={el => console.log(el)}>
+                  <div className={style.swiper_slide} ref={el => el && swiperObserver.current?.observe(el)}>
+                    <AnyImage
+                      src={photo}
+                      alt={`upload-preview-${index}`}
+                      className={style.swiper_image}
+                    />
+                    <button className={style.photo_delete_btn} onClick={() => removeImage(photo)}>
+                      &times;
+                    </button>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          }
+        </div>
+      </div>
+
+      <div>
+        <button type="submit" form="contractor-settings-form" className="goooSaveButton">
+          {text('Save')}
+        </button>
       </div>
     </>
   );

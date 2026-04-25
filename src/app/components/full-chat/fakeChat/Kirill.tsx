@@ -303,7 +303,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                     <h2>{text('You')}</h2>
                   </div>
                   <img
-                    src={currentUser.avatar || '/img/img-camera.png'}
+                    src={currentUser.avatar || '/img/user_avatar.png'}
                     style={{ width: '58px', height: '58px', borderRadius: 30 }}
                     alt="img absent"
                   />
@@ -525,7 +525,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                           {!isMine && (
                             <div className="ciril-img">
                               <img
-                                src={partnerUser?.avatar || '/img/img-camera.png'}
+                                src={partnerUser?.avatar || '/img/user_avatar.png'}
                                 style={{
                                   width: 40,
                                   height: 40,
@@ -1204,7 +1204,7 @@ function ChoiceOfReplenishmentMethodCard() {
                         />
                       </div>
                       <img
-                        src={chatPartner?.avatar || '/img/img-camera.png'}
+                        src={chatPartner?.avatar || '/img/user_avatar.png'}
                         alt="img absent"
                         style={{ height: 65, width: 66, borderRadius: 30 }}
                       />

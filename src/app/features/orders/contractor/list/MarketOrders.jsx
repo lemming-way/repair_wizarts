@@ -263,7 +263,7 @@ function MarketOrders() {
                           </div>
                           <img
                             src={
-                              getClient(order)?.avatar || '/img/profil_img/1.png'
+                              getClient(order)?.avatar || '/img/user_avatar.png'
                             }
                             alt=""
                           />

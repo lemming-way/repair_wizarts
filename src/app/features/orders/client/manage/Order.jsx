@@ -217,7 +217,7 @@ function Order() {
           <div className={styles.left}>
             <div className={styles.left_row}>
               <img
-                src={user?.avatar || '/img/img-camera.png'}
+                src={user?.avatar || '/img/user_avatar.png'}
                 width="120px"
                 height="120px"
                 className={styles.avatarImage}
@@ -325,7 +325,7 @@ function Order() {
                     <div className={styles.about_row}>
                       <div className={styles.left_row}>
                         <img
-                          src={contractorProfile.avatar || '/img/profil_img/2.png'}
+                          src={contractorProfile.avatar || '/img/user_avatar.png'}
                           width="80px"
                           height="80px"
                           className={styles.avatarImage}

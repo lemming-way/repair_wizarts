@@ -167,8 +167,8 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
       // очищаем список прикреплённых файлов
       const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
       const attachments = images
-        .map(id => Number(id || 0))
-        .filter(Number.isFinite);
+        .map(Number)
+        .filter(id => Number.isFinite(id) && id > 0);
 
       // заполняем основные свойства заказа
       const order: Partial<Order> = {
@@ -258,7 +258,6 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         order.agreedPrice = order.contractorPrice;
       }
 
-console.log(order);
       ret.push(order as Order);
     }
 
@@ -607,7 +606,7 @@ export function useFinishedOrders(includeMarket: boolean, includeDirect: boolean
  * @param description Описание заказа
  * @param attachments Изображения к заказу
  * @param desiredPrice Предложенная стоимость работ
- * @returns Промис, который разрешается после успешного обновления данных
+ * @returns Промис, который разрешается со списками обновлённых и удалённых прикреплённых файлов для инвалидации кэша
  */
 async function updateOrder(userId, { orderId, address, description, attachments, desiredPrice }: OrderUpdateData) {
   const updates: TripAPI.TripEditData = {};
@@ -716,13 +715,13 @@ export function useUpdateOrder() {
       }
 
       const results = await updateOrder(user.id, { orderId, address, description, attachments, desiredPrice });
+      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
       for (const id of results.deletedFiles) {
         client.removeQueries({ queryKey: [ 'files', id ] });
       }
       for (const id of results.updatedFiles) {
         client.invalidateQueries({ queryKey: [ 'files', id ] });
       }
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
       return;
     }
   });

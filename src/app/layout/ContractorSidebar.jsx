@@ -12,7 +12,7 @@ function Sidebar() {
   // Получаем основные данные пользователя
   const { user } = useUser();
 
-  // 2. Вызываем хук для получения данных о рейтинге
+  // 2. Вызываем хук для получения данных о рейтинге  todo: добавить реальную статистику
   const { averageRating, feedbackCount, isLoading } = { averageRating: 0, feedbackCount: 0, isLoading: false };
 
   const [menuActive, setMenuActive] = useState(false);
@@ -24,10 +24,8 @@ function Sidebar() {
   }
 
   // Формируем имя и аватар
-  const userAvatar = user.avatar || '/img/profil_img/1.png';
-  const userName =
-    `${user.name || ''} ${user.lastname || ''}`.trim() ||
-    text('First Last');
+  const userAvatar = user.avatar || '/img/user_avatar.png';
+  const userName = user.fullname || text('First Last');
 
   return (
     <div>
@@ -35,7 +33,7 @@ function Sidebar() {
         <div className="left-content" style={{ left: menuActive ? '0' : null }}>
           <div className="dffds">
             <div className="img-content">
-              <img src={userAvatar} alt={text("User's avatar")} />
+              <img src={userAvatar} alt={text("User's avatar")} style={{width: '110px', 'max-height': '110px'}} />
               <h3>{userName}</h3>
             </div>
             <div className="stars">

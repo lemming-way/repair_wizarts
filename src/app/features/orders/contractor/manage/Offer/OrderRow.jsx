@@ -89,7 +89,7 @@ export default function OrderRow({
         <div className={style.left}>
           <div className={style.profile}>
             <img
-              src={clientProfile?.avatar || '/img/profil_img/1.png'}
+              src={clientProfile?.avatar || '/img/user_avatar.png'}
               alt={text('Avatar')}
               className={style.avatar}
             />
@@ -149,7 +149,7 @@ export default function OrderRow({
         <div className={style.comment_wrap}>
           <div className={style.profile}>
             <img
-              src={user.avatar || '/img/profil_img/1.png'}
+              src={user.avatar || '/img/user_avatar.png'}
               alt={text('Avatar')}
               className={style.avatar}
             />

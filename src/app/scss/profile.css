@@ -206,7 +206,7 @@ input {
     margin: 15px 0;
 }
 
-.first_check input[type="radio"] {
+.first_check input[type="radio"],.first_check input[type="checkbox"] {
     width: 20px;
     height: 20px;
 }

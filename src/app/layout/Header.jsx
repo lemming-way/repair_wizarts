@@ -121,7 +121,7 @@ const Toolbar = () => {
                 }}
               >
                 <img
-                  src={user.avatar || '/img/icons/avatar.png'}
+                  src={user.avatar || '/img/user_avatar.png'}
                   width="40px"
                   height="40px"
                   alt=""

@@ -71,7 +71,7 @@ function Offers() {
                         <td>{products[item.order.productId]?.name ?? 'Неизвестная услуга'}</td>
                         <td>
                           <img
-                            src={ item.contractor?.avatar || '/img/img-camera.png' }
+                            src={ item.contractor?.avatar || '/img/user_avatar.png' }
                             alt=""
                             style={{
                               marginRight: '10px',
@@ -87,7 +87,7 @@ function Offers() {
                         </td>
                         <td>
                           <img
-                            src={ user.avatar || '/img/img-camera.png' }
+                            src={ user.avatar || '/img/user_avatar.png' }
                             alt=""
                             style={{
                               marginRight: '10px',
@@ -138,7 +138,7 @@ function Offers() {
                     <div className={style.card__row}>
                       <div className={style.card__profile}>
                         <img
-                          src={ user.avatar || '/img/img-camera.png' }
+                          src={ user.avatar || '/img/user_avatar.png' }
                           alt=""
                           style={{
                             cursor: 'pointer',

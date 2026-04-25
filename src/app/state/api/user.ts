@@ -194,6 +194,8 @@ export type UserUpdateData = {
   u_photo?: string;
   /** Валюта пользователя. */
   u_currency?: string;
+  /** Исполнитель готов выполнять заказы */
+  u_active?: 0 | 1;   // Работает только для подтверждённого водителя
   /** Город пользователя. */
   u_city?: number | null;  // Работает только для неподтверждённого водителя
   /** Описание пользователя. */
@@ -221,7 +223,8 @@ export function updateUser(userData: UserUpdateData, userTemporaryRole?: 1 | 2):
     formattedData.u_details = formattedDetails;
   }
 
-  return post<void>('user', { data: formattedData });
+  if (userTemporaryRole) return post<void>('user', { u_a_role: userTemporaryRole, data: formattedData });
+  else return post<void>('user', { data: formattedData });
 }
 
 

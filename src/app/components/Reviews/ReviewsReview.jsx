@@ -18,7 +18,7 @@ const ReviewsReview = (props) => {
             <div className={styles.reviewHeader}>
                 <img
                     alt="client"
-                    src="/img/profile__image.png"
+                    src="/img/user_avatar.png"
                     className={styles.reviewHeaderImage}
                 />
                 <div className={styles.reviewHeaderInfo}>

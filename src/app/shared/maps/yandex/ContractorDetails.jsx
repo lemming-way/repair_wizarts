@@ -13,7 +13,7 @@ export function ContractorDetails({ contractor }) {
         <div className={styles.balloonHeader}>
             <div className={styles.balloonHeaderPicture}>
                 <img
-                  src={contractor.avatar || '/img/img-camera.png'}
+                  src={contractor.avatar || '/user_avatar.png'}
                   alt={contractor.fullname}
                   className={styles.balloonHeaderPictureImg} />
             </div>

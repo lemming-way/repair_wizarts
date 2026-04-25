@@ -86,6 +86,7 @@ function App() {
 
       await updateUser(
         queryClient,
+        user.id,
         {
           isOnline: isVisible,
           lastTimeBeenOnline: new Date().toISOString(),
@@ -97,6 +98,7 @@ function App() {
     const handleBeforeUnload = async () => {
       await updateUser(
         queryClient,
+        user.id,
         {
           isOnline: false,
           lastTimeBeenOnline: new Date().toISOString(),

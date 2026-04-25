@@ -65,7 +65,7 @@ function Order() {
                                 <SwiperSlide className="swiper-slier order__card" key={v.id}>
                                     <div className="order__card">
                                         <div className="order__card__content">
-                                            <img style={{width: '103px'}} src="/img/profile__image.png" alt="" />
+                                            <img style={{width: '103px'}} src="/img/user_avatar.png" alt="" />
                                             <div className="order__card__title">
                                                 <h3>{v.sender}</h3>
                                                 <div className="mark__stars">

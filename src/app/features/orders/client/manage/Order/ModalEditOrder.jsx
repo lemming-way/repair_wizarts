@@ -33,11 +33,11 @@ export default function ModalEditOrder({
     const files = Array.from(event.target.files);
     const filteredFiles = files
       .filter(file => attachments.every(existing => {
-        return !existing.file ||
-               existing.file.name !== file.name ||
-               existing.file.size !== file.size ||
-               existing.file.type !== file.type ||
-               existing.file.lastModified !== file.lastModified;
+        return !(existing instanceof File) ||
+               existing.name !== file.name ||
+               existing.size !== file.size ||
+               existing.type !== file.type ||
+               existing.lastModified !== file.lastModified;
       }));
     if (attachments.length + filteredFiles.length > 10) {
       //~ setError(text('You can upload no more than 10 files.'));
@@ -105,7 +105,7 @@ export default function ModalEditOrder({
               }}
             >
               {attachments.map(image => (
-                <SwiperSlide key={getKeyFor()} className={style.modal_edit_order__slide_with_delete}>
+                <SwiperSlide key={getKeyFor(image)} className={style.modal_edit_order__slide_with_delete}>
                   <AnyImage src={image} alt="" />
                   <button className={style.modal_edit_order__delete_image_btn} onClick={() => removeImage(image)}>
                     &times;

@@ -27,7 +27,7 @@ function CreateDirect() {
   const [ignoreContractorServices, setIgnoreContractorServices] = useState([]);
   const { id } = useParams();
 
-  const { products } = useProducts();
+  const { categories, subcategories, products } = useProducts();
   const { user } = useUser();
 
   const productId = isFinite(id) ? Number(id) : 0;
@@ -232,6 +232,9 @@ function CreateDirect() {
     {/* Условный рендеринг модальных окон */}
     <ContractorInfoModals
       selectedContractor={selectedContractor}
+      categories={categories}
+      subcategories={subcategories}
+      products={products}
       showSmallModal={showSmallModal}
       showBigModal={showBigModal}
       handleCloseModals={handleCloseModals}
