@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Rating } from 'react-simple-star-rating';
-import { Navigation } from 'swiper';
-import { Swiper, /* SwiperSlide */ } from 'swiper/react';
+
+import { ImageSwiper } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
 import { BusinessModel } from 'app/state/user'
 import style from './CreateDirect.module.scss';
@@ -174,26 +174,11 @@ function ContractorInfoModals({
               </p>
 
               <div>
-                <Swiper
-                  slidesPerView={4}
-                  spaceBetween={30}
-                  navigation={true}
-                  modules={[Navigation]}
+                <ImageSwiper
                   className={style.swiper}
-                  breakpoints={{
-                    0: {
-                      slidesPerView: 2,
-                    },
-                    800: {
-                      slidesPerView: 2,
-                    },
-                    1124: {
-                      slidesPerView: 3,
-                    },
-                  }}
-                >
-                  {/* Слайдер картинок тестовых цен удален todo: Сделать новый блок цен */}
-                </Swiper>
+                  navigation={true}
+                  images={selectedContractor.photos}
+                />
               </div>
             </div>
 

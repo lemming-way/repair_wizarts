@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Navigation } from 'swiper';
-import { Swiper, SwiperSlide } from 'swiper/react';
+//~ import { Navigation } from 'swiper';
+//~ import { Swiper, SwiperSlide } from 'swiper/react';
 
 import 'app/scss/detail.scss';
 import 'app/scss/media.css';
 
-import style from './CreateDirect/CreateDirect.module.scss';
+//~ import style from './CreateDirect/CreateDirect.module.scss';
 import { useLanguage } from 'app/state/language';
 import { useGlobalState } from 'app/state/global';
 import { useUser } from 'app/state/user';
@@ -149,16 +149,16 @@ function CreateDirect() {
     setIgnoreContractorServices(list);
   }
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  //~ const [isModalOpen, setIsModalOpen] = useState(false);
 
   // todo: Временно удалено, нужно восстановить функционал
   //~ const openModal = () => {
     //~ setIsModalOpen(true);
   //~ };
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-  };
+  //~ const closeModal = () => {
+    //~ setIsModalOpen(false);
+  //~ };
 
   function addRemoveService(serviceName) {
     if (ignoreContractorServices.includes(serviceName)) {
@@ -241,7 +241,7 @@ function CreateDirect() {
       handleShowBigModal={handleShowBigModal}
     />
 
-    {/* Модальное окно с слайдером (удалено, так как test_price не используется для изображений) */}
+    {/* Модальное окно с слайдером (удалено, так как test_price не используется для изображений)
     {isModalOpen && (
       <div className={style.modal} onClick={closeModal}>
         <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -249,16 +249,16 @@ function CreateDirect() {
             ×
           </button>
 
-          {/* Слайдер внутри модального окна */}
+          {/* Слайдер внутри модального окна * /}
           <Swiper
             navigation={true}
             modules={[Navigation]}
             className={style.modalSwiper}
           >
-            {/* Если нужны картинки, их нужно будет брать из другого источника */}
+            {/* Если нужны картинки, их нужно будет брать из другого источника * /}
             <SwiperSlide>
                 <div className={style['modal-content-info']}>
-                  {/* Placeholder for image if needed */}
+                  {/* Placeholder for image if needed * /}
                   <p>{text('No image available')}</p>
                 </div>
               </SwiperSlide>
@@ -266,6 +266,7 @@ function CreateDirect() {
         </div>
       </div>
     )}
+    */}
   </>
 }
 
