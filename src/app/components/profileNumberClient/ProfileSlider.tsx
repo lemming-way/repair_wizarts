@@ -1,9 +1,7 @@
 import React, { useState, Suspense } from 'react';
-
+import { Navigation, Pagination } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper-bundle.min.css';
-
-const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
-const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 interface ProfileSliderProps {
   images?: string[];
@@ -34,8 +32,9 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
         <div className="swiper-wrapper">
           <div className="swiper">
             <Suspense fallback={<div className="swiper-loading" />}>
-              <LazySwiper
+              <Swiper
                 pagination={true}
+                modules={[Navigation, Pagination]}
                 navigation={{
                   nextEl: '.image-swiper-button-next',
                   prevEl: '.image-swiper-button-prev',
@@ -53,23 +52,23 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
                   <img src="/img/sliderleft.png" alt="prev" />
                 </div>
 
-                <LazySwiperSlide className="swiperPhoneNumber__slide">
+                <SwiperSlide className="swiperPhoneNumber__slide">
                   <img
                     src="/img/img-iPhone.png"
                     alt="iPhone"
                     onClick={() => openModal('/img/img-iPhone.png')}
                     style={{ cursor: 'pointer' }}
                   />
-                </LazySwiperSlide>
-                <LazySwiperSlide className="swiperPhoneNumber__slide">
+                </SwiperSlide>
+                <SwiperSlide className="swiperPhoneNumber__slide">
                   <img
                     src="/img/img-iPhone.png"
                     alt="iPhone"
                     onClick={() => openModal('/img/img-iPhone.png')}
                     style={{ cursor: 'pointer' }}
                   />
-                </LazySwiperSlide>
-              </LazySwiper>
+                </SwiperSlide>
+              </Swiper>
             </Suspense>
           </div>
         </div>
@@ -82,20 +81,21 @@ export default function MiniSlider({ images: propImages }: ProfileSliderProps) {
             </button>
 
             <Suspense fallback={<div className="swiper-loading" />}>
-              <LazySwiper
+              <Swiper
                 initialSlide={images.indexOf(modalImage)}
                 pagination={true}
                 navigation={true}
+                modules={[Navigation, Pagination]}
                 className="modalSwiper"
               >
                 {images.map((image, index) => (
-                  <LazySwiperSlide key={index}>
+                  <SwiperSlide key={index}>
                     <div className="modal-content-info">
                       <img src={image} alt={`Slide ${index + 1}`} />
                     </div>
-                  </LazySwiperSlide>
+                  </SwiperSlide>
                 ))}
-              </LazySwiper>
+              </Swiper>
             </Suspense>
           </div>
         </div>

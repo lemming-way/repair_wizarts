@@ -7,11 +7,15 @@ import React, {
   useCallback,
   Suspense,
 } from 'react';
-import '../../../scss/chat.css';
 import Dropdown from 'react-multilevel-dropdown';
 import MediaQuery from 'react-responsive';
 import { Link, useParams } from 'react-router-dom';
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
+import '../../../scss/chat.css';
 import AddFeedbackModal from './AddFeedbackModal';
 import AddOrderModal from './AddOrderModal';
 import BlackListModal from './BlackListModal';
@@ -36,16 +40,6 @@ import FrameMessages from './frameMessages';
 import { useLanguage } from '../../../state/language';
 import { AnyMedia, getKeyFor } from '../../../shared/ui';
 
-const LazySwiper = React.lazy(() =>
-  import('../../../shared/ui/SwiperWrapper').then((m) => ({
-    default: m.SwiperWithModules,
-  })),
-);
-const LazySwiperSlide = React.lazy(() =>
-  import('../../../shared/ui/SwiperWrapper').then((m) => ({
-    default: m.SwiperSlide,
-  })),
-);
 const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
 // TODO: Модуль не функционален, надо всё переделать
@@ -350,14 +344,15 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
       {photoUrls.length > 0 && (
         <div style={{ margin: '10px 0' }}>
           <Suspense fallback={<div className="swiper-loading" />}>
-            <LazySwiper
+            <Swiper
               slidesPerView={3}
               spaceBetween={10}
               navigation={true}
+              modules={[Navigation]}
               style={{ width: 300, height: 120 }}
             >
               {photoUrls.map((fileId, idx) => (
-                <LazySwiperSlide key={idx}>
+                <SwiperSlide key={idx}>
                   <AnyMedia
                     src={fileId}
                     mediaType='image' // Указываем тип медиа как изображение
@@ -369,9 +364,9 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
                       borderRadius: 8,
                     }}
                   />
-                </LazySwiperSlide>
+                </SwiperSlide>
               ))}
-            </LazySwiper>
+            </Swiper>
           </Suspense>
         </div>
       )}

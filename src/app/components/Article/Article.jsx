@@ -1,10 +1,10 @@
 import DOMPurify from 'dompurify'
-import React, {
-    useEffect,
-    useState,
-    Suspense
-} from 'react'
+import React, { useEffect, useState, Suspense } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { Navigation } from 'swiper';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import styles from './Article.module.css'
 import ArticleComments from './ArticleComments'
@@ -32,9 +32,6 @@ const mockArticleData = (id) => ({
 });
 
 const mockArticlesData = Array.from({ length: 8 }).map((_, i) => mockArticleData(i + 1));
-
-const LazySwiper = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperWithModules })));
-const LazySwiperSlide = React.lazy(() => import('../../shared/ui/SwiperWrapper').then(m => ({ default: m.SwiperSlide })));
 
 const Article = (props) => {
     const text = useLanguage()
@@ -142,10 +139,11 @@ const Article = (props) => {
             />
             <div className={styles.articles}>
                 <Suspense fallback={<div className="swiper-loading" />}>
-                    <LazySwiper
+                    <Swiper
                         slidesPerView={4}
                         spaceBetween={30}
                         navigation={true}
+                        modules={[Navigation]}
                         className="mySwiper"
                         breakpoints={{
                             0: {
@@ -163,7 +161,7 @@ const Article = (props) => {
                         }}
                     >
                         {articles.map((v) => (
-                            <LazySwiperSlide className="swiper-slier" key={v.id}>
+                            <SwiperSlide className="swiper-slier" key={v.id}>
                                 <Link
                                     to={"/articles/" + v.id}
                                     className={styles.articlesLink}
@@ -182,9 +180,9 @@ const Article = (props) => {
                                         </div>
                                     </div>
                                 </Link>
-                            </LazySwiperSlide>
+                            </SwiperSlide>
                         ))}
-                    </LazySwiper>
+                    </Swiper>
                 </Suspense>
             </div>
         </div>
