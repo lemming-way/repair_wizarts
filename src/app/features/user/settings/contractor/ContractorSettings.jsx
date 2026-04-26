@@ -1,10 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
-import { Navigation } from 'swiper';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/navigation';
+import { useEffect, useState } from 'react';
 
-import { MultiSelect, AnyImage, getKeyFor } from 'app/shared/ui/';
+import { MultiSelect, ImageSwiper } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
 import { useUser, useUpdateUser, useSetContractorActive, BusinessModel } from 'app/state/user';
 import { useProducts, useCities } from 'app/state/site-data';
@@ -27,8 +23,6 @@ function ContractorSettings() {
   const [productOptionSelected, setProductOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
   const [photos, setPhotos] = useState([]);
-  const [swiper, setSwiper] = useState(null);
-  const swiperObserver = useRef(null);
 
   const { categories, subcategories, products } = useProducts();
   const { cities } = useCities();
@@ -134,13 +128,6 @@ function ContractorSettings() {
     setIsActive(user.active);
     setPhotos(user.photos || []);
   }, [user, categories, subcategories, products]);
-
-  // Нужно для корректного обновления свайпера
-  useEffect(() => {
-    const observer = new ResizeObserver(() => swiper?.update());
-    swiperObserver.current = observer;
-    return () => observer.disconnect();
-  }, [ swiper ]);
 
   useEffect(() => {
     document.title = text('Settings');
@@ -419,31 +406,11 @@ function ContractorSettings() {
               style={{ display: 'none' }}
             />
           </div>
-          {photos.length > 0 &&
-            <Swiper
-              slidesPerView="auto"
-              spaceBetween={20}
-              navigation={true}
-              modules={[Navigation]}
-              className="mySwiper"
-              onSwiper={setSwiper}
-            >
-              {photos.map((photo, index) => (
-                <SwiperSlide key={getKeyFor(photo)} style={{width: 'max-content'}} ref={el => console.log(el)}>
-                  <div className={style.swiper_slide} ref={el => el && swiperObserver.current?.observe(el)}>
-                    <AnyImage
-                      src={photo}
-                      alt={`upload-preview-${index}`}
-                      className={style.swiper_image}
-                    />
-                    <button className={style.photo_delete_btn} onClick={() => removeImage(photo)}>
-                      &times;
-                    </button>
-                  </div>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          }
+          <ImageSwiper
+            images={photos}
+            navigation={true}
+            onDelete={removeImage}
+          />
         </div>
       </div>
 
