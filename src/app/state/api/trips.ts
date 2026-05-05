@@ -222,7 +222,8 @@ export async function getContractorsByProduct({ productId, cityId, minRating, is
   const result = await post('script/template/repair_api', payload);
   if (Array.isArray(result)) {
     return result.reduce((ret, id) => {
-      if (isFinite(id)) ret.push(Number(id));
+      const numId = Number(id);
+      if (Number.isInteger(numId) && numId > 0) ret.push(numId);
       return ret;
     }, [] );
   }
@@ -242,8 +243,8 @@ export async function createTrip(data: TripCreationData): Promise<number | null>
   if (!data.b_payment_way) data.b_payment_way = 1;
 
   const result = await post<{b_id?: string | number}>('drive', { data });
-  const b_id = result.b_id && Number(result.b_id);
-  if (Number.isFinite(b_id)) return b_id as number;
+  const b_id = Number(result.b_id);
+  if (Number.isInteger(b_id) && b_id > 0) return b_id;
   else return null;
 }
 

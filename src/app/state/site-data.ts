@@ -148,7 +148,7 @@ async function fetchProducts() {
       const secId = Number(section?.id);
       const name = String(section?.name || '');
       const subsections = section?.subsections;
-      if (Number.isFinite(secId) && secId > 0 && name && Array.isArray(subsections)) {
+      if (Number.isInteger(secId) && secId > 0 && name && Array.isArray(subsections)) {
         productsData.categories[secId] = {
           name,
           subcategories: []
@@ -157,7 +157,7 @@ async function fetchProducts() {
           const subId = Number(subsection?.id);
           const name = String(subsection?.name || '');
           const products = subsection?.services;
-          if (Number.isFinite(subId) && subId > 0 && !productsData.subcategories[subId] && name && Array.isArray(products)) {
+          if (Number.isInteger(subId) && subId > 0 && !productsData.subcategories[subId] && name && Array.isArray(products)) {
             productsData.categories[secId].subcategories.push(subId);
             productsData.subcategories[subId] = {
               name,
@@ -167,7 +167,7 @@ async function fetchProducts() {
             for (const product of products) {
               const prodId = Number(product?.id);
               const name = String(product?.name || '');
-              if (Number.isFinite(prodId) && prodId > 0 && !productsData.products[prodId] && name) {
+              if (Number.isInteger(prodId) && prodId > 0 && !productsData.products[prodId] && name) {
                 productsData.subcategories[subId].products.push(prodId);
                 productsData.products[prodId] = {
                   name,

@@ -35,7 +35,7 @@ function DirectOrders() {
       await acceptInvoice(orderId);
       const order = orders.find(o => o.id === orderId);
       if (order && user.id) {
-        navigate(`/contractor/chat/${order.clientId}_${user.id}`);
+        navigate(`/order/${order.id}/contractor/${user.id}`);
       }
     } catch (error) {
       console.error('Error accepting order:', error);

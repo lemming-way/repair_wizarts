@@ -45,7 +45,7 @@ export type DropboxFileInfo = {
 async function uploadOrUpdate(fileData: FileUploadData) {
   const fileId = ( await post<{ dl_id: string }>('dropbox/file/', { file: JSON.stringify(fileData) }) )?.dl_id;
   const numericId = Number(fileId || 0);
-  return numericId && Number.isFinite(numericId) ? numericId : null;
+  return Number.isInteger(numericId) && numericId > 0 ? numericId : null;
 }
 
 /**

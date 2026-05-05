@@ -39,7 +39,7 @@ initGlobals();
 // Функции для работы с состоянием
 // Получить значение по ключу
 export function getGlobal<T = any>(key: string): T | null {
-  return queryClient.getQueryData( [ GLOBAL_STATE_QUERY_KEY, key ] ) ?? null;
+  return queryClient.getQueryData<T>( [ GLOBAL_STATE_QUERY_KEY, key ] ) ?? null;
 }
 
 // Установить значение
@@ -71,6 +71,6 @@ export function isGlobalExists(key: string): boolean {
 
 // React Hook для использования глобального состояния
 export function useGlobalState<T = any>(key: string): T | null {
-  const { data } = useQuery( { queryKey: [ GLOBAL_STATE_QUERY_KEY, key ] }, queryClient ) as { data: T | null };
-  return data;
+  const { data } = useQuery<T>( { queryKey: [ GLOBAL_STATE_QUERY_KEY, key ] }, queryClient );
+  return data ?? null;
 }

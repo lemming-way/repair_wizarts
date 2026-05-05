@@ -168,7 +168,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
       const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
       const attachments = images
         .map(Number)
-        .filter(id => Number.isFinite(id) && id > 0);
+        .filter(id => Number.isInteger(id) && id > 0);
 
       // заполняем основные свойства заказа
       const order: Partial<Order> = {
@@ -180,7 +180,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         productId: Number(trip.b_options?.product ?? 0),
         description: String(trip.b_options?.description ?? ''),
         desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
-        createdAt: new Date(String(trip.b_created ?? '')),
+        createdAt: new Date(String(trip.b_created ?? '') || 0),
         attachments,
         contractorOffers: []
       };
@@ -205,7 +205,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
               readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
                 driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
                 { value: 0, unit: TimeUnit.HOURS },
-              createdAt: new Date(String(driver.c_becomed_candidate ?? ''))
+              createdAt: new Date(String(driver.c_becomed_candidate ?? '') || 0)
             });
             if (d_id === userId && b_state === TripAPI.TripState.New) {
               // текущий пользователь является мастером, откликнувшимся на заказ
@@ -219,10 +219,10 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
             // назначенный исполнитель
             c_state = d_state;
 
-            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(String(driver.c_appointed ?? ''));
-            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(String(driver.c_arrived ?? ''));
-            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(String(driver.c_started ?? ''));
-            else order.updatedAt = new Date(String(driver.c_completed ?? ''));
+            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(String(driver.c_appointed ?? '') || 0);
+            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(String(driver.c_arrived ?? '') || 0);
+            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(String(driver.c_started ?? '') || 0);
+            else order.updatedAt = new Date(String(driver.c_completed ?? '') || 0);
 
             order.contractorId = d_id;
             order.contractorPrice = d_price;
@@ -245,13 +245,13 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
       else if (b_state === TripAPI.TripState.Offering) order.status = OrderStatus.REQUESTED;
       else if (b_state === TripAPI.TripState.Assigned) {
         if (c_state === TripAPI.DriverState.Waiting) order.status = OrderStatus.IN_PROGRESS;
-        if (c_state === TripAPI.DriverState.Driving) order.status = OrderStatus.COMPLETED;
+        else if (c_state === TripAPI.DriverState.Driving) order.status = OrderStatus.COMPLETED;
         else order.status = OrderStatus.CONTRACTOR_CONFIRMED;
         order.agreedPrice = order.contractorPrice;
       }
       else if (b_state === TripAPI.TripState.Cancelled) {
         order.status = OrderStatus.CANCELLED;
-        order.updatedAt = new Date(String(trip.b_canceled ?? ''));
+        order.updatedAt = new Date(String(trip.b_canceled ?? '') || 0);
       }
       else if (b_state === TripAPI.TripState.Completed) {
         order.status = OrderStatus.CLOSED;
@@ -295,7 +295,7 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
   const { data, ...rest } = useQuery({
     queryKey: [ 'orders', user.id, 'list', types, stages ],
     queryFn: () => TripAPI.getTripIds(filter),
-    staleTime: CONFIG.API?.ordersListStaleTime ?? 120000,
+    staleTime: CONFIG.API?.ordersListRefetchTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersListRefetchTime ?? 120000,
     enabled: !!user.id && user.role === userRole &&  // Доступно только пользователю с заданной ролью
              user.id === authorizedUserId() &&   // Авторизованный пользователь не изменился
@@ -405,7 +405,7 @@ export function useOrdersByIds(ids: number[]) {
   const queries = ids.map(orderId => ({
     queryKey: [ 'orders', user.id, orderId ],
     queryFn: getOrderById,
-    staleTime: CONFIG.API?.ordersDataStaleTime ?? 300000,
+    staleTime: CONFIG.API?.ordersDataRefetchTime ?? 300000,
     refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 300000,
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   }));
@@ -627,7 +627,7 @@ async function updateOrder(userId, { orderId, address, description, attachments,
       if (Array.isArray(oldData[0]?.b_options?.images)) {
         const oldIds = (oldData[0].b_options.images ?? [])
           .map(Number)
-          .filter(id => !!id && Number.isFinite(id) && !idAttachments.includes(id));
+          .filter(id => Number.isInteger(id) && id > 0 && !idAttachments.includes(id));
         oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
         if (userId !== authorizedUserId()) throw new Error('User was changed.');
       }
@@ -693,7 +693,7 @@ export function useUpdateOrder() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
@@ -770,7 +770,7 @@ export function useCancelOrder() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
@@ -857,7 +857,7 @@ export type CreateOfferData = {
 async function createOffer({ orderId, price, comment, readyIn }: CreateOfferData): Promise<void> {
   const result = await getDrivenCar();
   const carId = Number(result?.c_id);
-  if (!carId || !Number.isFinite(carId)) throw new Error('User has no car');
+  if (!Number.isInteger(carId) || carId <= 0) throw new Error('User has no car');
 
   const options = {
     price,
@@ -884,7 +884,7 @@ export function useCreateOffer() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
@@ -940,7 +940,7 @@ export function useUpdateOffer() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
@@ -996,7 +996,7 @@ export function useAcceptOffer() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order || order.clientId !== user.id) throw new Error('Order not found.');
@@ -1058,7 +1058,7 @@ export function useRevokeOffer() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
@@ -1139,7 +1139,7 @@ export function useContractorFinishedOrders(includeMarket: boolean, includeDirec
 async function acceptInvoice(orderId: number, price: number): Promise<void> {
   const result = await getDrivenCar();
   const carId = Number(result?.c_id);
-  if (!carId || !Number.isFinite(carId)) throw new Error('User has no car');
+  if (!Number.isInteger(carId) || carId <= 0) throw new Error('User has no car');
   return TripAPI.acceptInvoice(orderId, carId, { price });
 }
 
@@ -1159,7 +1159,7 @@ export function useAcceptInvoice() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
@@ -1219,7 +1219,7 @@ export function useStartOrderWork() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
@@ -1265,7 +1265,7 @@ export function useCompleteOrderByContractor() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
@@ -1313,7 +1313,7 @@ export function useVerifyOrderCompletion() {
       const order = await client.fetchQuery({
         queryKey: [ 'orders', user.id, orderId ],
         queryFn: getOrderById,
-        staleTime: CONFIG.API?.ordersDataStaleTime ?? 120000
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');

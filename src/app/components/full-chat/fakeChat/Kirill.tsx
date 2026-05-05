@@ -1008,8 +1008,7 @@ function ChoiceOfReplenishmentMethodCard() {
   }, [scrollToBottomSoon]);
 
   // Helpers last online
-  const getTimeSinceLastOnline = (lastTimeBeenOnline: string) => {
-    const lastOnline = new Date(lastTimeBeenOnline);
+  const getTimeSinceLastOnline = (lastOnline: Date) => {
     const now = new Date();
     const diffInMinutes = Math.floor(
       (now.getTime() - lastOnline.getTime()) / (1000 * 60),
@@ -1215,7 +1214,7 @@ function ChoiceOfReplenishmentMethodCard() {
                             ? text('Online')
                             : `${text('Offline')} ${getTimeSinceLastOnline(
                                 chatPartner?.lastTimeBeenOnline ||
-                                  new Date().toISOString(),
+                                  new Date(),
                               )}`}
                         </h3>
                       </div>

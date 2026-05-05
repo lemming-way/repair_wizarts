@@ -3,7 +3,24 @@
 ini_set( 'display_errors', 0 );
 
 $out = call_user_func(function() {
-  $sql_queries = [
+  $current_user_id = '';
+  foreach ($_SESSION as $key => $val) {
+    if (substr($key, 0, 4) === 'UID:') {
+      $current_user_id = $val;
+      break;
+    }
+  }
+  $current_user_role = isset($_SESSION['id_role']) ? $_SESSION['id_role'] : 0;
+  if ($current_user_role == 2 && isset($_REQUEST['u_a_role']) && $_REQUEST['u_a_role'] == 1) $current_user_role = 1;
+  //~ $current_user_status = $_SESSION['id_verification_status'];
+
+  if (!$current_user_id) json_exit('401', 'error', 'Cannot find user ID', NULL);
+  if (!isset( $_REQUEST['s_t_data'] )) json_exit('400', 'error', 'No data', NULL);
+
+  // Настройка запросов
+  $actions = [
+    // ================ Пользователи ================
+    // Получение списка мастеров по городу и услуге
     'getContractorsByProduct' => [
       'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND `active`>0 AND ' .
                 'JSON_LENGTH(JSON_EXTRACT(`json`,CONCAT(\'$.services."\',:productId,\'"\')))>0 AND ' .
@@ -12,9 +29,12 @@ $out = call_user_func(function() {
         'numeric' => [ 'id_user' ]
       ]
     ],
+    // Установить статус верификации водителя без участия администратора
     'markUserAsVerified' => [
       'sql' => 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id'
     ],
+    // ================ Поездки/заказы ================
+    // Получить список поездок по заданным параметрам
     'getTripIds' => [
       'sql' => 'SELECT `o`.`id_order` ' .
               'FROM `order` `o` ' .
@@ -63,6 +83,7 @@ $out = call_user_func(function() {
         'numeric' => [ 'id_order' ]
       ]
     ],
+    // Получить данные поездок по их ID
     'getTripsByIds' => [
       'sql' => 'SELECT ' .
                 '`o`.`id_order` AS `b_id`,' .
@@ -192,39 +213,151 @@ $out = call_user_func(function() {
         ]
       ]
     ],
+    // ================ Сообщения/чаты ================
+    // Получить список активных чатов для пользователя
+    'getActiveChats' => [
+      'sql' => 'SELECT `order`,`client`,`contractor`,`unread_count`,`first_unread`,`last_time` ' .
+                'FROM (' .
+                  'SELECT ' .
+                    '`o`.`id_order` AS `order`,' .
+                    '`o`.`client` AS `client`,' .
+                    '`o`.`options` AS `o_options`,' .
+                    '`d`.`id_user` AS `contractor`,' .
+                    '`d`.`options` AS `d_options`,' .
+                    'IFNULL(SUM(`m`.`id_message` IS NOT NULL AND `r`.`id_message` IS NULL),0) AS `unread_count`,' .
+                    'MIN(IF(`r`.`id_message` IS NULL,`m`.`id_message`,NULL)) AS `first_unread`,' .
+                    'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time` ' .
+                  'FROM `order` `o` ' .
+                  'JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+                  'LEFT JOIN `message` `m` ' .
+                    'ON `m`.`recipient_owner_type`=31 ' .
+                    'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',`d`.`id_user`) ' .
+                    'AND `m`.`active_status`>0 ' .
+                  'LEFT JOIN `messages_read` `r` ' .
+                    'ON `r`.`id_message`=`m`.`id_message` ' .
+                    'AND `r`.`id_user`=:u_id ' .
+                  'WHERE `o`.`id_order_status` IN(2,3,4) ' .
+                    'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
+                    'AND `d`.`not_deleted`>0 ' .
+                    'AND (' .
+                      '(:u_role=1 AND `o`.`client`=:u_id) ' .
+                      'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
+                    ') ' .
+                  'GROUP BY `d`.`id_user`,`o`.`id_order` ' .
+                  //~ 'HAVING `unread_count`>0 ' .
+                    //~ 'OR (:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
+                    //~ 'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
+                ') `inner`',
+      'fields' => [
+        'numeric' => ['order', 'client', 'contractor', 'unread_count', 'first_unread']
+      ]
+    ],
+    // Получить id всех сообщений в чате
+    'getMessageIds' => [
+      'sql' => 'SELECT NOW() AS `server_time`,' .
+                'JSON_ARRAYAGG(`id_message`) AS `messages` ' .
+              'FROM `message` ' .
+              'WHERE (' .
+                  'SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id ' .
+                  'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) AND `client`=:u_id)' .
+                ') ' .
+                'AND `recipient_owner_type`=31 ' .
+                'AND `recipient_owner`=:chat_id ' .
+                'AND `id_message_type` IN(1,31,32) ' .
+                'AND `active_status`>0 ' .
+              'ORDER BY `id_message`',
+      'fields' => [
+        'json' => ['messages']
+      ]
+    ],
+    // Получить id всех сообщений в чате, обновлённых с заданного момента времени
+    'getUpdatedMessageIds' => [
+      'sql' => 'SELECT NOW() AS `server_time`,' .
+                 'JSON_ARRAYAGG(' .
+                   'JSON_OBJECT(' .
+                     '\'id\',`id_message`,' .
+                     '\'del\',IF(`active_status`=0,1,0)' .
+                   ')' .
+                 ') `messages` ' .
+               'FROM `message` ' .
+                'WHERE (' .
+                    'SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id ' .
+                    'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) AND `client`=:u_id)' .
+                  ') ' .
+                  'AND `recipient_owner_type`=31 ' .
+                  'AND `recipient_owner`=:chat_id ' .
+                  'AND `id_message_type` IN(1,31,32) ' .
+                  'AND GREATEST(`create_datetime`,`last_edit_datetime`)>:since ' .
+                'ORDER BY `id_message`',
+      'fields' => [
+        'json' => ['messages']
+      ]
+    ],
+    // Получить сообщения по списку id
+    'getMessages' => [
+      'sql' => 'SELECT `m`.`id_message`  AS `id`,' .
+                'IF(`sender_owner_type`=1,`sender_owner`,NULL) AS `from`,' .
+                '`value` AS `text`,' .
+                '`last_edit_datetime` AS `modified`,' .
+                '`last_edit_user` AS `editor`,' .
+                '`create_datetime` AS `created`,' .
+                '`create_user` AS `author`,' .
+                '`id_message_type` AS `type`,' .
+                '`id_message_upper` AS `related`,' .
+                'IF(`r`.`id_message` IS NULL,1,0) AS `unread` ' .
+              'FROM `message` `m` ' .
+              'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
+              'LEFT JOIN `messages_read` `r` ' .
+                'ON `r`.`id_message`=`m`.`id_message` ' .
+                'AND `r`.`id_user`=:u_id ' .
+              'WHERE `m`.`id_message` IN(:ids) ' .
+                'AND (' .
+                  'SUBSTRING_INDEX(`recipient_owner`,\':\',-1)=:u_id ' .
+                  'OR `o`.`client`=:u_id' .
+                ') ' .
+                'AND `active_status`>0 ' .
+                'AND `recipient_owner_type`=31 ' .
+                'AND `id_message_type` IN(1,31,32)',
+      'fields' => [
+        'numeric' => ['id', 'from', 'editor', 'author', 'type', 'related', 'deleted', 'unread']
+      ]
+    ],
+    // Пометить сообщения прочитанными
+    'markMessagesAsRead' => [
+      'sql' => 'INSERT IGNORE INTO `messages_read` ' .
+                'SELECT `m`.`id_message`,' .
+                  ':u_id AS `id_user`,' .
+                  'NOW() AS `read` ' .
+                'FROM `message` `m` ' .
+                'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
+                'WHERE `m`.`id_message` IN(:ids) ' .
+                  'AND (' .
+                    'SUBSTRING_INDEX(`recipient_owner`,\':\',-1)=:u_id ' .
+                    'OR `o`.`client`=:u_id' .
+                  ')' .
+                  'AND `active_status`>0 ' .
+                  'AND `recipient_owner_type`=31 ' .
+                  'AND `id_message_type` IN(1,31,32)'
+    ]
   ];
-
-  $current_user_id = '';
-  foreach ($_SESSION as $key => $val) {
-    if (substr($key, 0, 4) === 'UID:') {
-      $current_user_id = $val;
-      break;
-    }
-  }
-  $current_user_role = isset($_SESSION['id_role']) ? $_SESSION['id_role'] : 0;
-  if ($current_user_role == 2 && isset($_REQUEST['u_a_role']) && $_REQUEST['u_a_role'] == 1) $current_user_role = 1;
-  //~ $current_user_status = $_SESSION['id_verification_status'];
-
-  if (!$current_user_id) json_exit('401', 'error', 'Cannot find user ID', NULL);
-  if (!isset( $_REQUEST['s_t_data'] )) json_exit('400', 'error', 'No data', NULL);
 
   $data = json_decode($_REQUEST['s_t_data'], true);
   if (json_last_error() !== JSON_ERROR_NONE) json_exit('400', 'error', 'Bad JSON', NULL);
   if (!isset( $data['action'] )) json_exit('400', 'error', 'No action', NULL);
-  if (!isset( $sql_queries[$data['action']] )) json_exit('400', 'error', 'Unknown action', NULL);
+  if (!isset( $actions[$data['action']] )) json_exit('400', 'error', 'Unknown action', NULL);
 
-  if (!isset($sql_queries[$data['action']]['sql'])) {
+  if (!isset($actions[$data['action']]['sql'])) {
     json_exit('400', 'error', 'SQL query not defined for action', NULL);
   }
-  $sql = $sql_queries[$data['action']]['sql'];
-  if (isset($sql_queries[$data['action']]['fields']['json']) && is_array($sql_queries[$data['action']]['fields']['json'])) {
-    $json_fields = $sql_queries[$data['action']]['fields']['json'];
+  $sql = $actions[$data['action']]['sql'];
+  if (isset($actions[$data['action']]['fields']['json']) && is_array($actions[$data['action']]['fields']['json'])) {
+    $json_fields = $actions[$data['action']]['fields']['json'];
   }
   else {
     $json_fields = [];
   }
-  if (isset($sql_queries[$data['action']]['fields']['numeric']) && is_array($sql_queries[$data['action']]['fields']['numeric'])) {
-    $numeric_fields = $sql_queries[$data['action']]['fields']['numeric'];
+  if (isset($actions[$data['action']]['fields']['numeric']) && is_array($actions[$data['action']]['fields']['numeric'])) {
+    $numeric_fields = $actions[$data['action']]['fields']['numeric'];
   }
   else {
     $numeric_fields = [];
@@ -236,6 +369,9 @@ $out = call_user_func(function() {
   $escape = function($value) {
     if (is_null($value)) {
       return 'NULL';
+    }
+    elseif (is_bool($value)) {
+      return $value ? 1 : 0;
     }
     else {
       $value = real_escape_string($value);

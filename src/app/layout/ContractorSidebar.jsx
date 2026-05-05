@@ -74,15 +74,14 @@ function Sidebar() {
             <li
               style={{ position: 'relative' }}
               className={
-                location.pathname.includes('/contractor/chat') ||
-                location.pathname.includes('/168789461')
+                location.pathname.includes('/chat')
                   ? 'active'
                   : ''
               }
             >
               <img src="/img/img-massage.png" alt="" />
               <Badge />
-              <Link to="/contractor/chat">{text('Chat')}</Link>
+              <Link to="/chats">{text('Chat')}</Link>
             </li>
             <li
               style={{ position: 'relative' }}

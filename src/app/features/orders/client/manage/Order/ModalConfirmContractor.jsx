@@ -4,7 +4,8 @@ import style from '../../../OrderModals.module.css';
 
 export default function ModalConfirmContractor({
   setVisibleModalConfirmContractor,
-  id,
+  orderId,
+  contractorId
 }) {
   const navigator = useNavigate();
   return (
@@ -27,7 +28,7 @@ export default function ModalConfirmContractor({
               className={`${style.button} ${style.button_height_60}`}
               onClick={() => {
                 setVisibleModalConfirmContractor(false);
-                navigator('/client/chat/' + id);
+                navigator(`/order/${orderId}/chat/${contractorId}`);
               }}
             >
               Ок

@@ -44,7 +44,8 @@ import ChoiceOfReplenishmentMethodClient from './components/ChoiceOfReplenishmen
 import Offers from './features/orders/client/list/Offers';
 import WalletHistory from './components/ChoiceOfReplenishmentMethod/WalletHistory';
 // import AddedDevicesPage from './components/Orders/AddedDevicesPage';
-import FChatKirill from './components/full-chat/fakeChat/Kirill';
+//~ import FChatKirill from './components/full-chat/fakeChat/Kirill';
+import Chat from './features/chat';
 import Home from './components/Home';
 import FinanceClient from './components/Settings/FinanceClient';
 import ContractorLayout from './layout/ContractorLayout';
@@ -89,7 +90,7 @@ function App() {
         user.id,
         {
           isOnline: isVisible,
-          lastTimeBeenOnline: new Date().toISOString(),
+          lastTimeBeenOnline: new Date(),
         }
       );
     };
@@ -101,7 +102,7 @@ function App() {
         user.id,
         {
           isOnline: false,
-          lastTimeBeenOnline: new Date().toISOString(),
+          lastTimeBeenOnline: new Date(),
         }
       );
     };
@@ -162,9 +163,15 @@ function App() {
               <Route path="client" element={<RegistrationUserPage />} />
             </Route>
           </Route>
-          {!isContractor && (
+          {isAuthorized &&
+            <>
+              <Route path="chats" element={<Chat />} />
+              <Route path="order/:orderId/chat/:contractorId" element={<Chat />} />
+            </>
+          }
+          {!isContractor &&
             <Route path="client">
-              {isAuthorized && (
+              {isAuthorized &&
                 <Route path="settings" element={<ClientSettingsNavigator />}>
                   <Route index element={<UserProfile />} />
                   <Route path="wallet" element={<ChoiceOfReplenishmentMethodClient />} />
@@ -172,23 +179,23 @@ function App() {
                   <Route path="finance" element={<FinanceClient />} />
                   <Route path="balance" element={<BalanceClient />} />
                 </Route>
-              )}
+              }
 
               <Route path="requests">
-                {isAuthorized && (
+                {isAuthorized &&
                   <>
                     <Route index element={<MarketOrders />} />
                     {/* <Route path="archived" element={<Archive />} /> */}
                     <Route path="my_orders" element={<Offers />} />
                     <Route path="my_order/:id" element={<Order />} />
                   </>
-                )}
+                }
                 <Route path="create">
                   {/*<Route path="title" element={<TitleService />} />*/}
                   <Route path="data" element={<CreateMarket />} />
                 </Route>
               </Route>
-              {isAuthorized && (
+              {isAuthorized &&
                 <>
                   {/*<Route path="offers/:id" element={<MyOffer />} />*/}
                   {/* клиент на странице мастера может оставить отзыв */}
@@ -196,22 +203,22 @@ function App() {
                   {/* чат связан с бэком */}
                   {/* <Route path="chat" element={<FChat />} /> */}
                   {/* <Route path="chat/:id" element={<FChat />} /> */}
-                  {/* Чат без связи с бэком, только заготовка */}
-                  <Route path="chat" element={<FChatKirill />} />
-                  <Route path="chat/:id" element={<FChatKirill />} />
+                  {/* Чат без связи с бэком, только заготовка, к удалению */}
+                  {/*<Route path="chat" element={<FChatKirill />} />*/}
+                  {/*<Route path="chat/:id" element={<FChatKirill />} />*/}
 
                   {/* страница для оставления фидбека. Не знаю, что в ней, наверное её пересоздал выше */}
                   {/* <Route path="feedback/:username" element={<ReviewsContractor />} /> */}
                 </>
-              )}
+              }
             </Route>
-          )}
+          }
 
-          {isContractor && (
+          {isContractor &&
             <Route path="contractor" element={<ContractorLayout />}>
-              {/* Чат без связи с бэком, только заготовка */}
-              <Route path="chat" element={<FChatKirill />} />
-              <Route path="chat/:id" element={<FChatKirill />} />
+              {/* Чат без связи с бэком, только заготовка, к удалению */}
+              {/*<Route path="chat" element={<FChatKirill />} />*/}
+              {/*<Route path="chat/:id" element={<FChatKirill />} />*/}
               {/* прежний чат, был связана с бэком */}
               {/* <Route path="chat/" element={<FChat baseRoute="/contractor/chat/" showSidebar />} />
                         <Route path="chat/:id" element={<FChat baseRoute="/contractor/chat/" showSidebar />} /> */}
@@ -245,7 +252,7 @@ function App() {
               </Route>
               {/* <Route path="offers/create/:id" element={<OfferAService />} /> */}
             </Route>
-          )}
+          }
         </Routes>
       </main>
       {location.pathname.includes('/chat') || <Footer />}

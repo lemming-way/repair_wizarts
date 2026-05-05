@@ -54,10 +54,11 @@ function Order() {
   const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(0); // 0 for site, 1 for cash
 
+  const [acceptedContractorId, setAcceptedContractorId] = useState(false);
   // Functions for modals
   const handleCancelOrder = async () => {
     try {
-      await cancelOrder({ orderId: orderId, reason: 'Client cancellation' }); // Add a reason
+      await cancelOrder({ orderId, reason: 'Client cancellation' }); // Add a reason
     } catch (error) {
       console.error('Failed to cancel order:', error);
       alert(error.message); // todo: сделать нормальное сообщение об ошибке
@@ -66,7 +67,8 @@ function Order() {
 
   const handleAcceptOffer = async (contractorId, price) => {
     try {
-      await acceptOffer({ orderId: orderId, contractorId: contractorId });
+      await acceptOffer({ orderId, contractorId });
+      setAcceptedContractorId(contractorId);
       // Stub for payment selection
       // Here you would typically proceed to payment or confirmation
       // For now, we just show the confirmation modal
@@ -119,7 +121,8 @@ function Order() {
       {visibleModalConfirmContractor && (
         <ModalConfirmContractor
           setVisibleModalConfirmContractor={setVisibleModalConfirmContractor}
-          id={currentOrder.id}
+          orderId={currentOrder.id}
+          contractorId={acceptedContractorId}
         />
       )}
       {/* блок с оплатой */}

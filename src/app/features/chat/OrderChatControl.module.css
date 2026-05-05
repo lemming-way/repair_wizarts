@@ -1,0 +1,114 @@
+.order_control_block {
+    background-color: #ffffff;
+    padding: 16px 40px;
+    border-bottom: 1px solid #e9eaf1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Разрешить перенос элементов на меньших экранах */
+    gap: 15px; /* Отступы между элементами */
+}
+
+.order_info {
+    flex-grow: 1; /* Позволяет блоку информации занимать доступное пространство */
+    min-width: 250px; /* Минимальная ширина для блока информации перед переносом */
+}
+
+.order_title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.order_status_text,
+.order_price {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.action_buttons {
+    display: flex;
+    gap: 10px; /* Отступы между кнопками действий */
+    flex-wrap: wrap;
+    justify-content: flex-end; /* Выравнивание кнопок вправо */
+}
+
+/* Переиспользуем .orderButton из Chat.module.css для консистентности,
+   но определяем специфичные стили здесь для ясности или переопределения */
+.action_buttons button {
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    min-width: 120px; /* Обеспечиваем минимальную ширину кнопок */
+}
+
+/* Стили для конкретных кнопок */
+.cancelButton {
+    background-color: #f0ad4e; /* Оранжевый для отмены */
+    color: white;
+}
+.cancelButton:hover {
+    background-color: #ec971f;
+}
+
+.disputeButton {
+    background-color: #d9534f; /* Красный для спора */
+    color: white;
+}
+.disputeButton:hover {
+    background-color: #c9302c;
+}
+
+.close_chat_button {
+    background-color: #cccccc; /* Серый для закрытия чата */
+    color: #333;
+    border: 1px solid #bbbbbb;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    min-width: 100px;
+}
+.close_chat_button:hover {
+    background-color: #b3b3b3;
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 768px) {
+    .order_control_block {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 20px;
+        gap: 10px;
+    }
+    .action_buttons {
+        width: 100%; /* Занимают всю ширину для выравнивания кнопок */
+        justify-content: flex-start;
+    }
+    .close_chat_button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .order_title {
+        font-size: 16px;
+    }
+    .order_status_text,
+    .order_price {
+        font-size: 12px;
+    }
+    .action_buttons button,
+    .close_chat_button {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-width: unset;
+    }
+}

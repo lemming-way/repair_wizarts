@@ -102,13 +102,13 @@ const Toolbar = () => {
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
                 <Link
-                  to={isContractor ? '/contractor/chat' : '/client/chat'}
-                className="header__icons"
-                style={{ display: 'flex', position: 'relative' }}
-                onClick={() => {
-                  setVisibleSetout(false);
-                }}
-              >
+                  to="/chats"
+                  className="header__icons"
+                  style={{ display: 'flex', position: 'relative' }}
+                  onClick={() => {
+                    setVisibleSetout(false);
+                  }}
+                >
                 <img className="" src="/img/icons/message.svg" alt="" />
                 {/* {messages.count > 0 && <div className='chat-message-counter'>{messages.count}</div>} */}
                 <div className="chat-message-counter">1</div>

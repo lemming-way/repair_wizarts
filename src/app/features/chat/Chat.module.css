@@ -1,0 +1,342 @@
+.container {
+    display: flex;
+    overflow: hidden;
+    height: calc(100vh - 70px); /* Adjusting for header height if fixed */
+    width: 100%;
+    position: relative; /* Needed for absolute positioning of child elements */
+}
+
+/* Chat List / Frame Messages */
+.frame_messages {
+    width: 456px; /* Default width for chat list */
+    background: #fff;
+    height: 100%;
+    border-right: 1px solid #E9EAF1;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
+    flex-shrink: 0; /* Prevent shrinking when content tries to expand */
+    z-index: 100; /* Ensure it's above chat window when open */
+}
+
+.frame_messages.collapsed {
+    width: 0;
+    transform: translateX(-100%);
+    overflow: hidden;
+    border-right: none;
+}
+
+.chat_list_toggle_button {
+    position: absolute;
+    left: 10px;
+    top: 10px; /* Adjust as needed */
+    z-index: 101; /* Above the collapsed chat list */
+    background: #D9573B;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: left 0.3s ease-in-out;
+}
+
+.chat_list_toggle_button.hidden {
+    display: none; /* Hide button if chat list is already visible */
+}
+
+/* Main chat window area */
+.chat_window_area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative; /* For chat content positioning */
+    background: #f6f8f9; /* Default background from Chat.module.css */
+    overflow: hidden;
+}
+
+/* No chat selected state */
+.empty_chat {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background-color: #f6f8f9;
+}
+
+.empty_chat img {
+    width: 161px;
+}
+
+.empty_chat p {
+    color: #515151;
+    font-size: 20px;
+    text-align: center;
+    width: 95%;
+}
+
+/* Chat List Header and Search */
+.block_messages {
+    padding: 20px 40px 20px 40px; /* From chat.css */
+    background-color: #fff;
+    flex-shrink: 0;
+}
+
+.messages_text h2 {
+    padding: 20px 0 0 0;
+    margin-bottom: 20px;
+    font-weight: 600;
+    font-size: 28px;
+    line-height: 34px;
+    color: #000;
+}
+
+.magnafire {
+    margin: 0 0 24px 0;
+    height: 58px;
+    background: #F5F5F5;
+    border-radius: 12px;
+    width: 100%; /* Adjust to full width of frame_messages */
+    display: flex;
+    align-items: center;
+}
+
+.magnafire_img img {
+    margin: 20px 10px 20px 20px;
+}
+
+.magnafire_input input {
+    width: 100%;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 22px;
+    background: #F5F5F5;
+    border: none;
+    outline: none;
+}
+
+.magnafire_input input::placeholder {
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 22px;
+    color: #A9ABAD;
+}
+
+/* Chat Groups and Items */
+.big_messages__wrap {
+    overflow-y: auto;
+    height: 100%; /* Fill remaining space */
+    background: #fff;
+}
+
+.chat_group_header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    cursor: pointer;
+    background: #f0f0f0; /* Slightly different background for group header */
+    border-bottom: 1px solid #E9EAF1;
+    position: sticky;
+    top: 0;
+    z-index: 10; /* Keep header visible when scrolling chat items */
+}
+
+.chat_group_header:hover {
+    background: #e0e0e0;
+}
+
+.chat_group_header .avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.chat_group_header .user_name {
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 24px;
+    color: #000;
+    flex-grow: 1;
+}
+
+.chat_group_header .arrow_icon {
+    width: 13px;
+    height: 20px;
+    transition: transform 0.2s ease-in-out;
+    transform: rotate(180deg);
+}
+
+.chat_group_header.expanded .arrow_icon {
+    transform: rotate(270deg); /* Rotate arrow when expanded */
+}
+
+.chat_group_unread_badge {
+    background-color: #D9573B;
+    color: white;
+    border-radius: 50%;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    padding: 0 6px;
+    margin-left: 10px;
+}
+
+.chat_group_content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.chat_group_content.expanded {
+    max-height: 500px; /* Or a computed value, for transition */
+}
+
+.chat_item {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 1px solid #E9EAF1;
+    position: relative; /* For active highlight */
+}
+
+.chat_item:hover {
+    background: #f6f8f9;
+}
+
+.chat_item.active {
+    background: #e9eaf1; /* Highlight for active chat */
+}
+
+.chat_item .order_number {
+    font-size: 14px;
+    color: #888;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
+
+.chat_item .product_name {
+    font-weight: 500;
+    font-size: 16px;
+    color: #333;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat_item .order_status {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: gray; /* Default color */
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+.order_status.order_status_contractor_confirmed { background: #5bc0de; } /* Light blue */
+.order_status.order_status_in_progress { background: #5cb85c; } /* Green */
+.order_status.order_status_completed { background: #62c462; } /* Darker green */
+.order_status.order_status_closed { background: #cccccc; } /* Gray */
+.order_status.order_status_cancelled { background: #f0ad4e; } /* Orange */
+.order_status.order_status_dispute { background: #d9534f; } /* Red */
+
+.chat_item .last_message_time {
+    font-size: 12px;
+    color: #A9ABAD;
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+.chat_item_unread_badge {
+    background-color: #D9573B;
+    color: white;
+    border-radius: 50%;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+    padding: 0 5px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.online_indicator_dot { /* From OnlineDotted.module.css */
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #21E34C; /* Green for online */
+    border: 2px solid white;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.avatar_wrap {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .frame_messages {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    .frame_messages.collapsed {
+        transform: translateX(-100%);
+    }
+    .chat_list_toggle_button {
+        left: 10px;
+        top: 10px;
+    }
+}
+@media (max-width: 480px) {
+    .block_messages {
+        padding: 10px 15px;
+    }
+    .messages_text h2 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .chat_group_header {
+        padding: 10px 15px;
+    }
+    .chat_group_header .avatar {
+        width: 40px;
+        height: 40px;
+        margin-right: 10px;
+    }
+    .chat_group_header .user_name {
+        font-size: 16px;
+    }
+    .chat_item {
+        padding: 8px 15px;
+    }
+    .chat_item .product_name {
+        font-size: 14px;
+    }
+    .chat_item .order_number, .chat_item .last_message_time {
+        font-size: 11px;
+    }
+}

@@ -90,7 +90,7 @@ interface UserBaseData {
   /** Онлайн ли пользователь */
   isOnline: boolean;
   /** Последняя активность */
-  lastTimeBeenOnline: string;
+  lastTimeBeenOnline: Date;
 }
 
 interface ClientUserProfile extends UserBaseData {
@@ -150,8 +150,9 @@ export type UserProfile = ClientUserProfile | ContractorUserProfile;
 function fillUserProfile(data: UserAPI.UserData): UserProfile {
   const numId = Number(data.u_id);
   const u_details = data.u_details as Record<string, unknown> || undefined;
+  const lastTimeBeenOnline = 'string' === typeof u_details?.lastTimeBeenOnline ? new Date(u_details.lastTimeBeenOnline) : null;
   const baseProfile: UserBaseData = {
-    id: Number.isFinite(numId) ? numId : 0,
+    id: Number.isInteger(numId) && numId > 0 ? numId : 0,
     name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
     lastname: String(data.u_family || ''),
     fullname: [ data.u_name, data.u_middle, data.u_family ].filter(Boolean).join(' '),
@@ -165,7 +166,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     isEmailVerified: Number( data.u_email_checked) === 1,
     blackList: Array.isArray(u_details?.blackList) ? u_details.blackList : [],
     isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
-    lastTimeBeenOnline: 'string' === typeof u_details?.lastTimeBeenOnline ? u_details.lastTimeBeenOnline : '',
+    lastTimeBeenOnline: Number.isFinite(lastTimeBeenOnline?.getTime()) ? lastTimeBeenOnline! : new Date(0)
   };
 
   if (baseProfile.role === UserRole.Client) {
@@ -176,7 +177,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
   if (u_details?.services && 'object' === typeof u_details.services) {
     for (const key in u_details.services) {
       const productId = Number(key);
-      if (Number.isFinite(productId) && Array.isArray(u_details.services[key])) {
+      if (Number.isInteger(productId) && productId > 0 && Array.isArray(u_details.services[key])) {
         contractorServices[productId] = u_details.services[key];
       }
     }
@@ -191,9 +192,9 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     services: contractorServices,
     businessModel: u_details?.businessModel === BusinessModel.ServiceCenter ? BusinessModel.ServiceCenter : BusinessModel.IndependentTechnician,
     organizationName: u_details?.businessModel === BusinessModel.ServiceCenter && 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
-    photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isFinite(id) && id > 0) : [],
+    photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isInteger(id) && id > 0) : [],
     active: Number(data.u_active) === 1,
-    registrationDate: new Date(String(u_details?.registrationDate ?? ''))
+    registrationDate: new Date(String(u_details?.registrationDate ?? '') || 0)
   };
 }
 
@@ -402,7 +403,7 @@ export async function login(
 
         const checkState = Number(authResult.auth_user.u_check_state);
         let userChecked = checkState === 2;
-        const userUnchecked = !checkState || !Number.isFinite(checkState) || checkState === 1;
+        const userUnchecked = !checkState || !Number.isInteger(checkState) || checkState === 1;
         const drivenCar = await CarAPI.getDrivenCar();
         if (authorizedUserId() !== userId) return;
 
@@ -430,8 +431,8 @@ export async function login(
           userChecked = true;
         }
 
-        if (!drivenCar && userChecked && carToDrive && Number.isFinite(carToDrive)) {
-          CarAPI.driveCar(carToDrive);  // можно не ждать
+        if (!drivenCar && userChecked && Number.isInteger(carToDrive) && carToDrive! > 0) {
+          CarAPI.driveCar(carToDrive!);  // можно не ждать
         }
       }
     }
@@ -659,7 +660,7 @@ export type UserUpdatePayload = {
   address?: string;
   experience?: number;
   isOnline?: boolean;
-  lastTimeBeenOnline?: string;
+  lastTimeBeenOnline?: Date;
   services?: ServicesMap;
   businessModel?: BusinessModel;
   organizationName?: string;
@@ -726,7 +727,7 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
     apiUserData.u_details = { ...apiUserData.u_details, isOnline: payload.isOnline };
   }
   if (payload.lastTimeBeenOnline !== undefined) {
-    apiUserData.u_details = { ...apiUserData.u_details, lastTimeBeenOnline: payload.lastTimeBeenOnline };
+    apiUserData.u_details = { ...apiUserData.u_details, lastTimeBeenOnline: payload.lastTimeBeenOnline.toISOString() };
   }
   if (payload.services !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, services: payload.services };
@@ -748,7 +749,7 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
     if (Array.isArray(oldData.u_details?.photos)) {
       const oldIds = (oldData.u_details.photos ?? [])
         .map(Number)
-        .filter(id => !!id && Number.isFinite(id) && !idPhotos.includes(id));
+        .filter(id => Number.isInteger(id) && id > 0 && !idPhotos.includes(id));
       oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
       if (userId !== authorizedUserId()) throw new Error('User was changed.');
     }
