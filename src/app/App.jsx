@@ -163,11 +163,18 @@ function App() {
               <Route path="client" element={<RegistrationUserPage />} />
             </Route>
           </Route>
-          {isAuthorized &&
-            <>
-              <Route path="chats" element={<Chat />} />
-              <Route path="order/:orderId/chat/:contractorId" element={<Chat />} />
-            </>
+          {isAuthorized && (
+            isContractor ?
+              <Route element={<ContractorLayout />}>
+                <Route path="chats" element={<Chat />} />
+                <Route path="order/:orderId/chat/:contractorId" element={<Chat />} />
+              </Route>
+            :
+              <>
+                <Route path="chats" element={<Chat />} />
+                <Route path="order/:orderId/chat/:contractorId" element={<Chat />} />
+              </>
+            )
           }
           {!isContractor &&
             <Route path="client">

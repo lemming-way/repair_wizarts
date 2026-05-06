@@ -6,7 +6,7 @@ import { queryClient } from '../state/queryClient';
 const panelStyles: CSSProperties = {
   position: 'fixed',
   bottom: 12,
-  right: 12,
+  left: 12,
   width: 320,
   maxHeight: '60vh',
   overflowY: 'auto',
@@ -31,7 +31,7 @@ const headerStyles: CSSProperties = {
 const buttonStyles: CSSProperties = {
   position: 'fixed',
   bottom: 12,
-  right: 12,
+  left: 12,
   zIndex: 9999,
   background: '#0d6efd',
   color: '#fff',

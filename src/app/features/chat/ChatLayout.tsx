@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, useCallback } from 'react';
+import React, { FC, useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { useLanguage } from 'app/state/language';
@@ -11,9 +11,11 @@ import {
   useCompleteOrderByContractor,
   useVerifyOrderCompletion,
 } from 'app/state/order';
-import { useUser } from 'app/state/user';
+import { useUser, useUsersByIds } from 'app/state/user';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
+import { MessageFeed } from './MessageFeed';
+import { ChatInput } from './ChatInput';
 import DisputeModalV2 from 'app/components/full-chat/fakeChat/DisputeModal_v2'; // Для визуальной ссылки, будет использоваться для действий по спору
 import styles from './Chat.module.css';
 
@@ -42,6 +44,15 @@ export const ChatLayout: FC = () => {
     orderId && contractorId ? [orderId] : []
   );
   const currentOrder = orders[0];
+
+  //~ // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
+  //~ const isChatBlocked = useMemo(() => {
+    //~ if (!user.id || !chatPartner?.id) return false;
+    //~ const currentUserBlockedPartner = user.blackList?.includes(chatPartner.id);
+    //~ const partnerBlockedCurrentUser = chatPartner.blackList?.includes(user.id);
+    //~ return currentUserBlockedPartner || partnerBlockedCurrentUser;
+  //~ }, [user.id, user.blackList, chatPartner?.id, chatPartner?.blackList]);
+  const isChatBlocked = false;  // todo: логику чёрных списков надо продумать отдельно
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
@@ -96,6 +107,20 @@ export const ChatLayout: FC = () => {
     console.log('Chat closed');
     navigate('/chats');
   }, [navigate]);
+
+  // Placeholder for sending message (will be replaced by actual mutation later)
+  const handleSendMessage = useCallback(async (
+    orderId: number,
+    contractorId: number,
+    message: string,
+    files: File[],
+  ) => {
+    console.log('STUB: Sending message:', { orderId, contractorId, message, files });
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+    // In a real implementation, this would trigger a mutation to send the message
+    // and potentially invalidate the message feed cache.
+  }, []);
+
 
   // Обновление видимости списка чатов при изменении URL
   useEffect(() => {
@@ -171,15 +196,18 @@ export const ChatLayout: FC = () => {
                 onVerifyCompletion={handleVerifyCompletion}
                 onShowDisputeModal={handleShowDisputeModal}
               />
-              <div className="chat_messages_feed">
-                {/* TODO: Здесь будет компонент ленты сообщений */}
-                <h2 style={{ textAlign: 'center', padding: '20px' }}>
-                  {text('Message feed for Order')} №{currentOrder.id}
-                </h2>
-                <p style={{ textAlign: 'center', color: '#515151' }}>
-                  {text('Actual message feed and input area will be here.')}
-                </p>
-              </div>
+              <MessageFeed
+                order={currentOrder}
+                contractorId={contractorId}
+                currentUser={user}
+              />
+              <ChatInput
+                orderId={orderId}
+                contractorId={contractorId}
+                currentUser={user}
+                onSendMessage={handleSendMessage}
+                isBlocked={isChatBlocked}
+              />
             </>
           ) : (
             <div className={styles.empty_chat}>

@@ -28,7 +28,7 @@ export const ChatList: FC<ChatListProps> = ({
   const allUserIds = new Set<number>();
   const allOrderIds = new Set<number>();
   const chatGroups = new Map<number, ChatData[]>();
-  
+
   if (user.id) {
     for (const chat of chats) {
       const otherUserId = user.role === UserRole.Client ? chat.contractorId : chat.clientId;

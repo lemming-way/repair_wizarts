@@ -84,7 +84,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
     dayUpdate.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const diffInDays = Math.round((today.getTime() - dayUpdate.getTime()) / 86400000);
     if (diffInDays === 0) {
       return lastUpdate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
