@@ -23,6 +23,7 @@ export type ChatRecord = {
   unread_count: number;
   first_unread: number | null;
   last_time: string;
+  is_open: 0 | 1;
 };
 
 /**
@@ -61,15 +62,33 @@ export type ChatMessageRecord = {
 // ==================== Функции API ====================
 
 /**
- * Получить информацию об активных чатах.
+ * Получить ID активных чатов.
  * Доступно только для авторизованного пользователя.
- * @returns Промис, который разрешается со списком данных о чатах.
+ * @returns Промис, который разрешается со списком ID чатов.
  */
-export async function getActiveChats(): Promise<ChatRecord[]> {
+export async function getActiveChatIds(): Promise<string[]> {
   const payload = {
     is_var: 1,
     s_t_data: {
-      action: 'getActiveChats'
+      action: 'getActiveChatIds'
+    }
+  }
+  const result = await post<string[]>('script/template/repair_api', payload);
+  return result;
+}
+
+/**
+ * Получить информацию о чатах по их ID
+ * Доступно только для авторизованного пользователя.
+ * @param ids Список ID чатов
+ * @returns Промис, который разрешается со списком данных о чатах.
+ */
+export async function getChatsByIds(ids: string[]): Promise<ChatRecord[]> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'getChats',
+      ids
     }
   }
   const result = await post<ChatRecord[]>('script/template/repair_api', payload);

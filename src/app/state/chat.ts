@@ -22,12 +22,14 @@ import type { UserProfile } from './user';
 const EMPTY_ARRAY = Object.freeze([]);
 
 export type ChatData = {
+  id: string;
   orderId: number;
   clientId: number;
   contractorId: number;
   unreadCount: number;
   firstUnread?: number;
   lastUpdate?: Date;
+  isOpen: boolean;
 }
 
 /**
@@ -67,43 +69,96 @@ export type Message = {
   unread: boolean;
 }
 
-async function getActiveChats() {
-  const chats = await MessageAPI.getActiveChats();
-  const ret: ChatData[] = chats.reduce((acc, chat) => {
-    const chatItem: ChatData = {
-      orderId: Number.isInteger(chat.order) && chat.order > 0 ? chat.order : 0,
-      clientId: Number.isInteger(chat.client) && chat.client > 0 ? chat.client : 0,
-      contractorId: Number.isInteger(chat.contractor) && chat.contractor > 0 ? chat.contractor : 0,
-      unreadCount: Number.isInteger(chat.unread_count) && chat.unread_count > 0 ? chat.unread_count : 0,
-    }
-    if (!chatItem.orderId || !chatItem.clientId || !chatItem.contractorId) return acc;
-    if (Number.isInteger(chat.first_unread) && chat.first_unread! > 0) chatItem.firstUnread = chat.first_unread!;
-    if (!!chat.last_time && chat.last_time !== '0000-00-00 00:00:00') {
-      const date = new Date(String(chat.last_time));
-      if (!Number.isNaN(date.getTime())) chatItem.lastUpdate = date;
-    }
-    acc.push(chatItem);
-    return acc;
-  }, [] as ChatData[]);
-  return ret;
-}
+//~ async function getActiveChats() {
+  //~ const chats = await MessageAPI.getActiveChats();
+  //~ const ret: ChatData[] = chats.reduce((acc, chat) => {
+    //~ const chatItem: ChatData = {
+      //~ orderId: Number.isInteger(chat.order) && chat.order > 0 ? chat.order : 0,
+      //~ clientId: Number.isInteger(chat.client) && chat.client > 0 ? chat.client : 0,
+      //~ contractorId: Number.isInteger(chat.contractor) && chat.contractor > 0 ? chat.contractor : 0,
+      //~ unreadCount: Number.isInteger(chat.unread_count) && chat.unread_count > 0 ? chat.unread_count : 0,
+    //~ }
+    //~ if (!chatItem.orderId || !chatItem.clientId || !chatItem.contractorId) return acc;
+    //~ if (Number.isInteger(chat.first_unread) && chat.first_unread! > 0) chatItem.firstUnread = chat.first_unread!;
+    //~ if (!!chat.last_time && chat.last_time !== '0000-00-00 00:00:00') {
+      //~ const date = new Date(String(chat.last_time));
+      //~ if (!Number.isNaN(date.getTime())) chatItem.lastUpdate = date;
+    //~ }
+    //~ acc.push(chatItem);
+    //~ return acc;
+  //~ }, [] as ChatData[]);
+  //~ return ret;
+//~ }
+
+//~ export function useActiveChats() {
+  //~ const { user } = useUser() as { user: UserProfile };
+  //~ const { data, ...ret } = useQuery({
+    //~ queryKey: [ 'user', user.id, 'active-chats' ],
+    //~ queryFn: getActiveChats,
+    //~ refetchInterval: CONFIG.API?.chatsDataRefetchTime ?? 300000,
+    //~ staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000,
+    //~ enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
+  //~ });
+
+  //~ const chats = data || EMPTY_ARRAY;
+  //~ return {
+    //~ ...ret,
+    //~ chats
+  //~ };
+//~ }
 
 export function useActiveChats() {
   const { user } = useUser() as { user: UserProfile };
   const { data, ...ret } = useQuery({
     queryKey: [ 'user', user.id, 'active-chats' ],
-    queryFn: getActiveChats,
+    queryFn: MessageAPI.getActiveChatIds,
     refetchInterval: CONFIG.API?.chatsDataRefetchTime ?? 300000,
     staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000,
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
-
-  const chats = data || EMPTY_ARRAY;
-  return {
-    ...ret,
-    chats
-  };
+  
+  const result = useChatsByIds(data || []);
+  
+  if (!ret.isSuccess) return { ...ret, chats: EMPTY_ARRAY };
+  return result;
 }
+
+const [ getChatById, useChatsByIds ] = createBatchLoader({
+  fetchFn: async (ids: string[]) => {
+    const data = await MessageAPI.getChatsByIds(ids);
+    const ret: ChatData[] = (data ?? []).reduce((acc, chat) => {
+      const chatItem: ChatData = {
+        id: `${chat.order}:${chat.contractor}`,
+        orderId: Number.isInteger(chat.order) && chat.order > 0 ? chat.order : 0,
+        clientId: Number.isInteger(chat.client) && chat.client > 0 ? chat.client : 0,
+        contractorId: Number.isInteger(chat.contractor) && chat.contractor > 0 ? chat.contractor : 0,
+        unreadCount: Number.isInteger(chat.unread_count) && chat.unread_count > 0 ? chat.unread_count : 0,
+        isOpen: !!chat.is_open,
+      }
+      if (!chatItem.orderId || !chatItem.clientId || !chatItem.contractorId) return acc;
+      if (Number.isInteger(chat.first_unread) && chat.first_unread! > 0) chatItem.firstUnread = chat.first_unread!;
+      if (!!chat.last_time && chat.last_time !== '0000-00-00 00:00:00') {
+        const date = new Date(String(chat.last_time));
+        if (!Number.isNaN(date.getTime())) chatItem.lastUpdate = date;
+      }
+      acc.push(chatItem);
+      return acc;
+    }, [] as ChatData[]);
+    return ret;
+  },
+  createQueryKey: (userId, chatId) => [ 'user', userId, 'chat-data', chatId ],
+  extractKeys: (queryKey) => [ Number(queryKey[1]), String(queryKey[3]) ],
+  staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000,
+  dataKey: 'chats'
+});
+
+/**
+ * Получить данные чатов пользователя по ID (без сообщений)
+ * @param ids Список ID чатов
+ * @returns Объект, содержащий объединенное состояние запросов React Query
+ *          и массив `chats` с данными успешно полученных чатов.
+ */
+export { useChatsByIds };
 
 const lastChatRefetchTime: Map<string, string> = new Map();
 async function getChatMessageIds(client: QueryClient, userId: number, orderId: number, contractorId: number): Promise<number[]> {

@@ -214,7 +214,6 @@ $out = call_user_func(function() {
       ]
     ],
     // ================ Сообщения/чаты ================
-    // Получить список активных чатов для пользователя
     'getActiveChats' => [
       'sql' => 'SELECT `order`,`client`,`contractor`,`unread_count`,`first_unread`,`last_time` ' .
                 'FROM (' .
@@ -250,6 +249,81 @@ $out = call_user_func(function() {
                 ') `inner`',
       'fields' => [
         'numeric' => ['order', 'client', 'contractor', 'unread_count', 'first_unread']
+      ]
+    ],
+    // Получить список активных чатов для пользователя
+    'getActiveChatIds' => [
+      'sql' => 'SELECT CONCAT(`order`,\':\',`contractor`) AS `id`' .
+                'FROM (' .
+                  'SELECT ' .
+                    '`o`.`id_order` AS `order`,' .
+                    '`o`.`options` AS `o_options`,' .
+                    '`d`.`id_user` AS `contractor`,' .
+                    '`d`.`options` AS `d_options`,' .
+                    'EXISTS(' .
+                      'SELECT 1 FROM `message` `m` ' .
+                      'LEFT JOIN `messages_read` `r` ' .
+                        'ON `r`.`id_message`=`m`.`id_message` ' .
+                        'AND `r`.`id_user`=:u_id ' .
+                      'WHERE `m`.`recipient_owner_type`=31 ' .
+                        'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',`d`.`id_user`) ' .
+                        'AND `m`.`active_status`>0 ' .
+                        'AND `r`.`id_message` IS NULL' .
+                    ') AS `has_unread` ' .
+                  'FROM `order` `o` ' .
+                  'JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+                  'WHERE `o`.`id_order_status` IN(2,3,4) ' .
+                    'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
+                    'AND `d`.`not_deleted`>0 ' .
+                    'AND (' .
+                      '(:u_role=1 AND `o`.`client`=:u_id) ' .
+                      'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
+                    ') ' .
+                  'GROUP BY `d`.`id_user`,`o`.`id_order` ' .
+                  //~ 'HAVING `has_unread`>0 ' .
+                    //~ 'OR (:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
+                    //~ 'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
+                ') `inner`',
+    ],
+    // Получить данные чатов по `id`
+    'getChats' => [
+      'sql' => 'SELECT ' .
+                  '`o`.`id_order` AS `order`,' .
+                  '`o`.`client` AS `client`,' .
+                  '`d`.`id_user` AS `contractor`,' .
+                  'IFNULL(SUM(`m`.`id_message` IS NOT NULL AND `r`.`id_message` IS NULL),0) AS `unread_count`,' .
+                  'MIN(IF(`r`.`id_message` IS NULL,`m`.`id_message`,NULL)) AS `first_unread`,' .
+                  'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time`,' .
+                  '(' .
+                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
+                    'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
+                  ') AS `is_open` ' .
+                'FROM JSON_TABLE(' .
+                  'JSON_ARRAY(:ids),\'$[*]\' ' .
+                  'COLUMNS(`id` VARCHAR(255) PATH \'$\')' .
+                ') AS `ids` ' .
+                'JOIN `order` `o` ' .
+                  'ON `o`.`id_order`=SUBSTRING_INDEX(`ids`.`id`,\':\',1) ' .
+                'JOIN `order_driver` `d` ' .
+                  'ON `d`.`id_user`= SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
+                  'AND `d`.`id_order`=`o`.`id_order` ' .
+                'LEFT JOIN `message` `m` ' .
+                  'ON `m`.`recipient_owner_type`=31 ' .
+                  'AND `m`.`recipient_owner`=`ids`.`id` ' .
+                  'AND `m`.`active_status`>0 ' .
+                'LEFT JOIN `messages_read` `r` ' .
+                  'ON `r`.`id_message`=`m`.`id_message` ' .
+                  'AND `r`.`id_user`=:u_id ' .
+                'WHERE `o`.`id_order_status` IN(2,3,4) ' .
+                  'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
+                  'AND `d`.`not_deleted`>0 ' .
+                  'AND (' .
+                    '(:u_role=1 AND `o`.`client`=:u_id) ' .
+                    'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
+                  ') ' .
+                'GROUP BY `ids`.`id`',
+      'fields' => [
+        'numeric' => ['order', 'client', 'contractor', 'unread_count', 'first_unread', 'is_open']
       ]
     ],
     // Получить id всех сообщений в чате
