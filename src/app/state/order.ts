@@ -12,12 +12,7 @@
  * **Функции, не влияющие на глобальное состояние:**
  * useContractors, useClientOrders, useFinishedOrders, useOrdersByIds, useContractorOrders, useAvailableOrders
  */
-import {
-  UseQueryResult,
-  useQuery,
-  useQueries,
-  useMutation
-} from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
@@ -25,6 +20,7 @@ import * as FileAPI from './api/dropbox';
 import * as TripAPI from './api/trips';
 import { getDrivenCar } from './api/cars';
 import { authorizedUserId } from './auth';
+import { createBatchLoader } from './batch-query';
 import type { ServicesMap, UserProfile } from './user';
 import { UserRole, TimeUnit, useUser, useUsersByIds, getUserById } from './user';
 
@@ -312,87 +308,16 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
   return result;
 }
 
-let ordersToFetch: {
-  userId: number;
-  orderId: number;
-  resolve: (order: Order | null) => void;
-  reject: (error: unknown) => void;
-}[] = [];
-let ordersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-/**
- * Получить заказ пользователя по ID
- * Использует батчинг для объединения нескольких запросов в один API вызов.
- * @param orderId ID заказа
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param queryKey Ключ запроса, содержащий ID пользователя и ID заказа (например, ['orders', 8, 123]).
- * @returns Промис, который разрешается с объектом Order или null
- * @throws {Error} Если произошла ошибка при запросе к API или заказ не найден.
- */
-function getOrderById({ queryKey }: { queryKey: (string | number)[] }): Promise<Order | null> {
-  const userId = Number(queryKey[1]);
-  const orderId = Number(queryKey[2]);
-  if (!userId || !orderId) return Promise.resolve(null);
-
-  if (ordersFetchTimeout) clearTimeout(ordersFetchTimeout);
-  ordersFetchTimeout = setTimeout(async () => {
-    const resolvers = ordersToFetch;
-    ordersToFetch = [];
-    ordersFetchTimeout = null;
-
-    const orderIdsToFetch = [...new Set(resolvers.map(item => item.orderId))];
-
-    if (orderIdsToFetch.length === 0) {
-      return;
-    }
-
-    try {
-      const authUserId = authorizedUserId();
-      const data = authUserId ? (await TripAPI.getTripsByIds(orderIdsToFetch)) : null;
-      const orders = data ? parseOrders(authUserId, data) : [];
-      const ordersMap = Object.fromEntries(orders.map(order => [order.id, order]));
-      resolvers.forEach(item => {
-        const order = ordersMap[item.orderId];
-        if (order && authUserId === item.userId) {
-          item.resolve(order);
-        } else {
-          item.resolve(null);
-        }
-      });
-    } catch (error) {
-      resolvers.forEach(item => item.reject(error));
-    }
-  }, 10);
-
-  return new Promise((resolve, reject) => {
-    ordersToFetch.push({ userId, orderId, resolve, reject });
-  });
-}
-
-function combineFetchOrderResults(results: UseQueryResult<Awaited<Order | null>, unknown>[]) {
-  // Агрегируем состояния загрузки и ошибок
-  const ret = {
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    isSuccess: true,
-    orders: [] as Order[]
-  };
-
-  for (const query of results) {
-    ret.isLoading ||= query.isLoading;
-    ret.isFetching ||= query.isFetching;
-    if (query.isError && !ret.error) {
-      ret.isError = true;
-      ret.error = query.error;
-    }
-    ret.isSuccess &&= query.isSuccess;
-    if (query.data) ret.orders.push(query.data as Order);
-  }
-
-  return ret;
-}
+const [ getOrderById, useOrdersByIds ] = createBatchLoader({
+  fetchFn: async (ids: number[], authUserId: number) => {
+    const data = await TripAPI.getTripsByIds(ids);
+    return data ? parseOrders(authUserId, data) : [];
+  },
+  createQueryKey: (userId, orderId) => [ 'orders', userId, orderId ],
+  extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[2]) ],
+  staleTime: CONFIG.API?.ordersDataRefetchTime ?? 300000,
+  dataKey: 'orders'
+});
 
 /**
  * Получить список заказов пользователя по ID (в роли как клиента, так и мастера)
@@ -400,21 +325,7 @@ function combineFetchOrderResults(results: UseQueryResult<Awaited<Order | null>,
  * @returns Объект, содержащий объединенное состояние запросов React Query
  *          и массив `orders` с данными успешно полученных заказов.
  */
-export function useOrdersByIds(ids: number[]) {
-  const { user } = useUser() as { user: UserProfile };
-  const queries = ids.map(orderId => ({
-    queryKey: [ 'orders', user.id, orderId ],
-    queryFn: getOrderById,
-    staleTime: CONFIG.API?.ordersDataRefetchTime ?? 300000,
-    refetchInterval: CONFIG.API?.ordersDataRefetchTime ?? 300000,
-    enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
-  }));
-
-  return useQueries({
-    queries,
-    combine: combineFetchOrderResults
-  });
-}
+export { useOrdersByIds };
 
 // ==================== 3. Управление заказами (клиентская сторона) ====================
 
@@ -531,7 +442,7 @@ export function useCreateOrder() {
       if (orderData.contractorId && !orderData.services?.length) throw new Error('Mandatory parameter is empty.');
 
       if (orderData.contractorId) {
-        const contractorUser = (await getUserById(client, orderData.contractorId)) as { services?: ServicesMap };
+        const contractorUser = (await getUserById(client, user.id, orderData.contractorId)) as { services?: ServicesMap };
         if (!contractorUser.services?.[orderData.productId]) throw new Error('Bad contractor');
         const contractorServices = contractorUser.services[orderData.productId];
         let validServices = 0;

@@ -8,19 +8,14 @@
  *
  * **Функции, не влияющие на глобальное состояние:**
  */
-import {
-  QueryClient,
-  UseQueryResult,
-  useQuery,
-  useQueries,
-  useMutation
-} from '@tanstack/react-query';
+import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as FileAPI from './api/dropbox';
 import * as MessageAPI from './api/messages';
 import { authorizedUserId } from './auth';
+import { createBatchLoader } from './batch-query';
 import { UserRole, useUser } from './user';
 import type { UserProfile } from './user';
 
@@ -162,113 +157,44 @@ export function useChat(orderId: number, contractorId: number) {
   };
 }
 
-let messagesToFetch: {
-  userId: number;
-  messageId: number;
-  resolve: (message: Message | null) => void;
-  reject: (error: unknown) => void;
-}[] = [];
-let messagesFetchTimeout: ReturnType<typeof setTimeout> | null = null;
+const [ getMessageById, useMessagesByIds ] = createBatchLoader({
+  fetchFn: async (ids: number[]) => {
+    const data = await MessageAPI.getMessagesByIds(ids);
 
-/**
- * Получить сообщение по ID
- * Использует батчинг для объединения нескольких запросов в один API вызов.
- * @param messageId ID сообщения
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param queryKey Ключ запроса, содержащий ID пользователя и ID сообщения (например, ['user', 8, 'message', 123]).
- * @returns Промис, который разрешается с объектом Message или null
- * @throws {Error} Если произошла ошибка при запросе к API или заказ не найден.
- */
-function getMessageById({ queryKey }: { queryKey: (string | number)[] }): Promise<Message | null> {
-  const userId = Number(queryKey[1]);
-  const messageId = Number(queryKey[3]);
-  if (!userId || !messageId) return Promise.resolve(null);
+    const messages = (data ?? []).map(messageRec => {
+      const ret = {
+        id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
+        text: String(messageRec.text),
+        created: new Date(String(messageRec.created ?? '') || 0),
+        type:
+          messageRec.type === 31 ? MessageType.System :
+          !!messageRec.from ? MessageType.User :
+          MessageType.Admin,
+        format:
+          messageRec.type === 32 ? MessageFormat.Audio :
+          messageRec.type === 33 ? MessageFormat.Files :
+          MessageFormat.Text,
+        unread: !!messageRec.unread
+      } as Message;
+      if (Number.isInteger(messageRec.from) && messageRec.from! > 0) ret.from = messageRec.from!;
+      if (messageRec.modified) {
+        const date = new Date(String(messageRec.modified));
+        if (!Number.isNaN(date.getTime())) ret.modified = date;
+      }
+      if (Number.isInteger(messageRec.editor) && messageRec.editor! > 0) ret.editorId = messageRec.editor!;
+      if (Number.isInteger(messageRec.author) && messageRec.author! > 0) ret.authorId = messageRec.author!;
+      if (Number.isInteger(messageRec.related) && messageRec.related! > 0) ret.relatedMessage = messageRec.related!;
+      return ret;
+    });
 
-  if (messagesFetchTimeout) clearTimeout(messagesFetchTimeout);
-  messagesFetchTimeout = setTimeout(async () => {
-    const resolvers = messagesToFetch;
-    messagesToFetch = [];
-    messagesFetchTimeout = null;
+    return messages;
+  },
+  createQueryKey: (userId, messageId) => [ 'user', userId, 'message', messageId ],
+  extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[3]) ],
+  staleTime: Infinity,  // Изменённые сообщения перезагружаются в getChatMessageIds
+  dataKey: 'messages'
+});
 
-    const messageIdsToFetch = [...new Set(resolvers.map(item => item.messageId))];
-
-    if (messageIdsToFetch.length === 0) {
-      return;
-    }
-
-    try {
-      const authUserId = authorizedUserId();
-      const data = authUserId ? (await MessageAPI.getMessagesByIds(messageIdsToFetch)) : null;
-
-      const messages: Message[] = (data ?? []).map(messageRec => {
-        const ret = {
-          id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
-          text: String(messageRec.text),
-          created: new Date(String(messageRec.created ?? '') || 0),
-          type:
-            messageRec.type === 31 ? MessageType.System :
-            !!messageRec.from ? MessageType.User :
-            MessageType.Admin,
-          format:
-            messageRec.type === 32 ? MessageFormat.Audio :
-            messageRec.type === 33 ? MessageFormat.Files :
-            MessageFormat.Text,
-          unread: !!messageRec.unread
-        } as Message;
-        if (Number.isInteger(messageRec.from) && messageRec.from! > 0) ret.from = messageRec.from!;
-        if (messageRec.modified) {
-          const date = new Date(String(messageRec.modified));
-          if (!Number.isNaN(date.getTime())) ret.modified = date;
-        }
-        if (Number.isInteger(messageRec.editor) && messageRec.editor! > 0) ret.editorId = messageRec.editor!;
-        if (Number.isInteger(messageRec.author) && messageRec.author! > 0) ret.authorId = messageRec.author!;
-        if (Number.isInteger(messageRec.related) && messageRec.related! > 0) ret.relatedMessage = messageRec.related!;
-        return ret;
-      });
-
-      const messagesMap = Object.fromEntries(messages.map(message => [message.id, message]));
-      resolvers.forEach(item => {
-        const message = messagesMap[item.messageId];
-        if (message && authUserId === item.userId) {
-          item.resolve(message);
-        } else {
-          item.resolve(null);
-        }
-      });
-    } catch (error) {
-      resolvers.forEach(item => item.reject(error));
-    }
-  }, 10);
-
-  return new Promise((resolve, reject) => {
-    messagesToFetch.push({ userId, messageId, resolve, reject });
-  });
-}
-
-function combineFetchMessageResults(results: UseQueryResult<Awaited<Message | null>, unknown>[]) {
-  // Агрегируем состояния загрузки и ошибок
-  const ret = {
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    isSuccess: true,
-    messages: [] as Message[]
-  };
-
-  for (const query of results) {
-    ret.isLoading ||= query.isLoading;
-    ret.isFetching ||= query.isFetching;
-    if (query.isError && !ret.error) {
-      ret.isError = true;
-      ret.error = query.error;
-    }
-    ret.isSuccess &&= query.isSuccess;
-    if (query.data) ret.messages.push(query.data as Message);
-  }
-
-  return ret;
-}
 
 /**
  * Получить список сообщений по ID
@@ -276,17 +202,4 @@ function combineFetchMessageResults(results: UseQueryResult<Awaited<Message | nu
  * @returns Объект, содержащий объединенное состояние запросов React Query
  *          и массив `messages` с данными успешно полученных сообщений.
  */
-export function useMessagesByIds(ids: number[]) {
-  const { user } = useUser() as { user: UserProfile };
-  const queries = ids.map(messageId => ({
-    queryKey: [ 'user', user.id, 'message', messageId ],
-    queryFn: getMessageById,
-    staleTime: Infinity,  // Изменённые сообщения перезагружаются в getChatMessageIds
-    enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
-  }));
-
-  return useQueries({
-    queries,
-    combine: combineFetchMessageResults
-  });
-}
+export { useMessagesByIds };

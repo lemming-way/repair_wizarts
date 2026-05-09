@@ -13,10 +13,11 @@
  * **Функции, не влияющие на глобальное состояние:**
  * updateUserPassword, useUpdateUserPassword, recoverPassword, usePasswordRecovery
  */
-import { QueryClient, UseQueryResult, useQuery, useQueries, useMutation } from '@tanstack/react-query';
+import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
 import { setToken, clearToken, isUserAuthorized, authorizedUserId } from './auth';
+import { createBatchLoader } from './batch-query';
 import { fileToBase64, isImage, randomString } from 'app/shared/lib/utilities';
 import * as UserAPI from './api/user';
 import * as CarAPI from './api/cars';
@@ -206,13 +207,13 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
  * @throws {Error} Если произошла ошибка при запросе к API.
  */
 async function fetchAuthUser({ client }): Promise<UserProfile | {}> {
-  if (!isUserAuthorized()) return EMPTY_OBJECT;
+  if (!isUserAuthorized()) return {};
 
   try {
     const result = await UserAPI.getAuthUser();
     if (!result) return {};
     const userProfile = fillUserProfile(result);
-    return userProfile.id > 0 ? userProfile : EMPTY_OBJECT;
+    return userProfile.id > 0 ? userProfile : {};
   }
   catch (e) {
     throw e instanceof Error ? e : new Error(String(e));
@@ -238,86 +239,25 @@ export function useUser() {
   };
 }
 
-// Механизм батчинга для fetchUserById
-type UserResolver = {
-  userId: number;
-  resolve: (user: UserProfile | {}) => void;
-  reject: (error: unknown) => void;
-};
-
-let usersToFetch: UserResolver[] = [];
-let usersFetchTimeout: ReturnType<typeof setTimeout> | null = null;
-
-/**
- * Загружает данные пользователя по ID из API.
- * Использует батчинг для объединения нескольких запросов в один API вызов.
- * @param queryClient Инстанс QueryClient для управления кэшем.
- * @param queryKey Ключ запроса, содержащий ID пользователя (например, ['user', 123]).
- * @returns Промис, который разрешается с объектом UserProfile или пустым объектом.
- * @throws {Error} Если произошла ошибка при запросе к API или пользователь не найден.
- */
-function fetchUserById({ queryKey }: { queryKey: (string | number)[] }): Promise<UserProfile | {}> {
-  const userId = Number(queryKey[1]);
-  if (!userId) return Promise.resolve({});
-
-  if (usersFetchTimeout) clearTimeout(usersFetchTimeout);
-  usersFetchTimeout = setTimeout(async () => {
-    const resolvers = usersToFetch;
-    usersToFetch = [];
-    usersFetchTimeout = null;
-
-    const userIdsToFetch = [...new Set(resolvers.map(item => item.userId))];
-
-    if (userIdsToFetch.length === 0) {
-      return;
-    }
-
-    try {
-      const apiUsers = await UserAPI.getUsers(userIdsToFetch);
-      resolvers.forEach(item => {
-        const userData = apiUsers[item.userId];
-        if (userData) {
-          const userProfile = fillUserProfile(userData);
-          item.resolve(userProfile.id > 0 ? userProfile : {});
-        } else {
-          item.resolve({});
-        }
+const [ fetchUserById, useUsersByIds ] = createBatchLoader({
+  fetchFn: async (ids: number[]) => {
+    const data = await UserAPI.getUsers(ids);
+    if (data) {
+      return Object.values(data).map(user => {
+        const profile = fillUserProfile(user);
+        if (profile.id > 0) return profile;
+        else return null;
       });
-    } catch (error) {
-      resolvers.forEach(item => item.reject(error));
     }
-  }, 10);
-
-  return new Promise((resolve, reject) => {
-    usersToFetch.push({ userId, resolve, reject });
-  });
-}
-
-function combineFetchUserResults(results: UseQueryResult<Awaited<UserProfile | {}>, unknown>[]) {
-  // Агрегируем состояния загрузки и ошибок
-  const ret = {
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    error: null as unknown,
-    isSuccess: true,
-    users: [] as UserProfile[]
-  };
-
-  for (const query of results) {
-    ret.isLoading ||= query.isLoading;
-    ret.isFetching ||= query.isFetching;
-    if (query.isError && !ret.error) {
-      ret.isError = true;
-      ret.error = query.error;
+    else {
+      return [] as UserProfile[];
     }
-    ret.isSuccess &&= query.isSuccess;
-    const data = query.data as UserProfile;
-    if (data?.id) ret.users.push(data);
-  }
-
-  return ret;
-}
+  },
+  createQueryKey: (authId, userId) => [ 'user', authId, 'user', userId ],
+  extractKeys: queryKey => [ Number(queryKey[1]), Number(queryKey[3]) ],
+  staleTime: CONFIG.API?.userDataStaleTime ?? 900000,
+  dataKey: 'users'
+});
 
 /**
  * Получить данные пользователя по ID.
@@ -326,12 +266,12 @@ function combineFetchUserResults(results: UseQueryResult<Awaited<UserProfile | {
  * @param userId ID пользователя.
  * @returns Промис, разрешающийся с данными запрошенного пользователя.
  */
-export async function getUserById(queryClient: QueryClient, userId: number) {
-  if (!userId) return {};
+export async function getUserById(queryClient: QueryClient, authId: number, userId: number) {
+  if (!authId || !userId || authId !== authorizedUserId()) return {};
   return (await queryClient.ensureQueryData({
-    queryKey: ['user', userId],
+    queryKey: ['user', authId, 'user', userId],
     queryFn: fetchUserById,
-    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
+    staleTime: CONFIG.API?.userDataStaleTime ?? 900000,
   })) ?? {};
 }
 
@@ -341,19 +281,7 @@ export async function getUserById(queryClient: QueryClient, userId: number) {
  * @returns Объект, содержащий объединенное состояние запросов React Query
  *          и массив `users` с данными успешно полученных пользователей.
  */
-export function useUsersByIds(userIds: number[]) {
-  const queries = userIds.map(userId => ({
-    queryKey: ['user', userId],
-    queryFn: fetchUserById,
-    staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
-    enabled: !!userId
-  }));
-
-  return useQueries({
-    queries,
-    combine: combineFetchUserResults
-  });
-}
+export { useUsersByIds };
 
 /**
  * Выполняет вход пользователя в систему и сохраняет токен.
