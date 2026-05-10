@@ -46,6 +46,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   return (
     <div
       className={`${styles.chat_message_container} ${messageContainerStyle}`}
+      data-message={message.id}
     >
       {isSystemMessage ?
         <div className={styles.system_message_content}>

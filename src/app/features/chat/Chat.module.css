@@ -325,7 +325,7 @@
   position: relative; /* Для кнопки прокрутки */
 }
 
-.message_feed_view {
+.message_feed {
   height: 100%;
   overflow-y: auto;
   background: #f6f8f9;
@@ -807,7 +807,7 @@
     font-size: 11px;
   }
 
-  .message_feed_view {
+  .message_feed {
     padding: 5px 10px;
   }
   .message_bubble {

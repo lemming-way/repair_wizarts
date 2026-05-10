@@ -1,10 +1,12 @@
 import type { FC } from 'react';
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useCallback, useState, useMemo } from 'react';
 import { useLanguage } from 'app/state/language';
 import { Order } from 'app/state/order';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { ChatMessage } from './ChatMessage';
-import { MessageType, MessageFormat } from 'app/state/chat';
+import { Message, MessageType, MessageFormat } from 'app/state/chat';
+
+import { useChat, useMessagesByIds } from './MockMessages';
 
 import styles from './Chat.module.css';
 
@@ -14,113 +16,8 @@ interface MessageFeedProps {
   currentUser: UserProfile;
 }
 
-// Mock messages for UI demonstration
-const MOCK_MESSAGES = (currentUserId: number, partnerId: number, userRole: UserRole) => [
-  {
-    id: 1,
-    created: new Date(Date.now() - 3600000), // 1 hour ago
-    type: MessageType.System,
-    format: MessageFormat.Text,
-    text: 'Заказ №1234 был создан. Ожидайте предложений от мастеров.',
-    unread: false,
-  },
-  {
-    id: 2,
-    from: userRole === UserRole.Client ? currentUserId : partnerId,
-    created: new Date(Date.now() - 3500000),
-    authorId: userRole === UserRole.Client ? currentUserId : partnerId,
-    type: MessageType.User,
-    format: MessageFormat.Text,
-    text: 'Привет! Мне нужен ремонт iPhone 13. Экран разбит, но сенсор работает. Сколько будет стоить замена?',
-    unread: false,
-  },
-  {
-    id: 3,
-    from: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    created: new Date(Date.now() - 3000000),
-    authorId: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    type: MessageType.User,
-    format: MessageFormat.Text,
-    text: 'Здравствуйте! Замена экрана на iPhone 13 будет стоить 8000 рублей. Могу приехать завтра к 14:00.',
-    unread: false,
-  },
-  {
-    id: 4,
-    from: userRole === UserRole.Client ? currentUserId : partnerId,
-    created: new Date(Date.now() - 2800000),
-    authorId: userRole === UserRole.Client ? currentUserId : partnerId,
-    type: MessageType.User,
-    format: MessageFormat.Text,
-    text: 'Отлично! Завтра в 14:00 подходит. Адрес: ул. Пушкина, 10.',
-    unread: false,
-  },
-  {
-    id: 5,
-    from: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    created: new Date(Date.now() - 2700000),
-    authorId: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    type: MessageType.User,
-    text: 'Подтверждаю. Буду на месте.',
-    format: MessageFormat.Text,
-    modified: new Date(Date.now() - 500000), // Example of modified message
-    editorId: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    unread: true,
-  },
-  {
-    id: 6,
-    created: new Date(Date.now() - 2000000),
-    type: MessageType.System,
-    format: MessageFormat.Text,
-    text: 'Исполнитель подтвердил принятие заказа.',
-    unread: false,
-  },
-  {
-    id: 7,
-    from: userRole === UserRole.Client ? currentUserId : partnerId,
-    created: new Date(Date.now() - 1500000),
-    authorId: userRole === UserRole.Client ? currentUserId : partnerId,
-    type: MessageType.User,
-    format: MessageFormat.Text,
-    text: 'Мастер, вы уже выехали?',
-    unread: false,
-  },
-  {
-    id: 8,
-    created: new Date(Date.now() - 1000000),
-    type: MessageType.System,
-    format: MessageFormat.Text,
-    text: 'Работа над заказом началась.',
-    unread: true,
-  },
-  {
-    id: 9,
-    created: new Date(Date.now() - 750000),
-    authorId: 2,
-    type: MessageType.Admin,
-    format: MessageFormat.Text,
-    text: 'Мы будем отслеживать выполнение заказа в рамках проекта по повышению качества услуг.',
-    unread: true,
-  },
-  {
-    id: 10,
-    from: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    created: new Date(Date.now() - 500000),
-    authorId: userRole === UserRole.Contractor ? currentUserId : partnerId,
-    type: MessageType.User,
-    format: MessageFormat.Text,
-    text: 'Ремонт завершен, все работает отлично!',
-    unread: true,
-  },
-  {
-    id: 11,
-    created: new Date(Date.now() - 100000),
-    type: MessageType.System,
-    format: MessageFormat.Text,
-    text: 'Заказ успешно завершен.',
-    unread: true,
-  },
-];
-
+const BATCH_SIZE = 25; // Количество сообщений до и после текущего для окна
+const SCROLL_THRESHOLD = 200; // Порог для активации подгрузки сообщений (px от края)
 
 export const MessageFeed: FC<MessageFeedProps> = ({
   order,
@@ -129,12 +26,27 @@ export const MessageFeed: FC<MessageFeedProps> = ({
 }) => {
   const text = useLanguage();
   const messageFeedRef = useRef<HTMLDivElement>(null);
-  const [isAtBottom, setIsAtBottom] = useState(true); // Track if user is at the bottom
+  const scrollToBottomRef = useRef<(()=>void) | null>(null);
+  const postLoadingRef = useRef<(()=>void) | null>(null);
 
-  const chatPartnerId = (currentUser.role === UserRole.Client ? contractorId : order.clientId);
+  const [firstRenderedIndex, setFirstRenderedIndex] = useState(0);
+  const [windowSize, setWindowSize] = useState(0);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [pendingScrollToId, setPendingScrollToId] = useState<number | null>(null);
+  const [lastVisibleMessage, setLastVisibleMessage] = useState<number | null>(null);
+  const [lastVisibleMessageTop, setLastVisibleMessageTop] = useState<number | null>(null);
+  const [isLoadingWindow, setIsLoadingWindow] = useState(false); // Для предотвращения множественных запросов
+  const [isAtBottom, setIsAtBottom] = useState(true); // Отслеживание нахождения скролла внизу
 
-  // Generate mock messages based on current user's role
-  const messages = MOCK_MESSAGES(currentUser.id, chatPartnerId, currentUser.role);
+  // Получаем все ID сообщений чата
+  const { messageIds } = useChat(order.id, order.clientId, contractorId);
+
+  // Определяем ID сообщений для текущего окна
+  const windowedMessageIds = useMemo(
+    () => messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize),
+    [messageIds, firstRenderedIndex, windowSize]
+  );
+  const { messages, isLoading: isMessagesLoading, isSuccess: isMessagesSuccess } = useMessagesByIds(windowedMessageIds);
 
   const allUserIds = messages.reduce((ids, message) => {
     if (message.type === MessageType.User && message.from && message.from !== currentUser.id) {
@@ -145,29 +57,149 @@ export const MessageFeed: FC<MessageFeedProps> = ({
     }
     return ids;
   }, new Set<number>());
-  const { users, isLoading: isLoadingPartner } = useUsersByIds([...allUserIds]);
+  const { users } = useUsersByIds([...allUserIds]);
   const usersMap = new Map(users.map(user => [user.id, user]));
 
-  const scrollToBottom = useCallback(() => {
-    if (messageFeedRef.current) {
-      messageFeedRef.current.scrollTop = messageFeedRef.current.scrollHeight;
-      setIsAtBottom(true);
-    }
-  }, []);
+  // --- Функция для прокрутки к заданному сообщению по ID ---
+  const scrollToMessage = (targetId: number) => {
+    if (!messageIds.length) return;
 
-  const handleScroll = (event) => {
-    const el = event.target;
-    if (el) {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      // Consider "at bottom" if within 100px of the bottom
-      setIsAtBottom(scrollHeight - (scrollTop + clientHeight) < 100);
+    const targetIndex = messageIds.findIndex(id => id === targetId);
+    if (targetIndex === -1) return;
+
+    // Определяем новое окно загрузки вокруг целевого сообщения
+    let newFirst = targetIndex - BATCH_SIZE;
+    if (newFirst < 0) newFirst = 0;
+    let newSize = BATCH_SIZE * 2 + 1;
+    if (newFirst + newSize > messageIds.length) {
+      newFirst = messageIds.length - BATCH_SIZE * 2 - 1;
+      if (newFirst < 0) {
+        newSize += newFirst;
+        newFirst = 0;
+      }
+    }
+
+    if (newFirst !== firstRenderedIndex || newSize !== windowSize) {
+      setFirstRenderedIndex(newFirst);
+      setWindowSize(newSize);
+      setPendingScrollToId(targetId);
+      setIsLoadingWindow(true);
+    }
+    else {
+      const targetMessageElement = messageFeedRef.current?.querySelector(`[data-message="${targetId}"]`);
+      if (targetMessageElement) {
+        targetMessageElement.scrollIntoView({ behavior: isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
+      }
+      setIsInitialLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Scroll to bottom on initial load
-    scrollToBottom();
-  }, [order.id, contractorId, currentUser.id, !!messages]);
+  // --- Scroll to bottom function, теперь использует scrollToMessage ---
+  const scrollToBottom = () => {
+    if (messageIds.length > 0) {
+      scrollToMessage(messageIds[messageIds.length - 1]);
+    }
+  };
+  scrollToBottomRef.current = scrollToBottom;
+
+  useLayoutEffect(() => {
+    // Сброс состояния и прокрутка вниз при начальной загрузке чата
+    setFirstRenderedIndex(0);
+    setWindowSize(0);
+    setLastVisibleMessage(null);
+    setLastVisibleMessageTop(null);
+    setIsInitialLoading(true);
+    scrollToBottomRef.current?.();
+  }, [order.id, contractorId, currentUser.id, messageIds.length > 0]);
+
+  // --- Эффект для корректировки скролла после загрузки новой порции сообщений ---
+  postLoadingRef.current = () => {
+    setIsLoadingWindow(false);
+    if (!messages.length) return;
+
+    if (pendingScrollToId) {
+      // Прокрутка к заданному сообщению, если запрошено
+      const targetMessageElement = messageFeedRef.current?.querySelector(`[data-message="${pendingScrollToId}"]`);
+      if (targetMessageElement) {
+        targetMessageElement.scrollIntoView({ behavior: isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
+      }
+      setPendingScrollToId(null);
+      setIsInitialLoading(false);
+    }
+    else if (lastVisibleMessage && messageFeedRef.current) {
+      const msg = messageFeedRef.current.querySelector(`[data-message="${lastVisibleMessage}"]`) as HTMLElement;
+      if (msg) {
+        const { offsetTop, scrollTop } = messageFeedRef.current;
+        messageFeedRef.current.scrollTop = msg.offsetTop - offsetTop - (lastVisibleMessageTop ?? 0);
+      }
+    }
+  }
+
+  useLayoutEffect(() => {
+    postLoadingRef.current?.()
+  }, [messages]);
+
+  // --- Обработчик скролла для подгрузки сообщений ---
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    if (!messages.length) return;
+
+    const el = event.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight, offsetTop } = el;
+
+    // Определяем положение последнего видимого на экране элемента
+    const children = el.querySelectorAll('[data-message]');
+    let lastVisible: null | HTMLElement = null;
+    for (const msg of children) {
+      const { offsetTop: msgOffsetTop, offsetHeight: msgOffsetHeight } = msg as HTMLElement;
+      if (msgOffsetTop - offsetTop + msgOffsetHeight > scrollTop && msgOffsetTop - offsetTop < scrollTop + clientHeight) {
+        lastVisible = msg as HTMLElement;
+      }
+    }
+    if (lastVisible) {
+      setLastVisibleMessage(Number(lastVisible.dataset.message));
+      setLastVisibleMessageTop(lastVisible.offsetTop - offsetTop - scrollTop);
+    }
+    else {
+      setLastVisibleMessage(null);
+      setLastVisibleMessageTop(null);
+    }
+
+    const atBottom =
+      firstRenderedIndex + windowSize >= messageIds.length &&
+      scrollHeight - scrollTop - clientHeight < SCROLL_THRESHOLD;
+    setIsAtBottom(atBottom);
+
+    if (isLoadingWindow) {
+      return; // Игнорируем скролл, если уже идет загрузка
+    }
+
+    let newFirst = firstRenderedIndex;
+    let newSize = windowSize;
+
+    // Подгрузка старых сообщений (скролл вверх)
+    if (scrollTop < SCROLL_THRESHOLD && firstRenderedIndex > 0) {
+      newFirst -= BATCH_SIZE;
+      if (newFirst < 0) newFirst = 0;
+      newSize += BATCH_SIZE;
+      if (newSize > 3 * BATCH_SIZE + 1) newSize = 3 * BATCH_SIZE + 1;
+      if (newFirst + newSize > messageIds.length) newSize = messageIds.length - newFirst;
+    }
+    // Подгрузка новых сообщений (скролл вниз)
+    else if (scrollHeight - scrollTop - clientHeight < SCROLL_THRESHOLD && firstRenderedIndex + windowSize < messageIds.length) {
+      newSize += BATCH_SIZE;
+      if (firstRenderedIndex + newSize > messageIds.length) newSize = messageIds.length - firstRenderedIndex;
+      if (newSize > 3 * BATCH_SIZE + 1) {
+        newFirst += newSize - 3 * BATCH_SIZE - 1;
+        newSize = 3 * BATCH_SIZE + 1;
+      }
+    }
+
+    if (newFirst !== firstRenderedIndex || newSize !== windowSize) {
+        setIsLoadingWindow(true);
+        setFirstRenderedIndex(newFirst);
+        setWindowSize(newSize);
+    }
+  };
 
   return (
     <div className={styles.message_feed_container}>
@@ -182,7 +214,12 @@ export const MessageFeed: FC<MessageFeedProps> = ({
         </button>
       )}
 
-      <div className={styles.message_feed_view} ref={messageFeedRef} onScroll={handleScroll}>
+      <div className={styles.message_feed} ref={messageFeedRef} onScroll={handleScroll}>
+        {firstRenderedIndex > 0 && isMessagesLoading && (
+          <div className={styles.loading_messages_indicator}>
+            {text('Loading messages...')}
+          </div>
+        )}
         {messages.map((message) => {
           const userId =
             message.type === MessageType.User
@@ -201,6 +238,11 @@ export const MessageFeed: FC<MessageFeedProps> = ({
             />
           );
         })}
+        {firstRenderedIndex + windowSize < messageIds.length - 1 && isMessagesLoading && (
+          <div className={styles.loading_messages_indicator}>
+            {text('Loading messages...')}
+          </div>
+        )}
       </div>
     </div>
   );
