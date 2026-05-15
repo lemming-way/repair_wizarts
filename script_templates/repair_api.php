@@ -37,18 +37,32 @@ $out = call_user_func(function() {
     // Получить список поездок по заданным параметрам
     'getTripIds' => [
       'sql' => 'SELECT `o`.`id_order` ' .
-              'FROM `order` `o` ' .
-              'LEFT JOIN (' .
-                'SELECT DISTINCT `id_order` ' .
-                'FROM `order_driver` ' .
-                'WHERE `not_deleted`=1 AND `id_user`=:u_id AND `id_order_driver_status` IN(3,4,5,6)' .
-              ') `driving` ON :u_role=2 AND `driving`.`id_order`=`o`.`id_order` ' .
-              'LEFT JOIN (' .
-                'SELECT DISTINCT `id_order` ' .
-                'FROM `order_driver_select` ' .
-                'WHERE `id_user`=:u_id AND `cancel`=0' .
-              ') `assigned` ON :u_role=2 AND `o`.`id_order_status`=6 AND `assigned`.`id_order`=`o`.`id_order` ' .
-              'LEFT JOIN `users` `u` ON :u_role=2 AND `id_user`=:u_id ' .
+              ($current_user_role == 2 ?
+                'FROM (' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `order_driver` `od` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`od`.`id_order` ' .
+                  'WHERE `od`.`not_deleted`=1 AND `od`.`id_user`=:u_id AND `od`.`id_order_driver_status` IN(3,4,5,6) ' .
+                  'UNION ' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `order_driver_select` `ods` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`ods`.`id_order` ' .
+                  'WHERE `ods`.`id_user`=:u_id AND `ods`.`cancel`=0 AND `o`.`id_order_status`=6 ' .
+                  'UNION ' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `users` `u` ' .
+                  'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
+                  'WHERE `u`.`id_user`=:u_id '.
+                    'AND `o`.`id_order_status`=1 ' .
+                    'AND CASE ' .
+                      'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$" ' .
+                      'THEN JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")) ' .
+                      'ELSE 0 ' .
+                    'END' .
+                ') `o` '
+              :
+                'FROM `order` `o` '
+              ) .
               'WHERE ' .
                 '(' .
                   '((:flags & 1) AND `o`.`only_offer`=0) ' .
@@ -56,28 +70,10 @@ $out = call_user_func(function() {
                 ')' .
                 'AND (' .
                   '((:flags & 4) AND (`o`.`id_order_status`=1 OR `o`.`id_order_status`=6)) ' .
-                  'OR((:flags & 8) AND `o`.`id_order_status`=2) ' .
-                  'OR((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
+                  'OR ((:flags & 8) AND `o`.`id_order_status`=2) ' .
+                  'OR ((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
                 ')' .
-                'AND (' .
-                  '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                  'OR (' .
-                    ':u_role=2 ' .
-                    'AND (' .
-                      '(' .
-                        '`id_order_status`=1 ' .
-                        'AND `u`.`id_city`=`o`.`city_from` ' .
-                        'AND IF(' .
-                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$",' .
-                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")),' .
-                          '0' .
-                        ')' .
-                      ') ' .
-                      'OR (`id_order_status`=6 AND `assigned`.`id_order` IS NOT NULL) ' .
-                      'OR `driving`.`id_order` IS NOT NULL' .
-                    ')' .
-                  ')' .
-                ')' .
+                ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
               'ORDER BY `o`.`create_datetime` DESC',
       'fields' => [
         'numeric' => [ 'id_order' ]
@@ -194,11 +190,11 @@ $out = call_user_func(function() {
                       '(' .
                         '`id_order_status`=1 ' .
                         'AND `u`.`id_city`=`o`.`city_from`' .
-                        'AND IF(' .
-                          'JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$",' .
-                          'JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")),' .
-                          '0' .
-                        ')' .
+                        'AND CASE ' .
+                          'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$" ' .
+                          'THEN JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")) ' .
+                          'ELSE 0 ' .
+                        'END' .
                       ')' .
                       'OR (`o`.`id_order_status`=6 AND `ods2`.`id_order` IS NOT NULL) ' .
                       'OR `driving`>0' .
@@ -214,43 +210,6 @@ $out = call_user_func(function() {
       ]
     ],
     // ================ Сообщения/чаты ================
-    'getActiveChats' => [
-      'sql' => 'SELECT `order`,`client`,`contractor`,`unread_count`,`first_unread`,`last_time` ' .
-                'FROM (' .
-                  'SELECT ' .
-                    '`o`.`id_order` AS `order`,' .
-                    '`o`.`client` AS `client`,' .
-                    '`o`.`options` AS `o_options`,' .
-                    '`d`.`id_user` AS `contractor`,' .
-                    '`d`.`options` AS `d_options`,' .
-                    'IFNULL(SUM(`m`.`id_message` IS NOT NULL AND `r`.`id_message` IS NULL),0) AS `unread_count`,' .
-                    'MIN(IF(`r`.`id_message` IS NULL,`m`.`id_message`,NULL)) AS `first_unread`,' .
-                    'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time` ' .
-                  'FROM `order` `o` ' .
-                  'JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
-                  'LEFT JOIN `message` `m` ' .
-                    'ON `m`.`recipient_owner_type`=31 ' .
-                    'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',`d`.`id_user`) ' .
-                    'AND `m`.`active_status`>0 ' .
-                  'LEFT JOIN `messages_read` `r` ' .
-                    'ON `r`.`id_message`=`m`.`id_message` ' .
-                    'AND `r`.`id_user`=:u_id ' .
-                  'WHERE `o`.`id_order_status` IN(2,3,4) ' .
-                    'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
-                    'AND `d`.`not_deleted`>0 ' .
-                    'AND (' .
-                      '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                      'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
-                    ') ' .
-                  'GROUP BY `d`.`id_user`,`o`.`id_order` ' .
-                  //~ 'HAVING `unread_count`>0 ' .
-                    //~ 'OR (:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
-                    //~ 'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
-                ') `inner`',
-      'fields' => [
-        'numeric' => ['order', 'client', 'contractor', 'unread_count', 'first_unread']
-      ]
-    ],
     // Получить список активных чатов для пользователя
     'getActiveChatIds' => [
       'sql' => 'SELECT CONCAT(`order`,\':\',`contractor`) AS `id`' .
@@ -258,31 +217,59 @@ $out = call_user_func(function() {
                   'SELECT ' .
                     '`o`.`id_order` AS `order`,' .
                     '`o`.`options` AS `o_options`,' .
-                    '`d`.`id_user` AS `contractor`,' .
+                    'IFNULL(`d`.`id_user`,`ds`.`id_user`) AS `contractor`,' .
                     '`d`.`options` AS `d_options`,' .
+                    '`ds`.`order_select_type`,' .
                     'EXISTS(' .
                       'SELECT 1 FROM `message` `m` ' .
                       'LEFT JOIN `messages_read` `r` ' .
                         'ON `r`.`id_message`=`m`.`id_message` ' .
                         'AND `r`.`id_user`=:u_id ' .
                       'WHERE `m`.`recipient_owner_type`=31 ' .
-                        'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',`d`.`id_user`) ' .
+                        'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',IFNULL(`d`.`id_user`,`ds`.`id_user`)) ' .
                         'AND `m`.`active_status`>0 ' .
                         'AND `r`.`id_message` IS NULL' .
                     ') AS `has_unread` ' .
-                  'FROM `order` `o` ' .
-                  'JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
-                  'WHERE `o`.`id_order_status` IN(2,3,4) ' .
-                    'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
+                  ($current_user_role == 2 ?
+                    'FROM (' .
+                     'SELECT `id_order`,`id_user` FROM `order_driver` `d` ' .
+                     'WHERE `d`.`id_user`=:u_id AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`>0 ' .
+                     'UNION ' .
+                     'SELECT `id_order`,`id_user` FROM `order_driver_select` `ds` ' .
+                     'WHERE `ds`.`id_user`=:u_id AND `cancel`=0' .
+                    ') `uids` ' .
+                    'JOIN `order` `o` ON `o`.`id_order`=`uids`.`id_order` '
+                  :
+                    'FROM `order` `o` ' .
+                    'JOIN LATERAL (' .
+                     'SELECT `id_order`,`id_user` FROM `order_driver` `d` ' .
+                     'WHERE `d`.`id_order`=`o`.`id_order` AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`>0 ' .
+                     'UNION ' .
+                     'SELECT `id_order`,`id_user` FROM `order_driver_select` `ds` ' .
+                     'WHERE `ds`.`id_order`=`o`.`id_order` AND `cancel`=0' .
+                    ') `uids` '
+                  ) .
+                  'LEFT JOIN `order_driver` `d` '.
+                    'ON `d`.`id_order`=`o`.`id_order` ' .
+                    'AND `d`.`id_user`=`uids`.`id_user` ' .
+                    'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
                     'AND `d`.`not_deleted`>0 ' .
-                    'AND (' .
-                      '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                      'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
-                    ') ' .
-                  'GROUP BY `d`.`id_user`,`o`.`id_order` ' .
-                  //~ 'HAVING `has_unread`>0 ' .
-                    //~ 'OR (:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
-                    //~ 'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
+                  'LEFT JOIN `order_driver_select` `ds` ' .
+                    'ON `ds`.`id_order`=`o`.`id_order` ' .
+                    'AND `ds`.`id_user`=`uids`.`id_user` ' .
+                    'AND `cancel`=0 ' .
+                  'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
+                    ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
+                    'AND (`d`.`id_user`>0 OR `ds`.`id_user`>0) ' .
+                  'GROUP BY `contractor`,`o`.`id_order` ' .
+                  'HAVING `has_unread`>0 ' .
+                    'OR ' .
+                    ($current_user_role == 2 ?
+                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
+                      'OR `ds`.`order_select_type`=\'Active\''
+                    :
+                      'JSON_CONTAINS(`o`.`options`,CAST(`contractor` AS JSON),\'$.chatOpen\')'
+                    ) .
                 ') `inner`',
     ],
     // Получить данные чатов по `id`
@@ -290,13 +277,16 @@ $out = call_user_func(function() {
       'sql' => 'SELECT ' .
                   '`o`.`id_order` AS `order`,' .
                   '`o`.`client` AS `client`,' .
-                  '`d`.`id_user` AS `contractor`,' .
+                  'IFNULL(`d`.`id_user`,`ds`.`id_user`) AS `contractor`,' .
                   'IFNULL(SUM(`m`.`id_message` IS NOT NULL AND `r`.`id_message` IS NULL),0) AS `unread_count`,' .
                   'MIN(IF(`r`.`id_message` IS NULL,`m`.`id_message`,NULL)) AS `first_unread`,' .
                   'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time`,' .
                   '(' .
-                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(`d`.`id_user` AS JSON),\'$.chatOpen\')) ' .
-                    'OR (:u_role=2 AND JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\'))' .
+                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\')) ' .
+                    'OR (:u_role=2 AND (' .
+                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
+                      'OR `ds`.`order_select_type`=\'Active\'' .
+                    '))' .
                   ') AS `is_open` ' .
                 'FROM JSON_TABLE(' .
                   'JSON_ARRAY(:ids),\'$[*]\' ' .
@@ -304,9 +294,15 @@ $out = call_user_func(function() {
                 ') AS `ids` ' .
                 'JOIN `order` `o` ' .
                   'ON `o`.`id_order`=SUBSTRING_INDEX(`ids`.`id`,\':\',1) ' .
-                'JOIN `order_driver` `d` ' .
+                'LEFT JOIN `order_driver` `d` ' .
                   'ON `d`.`id_user`= SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
                   'AND `d`.`id_order`=`o`.`id_order` ' .
+                  'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                  'AND `d`.`not_deleted`>0 ' .
+                'LEFT JOIN `order_driver_select` `ds` ' .
+                  'ON `ds`.`id_user`= SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
+                  'AND `ds`.`id_order`=`o`.`id_order` ' .
+                  'AND `ds`.`cancel`=0 ' .
                 'LEFT JOIN `message` `m` ' .
                   'ON `m`.`recipient_owner_type`=31 ' .
                   'AND `m`.`recipient_owner`=`ids`.`id` ' .
@@ -314,12 +310,11 @@ $out = call_user_func(function() {
                 'LEFT JOIN `messages_read` `r` ' .
                   'ON `r`.`id_message`=`m`.`id_message` ' .
                   'AND `r`.`id_user`=:u_id ' .
-                'WHERE `o`.`id_order_status` IN(2,3,4) ' .
-                  'AND `d`.`id_order_driver_status` IN(2,3,4,5,6) ' .
-                  'AND `d`.`not_deleted`>0 ' .
+                'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
+                  'AND (`d`.`id_user` IS NOT NULL OR `ds`.`id_user` IS NOT NULL) ' .
                   'AND (' .
                     '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                    'OR (:u_role=2 AND `d`.`id_user`=:u_id)' .
+                    'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
                   ') ' .
                 'GROUP BY `ids`.`id`',
       'fields' => [
@@ -412,6 +407,54 @@ $out = call_user_func(function() {
                   'AND `active_status`>0 ' .
                   'AND `recipient_owner_type`=31 ' .
                   'AND `id_message_type` IN(1,31,32)'
+    ],
+    // Открыть/закрыть чат
+    'chatOpenClose' => [
+      'sql' => 'UPDATE `order` `o` ' .
+                'LEFT JOIN `order_driver` `d` ' .
+                  'ON `d`.`id_order`=`o`.`id_order` ' .
+                  'AND `d`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
+                  'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                  'AND `d`.`not_deleted`>0 ' .
+                'LEFT JOIN `order_driver_select` `ds` ' .
+                  'ON `ds`.`id_order`=`o`.`id_order` ' .
+                  'AND `ds`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
+                  'AND `ds`.`cancel`=0 ' .
+                'SET ' .
+                  '`o`.`options`=IFNULL(' .
+                    'CASE ' .
+                      'WHEN :u_role=1 AND :open>0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') IS NOT TRUE THEN ' .
+                        'JSON_MERGE_PRESERVE(`o`.`options`,JSON_OBJECT(\'chatOpen\',JSON_ARRAY(IFNULL(`d`.`id_user`,`ds`.`id_user`)))) ' .
+                      'WHEN :u_role=1 AND :open=0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') THEN ' .
+                        'JSON_REMOVE(`o`.`options`,' .
+                          'CONCAT(' .
+                            '\'$.chatOpen[\',' .
+                            'FIND_IN_SET(IFNULL(`d`.`id_user`,`ds`.`id_user`),REGEXP_REPLACE(`o`.`options`->\'$.chatOpen\',\'[\\\\[\\\\]\\\\s]\',\'\'))-1,' .
+                            '\']\'' .
+                          ')' .
+                        ') ' .
+                      'ELSE `o`.`options` ' .
+                    'END,' .
+                    '`o`.`options`' .
+                  '),' .
+                  '`d`.`options`=IFNULL(' .
+                    'IF(:u_role=2,' .
+                      'JSON_MERGE_PATCH(`d`.`options`,JSON_OBJECT(\'chatOpen\',:open>0)),' .
+                      '`d`.`options`' .
+                    '),' .
+                    '`d`.`options`' .
+                  '),' .
+                  '`ds`.`order_select_type`=IF(:u_role=2,' .
+                    'IF(:open>0,\'Active\',\'Processing\'),' .
+                    '`ds`.`order_select_type`' .
+                  ')' .
+                'WHERE `o`.`id_order`=SUBSTRING_INDEX(:id,\':\',1) ' .
+                  'AND `o`.`id_order_status` IN(1,2,3,4,6) ' .
+                  'AND (`d`.`id_user` IS NOT NULL OR `ds`.`id_user` IS NOT NULL) ' .
+                  'AND (' .
+                    '(:u_role=1 AND `o`.`client`=:u_id) ' .
+                    'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
+                  ')',
     ]
   ];
 
@@ -528,7 +571,7 @@ $out = call_user_func(function() {
     $out = [ 'id' => insert_id() ];
   }
   else {
-    $out = null;
+    $out = $result;
   }
 
   return $out;

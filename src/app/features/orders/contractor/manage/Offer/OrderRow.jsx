@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
@@ -17,6 +18,7 @@ export default function OrderRow({
   onResponseChanged,
 }) {
   const text = useLanguage();
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImageId, setModalImageId] = useState(null);
   const [visibleRevokeModal, setVisibleRevokeModal] = useState(false);
@@ -137,6 +139,12 @@ export default function OrderRow({
             ))}
           </Swiper>
 
+          <button
+            className={style.button}
+            onClick={() => navigate(`/order/${order.id}/chat/${user.id}`)}
+          >
+            {text('Go to chat')}
+          </button>
           <button
             className={style.button}
             onClick={() => setIsOpenCommentWrap((prev) => !prev)}

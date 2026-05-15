@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from 'app/state/language';
 import style from './CreateDirect.module.scss';
 
-function ConfirmationBlock({ visibleConfirm, setVisibleConfirm }) {
+function ConfirmationBlock({ visibleConfirm, setVisibleConfirm, orderId, contractorId }) {
   const text = useLanguage();
 
   if (!visibleConfirm) {
@@ -31,7 +31,7 @@ function ConfirmationBlock({ visibleConfirm, setVisibleConfirm }) {
         </div>
 
         <Link
-          to="/client/requests/my_orders/#order"
+          to={`/order/${orderId}/chat/${contractorId}`}
           className={style.button_confirm}
         >
           {text('Continue')}

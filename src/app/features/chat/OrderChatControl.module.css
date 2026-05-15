@@ -1,6 +1,6 @@
 .order_control_block {
     background-color: #ffffff;
-    padding: 16px 40px;
+    padding: 16px 20px 16px 60px;
     border-bottom: 1px solid #e9eaf1;
     display: flex;
     justify-content: space-between;
@@ -78,6 +78,58 @@
 }
 .close_chat_button:hover {
     background-color: #b3b3b3;
+}
+
+.dotted {
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.button_dotted > div {
+  --size: 7px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background-color: gray;
+}
+
+.dropdown_button {
+  /* padding: 5px; */
+  background-color: unset !important;
+  outline: none !important;
+  box-shadow: none !important;
+  /* margin-right: 20px; */
+}
+
+.dropdown_button:hover {
+  background-color: rgba(128, 128, 128, 0.422) !important;
+}
+
+.dropdown_menu {
+  right: unset;
+  /* left: 0; */
+  right: 0;
+}
+
+.dropdown_menu li {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dropdown_item {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 15px;
+}
+
+.dropdown_item img {
+  --size: 20px;
+  width: var(--size);
+  height: var(--size - 10px);
 }
 
 /* Медиа-запросы для адаптивности */

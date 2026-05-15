@@ -103,7 +103,7 @@ function Order() {
       OrderStatus.DRAFT,
       OrderStatus.PUBLISHED,
       OrderStatus.REQUESTED,
-      OrderStatus.CONTRACTOR_CONFIRMED
+      OrderStatus.APPOINTED
     ].includes(currentOrder.status);
 
   if (!orderId) return null;
@@ -458,6 +458,9 @@ function Order() {
                     >
                       {text('Select contractor')}
                     </button>
+                    <Link to={`/order/${orderId}/chat/${offer.contractorId}`}>
+                      <button className={styles.button}>{text('Chat with master')}</button>
+                    </Link>
                     <Link to={`/client/feedback/${offer.contractorId}`}>
                       <button className={styles.button}>{text('Reviews about the contractor')}</button>
                     </Link>

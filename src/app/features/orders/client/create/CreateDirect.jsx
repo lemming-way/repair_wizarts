@@ -45,6 +45,7 @@ function CreateDirect() {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [showSmallModal, setShowSmallModal] = useState(false);
   const [showBigModal, setShowBigModal] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState(null);
 
   const { contractors } = useContractors({ product: productId, city: currentCity });
   const { createOrder } = useCreateOrder();
@@ -118,6 +119,7 @@ function CreateDirect() {
       }
       console.log(`Заказ успешно создан. ID: ${newOrderId}`);
 
+      setCreatedOrderId(newOrderId);
       setShowOrderForm(false);
       setVisibleBlockPayment(true);
     } catch (err) {
@@ -201,6 +203,8 @@ function CreateDirect() {
 
     {/* Вы подтвердили производителя работ */}
     <ConfirmationBlock
+      orderId={createdOrderId}
+      contractorId={selectedContractor.id}
       visibleConfirm={visibleConfirm}
       setVisibleConfirm={setVisibleConfirm}
     />

@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import { FC, useEffect } from 'react';
 
 import { useLanguage } from 'app/state/language';
 import { useActiveChats, ChatData } from 'app/state/chat';
@@ -10,16 +10,20 @@ import styles from './Chat.module.css';
 
 interface ChatListProps {
   currentUser: UserProfile;
+  isChatOpen: boolean;
   currentOrderId: number | null;
   currentContractorId: number | null;
   onChatSelected: (orderId: number, contractorId: number) => void;
+  setChatOpen: (orderId: number, contractorId: number) => void;
 }
 
 export const ChatList: FC<ChatListProps> = ({
   currentUser: user,
+  isChatOpen,
   currentOrderId: orderId,
   currentContractorId: contractorId,
-  onChatSelected
+  onChatSelected,
+  setChatOpen
 }) => {
   const text = useLanguage();
   const { chats, isLoading: isLoadingChats, isError: isErrorChats } = useActiveChats();
@@ -44,6 +48,15 @@ export const ChatList: FC<ChatListProps> = ({
 
   // Fetch user profiles
   const { users, isLoading: isLoadingPartners, isError: isErrorPartners } = useUsersByIds([...allUserIds]);
+
+  useEffect(() => {
+    if (isChatOpen && orderId && contractorId && chats) {
+      const currentChat = chats.find(chat => chat.orderId === orderId && chat.contractorId === contractorId);
+      if (!currentChat || !currentChat.isOpen) {
+        setChatOpen(orderId, contractorId);
+      }
+    }
+  }, [chats, isChatOpen, orderId, contractorId, setChatOpen]);
 
   // Ранний выход из функции, если данные не готовы
   if (isLoadingChats || isLoadingOrders || isLoadingPartners) {

@@ -35,7 +35,7 @@ function DirectOrders() {
       await acceptInvoice(orderId);
       const order = orders.find(o => o.id === orderId);
       if (order && user.id) {
-        navigate(`/order/${order.id}/contractor/${user.id}`);
+        navigate(`/order/${order.id}/chat/${user.id}`);
       }
     } catch (error) {
       console.error('Error accepting order:', error);
@@ -96,8 +96,8 @@ function DirectOrders() {
               </summary>
               <div className={style.details_body}>
                 {
-                  order.services?.map(item => 
-                    <p className={style.text}>{item.service}</p>
+                  order.services?.map((item,index) => 
+                    <p key={index} className={style.text}>{item.service}</p>
                   )
                 }
                 <p className={style.text}>{order.description}</p>
@@ -134,6 +134,12 @@ function DirectOrders() {
                       onClick={() => handleDeclineOrder(order.id)}
                     >
                       {text('Decline')}
+                    </button>
+                    <button
+                      className={style.button_back}
+                      onClick={() => navigate(`/order/${order.id}/chat/${user.id}`)}
+                    >
+                      {text('Go to chat')}
                     </button>
                   </div>
                 </div>

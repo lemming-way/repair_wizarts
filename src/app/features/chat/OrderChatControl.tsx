@@ -1,5 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
+import Dropdown from 'react-multilevel-dropdown';
+
 import { useLanguage } from 'app/state/language';
 import { Order, OrderStatus, orderStatusString } from 'app/state/order';
 import { UserProfile, UserRole } from 'app/state/user';
@@ -35,7 +37,8 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
 
   const isClient = currentUser.role === UserRole.Client;
   const isContractor = currentUser.role === UserRole.Contractor;
-  const effectiveOrderStatus = order.contractorId === chatContractorId
+  const effectiveOrderStatus =
+    order.status === OrderStatus.PUBLISHED || chatContractorId === order.contractorId
     ? order.status
     : OrderStatus.CANCELLED;
 
@@ -69,7 +72,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   // Рендеринг кнопок в зависимости от статуса заказа и роли пользователя
   const renderActionButtons = () => {
     switch (effectiveOrderStatus) {
-      case OrderStatus.CONTRACTOR_CONFIRMED:
+      case OrderStatus.APPOINTED:
         if (isClient) {
           return (
             <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
@@ -182,9 +185,27 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
       <div className={styles.action_buttons}>
         {renderActionButtons()}
       </div>
-      <button className={styles.close_chat_button} onClick={() => onCloseChat(order.id, chatContractorId)}>
-        {text('Close Chat')}
-      </button>
+      <Dropdown
+        title={
+          <>
+            <div className={styles.button_dotted}>
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          </>
+        }
+        buttonClassName={styles.dropdown_button}
+        menuClassName={styles.dropdown_menu}
+      >
+          <Dropdown.Item
+            className={styles.dropdown_item}
+            onClick={() => onCloseChat(order.id, chatContractorId)}
+          >
+            <img src="/img/icons/trash.png" alt="" />
+            {text('Close chat')}
+          </Dropdown.Item>
+      </Dropdown>
     </div>
   );
 };

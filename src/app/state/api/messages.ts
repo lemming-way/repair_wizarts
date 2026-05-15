@@ -170,3 +170,23 @@ export async function markMessagesAsRead(ids: number[]): Promise<void> {
   const result = await post<void>('script/template/repair_api', payload);
   return result;
 }
+
+/**
+ * Пометить чат открытым или закрытым.
+ * Доступно только для авторизованного пользователя.
+ * @param id ID чата
+ * @param isOpen открыт чат или закрыт
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function markChatAsOpen(id: string, isOpen: boolean): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'chatOpenClose',
+      id,
+      open: isOpen
+    }
+  }
+  const result = await post<void>('script/template/repair_api', payload);
+  return result;
+}

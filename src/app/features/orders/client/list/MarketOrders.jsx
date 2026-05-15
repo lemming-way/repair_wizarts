@@ -85,6 +85,7 @@ function MarketOrders() {
               .map((v) =>
                 <MarketOrder
                   productId={v.productId}
+                  contractorId={v.contractorId}
                   desiredPrice={v.desiredPrice}
                   agreedPrice={v.agreedPrice}
                   description={v.description}

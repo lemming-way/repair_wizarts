@@ -82,7 +82,7 @@ export enum OrderStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
   REQUESTED = 'requested',
-  CONTRACTOR_CONFIRMED = 'contractor_confirmed',
+  APPOINTED = 'appointed',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',
   AWAITING_PAYMENT = 'awaiting_payment',
@@ -93,13 +93,14 @@ export enum OrderStatus {
 }
 
 export const orderStatusString = {
-  [OrderStatus.PUBLISHED]: 'Awaiting offer',
-  [OrderStatus.REQUESTED]: 'Offered to the contractor',
-  [OrderStatus.CONTRACTOR_CONFIRMED]: 'Contractor confirmed',
+  [OrderStatus.PUBLISHED]: 'Awaiting',
+  [OrderStatus.REQUESTED]: 'Offered',
+  [OrderStatus.APPOINTED]: 'Appointed',
   [OrderStatus.IN_PROGRESS]: 'In progress',
   [OrderStatus.COMPLETED]: 'Completed',
   [OrderStatus.CANCELLED]: 'Cancelled',
   [OrderStatus.CLOSED]: 'Finished',
+  [OrderStatus.DISPUTE]: 'Dispute',
 };
 
 const EMPTY_ARRAY = Object.freeze([]);
@@ -242,7 +243,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
       else if (b_state === TripAPI.TripState.Assigned) {
         if (c_state === TripAPI.DriverState.Waiting) order.status = OrderStatus.IN_PROGRESS;
         else if (c_state === TripAPI.DriverState.Driving) order.status = OrderStatus.COMPLETED;
-        else order.status = OrderStatus.CONTRACTOR_CONFIRMED;
+        else order.status = OrderStatus.APPOINTED;
         order.agreedPrice = order.contractorPrice;
       }
       else if (b_state === TripAPI.TripState.Cancelled) {
@@ -687,7 +688,7 @@ export function useCancelOrder() {
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
       if (!order) throw new Error('Order not found.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.CONTRACTOR_CONFIRMED ]
+        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ]
         .includes(order.status)
       ) {
         throw new Error('Cannot cancel an ongoing order.');
@@ -1134,7 +1135,7 @@ export function useStartOrderWork() {
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.CONTRACTOR_CONFIRMED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.APPOINTED) throw new Error('Incorrect order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
 
       await startOrderWork(orderId);

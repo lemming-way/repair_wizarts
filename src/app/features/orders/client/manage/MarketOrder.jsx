@@ -13,10 +13,9 @@ import { useLanguage } from 'app/state/language';
 import style from './MarketOrder/MarketOrder.module.css';
 
 const MarketOrder = (props) => {
-  const text = useLanguage();
-  const { categories, subcategories, products } = useProducts();
   const {
     id,
+    contractorId,
     desiredPrice,
     description,
     contractorsCount,
@@ -25,6 +24,9 @@ const MarketOrder = (props) => {
     createdAt,
     attachments,
   } = props;
+
+  const text = useLanguage();
+  const { categories, subcategories, products } = useProducts();
 
   const { updateOrder } = useUpdateOrder();
   const { cancelOrder } = useCancelOrder();
@@ -85,7 +87,8 @@ const MarketOrder = (props) => {
     status === OrderStatus.DRAFT ||
     status === OrderStatus.PUBLISHED ||
     status === OrderStatus.REQUESTED ||
-    status === OrderStatus.CONTRACTOR_CONFIRMED;
+    status === OrderStatus.APPOINTED;
+  const hasChat = !!contractorId;
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -105,7 +108,7 @@ const MarketOrder = (props) => {
 
   const buttonClassName = cn('dubl-btn-free', {
     'dubl-btn': status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED,
-    'dubl-but': status === OrderStatus.CONTRACTOR_CONFIRMED,
+    'dubl-but': status === OrderStatus.APPOINTED,
     'dubl-but-blue': status === OrderStatus.IN_PROGRESS,
     'dubl-but-green': status === OrderStatus.COMPLETED,
   });
@@ -151,7 +154,7 @@ const MarketOrder = (props) => {
               <div className="nav_applications-img">
                 {isEditable && (
                   <Popup
-                    trigger={<img src="/img/added_img/pencil.svg" alt="img absent" />}
+                    trigger={<img src="/img/added_img/pencil.svg" alt={text('Edit order')} />}
                     modal
                     nested
                   >
@@ -359,7 +362,7 @@ const MarketOrder = (props) => {
                 )}
                 {isCancellable && (
                   <Popup
-                    trigger={<img src="/img/added_img/fluent.svg" alt="img absent" />}
+                    trigger={<img src="/img/added_img/fluent.svg" alt={text('Cancel order')} />}
                     modal
                     nested
                   >
@@ -412,6 +415,11 @@ const MarketOrder = (props) => {
                     )}
                   </Popup>
                 )}
+                {hasChat &&
+                  <Link to={`/order/${id}/chat/${contractorId}`}>
+                    <img src="/img/chat.png" alt={text('Chat with contractor')} />
+                  </Link>
+                }
               </div>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   useVerifyOrderCompletion,
 } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
+import { useSetChatOpen } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
@@ -32,18 +33,18 @@ export const ChatLayout: FC = () => {
     return { orderId, contractorId };
   })(useParams<{ orderId: string, contractorId: string }>());
 
-  const isChatOpen = !!orderId && !!contractorId;
-  const [isChatListVisible, setIsChatListVisible] = useState(!isChatOpen); // Скрыть список по умолчанию, если чат открыт
-
-  // Состояния для модальных окон
-  const [isVisibleDisputeModal, setIsVisibleDisputeModal] = useState(false);
-  const [disputeOrderId, setDisputeOrderId] = useState<number | null>(null);
-
   // Получаем детали текущего заказа
   const { orders, isLoading: isLoadingOrder } = useOrdersByIds(
     orderId && contractorId ? [orderId] : []
   );
   const currentOrder = orders[0];
+
+  const isChatOpen = !!orderId && !!contractorId && !!currentOrder;
+  const [isChatListVisible, setIsChatListVisible] = useState(!isChatOpen); // Скрыть список по умолчанию, если чат открыт
+
+  // Состояния для модальных окон
+  const [isVisibleDisputeModal, setIsVisibleDisputeModal] = useState(false);
+  const [disputeOrderId, setDisputeOrderId] = useState<number | null>(null);
 
   //~ // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
   //~ const isChatBlocked = useMemo(() => {
@@ -54,6 +55,9 @@ export const ChatLayout: FC = () => {
   //~ }, [user.id, user.blackList, chatPartner?.id, chatPartner?.blackList]);
   const isChatBlocked = false;  // todo: логику чёрных списков надо продумать отдельно
 
+  // Мутации для действий с чатом
+  const { setChatOpen } = useSetChatOpen();
+
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
   const { startOrderWork } = useStartOrderWork();
@@ -63,14 +67,14 @@ export const ChatLayout: FC = () => {
   // Колбэки для OrderChatControl
   const handleCancelOrder = useCallback(async (order: Order, reason: string) => {
     try {
-      if (order.status === OrderStatus.CONTRACTOR_CONFIRMED) {
+      if (order.status === OrderStatus.APPOINTED) {
         await cancelOrder({ orderId: order.id, reason });
       }
       else {
         alert('(Заглушка) Запрос на отмену заказа отправлен');
       }
     } catch (error: any) {
-      alert(text(`Failed to cancel order: ${error.message}`));
+      alert(`Failed to cancel order: ${error.message}`);
     }
   }, [cancelOrder, text]);
 
@@ -78,7 +82,7 @@ export const ChatLayout: FC = () => {
     try {
       await startOrderWork(orderId);
     } catch (error: any) {
-      alert(text(`Failed to start work: ${error.message}`));
+      alert(`Failed to start work: ${error.message}`);
     }
   }, [startOrderWork, text]);
 
@@ -86,7 +90,7 @@ export const ChatLayout: FC = () => {
     try {
       await completeOrderByContractor(orderId);
     } catch (error: any) {
-      alert(text(`Failed to complete work: ${error.message}`));
+      alert(`Failed to complete work: ${error.message}`);
     }
   }, [completeOrderByContractor, text]);
 
@@ -94,7 +98,7 @@ export const ChatLayout: FC = () => {
     try {
       await verifyOrderCompletion(orderId);
     } catch (error: any) {
-      alert(text(`Failed to verify completion: ${error.message}`));
+      alert(`Failed to verify completion: ${error.message}`);
     }
   }, [verifyOrderCompletion, text]);
 
@@ -103,8 +107,20 @@ export const ChatLayout: FC = () => {
     setIsVisibleDisputeModal(true);
   }, []);
 
+  const handleOpenChat = useCallback(async (orderId: number, contractorId: number) => {
+    try {
+      await setChatOpen({ orderId, contractorId, isOpen: true });
+    } catch (error: any) {
+      alert(`Failed to mark chat open: ${error.message}`);
+    }
+  }, [setChatOpen]);
+
   const handleCloseChat = useCallback(async (orderId: number, contractorId: number) => {
-    console.log('Chat closed');
+    try {
+      await setChatOpen({ orderId, contractorId, isOpen: false });
+    } catch (error: any) {
+      alert(`Failed to mark chat closed: ${error.message}`);
+    }
     navigate('/chats');
   }, [navigate]);
 
@@ -158,22 +174,33 @@ export const ChatLayout: FC = () => {
       )}
 
       {/* Кнопка для переключения видимости списка чатов, видна когда список свернут */}
-      {!isChatListVisible && (
-        <button
-          className={`${styles.chat_list_toggle_button}`}
-          onClick={() => setIsChatListVisible(true)}
-          title={text('Open chat list')}
-        >
-          <img src="/img/arrowleft-white.png" alt="Open" style={{ transform: 'rotate(180deg)' }}/> {/* Корректируем иконку */}
-        </button>
+      {isChatOpen && (
+        isChatListVisible ?
+          <button
+            className={`${styles.chat_list_toggle_button} ${styles.close}`}
+            onClick={() => setIsChatListVisible(false)}
+            title={text('Close chat list')}
+          >
+            <img src="/img/arrowleft-white.png" alt="Close" /> {/* Корректируем иконку */}
+          </button>
+        :
+          <button
+            className={`${styles.chat_list_toggle_button}`}
+            onClick={() => setIsChatListVisible(true)}
+            title={text('Open chat list')}
+          >
+            <img src="/img/arrowleft-white.png" alt="Open" style={{ transform: 'rotate(180deg)' }}/> {/* Корректируем иконку */}
+          </button>
       )}
 
       <div className={`${styles.frame_messages} ${!isChatListVisible ? styles.collapsed : ''}`}>
         <ChatList
           currentUser={user}
+          isChatOpen={isChatOpen}
           currentOrderId={orderId}
           currentContractorId={contractorId}
           onChatSelected={handleChatSelected}
+          setChatOpen={handleOpenChat}
         />
       </div>
 

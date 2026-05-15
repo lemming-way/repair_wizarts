@@ -49,6 +49,9 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   transition: left 0.3s ease-in-out;
 }
+.chat_list_toggle_button.close {
+  left: 466px;
+}
 
 .chat_list_toggle_button.hidden {
   display: none; /* Скрыть кнопку, если список чатов уже виден */
@@ -252,15 +255,18 @@
 }
 
 .chat_item .order_status {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+  font-size: 0.7em;
+  padding: 0 6px;
+  border-radius: 12px;
+  color: white;
   background: gray; /* Цвет по умолчанию */
   margin-left: 10px;
   flex-shrink: 0;
 }
 
-.order_status.order_status_contractor_confirmed { background: #5bc0de; } /* Светло-синий */
+.order_status.order_status_published { background: #ccc137; } /* Желтоватый */
+.order_status.order_status_requested { background: #ccc137; } /* Желтоватый */
+.order_status.order_status_appointed { background: #5bc0de; } /* Светло-синий */
 .order_status.order_status_in_progress { background: #5cb85c; } /* Зеленый */
 .order_status.order_status_completed { background: #62c462; } /* Темно-зеленый */
 .order_status.order_status_closed { background: #cccccc; } /* Серый */

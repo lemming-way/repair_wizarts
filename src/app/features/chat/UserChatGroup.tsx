@@ -24,7 +24,9 @@ interface UserChatGroupProps {
 
 const getOrderStatusColorClass = (status: OrderStatus) => {
   switch (status) {
-    case OrderStatus.CONTRACTOR_CONFIRMED: return styles.order_status_contractor_confirmed;
+    case OrderStatus.PUBLISHED: return styles.order_status_published;
+    case OrderStatus.REQUESTED: return styles.order_status_requested;
+    case OrderStatus.APPOINTED: return styles.order_status_appointed;
     case OrderStatus.IN_PROGRESS: return styles.order_status_in_progress;
     case OrderStatus.COMPLETED: return styles.order_status_completed;
     case OrderStatus.CLOSED: return styles.order_status_closed;
@@ -130,7 +132,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
             const isActive = chat.orderId === activeChatOrder && chat.contractorId === activeChatContractor;
             const order = orders.get(chat.orderId);
             const displayStatus =
-              !order || chat.contractorId !== order.contractorId
+              !order || (order.status !== OrderStatus.PUBLISHED && chat.contractorId !== order.contractorId)
               ? OrderStatus.CANCELLED
               : order.status;
 
@@ -146,7 +148,9 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
                   className={`${styles.order_status} ${getOrderStatusColorClass(displayStatus)}`}
                   title={text(orderStatusString[displayStatus])}
                   // onClick={() => showOrderInfoCard(order)}  // TODO: Implement order info card
-                />
+                >
+                  {text(orderStatusString[displayStatus])}
+                </div>
                 {chat.unreadCount > 0 && (
                     <span className={styles.chat_item_unread_badge}>{chat.unreadCount}</span>
                 )}
