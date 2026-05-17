@@ -48,7 +48,11 @@ type UpdatedChatMessagesResponse = {
 export type ChatMessageRecord = {
   id: number;
   from: number | null;
-  text: string;
+  text: string | null;
+  event_type: string | null;
+  audio_id: number | null;
+  caption: string | null;
+  file_id: number | null;
   modified: string;
   editor: number | null;
   created: string;
@@ -109,9 +113,9 @@ export async function getAllChatMessages(orderId: number, contractorId: number):
       action: 'getMessageIds',
       chat_id: `${orderId}:${contractorId}`,
     }
-  }
-  const result = await post<AllChatMessagesResponse>('script/template/repair_api', payload);
-  return result;
+  };
+  const result = await post<AllChatMessagesResponse[]>('script/template/repair_api', payload);
+  return result[0] ?? { server_time: '', messages: [] };
 }
 
 /**
@@ -130,9 +134,9 @@ export async function getUpdatedChatMessages(orderId: number, contractorId: numb
       chat_id: `${orderId}:${contractorId}`,
       since
     }
-  }
-  const result = await post<UpdatedChatMessagesResponse>('script/template/repair_api', payload);
-  return result;
+  };
+  const result = await post<UpdatedChatMessagesResponse[]>('script/template/repair_api', payload);
+  return result[0] ?? { server_time: '', messages: [] };
 }
 
 /**
@@ -151,6 +155,43 @@ export async function getMessagesByIds(ids: number[]): Promise<ChatMessageRecord
   }
   const result = await post<ChatMessageRecord[]>('script/template/repair_api', payload);
   return result;
+}
+
+type PostMessageData = {
+  type?: 1 | 32 | 33;
+  text?: string;
+  file_id?: number;
+  reply_to?: number;
+}
+
+/**
+ * Отправить новое сообщение в чат.
+ * Доступно только для авторизованного пользователя.
+ * @param id ID чата
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function postMessage(id: string, message: PostMessageData): Promise<number | null> {
+  const {
+    type = 1,
+    text = '',
+    file_id = null,
+    reply_to = null
+  } = message;
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'postMessage',
+      chat_id: id,
+      type,
+      text,
+      file_id,
+      reply_to
+    }
+  }
+  const result = await post<{id?: string | number}>('script/template/repair_api', payload);
+  const messageId = Number(result.id);
+  if (Number.isInteger(messageId) && messageId > 0) return messageId;
+  else return null;
 }
 
 /**

@@ -4,9 +4,7 @@ import { useLanguage } from 'app/state/language';
 import { Order } from 'app/state/order';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { ChatMessage } from './ChatMessage';
-import { Message, MessageType, MessageFormat } from 'app/state/chat';
-
-import { useChat, useMessagesByIds } from './MockMessages';
+import { Message, MessageType, MessageFormat, useChat, useMessagesByIds } from 'app/state/chat';
 
 import styles from './Chat.module.css';
 
@@ -42,13 +40,22 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   const [isAtBottom, setIsAtBottom] = useState(true); // Отслеживание нахождения скролла внизу
 
   // Получаем все ID сообщений чата
-  const { messageIds } = useChat(order.id, order.clientId, contractorId);
+  const { messageIds } = useChat(order.id, contractorId);
+
+  // Корректируем размер окна, если необходимо
+  // Можно положить этот код в useLayoutEffect, но так тоже сработает
+  if (windowSize < BATCH_SIZE * 2 - 1 && messageIds.length > windowSize) {
+    let newSize = Math.min(messageIds.length, BATCH_SIZE * 2 - 1 );
+    let newFirst = firstRenderedIndex;
+    if (newFirst + newSize > messageIds.length) {
+      newFirst = messageIds.length - newSize;
+    }
+    setFirstRenderedIndex(newFirst);
+    setWindowSize(newSize);
+  }
 
   // Определяем ID сообщений для текущего окна
-  const windowedMessageIds = useMemo(
-    () => messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize),
-    [messageIds, firstRenderedIndex, windowSize]
-  );
+  const windowedMessageIds = messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize);
   const { messages, isLoading: isMessagesLoading } = useMessagesByIds(windowedMessageIds);
 
   const allUserIds = messages.reduce((ids, message) => {
@@ -121,43 +128,11 @@ export const MessageFeed: FC<MessageFeedProps> = ({
     locals.scrollToBottom();
   }, [order.id, contractorId, currentUser.id, messageIds.length > 0]);
 
-  // --- Эффект для корректировки скролла после загрузки новой порции сообщений ---
-  localsRef.current.afterLoading = () => {
+  const handleScrollPosition = () => {
+    const el = messageFeedRef.current;
+    if (!el || !messages.length) return;
+
     const locals = localsRef.current;
-    const messageFeed = messageFeedRef.current;
-
-    locals.isLoadingWindow = false;
-    if (!messages.length) return;
-
-    if (locals.pendingScrollToId) {
-      // Прокрутка к заданному сообщению, если запрошено
-      const targetMessageElement = messageFeed?.querySelector(`[data-message="${locals.pendingScrollToId}"]`);
-      if (targetMessageElement) {
-        targetMessageElement.scrollIntoView({ behavior: locals.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
-      }
-      locals.pendingScrollToId = null;
-      locals.isInitialLoading = false;
-    }
-    else if (locals.lastVisibleMessage && messageFeed) {
-      const msg = messageFeed.querySelector(`[data-message="${locals.lastVisibleMessage}"]`) as HTMLElement;
-      if (msg) {
-        const { offsetTop, scrollTop } = messageFeed;
-        messageFeed.scrollTop = msg.offsetTop - offsetTop - (locals.lastVisibleMessageTop ?? 0);
-      }
-    }
-  }
-
-  useLayoutEffect(() => {
-    localsRef.current.afterLoading()
-  }, [messages]);
-
-  // --- Обработчик скролла для подгрузки сообщений ---
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const locals = localsRef.current;
-
-    if (!messages.length) return;
-
-    const el = event.currentTarget;
     const { scrollTop, scrollHeight, clientHeight, offsetTop } = el;
 
     // Определяем положение последнего видимого на экране элемента
@@ -182,10 +157,55 @@ export const MessageFeed: FC<MessageFeedProps> = ({
       firstRenderedIndex + windowSize >= messageIds.length &&
       scrollHeight - scrollTop - clientHeight < SCROLL_THRESHOLD;
     setIsAtBottom(atBottom);
+  };
 
-    if (locals.isLoadingWindow) {
+  // --- Эффект для корректировки скролла после загрузки новой порции сообщений ---
+  localsRef.current.afterLoading = () => {
+    const locals = localsRef.current;
+    const messageFeed = messageFeedRef.current;
+
+    locals.isLoadingWindow = false;
+    if (!messages.length) return;
+
+    if (locals.pendingScrollToId) {
+      // Прокрутка к заданному сообщению, если запрошено
+      const targetMessageElement = messageFeed?.querySelector(`[data-message="${locals.pendingScrollToId}"]`);
+      if (targetMessageElement) {
+        targetMessageElement.scrollIntoView({ behavior: locals.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
+      }
+      locals.pendingScrollToId = null;
+      locals.isInitialLoading = false;
+    }
+    else if (isAtBottom) {
+      localsRef.current.scrollToBottom();
+    }
+    else if (locals.lastVisibleMessage && messageFeed) {
+      const msg = messageFeed.querySelector(`[data-message="${locals.lastVisibleMessage}"]`) as HTMLElement;
+      if (msg) {
+        const { offsetTop, scrollTop } = messageFeed;
+        messageFeed.scrollTop = msg.offsetTop - offsetTop - (locals.lastVisibleMessageTop ?? 0);
+      }
+    }
+
+    handleScrollPosition();
+  }
+
+  useLayoutEffect(() => {
+    localsRef.current.afterLoading()
+  }, [messages]);
+
+  // --- Обработчик скролла для подгрузки сообщений ---
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const locals = localsRef.current;
+
+    handleScrollPosition();
+
+    if (!messages.length || locals.isLoadingWindow) {
       return; // Игнорируем скролл, если уже идет загрузка
     }
+
+    const el = event.currentTarget;
+    const { scrollTop, scrollHeight, clientHeight } = el;
 
     let newFirst = firstRenderedIndex;
     let newSize = windowSize;

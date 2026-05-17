@@ -30,35 +30,29 @@ export type ChatData = {
   firstUnread?: number;
   lastUpdate?: Date;
   isOpen: boolean;
-}
+};
 
 /**
  * Типы сообщений
  */
 export enum MessageType {
-  User = 1,
-  System,
-  Admin
+  User = 'user',
+  System = 'system',
+  Admin = 'administrator'
 }
 
 /**
  * Форматы сообщений
  */
 export enum MessageFormat {
-  Text = 1,
-  Audio,
-  Files
+  Text = 'text',
+  Audio = 'audio',
+  File = 'file'
 }
 
-/**
- * Сообщение чата
- */
-export type Message = {
+interface MessageBase {
   id: number;
   from?: number;
-  text: string;
-  audio?: number;
-  files?: number[];
   modified?: Date;
   editorId?: number;
   created: Date;
@@ -69,6 +63,38 @@ export type Message = {
   unread: boolean;
 }
 
+interface TextMessageBase extends MessageBase {
+  format: MessageFormat.Text;
+  text: string;
+}
+
+interface SystemMessage extends TextMessageBase {
+  type: MessageType.System;
+  eventType: string;
+}
+
+interface TextMessage extends TextMessageBase {
+  type: MessageType.User | MessageType.Admin;
+}
+
+interface AudioMessage extends MessageBase {
+  type: MessageType.User | MessageType.Admin;
+  format: MessageFormat.Audio;
+  audioId: number;
+}
+
+interface FileMessage extends MessageBase {
+  type: MessageType.User | MessageType.Admin;
+  format: MessageFormat.File;
+  caption: string;
+  fileId: number;
+}
+
+/**
+ * Сообщение чата
+ */
+export type Message = SystemMessage | TextMessage | AudioMessage | FileMessage;
+
 export function useActiveChats() {
   const { user } = useUser() as { user: UserProfile };
   const { data, ...ret } = useQuery({
@@ -78,9 +104,9 @@ export function useActiveChats() {
     staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000,
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
-  
+
   const result = useChatsByIds(data || []);
-  
+
   if (!ret.isSuccess) return { ...ret, chats: EMPTY_ARRAY };
   return result;
 }
@@ -129,7 +155,7 @@ export function useSetChatOpen() {
       if (!user.id) throw new Error('User must be authorized.');
       if (!orderId) throw new Error('Order ID not specified.');
       if (!contractorId) throw new Error('Contractor ID not specified.');
-      
+
       const chatId = `${orderId}:${contractorId}`;
 
       await MessageAPI.markChatAsOpen(chatId, isOpen);
@@ -155,6 +181,8 @@ async function getChatMessageIds(client: QueryClient, userId: number, orderId: n
   if (lastRefetchTime && previous) {
     const resultSet = new Set(previous);
     const result = await MessageAPI.getUpdatedChatMessages(orderId, contractorId, lastRefetchTime);
+    if (!result.messages?.length) return previous;
+
     for (const message of (result.messages ?? [])) {
       const id = Number(message.id);
       if (!Number.isInteger(id) || id <= 0) continue;
@@ -206,7 +234,6 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
     const messages = (data ?? []).map(messageRec => {
       const ret = {
         id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
-        text: String(messageRec.text),
         created: new Date(String(messageRec.created ?? '') || 0),
         type:
           messageRec.type === 31 ? MessageType.System :
@@ -214,10 +241,17 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
           MessageType.Admin,
         format:
           messageRec.type === 32 ? MessageFormat.Audio :
-          messageRec.type === 33 ? MessageFormat.Files :
+          messageRec.type === 33 ? MessageFormat.File :
           MessageFormat.Text,
         unread: !!messageRec.unread
       } as Message;
+      if (ret.type === MessageType.System) ret.eventType = String(messageRec.event_type ?? '');
+      if (ret.format === MessageFormat.Text) ret.text = String(messageRec.text ?? '');
+      if (ret.format === MessageFormat.Audio) ret.audioId = Number(messageRec.audio_id ?? 0);
+      if (ret.format === MessageFormat.File) {
+        ret.caption = String(messageRec.caption ?? '');
+        ret.fileId = Number(messageRec.file_id ?? 0);
+      }
       if (Number.isInteger(messageRec.from) && messageRec.from! > 0) ret.from = messageRec.from!;
       if (messageRec.modified) {
         const date = new Date(String(messageRec.modified));
@@ -245,3 +279,71 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
  *          и массив `messages` с данными успешно полученных сообщений.
  */
 export { useMessagesByIds };
+
+export type SendMessageParams = {
+  orderId: number,
+  contractorId: number,
+  text?: string;
+  audio?: Blob;
+  file?: File;
+  format?: MessageFormat;
+  replyToMessage?: number;
+};
+
+async function sendMessage(message: SendMessageParams): Promise<number | null> {
+  if (!message.orderId || !message.contractorId) throw new Error('Order or contractor not specified.');
+  const chatId = `${message.orderId}:${message.contractorId}`;
+  const data = {} as any;
+  if (message.format === MessageFormat.Audio) {
+    if (!message.audio) throw new Error('Audio file not specified.');
+    const type = message.audio.type;
+    if (!type.startsWith('audio/')) throw new Error('Invalid media type.');
+    const format = type.substring(6);
+    if (format !== 'webm' && format !== 'ogg' && !format.startsWith('ogg;')) throw new Error('Invalid media type.');
+    const ext = format === 'webm' ? 'weba' : 'ogg';
+    const base64 = await fileToBase64(message.audio);
+    const fileId = await FileAPI.uploadFile((message.audio as File).name ?? `audio_file.${ext}`, base64, 0);
+    if (!fileId) throw new Error('Audio uploading failed.');
+    data.type = 32;
+    data.file_id = fileId;
+  }
+  else if (message.format === MessageFormat.File) {
+    if (!message.file) throw new Error('Attachment not specified.');
+    const base64 = await fileToBase64(message.file);
+    const fileId = await FileAPI.uploadFile(message.file.name, base64, 0);
+    if (!fileId) throw new Error('File uploading failed.');
+    data.type = 33;
+    data.text = message.text ?? '';
+    data.file_id = fileId;
+  }
+  else {
+    if (!message.text) throw new Error('Message is empty.');
+    data.type = 1;
+    data.text = message.text;
+  }
+  return MessageAPI.postMessage(chatId, message);
+}
+
+export function useSendMessage() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async (data: SendMessageParams, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (!data.orderId) throw new Error('Order ID not specified.');
+      if (!data.contractorId) throw new Error('Contractor ID not specified.');
+
+      await sendMessage(data);
+      const chatId = `${data.orderId}:${data.contractorId}`;
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat', chatId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
+
+      return;
+    }
+  });
+
+  const { mutateAsync, ...ret } = mutation;
+  return {
+    ...ret,
+    sendMessage: mutateAsync
+  }
+}

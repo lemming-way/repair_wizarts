@@ -72,7 +72,7 @@ function App() {
   const queryClient = useQueryClient();
 
   const { categories, isLoading: areProductsLoading } = useProducts();
-  
+
   const isAuthorized = !!user.id;
   const isContractor = user.role === UserRole.Contractor;
 
@@ -85,26 +85,32 @@ function App() {
     const handleVisibilityChange = async () => {
       const isVisible = document.visibilityState === 'visible';
 
-      await updateUser(
-        queryClient,
-        user.id,
-        {
-          isOnline: isVisible,
-          lastTimeBeenOnline: new Date(),
-        }
-      );
+      try {
+        await updateUser(
+          queryClient,
+          user.id,
+          {
+            isOnline: isVisible,
+            lastTimeBeenOnline: new Date(),
+          }
+        );
+      }
+      catch {}
     };
 
     // Add page unload tracking
     const handleBeforeUnload = async () => {
-      await updateUser(
-        queryClient,
-        user.id,
-        {
-          isOnline: false,
-          lastTimeBeenOnline: new Date(),
-        }
-      );
+      try {
+        await updateUser(
+          queryClient,
+          user.id,
+          {
+            isOnline: false,
+            lastTimeBeenOnline: new Date(),
+          }
+        );
+      }
+      catch {}
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);

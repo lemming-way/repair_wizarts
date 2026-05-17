@@ -40,14 +40,14 @@ $out = call_user_func(function() {
               ($current_user_role == 2 ?
                 'FROM (' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
-                  'FROM `order_driver` `od` ' .
-                  'JOIN `order` `o` ON `o`.`id_order`=`od`.`id_order` ' .
-                  'WHERE `od`.`not_deleted`=1 AND `od`.`id_user`=:u_id AND `od`.`id_order_driver_status` IN(3,4,5,6) ' .
+                  'FROM `order_driver` `d` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`d`.`id_order` ' .
+                  'WHERE `d`.`not_deleted`=1 AND `d`.`id_user`=:u_id AND `d`.`id_order_driver_status` IN(3,4,5,6) ' .
                   'UNION ' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
-                  'FROM `order_driver_select` `ods` ' .
-                  'JOIN `order` `o` ON `o`.`id_order`=`ods`.`id_order` ' .
-                  'WHERE `ods`.`id_user`=:u_id AND `ods`.`cancel`=0 AND `o`.`id_order_status`=6 ' .
+                  'FROM `order_driver_select` `ds` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`ds`.`id_order` ' .
+                  'WHERE `ds`.`id_user`=:u_id AND `ds`.`cancel`=0 AND `o`.`id_order_status`=6 ' .
                   'UNION ' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
                   'FROM `users` `u` ' .
@@ -212,7 +212,7 @@ $out = call_user_func(function() {
     // ================ Сообщения/чаты ================
     // Получить список активных чатов для пользователя
     'getActiveChatIds' => [
-      'sql' => 'SELECT CONCAT(`order`,\':\',`contractor`) AS `id`' .
+      'sql' => 'SELECT CONCAT(`order`,":",`contractor`) AS `id`' .
                 'FROM (' .
                   'SELECT ' .
                     '`o`.`id_order` AS `order`,' .
@@ -226,8 +226,9 @@ $out = call_user_func(function() {
                         'ON `r`.`id_message`=`m`.`id_message` ' .
                         'AND `r`.`id_user`=:u_id ' .
                       'WHERE `m`.`recipient_owner_type`=31 ' .
-                        'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',IFNULL(`d`.`id_user`,`ds`.`id_user`)) ' .
+                        'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,":",IFNULL(`d`.`id_user`,`ds`.`id_user`)) ' .
                         'AND `m`.`active_status`>0 ' .
+                        'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
                         'AND `r`.`id_message` IS NULL' .
                     ') AS `has_unread` ' .
                   ($current_user_role == 2 ?
@@ -260,15 +261,14 @@ $out = call_user_func(function() {
                     'AND `cancel`=0 ' .
                   'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
                     ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
-                    'AND (`d`.`id_user`>0 OR `ds`.`id_user`>0) ' .
                   'GROUP BY `contractor`,`o`.`id_order` ' .
                   'HAVING `has_unread`>0 ' .
                     'OR ' .
                     ($current_user_role == 2 ?
-                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
-                      'OR `ds`.`order_select_type`=\'Active\''
+                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',"$") ' .
+                      'OR `ds`.`order_select_type`="Active"'
                     :
-                      'JSON_CONTAINS(`o`.`options`,CAST(`contractor` AS JSON),\'$.chatOpen\')'
+                      'JSON_CONTAINS(`o`.`options`,CAST(`contractor` AS JSON),"$.chatOpen")'
                     ) .
                 ') `inner`',
     ],
@@ -278,29 +278,39 @@ $out = call_user_func(function() {
                   '`o`.`id_order` AS `order`,' .
                   '`o`.`client` AS `client`,' .
                   'IFNULL(`d`.`id_user`,`ds`.`id_user`) AS `contractor`,' .
-                  'IFNULL(SUM(`m`.`id_message` IS NOT NULL AND `r`.`id_message` IS NULL),0) AS `unread_count`,' .
-                  'MIN(IF(`r`.`id_message` IS NULL,`m`.`id_message`,NULL)) AS `first_unread`,' .
+                  'IFNULL(SUM(' .
+                    '`m`.`id_message` IS NOT NULL ' .
+                    'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
+                    'AND `r`.`id_message` IS NULL' .
+                  '),0) AS `unread_count`,' .
+                  'MIN(IF(' .
+                    '`m`.`id_message` IS NOT NULL ' .
+                    'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
+                    'AND `r`.`id_message` IS NULL,' .
+                    '`m`.`id_message`,' .
+                    'NULL' .
+                  ')) AS `first_unread`,' .
                   'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time`,' .
                   '(' .
-                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\')) ' .
+                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),"$.chatOpen")) ' .
                     'OR (:u_role=2 AND (' .
-                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
-                      'OR `ds`.`order_select_type`=\'Active\'' .
+                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',"$") ' .
+                      'OR `ds`.`order_select_type`="Active"' .
                     '))' .
                   ') AS `is_open` ' .
                 'FROM JSON_TABLE(' .
-                  'JSON_ARRAY(:ids),\'$[*]\' ' .
-                  'COLUMNS(`id` VARCHAR(255) PATH \'$\')' .
+                  'JSON_ARRAY(:ids),"$[*]" ' .
+                  'COLUMNS(`id` VARCHAR(255) PATH "$")' .
                 ') AS `ids` ' .
                 'JOIN `order` `o` ' .
-                  'ON `o`.`id_order`=SUBSTRING_INDEX(`ids`.`id`,\':\',1) ' .
+                  'ON `o`.`id_order`=SUBSTRING_INDEX(`ids`.`id`,":",1) ' .
                 'LEFT JOIN `order_driver` `d` ' .
-                  'ON `d`.`id_user`= SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
+                  'ON `d`.`id_user`=SUBSTRING_INDEX(`ids`.`id`,":",-1) ' .
                   'AND `d`.`id_order`=`o`.`id_order` ' .
                   'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
                   'AND `d`.`not_deleted`>0 ' .
                 'LEFT JOIN `order_driver_select` `ds` ' .
-                  'ON `ds`.`id_user`= SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
+                  'ON `ds`.`id_user`=SUBSTRING_INDEX(`ids`.`id`,":",-1) ' .
                   'AND `ds`.`id_order`=`o`.`id_order` ' .
                   'AND `ds`.`cancel`=0 ' .
                 'LEFT JOIN `message` `m` ' .
@@ -325,16 +335,18 @@ $out = call_user_func(function() {
     'getMessageIds' => [
       'sql' => 'SELECT NOW() AS `server_time`,' .
                 'JSON_ARRAYAGG(`id_message`) AS `messages` ' .
-              'FROM `message` ' .
-              'WHERE (' .
-                  'SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id ' .
-                  'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) AND `client`=:u_id)' .
-                ') ' .
-                'AND `recipient_owner_type`=31 ' .
-                'AND `recipient_owner`=:chat_id ' .
-                'AND `id_message_type` IN(1,31,32) ' .
-                'AND `active_status`>0 ' .
-              'ORDER BY `id_message`',
+                'FROM (' .
+                  'SELECT *,ROW_NUMBER() OVER(ORDER BY `id_message`) AS `num` ' .
+                  'FROM `message` ' .
+                  'WHERE (' .
+                      'SUBSTRING_INDEX(:chat_id,":",-1)=:u_id ' .
+                      'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,":",1) AND `client`=:u_id)' .
+                    ') ' .
+                    'AND `recipient_owner_type`=31 ' .
+                    'AND `recipient_owner`=:chat_id ' .
+                    'AND `id_message_type` IN(1,31,32,33) ' .
+                    'AND `active_status`>0 ' .
+                ') `m`',
       'fields' => [
         'json' => ['messages']
       ]
@@ -342,22 +354,33 @@ $out = call_user_func(function() {
     // Получить id всех сообщений в чате, обновлённых с заданного момента времени
     'getUpdatedMessageIds' => [
       'sql' => 'SELECT NOW() AS `server_time`,' .
-                 'JSON_ARRAYAGG(' .
-                   'JSON_OBJECT(' .
-                     '\'id\',`id_message`,' .
-                     '\'del\',IF(`active_status`=0,1,0)' .
-                   ')' .
-                 ') `messages` ' .
-               'FROM `message` ' .
-                'WHERE (' .
-                    'SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id ' .
-                    'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) AND `client`=:u_id)' .
-                  ') ' .
-                  'AND `recipient_owner_type`=31 ' .
-                  'AND `recipient_owner`=:chat_id ' .
-                  'AND `id_message_type` IN(1,31,32) ' .
-                  'AND GREATEST(`create_datetime`,`last_edit_datetime`)>:since ' .
-                'ORDER BY `id_message`',
+                  'JSON_ARRAYAGG(' .
+                    'JSON_OBJECT(' .
+                      '"id",`m`.`id_message`,' .
+                      '"del",IF(`m`.`active_status`=0,1,0)' .
+                    ')' .
+                  ') `messages` ' .
+                'FROM (' .
+                  'SELECT `m`.*,ROW_NUMBER() OVER(ORDER BY `m`.`id_message`) AS `num` ' .
+                  'FROM `message` `m`' .
+                  'JOIN `order` `o` ' .
+                  'LEFT JOIN `messages_read` `r1` ' .
+                    'ON `r1`.`id_message`=`m`.`id_message` ' .
+                    'AND `r1`.`id_user`=:u_id ' .
+                  'LEFT JOIN `messages_read` `r2` ' .
+                    'ON `r2`.`id_message`=`m`.`id_message` ' .
+                    'AND `r2`.`id_user`=' . ($current_user_role == 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(:chat_id,":",-1) ') .
+                  'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,":",1) ' .
+                    ($current_user_role == 2 ?
+                      'AND SUBSTRING_INDEX(:chat_id,":",-1)=:u_id '
+                    :
+                      'AND `o`.`client`=:u_id '
+                    ) .
+                    'AND `m`.`recipient_owner_type`=31 ' .
+                    'AND `m`.`recipient_owner`=:chat_id ' .
+                    'AND `m`.`id_message_type` IN(1,31,32,33) ' .
+                    'AND GREATEST(`m`.`create_datetime`,`m`.`last_edit_datetime`,IFNULL(`r1`.`read`,0),IFNULL(`r2`.`read`,0))>:since ' .
+                ') `m`',
       'fields' => [
         'json' => ['messages']
       ]
@@ -365,30 +388,39 @@ $out = call_user_func(function() {
     // Получить сообщения по списку id
     'getMessages' => [
       'sql' => 'SELECT `m`.`id_message`  AS `id`,' .
-                'IF(`sender_owner_type`=1,`sender_owner`,NULL) AS `from`,' .
-                '`value` AS `text`,' .
-                '`last_edit_datetime` AS `modified`,' .
-                '`last_edit_user` AS `editor`,' .
-                '`create_datetime` AS `created`,' .
-                '`create_user` AS `author`,' .
-                '`id_message_type` AS `type`,' .
-                '`id_message_upper` AS `related`,' .
-                'IF(`r`.`id_message` IS NULL,1,0) AS `unread` ' .
+                'IF(`m`.`sender_owner_type`=1,`m`.`sender_owner`,NULL) AS `from`,' .
+                'CASE WHEN `m`.`id_message_type`=1 THEN `m`.`value` WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>"$.text" ELSE NULL END AS `text`,' .
+                'CASE WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>"$.eventType" ELSE NULL END AS `event_type`,' .
+                'CASE WHEN `m`.`id_message_type`=32 THEN `m`.`value`->>"$.audio" ELSE NULL END AS `audio_id`,' .
+                'CASE WHEN `m`.`id_message_type`=33 THEN `m`.`value`->>"$.caption" ELSE NULL END AS `caption`,' .
+                'CASE WHEN `m`.`id_message_type`=33 THEN `m`.`value`->>"$.file" ELSE NULL END AS `file_id`,' .
+                '`m`.`last_edit_datetime` AS `modified`,' .
+                '`m`.`last_edit_user` AS `editor`,' .
+                '`m`.`create_datetime` AS `created`,' .
+                '`m`.`create_user` AS `author`,' .
+                '`m`.`id_message_type` AS `type`,' .
+                '`m`.`id_message_upper` AS `related`,' .
+                'IF((`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) AND `r1`.`id_message` IS NULL,1,0) AS `unread`,' .
+                '`r2`.`read` AS `partner_read_time` ' .
               'FROM `message` `m` ' .
-              'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
-              'LEFT JOIN `messages_read` `r` ' .
-                'ON `r`.`id_message`=`m`.`id_message` ' .
-                'AND `r`.`id_user`=:u_id ' .
+              'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,":",1) ' .
+              'LEFT JOIN `messages_read` `r1` ' .
+                'ON `r1`.`id_message`=`m`.`id_message` ' .
+                'AND `r1`.`id_user`=:u_id ' .
+              'LEFT JOIN `messages_read` `r2` ' .
+                'ON `r2`.`id_message`=`m`.`id_message` ' .
+                'AND `r2`.`id_user`=' . ($current_user_role == 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1) ') .
               'WHERE `m`.`id_message` IN(:ids) ' .
-                'AND (' .
-                  'SUBSTRING_INDEX(`recipient_owner`,\':\',-1)=:u_id ' .
-                  'OR `o`.`client`=:u_id' .
-                ') ' .
-                'AND `active_status`>0 ' .
-                'AND `recipient_owner_type`=31 ' .
-                'AND `id_message_type` IN(1,31,32)',
+                  ($current_user_role == 2 ?
+                    'AND SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1)=:u_id '
+                  :
+                    'AND `o`.`client`=:u_id '
+                  ) .
+                'AND `m`.`active_status`>0 ' .
+                'AND `m`.`recipient_owner_type`=31 ' .
+                'AND `m`.`id_message_type` IN(1,31,32,33)',
       'fields' => [
-        'numeric' => ['id', 'from', 'editor', 'author', 'type', 'related', 'deleted', 'unread']
+        'numeric' => ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'related', 'deleted', 'unread']
       ]
     ],
     // Пометить сообщения прочитанными
@@ -398,39 +430,104 @@ $out = call_user_func(function() {
                   ':u_id AS `id_user`,' .
                   'NOW() AS `read` ' .
                 'FROM `message` `m` ' .
-                'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
+                'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,":",1) ' .
                 'WHERE `m`.`id_message` IN(:ids) ' .
-                  'AND (' .
-                    'SUBSTRING_INDEX(`recipient_owner`,\':\',-1)=:u_id ' .
-                    'OR `o`.`client`=:u_id' .
+                  ($current_user_role == 2 ?
+                    'AND SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1)=:u_id '
+                  :
+                    'AND `o`.`client`=:u_id '
+                  ) .
+                  'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
+                  'AND `m`.`active_status`>0 ' .
+                  'AND `m`.`recipient_owner_type`=31 ' .
+                  'AND `m`.`id_message_type` IN(1,31,32,33)'
+    ],
+    'postMessage' => [
+      'sql' => 'INSERT INTO `message`(' .
+                  '`sender_owner`,' .
+                  '`sender_owner_type`,' .
+                  '`recipient_owner`,' .
+                  '`recipient_owner_type`,' .
+                  '`name`,' .
+                  '`value`,' .
+                  '`last_edit_datetime`,' .
+                  '`create_datetime`,' .
+                  '`create_user`,' .
+                  '`id_message_type`,' .
+                  '`id_message_upper`' .
+                ') SELECT ' .
+                  ':u_id,' .                         // sender_owner
+                  '1,' .                             // sender_owner_type
+                  ':chat_id,' .                      // recipient_owner
+                  '31,' .                            // recipient_owner_type
+                  '"",' .                            // name
+                  'CASE :type ' .                    // value
+                    'WHEN 1 THEN :text ' .
+                    'WHEN 32 THEN JSON_OBJECT("audio",:file_id) ' .
+                    'WHEN 33 THEN JSON_OBJECT("caption",:text,"file",:file_id) ' .
+                    'ELSE "" ' .
+                  'END,' .
+                  '0,' .                             // last_edit_datetime
+                  'NOW(),' .                         // create_datetime
+                  ':u_id,' .                         // create_user
+                  ':type,' .                         // id_message_type
+                  ':reply_to ' .                     // id_message_upper
+                'FROM `order` `o` ' .
+                'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
+                'JOIN `users` `u2` ' .
+                'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,":",1) ' .
+                'AND `u2`.`id_user`=SUBSTRING_INDEX(:chat_id,":",-1) ' .
+                'AND JSON_VALID(`u1`.`json`) ' .
+                'AND JSON_VALID(`u2`.`json`) ' .
+                'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),"$.blackList") IS NOT TRUE ' .
+                'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),"$.blackList") IS NOT TRUE ' .
+                'AND (' .
+                  'EXISTS(' .
+                    'SELECT 1 FROM `order_driver` `d` ' .
+                    'WHERE `d`.`id_user`=`u2`.`id_user` ' .
+                      'AND `d`.`id_order`=`o`.`id_order` ' .
+                      'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                      'AND `d`.`not_deleted`>0' .
+                  ') OR EXISTS(' .
+                    'SELECT 1 FROM `order_driver_select` `ds` ' .
+                    'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
+                      'AND `ds`.`id_order`=`o`.`id_order` ' .
+                      'AND `ds`.`cancel`=0 ' .
                   ')' .
-                  'AND `active_status`>0 ' .
+                ') ' .
+                'AND (:reply_to IS NULL OR EXISTS(' .
+                  'SELECT 1 FROM `message` ' .
+                  'WHERE `id_message`=:reply_to ' .
+                  'AND `recipient_owner`=:chat_id ' .
                   'AND `recipient_owner_type`=31 ' .
-                  'AND `id_message_type` IN(1,31,32)'
+                  'AND `id_message_type` IN(1,32,33)' .
+                '))' .
+                'AND :type IN(1,32,33) ' .
+                'AND ' . ($current_user_role == 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id')
     ],
     // Открыть/закрыть чат
     'chatOpenClose' => [
       'sql' => 'UPDATE `order` `o` ' .
                 'LEFT JOIN `order_driver` `d` ' .
                   'ON `d`.`id_order`=`o`.`id_order` ' .
-                  'AND `d`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
+                  'AND `d`.`id_user`=SUBSTRING_INDEX(:id,":",-1) ' .
                   'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
                   'AND `d`.`not_deleted`>0 ' .
                 'LEFT JOIN `order_driver_select` `ds` ' .
                   'ON `ds`.`id_order`=`o`.`id_order` ' .
-                  'AND `ds`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
+                  'AND `ds`.`id_user`=SUBSTRING_INDEX(:id,":",-1) ' .
                   'AND `ds`.`cancel`=0 ' .
                 'SET ' .
                   '`o`.`options`=IFNULL(' .
                     'CASE ' .
-                      'WHEN :u_role=1 AND :open>0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') IS NOT TRUE THEN ' .
-                        'JSON_MERGE_PRESERVE(`o`.`options`,JSON_OBJECT(\'chatOpen\',JSON_ARRAY(IFNULL(`d`.`id_user`,`ds`.`id_user`)))) ' .
-                      'WHEN :u_role=1 AND :open=0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') THEN ' .
+                      'WHEN :u_role=1 AND :open>0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),"$.chatOpen") IS NOT TRUE THEN ' .
+                        'JSON_MERGE_PRESERVE(`o`.`options`,JSON_OBJECT("chatOpen",JSON_ARRAY(IFNULL(`d`.`id_user`,`ds`.`id_user`)))) ' .
+                      'WHEN :u_role=1 AND :open=0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),"$.chatOpen") THEN ' .
                         'JSON_REMOVE(`o`.`options`,' .
                           'CONCAT(' .
-                            '\'$.chatOpen[\',' .
-                            'FIND_IN_SET(IFNULL(`d`.`id_user`,`ds`.`id_user`),REGEXP_REPLACE(`o`.`options`->\'$.chatOpen\',\'[\\\\[\\\\]\\\\s]\',\'\'))-1,' .
-                            '\']\'' .
+                            '"$.chatOpen[",' .
+                            'FIND_IN_SET(IFNULL(`d`.`id_user`,`ds`.`id_user`),REGEXP_REPLACE(`o`.`options`->"$.chatOpen","[\\\\[\\\\]\\\\s]",""))-1,' .
+                            '"]"' .
                           ')' .
                         ') ' .
                       'ELSE `o`.`options` ' .
@@ -439,16 +536,16 @@ $out = call_user_func(function() {
                   '),' .
                   '`d`.`options`=IFNULL(' .
                     'IF(:u_role=2,' .
-                      'JSON_MERGE_PATCH(`d`.`options`,JSON_OBJECT(\'chatOpen\',:open>0)),' .
+                      'JSON_MERGE_PATCH(`d`.`options`,JSON_OBJECT("chatOpen",:open>0)),' .
                       '`d`.`options`' .
                     '),' .
                     '`d`.`options`' .
                   '),' .
                   '`ds`.`order_select_type`=IF(:u_role=2,' .
-                    'IF(:open>0,\'Active\',\'Processing\'),' .
+                    'IF(:open>0,"Active","Processing"),' .
                     '`ds`.`order_select_type`' .
                   ')' .
-                'WHERE `o`.`id_order`=SUBSTRING_INDEX(:id,\':\',1) ' .
+                'WHERE `o`.`id_order`=SUBSTRING_INDEX(:id,":",1) ' .
                   'AND `o`.`id_order_status` IN(1,2,3,4,6) ' .
                   'AND (`d`.`id_user` IS NOT NULL OR `ds`.`id_user` IS NOT NULL) ' .
                   'AND (' .

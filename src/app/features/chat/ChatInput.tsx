@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
-import type { UserProfile } from 'app/state/user';
+import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { AnyMedia, getKeyFor } from 'app/shared/ui';
 import { isImage } from 'app/shared/lib/utilities'; // For basic file type check
 
@@ -9,6 +9,7 @@ import styles from './Chat.module.css';
 
 interface ChatInputProps {
   orderId: number;
+  clientId: number;
   contractorId: number;
   currentUser: UserProfile;
   onSendMessage: (
@@ -17,7 +18,7 @@ interface ChatInputProps {
     message: string,
     files: File[],
   ) => Promise<void>;
-  isBlocked: boolean;
+  isBusy: boolean;
 }
 
 const MAX_FILE_SIZE_MB = 10; // Maximum allowed file size in MB
@@ -25,10 +26,11 @@ const MAX_FILE_COUNT = 5; // Maximum number of files per message
 
 export const ChatInput: FC<ChatInputProps> = ({
   orderId,
+  clientId,
   contractorId,
   currentUser,
   onSendMessage,
-  isBlocked,
+  isBusy,
 }) => {
   const text = useLanguage();
   const [message, setMessage] = useState('');
@@ -38,17 +40,41 @@ export const ChatInput: FC<ChatInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const partnerId = currentUser.role === UserRole.Contractor ? contractorId : clientId;
+  const { users } = useUsersByIds(partnerId ? [partnerId] : []);
+  const chatPartner = users[0];
+
+  // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
+  const currentUserBlockedPartner = currentUser.blackList?.includes(chatPartner?.id);
+  const partnerBlockedCurrentUser = chatPartner?.blackList?.includes(currentUser.id);
+  const isBlocked = currentUserBlockedPartner || partnerBlockedCurrentUser;
+
   // Lazy load EmojiPicker
   const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
+  // Adjust textarea height dynamically
+  const updateMessage = (message: string) => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // Reset height to recalculate
+      textareaRef.current.value = message;
+      const scrollHeight = textareaRef.current.scrollHeight;
+      const lineHeight = parseFloat(getComputedStyle(textareaRef.current).lineHeight);
+      const maxRows = 8; // Max 8 lines
+      const maxHeight = Math.round(lineHeight * maxRows + 20);
+      const borderHeight = textareaRef.current.offsetHeight - textareaRef.current.clientHeight;
+      textareaRef.current.style.height = Math.min(scrollHeight, maxHeight) + borderHeight + 'px';
+    }
+    setMessage(message);
+  };
+
   // Handler for text input
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
+    updateMessage(e.target.value);
   };
 
   // Handler for emoji selection
   const addEmojiToMessage = useCallback((emojiData: any) => {
-    setMessage((prev) => prev + emojiData.emoji);
+    updateMessage(message + emojiData.emoji);
   }, []);
 
   // Handler for file selection (from input)
@@ -72,18 +98,18 @@ export const ChatInput: FC<ChatInputProps> = ({
   };
 
   // Handler for removing a file from preview
-  const handleRemoveFile = useCallback((fileToRemove: File) => {
+  const handleRemoveFile = (fileToRemove: File) => {
     setPreviewFiles((prev) => prev.filter((file) => file !== fileToRemove));
-  }, []);
+  };
 
   // Handler for sending message
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = async () => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage && previewFiles.length === 0) return;
 
     try {
       await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles);
-      setMessage('');
+      updateMessage('');
       setPreviewFiles([]);
       setIsEmojiPickerVisible(false);
       setIsAttachmentMenuVisible(false);
@@ -94,27 +120,15 @@ export const ChatInput: FC<ChatInputProps> = ({
       console.error('Failed to send message:', error);
       alert(text('Failed to send message. Please try again.'));
     }
-  }, [message, previewFiles, onSendMessage, orderId, contractorId, text]);
+  };
 
   // Handler for Ctrl+Enter to send message
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      handleSendMessage();
+      if (!isBusy) handleSendMessage();
     }
   };
-
-  // Adjust textarea height dynamically
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'; // Reset height to recalculate
-      const scrollHeight = textareaRef.current.scrollHeight;
-      const lineHeight = parseFloat(getComputedStyle(textareaRef.current).lineHeight);
-      const maxRows = 4; // Max 4 lines
-      const maxHeight = lineHeight * maxRows;
-      textareaRef.current.style.height = Math.min(scrollHeight, maxHeight) + 'px';
-    }
-  }, [message]);
 
   // Handle drag and drop
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -148,7 +162,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   // TODO: Implement audio recording logic later
 
   // Position emoji picker dynamically if needed, similar to Kirill.tsx
-  // todo: проверить эту логику
+  // todo: проверить эту логику. Лучше использовать CSS здесь
   const footerRef = useRef<HTMLDivElement>(null);
   const [footerHeight, setFooterHeight] = useState(0);
 
@@ -286,7 +300,7 @@ export const ChatInput: FC<ChatInputProps> = ({
             className={`${styles.action_button} ${styles.send_button}`}
             onClick={handleSendMessage}
             title={text('Send message')}
-            disabled={isBlocked || (!message.trim() && previewFiles.length === 0)}
+            disabled={isBusy || isBlocked || (!message.trim() && previewFiles.length === 0)}
           >
             <img src="/img/chat_img/plane.png" alt="Send" />
           </button>

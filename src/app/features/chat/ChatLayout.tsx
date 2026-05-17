@@ -11,8 +11,8 @@ import {
   useCompleteOrderByContractor,
   useVerifyOrderCompletion,
 } from 'app/state/order';
-import { useUser, useUsersByIds } from 'app/state/user';
-import { useSetChatOpen } from 'app/state/chat';
+import { useUser, UserRole } from 'app/state/user';
+import { MessageFormat, useSetChatOpen, useSendMessage } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
@@ -46,17 +46,9 @@ export const ChatLayout: FC = () => {
   const [isVisibleDisputeModal, setIsVisibleDisputeModal] = useState(false);
   const [disputeOrderId, setDisputeOrderId] = useState<number | null>(null);
 
-  //~ // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
-  //~ const isChatBlocked = useMemo(() => {
-    //~ if (!user.id || !chatPartner?.id) return false;
-    //~ const currentUserBlockedPartner = user.blackList?.includes(chatPartner.id);
-    //~ const partnerBlockedCurrentUser = chatPartner.blackList?.includes(user.id);
-    //~ return currentUserBlockedPartner || partnerBlockedCurrentUser;
-  //~ }, [user.id, user.blackList, chatPartner?.id, chatPartner?.blackList]);
-  const isChatBlocked = false;  // todo: логику чёрных списков надо продумать отдельно
-
   // Мутации для действий с чатом
   const { setChatOpen } = useSetChatOpen();
+  const { sendMessage, isPending: isSendingMessage } = useSendMessage();
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
@@ -124,17 +116,25 @@ export const ChatLayout: FC = () => {
     navigate('/chats');
   }, [navigate]);
 
-  // Placeholder for sending message (will be replaced by actual mutation later)
   const handleSendMessage = useCallback(async (
     orderId: number,
     contractorId: number,
     message: string,
     files: File[],
   ) => {
-    console.log('STUB: Sending message:', { orderId, contractorId, message, files });
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-    // In a real implementation, this would trigger a mutation to send the message
-    // and potentially invalidate the message feed cache.
+    const payload = {
+      orderId,
+      contractorId,
+      text: message,
+      format: MessageFormat.Text
+    };
+
+    try {
+      await sendMessage(payload);
+    }
+    catch (err: any) {
+      console.error('Send message failed:', err);
+    }
   }, []);
 
 
@@ -164,7 +164,7 @@ export const ChatLayout: FC = () => {
   const isLoadingChatDetails = isLoadingOrder;
 
   return (
-    <section className={styles.container}>
+    <section className={user.role === UserRole.Contractor ? `${styles.container} ${styles.contractor}` : styles.container}>
       {isVisibleDisputeModal && disputeOrderId && (
         <DisputeModalV2
           id={disputeOrderId}
@@ -230,10 +230,11 @@ export const ChatLayout: FC = () => {
               />
               <ChatInput
                 orderId={orderId}
+                clientId={currentOrder.clientId}
                 contractorId={contractorId}
                 currentUser={user}
                 onSendMessage={handleSendMessage}
-                isBlocked={isChatBlocked}
+                isBusy={isSendingMessage}
               />
             </>
           ) : (

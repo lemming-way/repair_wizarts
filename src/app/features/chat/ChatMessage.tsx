@@ -26,6 +26,9 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   const isSystemMessage = message.type === MessageType.System;
   const isPartnerMessage = message.type === MessageType.User && !isOwnMessage;
   const isAdministratorMessage = message.type === MessageType.Admin;
+  const isTextMessage = message.format === MessageFormat.Text;
+  const isAudioMessage = message.format === MessageFormat.Audio;
+  const isAttachment = message.format === MessageFormat.File;
 
   const avatarSrc = authorAvatar || '/img/user_avatar.png';
   const displayName = authorName || (isAdministratorMessage ? text('Administrator') : text('Unknown user'));
@@ -76,7 +79,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <span className={styles.author_name_own}>{text('You')}</span>
               </div>
             )}
-            <p className={styles.message_text}>{message.text}</p>
+            {isTextMessage && <p className={styles.message_text}>{message.text}</p>}
             {/* TODO: Render files/audio here later */}
           </div>
         </div>

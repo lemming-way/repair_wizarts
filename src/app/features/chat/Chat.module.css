@@ -4,9 +4,13 @@
 .container {
   display: flex;
   overflow: hidden;
-  height: calc(100vh - 70px); /* Высота с учетом фиксированного хедера */
+  height: calc(100dvh - 70px); /* Высота с учетом фиксированного хедера */
   width: 100%;
   position: relative; /* Необходим для абсолютного позиционирования дочерних элементов */
+}
+
+.container.contractor {
+  height: calc(100dvh - 120px); /* Высота с учетом фиксированного хедера */
 }
 
 /* =========================================================================
@@ -550,9 +554,9 @@
   padding: 10px 15px;
   font-size: 16px;
   line-height: 1.4;
-  resize: none; /* Отключить изменение размера пользователем */
-  min-height: 40px; /* Минимальная высота (примерно 1 строка) */
-  max-height: 120px; /* Максимальная высота (примерно 4-5 строк) */
+  resize: none;
+  min-height: 44px;
+  max-height: 201px;
   overflow-y: auto;
   outline: none;
 }
