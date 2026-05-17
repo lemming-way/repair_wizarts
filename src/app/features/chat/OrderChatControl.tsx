@@ -16,6 +16,8 @@ interface OrderChatControlProps {
   onCloseChat: (orderId: number, contractorId: number) => Promise<void>;
   // Колбэки для мутаций (или заглушек действий)
   onCancelOrder: (order: Order, reason: string) => Promise<void>;
+  onAcceptOffer: (orderId: number, contractorId: number) => Promise<void>;
+  onAcceptInvoice: (orderId: number) => Promise<void>;
   onStartWork: (orderId: number) => Promise<void>;
   onCompleteWork: (orderId: number) => Promise<void>;
   onVerifyCompletion: (orderId: number) => Promise<void>;
@@ -28,6 +30,8 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   currentUser,
   onCloseChat,
   onCancelOrder,
+  onAcceptOffer,
+  onAcceptInvoice,
   onStartWork,
   onCompleteWork,
   onVerifyCompletion,
@@ -53,6 +57,14 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
     }
   };
 
+  const handleAcceptOffer = async() => {
+    await onAcceptOffer(order.id, chatContractorId);
+  };
+
+  const handleAcceptInvoice = async() => {
+    await onAcceptInvoice(order.id);
+  };
+
   const handleStartWorkClick = async () => {
     await onStartWork(order.id);
   };
@@ -72,6 +84,24 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   // Рендеринг кнопок в зависимости от статуса заказа и роли пользователя
   const renderActionButtons = () => {
     switch (effectiveOrderStatus) {
+      case OrderStatus.PUBLISHED:
+        if (isClient) {
+          return (
+            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptOffer}>
+              {text('Select contractor')}
+            </button>
+          );
+        }
+        break;
+      case OrderStatus.REQUESTED:
+        if (isContractor) {
+          return (
+            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptInvoice}>
+              {text('Accept invoice')}
+            </button>
+          );
+        }
+        break;
       case OrderStatus.APPOINTED:
         if (isClient) {
           return (

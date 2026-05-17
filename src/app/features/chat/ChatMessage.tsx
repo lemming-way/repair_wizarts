@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import React from 'react';
+import { formatMarkdown } from 'app/shared/lib/markdown';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, useUsersByIds } from 'app/state/user';
 import { MessageType, MessageFormat, Message } from 'app/state/chat';
@@ -79,7 +80,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <span className={styles.author_name_own}>{text('You')}</span>
               </div>
             )}
-            {isTextMessage && <p className={styles.message_text}>{message.text}</p>}
+            {isTextMessage && <p className={styles.message_text}>{formatMarkdown(message.text)}</p>}
             {/* TODO: Render files/audio here later */}
           </div>
         </div>

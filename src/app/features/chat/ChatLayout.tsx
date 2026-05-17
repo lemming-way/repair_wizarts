@@ -7,6 +7,8 @@ import {
   OrderStatus,
   useOrdersByIds,
   useCancelOrder,
+  useAcceptOffer,
+  useAcceptInvoice,
   useStartOrderWork,
   useCompleteOrderByContractor,
   useVerifyOrderCompletion,
@@ -52,6 +54,8 @@ export const ChatLayout: FC = () => {
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
+  const { acceptOffer } = useAcceptOffer();
+  const { acceptInvoice } = useAcceptInvoice();
   const { startOrderWork } = useStartOrderWork();
   const { completeOrderByContractor } = useCompleteOrderByContractor();
   const { verifyOrderCompletion } = useVerifyOrderCompletion();
@@ -69,6 +73,28 @@ export const ChatLayout: FC = () => {
       alert(`Failed to cancel order: ${error.message}`);
     }
   }, [cancelOrder, text]);
+
+  const handleAcceptOffer = useCallback(async (orderId: number, contractorId: number) => {
+    try {
+      // Stub for payment selection
+      // Here you would typically proceed to payment or confirmation
+      // For now, we just show the confirmation modal
+      //~ setVisibleBlockPayment(false); // Close payment selection if it was open
+      await acceptOffer({ orderId, contractorId });
+    } catch (error: any) {
+      console.error('Failed to accept offer:', error);
+      alert(error.message); // todo: сделать нормальное сообщение об ошибке
+    }
+  }, [acceptOffer]);
+
+  const handleAcceptInvoice = useCallback(async (orderId: number) => {
+    try {
+      await acceptInvoice(orderId);
+    } catch (error: any) {
+      console.error('Failed to accept invoice:', error);
+      alert(error.message); // todo: сделать нормальное сообщение об ошибке
+    }
+  }, [acceptInvoice]);
 
   const handleStartWork = useCallback(async (orderId: number) => {
     try {
@@ -218,6 +244,8 @@ export const ChatLayout: FC = () => {
                 currentUser={user}
                 onCloseChat={handleCloseChat}
                 onCancelOrder={handleCancelOrder}
+                onAcceptOffer={handleAcceptOffer}
+                onAcceptInvoice={handleAcceptInvoice}
                 onStartWork={handleStartWork}
                 onCompleteWork={handleCompleteWork}
                 onVerifyCompletion={handleVerifyCompletion}
