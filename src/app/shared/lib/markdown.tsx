@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 
 const regExps = {
-  pre: /^```([\s\S]+?)\n```\n?/m,
+  pre: /^```([^\n]*)\n(?:|([\s\S]*?)\n)```\n?/m,
   para: /([^\n]*)(?:\n|$)/,
   code: /`([^`\r\n]+)`/,
   bold: /\*\*(.+?)\*\*(?!\*)/,
@@ -11,7 +11,7 @@ const regExps = {
   it2:  /_([^_\r\n]+)_/
 };
 
-export function formatMarkdown(text: string) {
+export function simpleMarkdown(text: string) {
   return formatMarkdownRecursive(text, [ 'pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2' ]);
 }
 
@@ -25,7 +25,7 @@ function formatMarkdownRecursive(text: string, rules: string[]): ReactElement {
         <>
           {before && formatMarkdownRecursive(before, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
           <pre>
-            {match[1]}
+            {match[2]}
           </pre>
           {after && formatMarkdownRecursive(after, ['pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
         </>

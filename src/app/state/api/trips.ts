@@ -10,7 +10,7 @@
  *
  * **Изменение данных:**
  * createTrip, updateTrip, cancelTripByClient, cancelTripByDriver, inviteDriver, acceptInvoice, createOffer,
- * acceptOffer, setArriveState, startTrip, finishTrip, scoreTrip
+ * acceptOffer, setArriveState, startTrip, finishTrip, rateTrip
  */
 import { post } from './request';
 
@@ -425,6 +425,6 @@ export async function finishTrip(tripId: number): Promise<void> {
  * @param points - количество баллов
  * @returns Промис, который разрешается после успешного обновления
  */
-export async function scoreTrip(tripId: number, points: number): Promise<void> {
+export async function rateTrip(tripId: number, points: number): Promise<void> {
   return post<void>(`drive/get/${tripId}`, { action: 'set_rate', value: points });
 }
