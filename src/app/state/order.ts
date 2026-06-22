@@ -18,6 +18,7 @@ import CONFIG from 'config';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as FileAPI from './api/dropbox';
 import * as TripAPI from './api/trips';
+import * as OrderAPI from './api/orders';
 import { getDrivenCar } from './api/cars';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
@@ -78,19 +79,22 @@ export type Offer = {
   //~ // ... другие поля
 //~ }
 
-export enum OrderStatus {
-  DRAFT = 'draft',
-  PUBLISHED = 'published',
-  REQUESTED = 'requested',
-  APPOINTED = 'appointed',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  AWAITING_PAYMENT = 'awaiting_payment',
-  PAID = 'paid',
-  CLOSED = 'closed',
-  DISPUTE = 'dispute',
-  CANCELLED = 'cancelled'
-}
+export const OrderStatus = {
+  DRAFT: 'draft',
+  PUBLISHED: 'published',
+  REQUESTED: 'requested',
+  APPOINTED: 'appointed',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  AWAITING_PAYMENT: 'awaiting_payment',
+  PAID: 'paid',
+  CLOSED: 'closed',
+  DISPUTE: 'dispute',
+  CANCELLED: 'cancelled'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
 
 export const orderStatusString = {
   [OrderStatus.PUBLISHED]: 'Awaiting',
@@ -125,7 +129,7 @@ export function useContractors({ product, city, rating, isOnline }: {
   const { user } = useUser() as { user: UserProfile };
   const { data, ...rest } = useQuery({
     queryKey: [ 'contractors', product, city, rating, isOnline ],
-    queryFn: () => TripAPI.getContractorsByProduct({ productId: product, cityId: city, minRating: rating, isOnline }),
+    queryFn: () => OrderAPI.getContractorsByProduct({ productId: product, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
     // Здесь и далее проверяем соответствие ID пользователя авторизованному пользователю в токене,
     // потому что пользователь может смениться во время выполнения асинхронных операций
@@ -154,9 +158,130 @@ export function useContractors({ product, city, rating, isOnline }: {
 
 /**
  * Преобразует сырые данные API в структуру Order
+ * @param rawData Данные заказов от API
+ * @returns Список заказов
+ */
+function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
+  const result = rawData.reduce((ret, data) => {
+    // очищаем список прикреплённых файлов
+    const images = Array.isArray(data.images) ? data.images : [];
+    const attachments = images
+      .map(Number)
+      .filter(id => Number.isInteger(id) && id > 0);
+
+    const status =
+      data.order_status === OrderAPI.OrderStatus.New ? OrderStatus.PUBLISHED :
+      data.order_status === OrderAPI.OrderStatus.Offering ? OrderStatus.REQUESTED :
+      data.order_status === OrderAPI.OrderStatus.Cancelled ? OrderStatus.CANCELLED :
+      data.order_status === OrderAPI.OrderStatus.Completed ? OrderStatus.CLOSED :
+      data.order_status === OrderAPI.OrderStatus.Assigned ? (
+        data.contractor_status === OrderAPI.ContractorStatus.Waiting ? OrderStatus.IN_PROGRESS :
+        data.contractor_status === OrderAPI.ContractorStatus.Driving ? OrderStatus.IN_PROGRESS :
+        data.contractor_status === OrderAPI.ContractorStatus.Completed ? OrderStatus.COMPLETED :
+        OrderStatus.APPOINTED
+      ) :
+      null;
+    if (!status) return ret;
+
+    const offersData =
+      Array.isArray(data.contractor_offers) ? data.contractor_offers :
+      !!data.contractor_offer && 'object' === typeof data.contractor_offer ? [ data.contractor_offer ] :
+      [];
+      
+    const contractorOffers = offersData.reduce((ret, data) => {
+      const offer = {
+        contractorId: Number(data.id),
+        price: Number(data.price),
+        comment: String(data.comment ?? ''),
+        readyIn:
+          data.ready_in?.unit ?
+          {
+            value: Number(data.ready_in.value ?? 0),
+            unit: String(data.ready_in.unit) as TimeUnit
+          } :
+          {
+            value: 0,
+            unit: TimeUnit.HOURS
+          },
+        createdAt: new Date(Date.parse(data.created_at) || 0)
+      };
+      if (offer.contractorId > 0 && offer.price >= 0) {
+        ret.push(offer);
+      }
+      
+      return ret;
+    }, [] as Offer[]);
+
+    const lastUpdate =
+      data.canceled_at ??
+      data.finished_at ??
+      data.completed_at ??
+      data.started_at ??
+      data.appointed_at ??
+      data.created_at;
+      
+    // заполняем основные свойства заказа
+    const order: Order = {
+      id: Number(data.id),
+      type: Number(data.is_direct) === 1 ? OrderType.Direct : OrderType.Market,
+      clientId: Number(data.client),
+      city: Number(data.city ?? 0),
+      address: String(data.address ?? ''),
+      productId: Number(data.product ?? 0),
+      description: String(data.description ?? ''),
+      desiredPrice: Number(data.desired_price ?? 0),
+      status,
+      createdAt: new Date(Date.parse(data.created_at) || 0),
+      updatedAt: new Date(Date.parse(lastUpdate) || 0),
+      contractorOffers,
+      contractorOffersCount: Number.isInteger(data.offers_count) ? Number(data.offers_count) : contractorOffers.length,
+      attachments
+    };
+    // отбрасываем бракованные данные
+    if (!order.id || !order.clientId || !order.productId || !order.city) {
+      return ret;
+    }
+    
+    const contractorId = data.contractor || data.invited_contractor;
+    if (contractorId) order.contractorId = contractorId;
+    
+    if (order.type === OrderType.Direct) {
+      const services = (data.services || []).reduce((ret, data) => {
+        const service = {
+          service: String(data.service ?? ''),
+          price: Number(data.price ?? 0)
+        };
+        if (service.service && service.price >= 0) {
+          ret.push(service);
+        }
+        
+        return ret;
+      }, [] as OrderServiceDetails[]);
+      order.services = services;
+    }
+    
+    if (data.contractor_price !== null) {
+      order.contractorPrice = Number(data.contractor_price ?? 0);
+    }
+
+    if (order.status !== OrderStatus.PUBLISHED && order.status !== OrderStatus.REQUESTED && data.agreed_price !== null) {
+      order.agreedPrice = Number(data.agreed_price ?? 0);
+    }
+    
+    ret.push(order);
+
+    return ret;
+  }, [] as Order[]);
+
+  return result;
+}
+
+/**
+ * Преобразует сырые данные API в структуру Order
  * @param rawData Данные поездок от API
  * @returns Список заказов
  */
+/*
 function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTripsByIds>>): Order[] {
   const result = rawData.reduce((ret, trip) => {
     if (trip.b_id && trip.u_id) {
@@ -177,7 +302,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
         productId: Number(trip.b_options?.product ?? 0),
         description: String(trip.b_options?.description ?? ''),
         desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
-        createdAt: new Date(String(trip.b_created ?? '') || 0),
+        createdAt: new Date(Date.parse(trip.b_created) || 0),
         attachments,
         contractorOffers: []
       };
@@ -202,7 +327,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
               readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
                 driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
                 { value: 0, unit: TimeUnit.HOURS },
-              createdAt: new Date(String(driver.c_becomed_candidate ?? '') || 0)
+              createdAt: new Date(Date.parse(driver.c_becomed_candidate) || 0)
             });
             if (d_id === userId && b_state === TripAPI.TripState.New) {
               // текущий пользователь является мастером, откликнувшимся на заказ
@@ -216,10 +341,10 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
             // назначенный исполнитель
             c_state = d_state;
 
-            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(String(driver.c_appointed ?? '') || 0);
-            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(String(driver.c_arrived ?? '') || 0);
-            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(String(driver.c_started ?? '') || 0);
-            else order.updatedAt = new Date(String(driver.c_completed ?? '') || 0);
+            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(Date.parse(driver.c_appointed) || 0);
+            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(Date.parse(driver.c_arrived) || 0);
+            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(Date.parse(driver.c_started) || 0);
+            else order.updatedAt = new Date(Date.parse(driver.c_completed) || 0);
 
             order.contractorId = d_id;
             order.contractorPrice = d_price;
@@ -248,7 +373,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
       }
       else if (b_state === TripAPI.TripState.Cancelled) {
         order.status = OrderStatus.CANCELLED;
-        order.updatedAt = new Date(String(trip.b_canceled ?? '') || 0);
+        order.updatedAt = new Date(Date.parse(trip.b_canceled) || 0);
       }
       else if (b_state === TripAPI.TripState.Completed) {
         order.status = OrderStatus.CLOSED;
@@ -263,6 +388,7 @@ function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.
 
   return result;
 }
+*/
 
 // Группы заказов для выборки
 type OrderStage = 'new' | 'active' | 'finished';
@@ -310,9 +436,9 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
 }
 
 const [ getOrderById, useOrdersByIds ] = createBatchLoader({
-  fetchFn: async (ids: number[], authUserId: number) => {
-    const data = await TripAPI.getTripsByIds(ids);
-    return data ? parseOrders(authUserId, data) : [];
+  fetchFn: async (ids: number[]) => {
+    const data = await OrderAPI.getOrdersByIds(ids);
+    return data ? parseOrders(data) : [];
   },
   createQueryKey: (userId, orderId) => [ 'orders', userId, orderId ],
   extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[2]) ],
@@ -612,7 +738,7 @@ export function useUpdateOrder() {
       if (!order) throw new Error('Order not found.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED ]
+        !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED ] as OrderStatus[])
         .includes(order.status)
       ) {
         throw new Error('Incorrect order state.');
@@ -688,7 +814,7 @@ export function useCancelOrder() {
       if (user.id !== authorizedUserId()) throw new Error('User was changed.');
       if (!order) throw new Error('Order not found.');
       if (
-        ![ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ]
+        !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ] as OrderStatus[])
         .includes(order.status)
       ) {
         throw new Error('Cannot cancel an ongoing order.');

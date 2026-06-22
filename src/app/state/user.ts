@@ -51,12 +51,15 @@ export enum BusinessModel {
 /**
  * Единицы времени.
  */
-export enum TimeUnit {
-  MINUTES = 'minutes',
-  HOURS = 'hours',
-  DAYS = 'days',
-  WEEKS = 'weeks'
-}
+export const TimeUnit = {
+  MINUTES: 'minutes',
+  HOURS: 'hours',
+  DAYS: 'days',
+  WEEKS: 'weeks'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type TimeUnit = typeof TimeUnit[keyof typeof TimeUnit];
 
 /**
  * Базовые данные пользователя.
@@ -151,7 +154,6 @@ export type UserProfile = ClientUserProfile | ContractorUserProfile;
 function fillUserProfile(data: UserAPI.UserData): UserProfile {
   const numId = Number(data.u_id);
   const u_details = data.u_details as Record<string, unknown> || undefined;
-  const lastTimeBeenOnline = 'string' === typeof u_details?.lastTimeBeenOnline ? new Date(u_details.lastTimeBeenOnline) : null;
   const baseProfile: UserBaseData = {
     id: Number.isInteger(numId) && numId > 0 ? numId : 0,
     name: data.u_name && data.u_middle ? `${data.u_name} ${data.u_middle}` : String(data.u_name || data.u_middle || ''),
@@ -167,7 +169,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     isEmailVerified: Number( data.u_email_checked) === 1,
     blackList: Array.isArray(u_details?.blackList) ? u_details.blackList : [],
     isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
-    lastTimeBeenOnline: Number.isFinite(lastTimeBeenOnline?.getTime()) ? lastTimeBeenOnline! : new Date(0)
+    lastTimeBeenOnline: new Date(Date.parse(String(u_details.lastTimeBeenOnline)) || 0)
   };
 
   if (baseProfile.role === UserRole.Client) {
@@ -195,7 +197,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     organizationName: u_details?.businessModel === BusinessModel.ServiceCenter && 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
     photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isInteger(id) && id > 0) : [],
     active: Number(data.u_active) === 1,
-    registrationDate: new Date(String(u_details?.registrationDate ?? '') || 0)
+    registrationDate: new Date(Date.parse(String(u_details?.registrationDate)) || 0)
   };
 }
 

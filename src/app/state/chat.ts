@@ -126,8 +126,8 @@ const [ getChatById, useChatsByIds ] = createBatchLoader({
       if (!chatItem.orderId || !chatItem.clientId || !chatItem.contractorId) return acc;
       if (Number.isInteger(chat.first_unread) && chat.first_unread! > 0) chatItem.firstUnread = chat.first_unread!;
       if (!!chat.last_time && chat.last_time !== '0000-00-00 00:00:00') {
-        const date = new Date(String(chat.last_time));
-        if (!Number.isNaN(date.getTime())) chatItem.lastUpdate = date;
+        const timestamp = Date.parse(chat.last_time);
+        if (!Number.isNaN(timestamp)) chatItem.lastUpdate = new Date(timestamp);
       }
       acc.push(chatItem);
       return acc;
@@ -234,7 +234,7 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
     const messages = (data ?? []).map(messageRec => {
       const ret = {
         id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
-        created: new Date(String(messageRec.created ?? '') || 0),
+        created: new Date(Date.parse(messageRec.created) || 0),
         type:
           messageRec.type === 31 ? MessageType.System :
           !!messageRec.from ? MessageType.User :
@@ -254,8 +254,8 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
       }
       if (Number.isInteger(messageRec.from) && messageRec.from! > 0) ret.from = messageRec.from!;
       if (messageRec.modified) {
-        const date = new Date(String(messageRec.modified));
-        if (!Number.isNaN(date.getTime())) ret.modified = date;
+        const timestamp = Date.parse(messageRec.modified);
+        if (!Number.isNaN(timestamp)) ret.modified = new Date(timestamp);
       }
       if (Number.isInteger(messageRec.editor) && messageRec.editor! > 0) ret.editorId = messageRec.editor!;
       if (Number.isInteger(messageRec.author) && messageRec.author! > 0) ret.authorId = messageRec.author!;

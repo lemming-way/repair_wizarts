@@ -80,7 +80,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <span className={styles.author_name_own}>{text('You')}</span>
               </div>
             )}
-            {isTextMessage && <p className={styles.message_text}>{simpleMarkdown(message.text)}</p>}
+            {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
             {/* TODO: Render files/audio here later */}
           </div>
         </div>

@@ -34,7 +34,7 @@ $out = call_user_func(function() {
       'sql' => 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id'
     ],
     // ================ Поездки/заказы ================
-    // Получить список поездок по заданным параметрам
+    // Получить список поездок по заданным параметрам / к удалению
     'getTripIds' => [
       'sql' => 'SELECT `o`.`id_order` ' .
               ($current_user_role == 2 ?
@@ -79,7 +79,7 @@ $out = call_user_func(function() {
         'numeric' => [ 'id_order' ]
       ]
     ],
-    // Получить данные поездок по их ID
+    // Получить данные поездок по их ID / к удалению
     'getTripsByIds' => [
       'sql' => 'SELECT ' .
                 '`o`.`id_order` AS `b_id`,' .
@@ -206,6 +206,167 @@ $out = call_user_func(function() {
         'numeric' => [
           'b_id', 'u_id', 'city_start', 'b_start_latitude', 'b_start_longitude', 'b_state', 'b_only_offer',
           'b_rating', 'b_max_waiting', 'b_price_estimate', 'b_payment_way', 'b_payment_card', 'b_offer'
+        ]
+      ]
+    ],
+    // Получить список заказов по заданным параметрам
+    'getOrderIds' => [
+      'sql' => 'SELECT `o`.`id_order` ' .
+              ($current_user_role == 2 ?
+                'FROM (' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `order_driver` `d` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`d`.`id_order` ' .
+                  'WHERE `d`.`not_deleted`=1 AND `d`.`id_user`=:u_id AND `d`.`id_order_driver_status` IN(3,4,5,6) ' .
+                  'UNION ' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `order_driver_select` `ds` ' .
+                  'JOIN `order` `o` ON `o`.`id_order`=`ds`.`id_order` ' .
+                  'WHERE `ds`.`id_user`=:u_id AND `ds`.`cancel`=0 AND `o`.`id_order_status`=6 ' .
+                  'UNION ' .
+                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
+                  'FROM `users` `u` ' .
+                  'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
+                  'WHERE `u`.`id_user`=:u_id '.
+                    'AND `o`.`id_order_status`=1 ' .
+                    'AND CASE ' .
+                      'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$" ' .
+                      'THEN JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")) ' .
+                      'ELSE 0 ' .
+                    'END' .
+                ') `o` '
+              :
+                'FROM `order` `o` '
+              ) .
+              'WHERE ' .
+                '(' .
+                  '((:flags & 1) AND `o`.`only_offer`=0) ' .
+                  'OR ((:flags & 2) AND `o`.`only_offer`>0)' .
+                ')' .
+                'AND (' .
+                  '((:flags & 4) AND (`o`.`id_order_status`=1 OR `o`.`id_order_status`=6)) ' .
+                  'OR ((:flags & 8) AND `o`.`id_order_status`=2) ' .
+                  'OR ((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
+                ')' .
+                ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
+              'ORDER BY `o`.`create_datetime` DESC',
+      'fields' => [
+        'numeric' => [ 'id_order' ]
+      ]
+    ],
+    // Получить данные заказов по их ID
+    'getOrdersByIds' => [
+      'sql' => 'SELECT ' .
+                '`o`.`id_order` AS `id`,' .
+                '`o`.`client` AS `client`,' .
+                '`c`.`id_user` AS `contractor`,' .
+                '`o`.`city_from` AS `city`,' .
+                '`o`.`from` AS `address`,' .
+                '`o`.`from_lat` AS `latitude`,' .
+                '`o`.`from_lng` AS `longitude`,' .
+                '`o`.`id_order_status` AS `order_status`,' .
+                '`c`.`id_order_driver_status` AS `contractor_status`,' .
+                'IF(`o`.`only_offer`>0,1,0) AS `is_direct`,' .
+                '`o`.`rating` AS `client_rating`,' .
+                '`c`.`rating` AS `contractor_rating`,' .                
+                '`o`.`create_datetime` AS `created_at`,' .
+                'NULLIF(`c`.`appoint_datetime`,0) AS `appointed_at`,' .
+                'NULLIF(`c`.`start_datetime`,0) AS `started_at`,' .
+                'NULLIF(`c`.`complete_datetime`,0) AS `finished_at`,' .
+                'NULLIF(`o`.`cancel_datetime`,0) AS `canceled_at`,' .
+                '`o`.`cancel_reason` AS `cancel_reason`,' .
+                'NULLIF(`o`.`complete_datetime`,0) AS `completed_at`,' .
+                '`o`.`price_estimate` AS `desired_price`,' .
+                '`c`.`price_estimate` AS `contractor_price`,' .
+                'ROUND(`o`.`sum`,2) AS `agreed_price`,' .
+                ($current_user_role == 2 ?
+                  'IF(`d`.`id_order_driver_status` IN(1,3,4,5,6),JSON_OBJECT(' .
+                    '"id",`d`.`id_user`,' .
+                    '"price",IFNULL(`d`.`price_estimate`,0),' .
+                    '"created_at",IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),' .
+                    '"comment",`d`.`options`->>"$.comment",' .
+                    '"ready_in",`d`.`options`->"$.readyIn"' .
+                  '),NULL) AS `contractor_offer`,' .
+                  'IFNULL(`dc`.`count`,0) AS `offers_count`,'
+                :
+                  '`d`.`drivers` AS `contractor_offers`,'
+                ) .
+                '`o`.`id_payment_method` AS `payment_way`,' .
+                'IF(`ds`.`cancel`=0,`ds`.`id_user`,NULL) AS `invited_contractor`,' .
+                '`o`.`options`->>"$.product" AS `product`,' .
+                '`o`.`options`->"$.services" AS `services`,' .
+                '`o`.`options`->>"$.description" AS `description`,' .
+                '`o`.`options`->"$.images" AS `images`' .
+              'FROM `order` `o` ' .
+              ($current_user_role == 2 ?
+                'LEFT JOIN `order_driver_select` `ds` ' .
+                  'ON `o`.`only_offer`>0 AND `ds`.`id_order`=`o`.`id_order` AND `ds`.`id_user`=:u_id '
+              :
+                'LEFT JOIN LATERAL (' .
+                  'SELECT `id_user`,0 AS `cancel` ' .
+                  'FROM `order_driver_select` `ds` ' .
+                  'WHERE `ds`.`id_order`=`o`.`id_order` AND `ds`.`cancel`=0 ' .
+                  'ORDER BY `ds`.`create_datetime` ' .
+                  'LIMIT 1' .
+                ') `ds` ON `o`.`only_offer`>0 '
+              ) .
+              ($current_user_role == 2 ?
+                'JOIN LATERAL (' .
+                  'SELECT COUNT(1) AS `count` ' .
+                  'FROM `order_driver` `d` ' .
+                  'WHERE `d`.`id_order`=`o`.`id_order` AND `d`.`id_order_driver_status` IN(1,3,4,5,6) AND `d`.`not_deleted`=1' .
+                ') `dc` ' .
+                'LEFT JOIN `order_driver` `d` ' .
+                  'ON `d`.`id_order`=`o`.`id_order` ' .
+                  'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) '.
+                  'AND `d`.`not_deleted`=1 '.
+                  'AND `d`.`id_user`=:u_id '
+              :
+                'LEFT JOIN LATERAL (' .
+                  'SELECT ' .
+                    'JSON_ARRAYAGG(' .
+                      'JSON_OBJECT(' .
+                        '"id",`d`.`id_user`,' .
+                        '"price",IFNULL(`d`.`price_estimate`,0),' .
+                        '"created_at",IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),' .
+                        '"comment",`d`.`options`->>"$.comment",' .
+                        '"ready_in",`d`.`options`->"$.readyIn"' .
+                      ')' .
+                    ') AS `drivers` ' .
+                  'FROM `order_driver` `d` ' .
+                  'WHERE `d`.`id_order`=`o`.`id_order` AND `d`.`id_order_driver_status` IN(1,3,4,5,6) AND `d`.`not_deleted`=1 ' .
+                ') `d` ON TRUE '
+              ) .
+              'LEFT JOIN `order_driver` `c` ' .
+                'ON `o`.`id_order_status` IN(2,3,4) ' .
+                'AND `c`.`id_order`=`o`.`id_order` ' .
+                'AND `c`.`not_deleted`=1 ' .
+                'AND `c`.`id_order_driver_status` IN(3,4,5,6) ' .
+              ($current_user_role == 2 ? 'LEFT JOIN `users` `u` ON `u`.`id_user`=:u_id ' : '') .
+              'WHERE `o`.`id_order` IN(:order_ids) ' .
+                ($current_user_role == 2 ?
+                  'AND (' .
+                    '(' .
+                      '`o`.`id_order_status`=1 ' .
+                      'AND `u`.`id_city`=`o`.`city_from` ' .
+                      'AND CASE ' .
+                        'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>"$.product" REGEXP "^[0-9]+$" ' .
+                        'THEN JSON_CONTAINS_PATH(`u`.`json`,"one",CONCAT("$.services.\"",`o`.`options`->>"$.product","\"")) ' .
+                        'ELSE 0 ' .
+                      'END' .
+                    ')' .
+                    'OR (`o`.`id_order_status`=6 AND `ds`.`id_order` IS NOT NULL) ' .
+                    'OR `d`.`id_order` IS NOT NULL' .
+                  ')'
+                :
+                  'AND `o`.`client`=:u_id'
+                ),
+      'fields' => [
+        'json' => ['contractor_offers', 'contractor_offer', 'services', 'images'],
+        'numeric' => [
+          'id', 'client', 'contractor', 'city', 'latitude', 'longitude', 'order_status', 'contractor_status',
+          'is_direct', 'client_rating', 'contractor_rating', 'desired_price', 'contractor_price', 'agreed_price',
+          'offers_count', 'payment_way', 'invited_contractor', 'product'
         ]
       ]
     ],
@@ -442,6 +603,7 @@ $out = call_user_func(function() {
                   'AND `m`.`recipient_owner_type`=31 ' .
                   'AND `m`.`id_message_type` IN(1,31,32,33)'
     ],
+    // Добавить сообщение
     'postMessage' => [
       'sql' => 'INSERT INTO `message`(' .
                   '`sender_owner`,' .

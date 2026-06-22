@@ -16,7 +16,7 @@ type BatchItem<T, ID> = {
 }
 
 type BatchConfig<T, ID, K> = {
-  fetchFn: (ids: ID[], authUserId: number) => Promise<(T | null)[]>;
+  fetchFn: (ids: ID[]) => Promise<(T | null)[]>;
   createQueryKey: (userId: number, itemId: ID) => (string | number)[];
   extractKeys: (queryKey: (string | number)[]) => [ number, ID ];
   staleTime?: number;
@@ -84,7 +84,7 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
 
       try {
         const authUserId = authorizedUserId();
-        const data = authUserId ? (await fetchFn(itemIds, authUserId)) : null;
+        const data = authUserId ? (await fetchFn(itemIds)) : null;
 
         const itemsMap = new Map<ID, T>(data?.filter(Boolean).map(item => [item!.id, item!]) ?? []);
         resolvers.forEach(resolver => {
