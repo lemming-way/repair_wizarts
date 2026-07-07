@@ -3,41 +3,177 @@
 ini_set( 'display_errors', 0 );
 
 $out = call_user_func(function() {
-  $current_user_id = '';
-  foreach ($_SESSION as $key => $val) {
-    if (substr($key, 0, 4) === 'UID:') {
-      $current_user_id = $val;
-      break;
+  /********************************************************************
+                         Вспомогательные функции
+  ********************************************************************/
+
+  // Обработка входных данных и данных авторизации
+  $get_context = function() {
+    $current_user_id = defined('UID') ? intval($_SESSION[UID]) : 0;
+    $current_user_role = isset($_SESSION['id_role']) ? intval($_SESSION['id_role']) : 0;
+    $active_role = isset($this->id_role) ? intval($this->id_role) : $current_user_role;
+    if ($current_user_role === 2 && $active_role === 1) $current_user_role = 1;
+    //~ $current_user_status = $_SESSION['id_verification_status'];
+
+    if (!$current_user_id) json_exit('401', 'error', 'Cannot find user ID', NULL);
+    if (!isset( $_REQUEST['s_t_data'] )) json_exit('400', 'error', 'No data', NULL);
+
+    $data = json_decode($_REQUEST['s_t_data'], true);
+    if (json_last_error() !== JSON_ERROR_NONE) json_exit('400', 'error', 'Bad JSON', NULL);
+    if (!isset( $data['action'] )) json_exit('400', 'error', 'No action', NULL);
+    $action = $data['action'];
+    unset( $data['action'] );
+    $data['u_id'] = $current_user_id;
+    $data['u_role'] = $current_user_role;
+
+    return [
+      'u_id' => $current_user_id,
+      'u_role' => $current_user_role,
+      'action' => $action,
+      'data' => $data
+    ];
+  };
+
+  // Умное экранирование строк с учётом числовых и булевых значений
+  $sql_escape = function($value) {
+    if (is_null($value)) {
+      return 'NULL';
     }
-  }
-  $current_user_role = isset($_SESSION['id_role']) ? $_SESSION['id_role'] : 0;
-  if ($current_user_role == 2 && isset($_REQUEST['u_a_role']) && $_REQUEST['u_a_role'] == 1) $current_user_role = 1;
-  //~ $current_user_status = $_SESSION['id_verification_status'];
+    elseif (is_bool($value)) {
+      return $value ? 1 : 0;
+    }
+    else {
+      $value = real_escape_string($value);
+      if (!is_numeric($value) || !is_finite($value)) $value = "'$value'";
+      return $value;
+    }
+  };
 
-  if (!$current_user_id) json_exit('401', 'error', 'Cannot find user ID', NULL);
-  if (!isset( $_REQUEST['s_t_data'] )) json_exit('400', 'error', 'No data', NULL);
+  // Выполнение SQL запроса с подстановкой переменных и возвратом полученного результата
+  $query = function($sql, $data, $options = []) use($sql_escape) {
+    if (!$sql) return null;
+    if (isset($options['json_fields']) && is_array($options['json_fields'])) {
+      $json_fields = $options['json_fields'];
+    }
+    else {
+      $json_fields = [];
+    }
+    if (isset($options['numeric_fields']) && is_array($options['numeric_fields'])) {
+      $numeric_fields = $options['numeric_fields'];
+    }
+    else {
+      $numeric_fields = [];
+    }
 
-  // Настройка запросов
-  $actions = [
-    // ================ Пользователи ================
+    foreach ($data as &$value) {
+      if (is_array($value)) {
+        if ($value === []) {
+          $value = "''";
+          continue;
+        }
+        elseif (array_keys($value) === range(0, count($value) - 1)) {
+          $values = [];
+          foreach ($value as $item) {
+            if (is_array($item)) break;
+            $values[] = $sql_escape($item);
+          }
+          if (count($values) === count($value)) {
+            $value = join(',', $values);
+            continue;
+          }
+        }
+        $value = $sql_escape(json_encode($value, JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
+      }
+      else {
+        $value = $sql_escape($value);
+      }
+    }
+    unset($value);
+    $sql = preg_replace_callback(
+      '/\'(?:[^\'\\\\]+|\\\\.)*\'(*SKIP)(*FAIL)|"(?:[^"\\\\]+|\\\\.)*"(*SKIP)(*FAIL)|`(?:[^`]*)`(*SKIP)(*FAIL)|:([A-Za-z_][A-Za-z0-9_]*)/',
+      function($matches) use($data) {
+        if (!isset( $data[$matches[1]] )) {
+          throw new Exception("Variable unset: $matches[1]", 400);
+        }
+        return $data[$matches[1]];
+      },
+      $sql
+    );
+
+    $result = @query($sql);
+    if (!$result) {
+      $err = error_db();
+      if (!$err) $err = 'MySQL error';
+      throw new Exception($err, 500);
+    }
+
+    if ($result === true) {
+      $ret = [ 'rows' => affected_rows() ];
+      $last_id = insert_id();
+      if ($last_id > 0) {
+        $ret['id'] = $last_id;
+      }
+    }
+    else {
+      $ret = [];
+      while ($row = fetch_assoc($result)) {
+        if ($json_fields || $numeric_fields) {
+          foreach ($row as $key => $value) {
+            if (!is_null($value)) {
+              if ($json_fields && in_array($key, $json_fields)) {
+                $decoded_json = json_decode($value, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                  throw new Exception("Failed to decode JSON field '$key': " . json_last_error_msg(), 500);
+                }
+                $row[$key] = $decoded_json;
+              }
+              elseif ($numeric_fields && in_array($key, $numeric_fields)) {
+                $row[$key] = +$value;
+              }
+            }
+          }
+        }
+        if (count(array_keys($row)) === 1) $ret[] = array_values($row)[0];
+        else $ret[] = $row;
+      }
+    }
+
+    return $ret;
+  };
+
+  // Получаем контекст
+  $context = $get_context();
+  $data = $context['data'];
+  try {
+    /********************************************************************
+                             Выполнение действий
+    ********************************************************************/
+
+    switch($context['action']) {
+    // ==============================================
+    //                  Пользователи
+    // ==============================================
+
     // Получение списка мастеров по городу и услуге
-    'getContractorsByProduct' => [
-      'sql' => 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND `active`>0 AND ' .
+    case 'getContractorsByProduct':
+      $sql = 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND `active`>0 AND ' .
                 'JSON_LENGTH(JSON_EXTRACT(`json`,CONCAT(\'$.services."\',:productId,\'"\')))>0 AND ' .
-                '(:isOnline=0 OR `json`->"$.isOnline"=TRUE)',
-      'fields' => [
-        'numeric' => [ 'id_user' ]
-      ]
-    ],
-    // Установить статус верификации водителя без участия администратора
-    'markUserAsVerified' => [
-      'sql' => 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id'
-    ],
-    // ================ Поездки/заказы ================
+                '(:isOnline=0 OR `json`->"$.isOnline"=TRUE)';
+      return $query($sql, $data, [ 'numeric_fields' => [ 'id_user' ] ]);
+
+      // Установить статус верификации водителя без участия администратора
+    case 'markUserAsVerified':
+      $sql = 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id';
+      return $query($sql, $data);
+
+    // ================================================
+    //                  Поездки/заказы
+    // ================================================
+
     // Получить список поездок по заданным параметрам / к удалению
-    'getTripIds' => [
-      'sql' => 'SELECT `o`.`id_order` ' .
-              ($current_user_role == 2 ?
+    case 'getTripIds':
+      $sql = 'SELECT `o`.`id_order` ' .
+              ($context['u_role'] === 2 ?
                 'FROM (' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
                   'FROM `order_driver` `d` ' .
@@ -73,15 +209,13 @@ $out = call_user_func(function() {
                   'OR ((:flags & 8) AND `o`.`id_order_status`=2) ' .
                   'OR ((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
                 ')' .
-                ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
-              'ORDER BY `o`.`create_datetime` DESC',
-      'fields' => [
-        'numeric' => [ 'id_order' ]
-      ]
-    ],
+                ($context['u_role'] === 2 ? '' : 'AND `o`.`client`=:u_id ') .
+              'ORDER BY `o`.`create_datetime` DESC';
+      return $query($sql, $data, [ 'numeric_fields' => [ 'id_order' ] ]);
+
     // Получить данные поездок по их ID / к удалению
-    'getTripsByIds' => [
-      'sql' => 'SELECT ' .
+    case 'getTripsByIds':
+      $sql = 'SELECT ' .
                 '`o`.`id_order` AS `b_id`,' .
                 '`o`.`client` AS `u_id`,' .
                 '`o`.`city_from` AS `city_start`,' .
@@ -200,19 +334,20 @@ $out = call_user_func(function() {
                       'OR `driving`>0' .
                     ')' .
                   ')' .
-                ')',
-      'fields' => [
-        'json' => ['b_options', 'drivers', 'b_offers', 'b_cancel_states'],
-        'numeric' => [
+                ')';
+      $options = [
+        'json_fields' => ['b_options', 'drivers', 'b_offers', 'b_cancel_states'],
+        'numeric_fields' => [
           'b_id', 'u_id', 'city_start', 'b_start_latitude', 'b_start_longitude', 'b_state', 'b_only_offer',
           'b_rating', 'b_max_waiting', 'b_price_estimate', 'b_payment_way', 'b_payment_card', 'b_offer'
         ]
-      ]
-    ],
+      ];
+      return $query($sql, $data, $options);
+
     // Получить список заказов по заданным параметрам
-    'getOrderIds' => [
-      'sql' => 'SELECT `o`.`id_order` ' .
-              ($current_user_role == 2 ?
+    case 'getOrderIds':
+      $sql = 'SELECT `o`.`id_order` ' .
+              ($context['u_role'] === 2 ?
                 'FROM (' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
                   'FROM `order_driver` `d` ' .
@@ -248,15 +383,13 @@ $out = call_user_func(function() {
                   'OR ((:flags & 8) AND `o`.`id_order_status`=2) ' .
                   'OR ((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
                 ')' .
-                ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
-              'ORDER BY `o`.`create_datetime` DESC',
-      'fields' => [
-        'numeric' => [ 'id_order' ]
-      ]
-    ],
+                ($context['u_role'] === 2 ? '' : 'AND `o`.`client`=:u_id ') .
+              'ORDER BY `o`.`create_datetime` DESC';
+      return $query($sql, $data, [ 'numeric_fields' => [ 'id_order' ] ]);
+
     // Получить данные заказов по их ID
-    'getOrdersByIds' => [
-      'sql' => 'SELECT ' .
+    case 'getOrdersByIds':
+      $sql = 'SELECT ' .
                 '`o`.`id_order` AS `id`,' .
                 '`o`.`client` AS `client`,' .
                 '`c`.`id_user` AS `contractor`,' .
@@ -268,7 +401,7 @@ $out = call_user_func(function() {
                 '`c`.`id_order_driver_status` AS `contractor_status`,' .
                 'IF(`o`.`only_offer`>0,1,0) AS `is_direct`,' .
                 '`o`.`rating` AS `client_rating`,' .
-                '`c`.`rating` AS `contractor_rating`,' .                
+                '`c`.`rating` AS `contractor_rating`,' .
                 '`o`.`create_datetime` AS `created_at`,' .
                 'NULLIF(`c`.`appoint_datetime`,0) AS `appointed_at`,' .
                 'NULLIF(`c`.`start_datetime`,0) AS `started_at`,' .
@@ -279,7 +412,7 @@ $out = call_user_func(function() {
                 '`o`.`price_estimate` AS `desired_price`,' .
                 '`c`.`price_estimate` AS `contractor_price`,' .
                 'ROUND(`o`.`sum`,2) AS `agreed_price`,' .
-                ($current_user_role == 2 ?
+                ($context['u_role'] === 2 ?
                   'IF(`d`.`id_order_driver_status` IN(1,3,4,5,6),JSON_OBJECT(' .
                     '"id",`d`.`id_user`,' .
                     '"price",IFNULL(`d`.`price_estimate`,0),' .
@@ -298,7 +431,7 @@ $out = call_user_func(function() {
                 '`o`.`options`->>"$.description" AS `description`,' .
                 '`o`.`options`->"$.images" AS `images`' .
               'FROM `order` `o` ' .
-              ($current_user_role == 2 ?
+              ($context['u_role'] === 2 ?
                 'LEFT JOIN `order_driver_select` `ds` ' .
                   'ON `o`.`only_offer`>0 AND `ds`.`id_order`=`o`.`id_order` AND `ds`.`id_user`=:u_id '
               :
@@ -310,7 +443,7 @@ $out = call_user_func(function() {
                   'LIMIT 1' .
                 ') `ds` ON `o`.`only_offer`>0 '
               ) .
-              ($current_user_role == 2 ?
+              ($context['u_role'] === 2 ?
                 'JOIN LATERAL (' .
                   'SELECT COUNT(1) AS `count` ' .
                   'FROM `order_driver` `d` ' .
@@ -342,9 +475,9 @@ $out = call_user_func(function() {
                 'AND `c`.`id_order`=`o`.`id_order` ' .
                 'AND `c`.`not_deleted`=1 ' .
                 'AND `c`.`id_order_driver_status` IN(3,4,5,6) ' .
-              ($current_user_role == 2 ? 'LEFT JOIN `users` `u` ON `u`.`id_user`=:u_id ' : '') .
+              ($context['u_role'] === 2 ? 'LEFT JOIN `users` `u` ON `u`.`id_user`=:u_id ' : '') .
               'WHERE `o`.`id_order` IN(:order_ids) ' .
-                ($current_user_role == 2 ?
+                ($context['u_role'] === 2 ?
                   'AND (' .
                     '(' .
                       '`o`.`id_order_status`=1 ' .
@@ -360,20 +493,24 @@ $out = call_user_func(function() {
                   ')'
                 :
                   'AND `o`.`client`=:u_id'
-                ),
-      'fields' => [
-        'json' => ['contractor_offers', 'contractor_offer', 'services', 'images'],
-        'numeric' => [
+                );
+      $options = [
+        'json_fields' => ['contractor_offers', 'contractor_offer', 'services', 'images'],
+        'numeric_fields' => [
           'id', 'client', 'contractor', 'city', 'latitude', 'longitude', 'order_status', 'contractor_status',
           'is_direct', 'client_rating', 'contractor_rating', 'desired_price', 'contractor_price', 'agreed_price',
           'offers_count', 'payment_way', 'invited_contractor', 'product'
         ]
-      ]
-    ],
-    // ================ Сообщения/чаты ================
+      ];
+      return $query($sql, $data, $options);
+
+    // ================================================
+    //                  Сообщения/чаты
+    // ================================================
+
     // Получить список активных чатов для пользователя
-    'getActiveChatIds' => [
-      'sql' => 'SELECT CONCAT(`order`,":",`contractor`) AS `id`' .
+    case 'getActiveChatIds':
+      $sql = 'SELECT CONCAT(`order`,":",`contractor`) AS `id`' .
                 'FROM (' .
                   'SELECT ' .
                     '`o`.`id_order` AS `order`,' .
@@ -392,7 +529,7 @@ $out = call_user_func(function() {
                         'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
                         'AND `r`.`id_message` IS NULL' .
                     ') AS `has_unread` ' .
-                  ($current_user_role == 2 ?
+                  ($context['u_role'] === 2 ?
                     'FROM (' .
                      'SELECT `id_order`,`id_user` FROM `order_driver` `d` ' .
                      'WHERE `d`.`id_user`=:u_id AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`>0 ' .
@@ -421,21 +558,22 @@ $out = call_user_func(function() {
                     'AND `ds`.`id_user`=`uids`.`id_user` ' .
                     'AND `cancel`=0 ' .
                   'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
-                    ($current_user_role == 2 ? '' : 'AND `o`.`client`=:u_id ') .
+                    ($context['u_role'] === 2 ? '' : 'AND `o`.`client`=:u_id ') .
                   'GROUP BY `contractor`,`o`.`id_order` ' .
                   'HAVING `has_unread`>0 ' .
                     'OR ' .
-                    ($current_user_role == 2 ?
+                    ($context['u_role'] === 2 ?
                       'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',"$") ' .
                       'OR `ds`.`order_select_type`="Active"'
                     :
                       'JSON_CONTAINS(`o`.`options`,CAST(`contractor` AS JSON),"$.chatOpen")'
                     ) .
-                ') `inner`',
-    ],
+                ') `inner`';
+      return $query($sql, $data);
+
     // Получить данные чатов по `id`
-    'getChats' => [
-      'sql' => 'SELECT ' .
+    case 'getChats':
+      $sql = 'SELECT ' .
                   '`o`.`id_order` AS `order`,' .
                   '`o`.`client` AS `client`,' .
                   'IFNULL(`d`.`id_user`,`ds`.`id_user`) AS `contractor`,' .
@@ -487,14 +625,13 @@ $out = call_user_func(function() {
                     '(:u_role=1 AND `o`.`client`=:u_id) ' .
                     'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
                   ') ' .
-                'GROUP BY `ids`.`id`',
-      'fields' => [
-        'numeric' => ['order', 'client', 'contractor', 'unread_count', 'first_unread', 'is_open']
-      ]
-    ],
+                'GROUP BY `ids`.`id`';
+      $numeric_fields = ['order', 'client', 'contractor', 'unread_count', 'first_unread', 'is_open'];
+      return $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
+
     // Получить id всех сообщений в чате
-    'getMessageIds' => [
-      'sql' => 'SELECT NOW() AS `server_time`,' .
+    case 'getMessageIds':
+      $sql = 'SELECT NOW() AS `server_time`,' .
                 'JSON_ARRAYAGG(`id_message`) AS `messages` ' .
                 'FROM (' .
                   'SELECT *,ROW_NUMBER() OVER(ORDER BY `id_message`) AS `num` ' .
@@ -507,14 +644,12 @@ $out = call_user_func(function() {
                     'AND `recipient_owner`=:chat_id ' .
                     'AND `id_message_type` IN(1,31,32,33) ' .
                     'AND `active_status`>0 ' .
-                ') `m`',
-      'fields' => [
-        'json' => ['messages']
-      ]
-    ],
+                ') `m`';
+      return $query($sql, $data, [ 'json_fields' => ['messages'] ]);
+
     // Получить id всех сообщений в чате, обновлённых с заданного момента времени
-    'getUpdatedMessageIds' => [
-      'sql' => 'SELECT NOW() AS `server_time`,' .
+    case 'getUpdatedMessageIds':
+      $sql = 'SELECT NOW() AS `server_time`,' .
                   'JSON_ARRAYAGG(' .
                     'JSON_OBJECT(' .
                       '"id",`m`.`id_message`,' .
@@ -530,9 +665,9 @@ $out = call_user_func(function() {
                     'AND `r1`.`id_user`=:u_id ' .
                   'LEFT JOIN `messages_read` `r2` ' .
                     'ON `r2`.`id_message`=`m`.`id_message` ' .
-                    'AND `r2`.`id_user`=' . ($current_user_role == 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(:chat_id,":",-1) ') .
+                    'AND `r2`.`id_user`=' . ($context['u_role'] === 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(:chat_id,":",-1) ') .
                   'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,":",1) ' .
-                    ($current_user_role == 2 ?
+                    ($context['u_role'] === 2 ?
                       'AND SUBSTRING_INDEX(:chat_id,":",-1)=:u_id '
                     :
                       'AND `o`.`client`=:u_id '
@@ -541,14 +676,12 @@ $out = call_user_func(function() {
                     'AND `m`.`recipient_owner`=:chat_id ' .
                     'AND `m`.`id_message_type` IN(1,31,32,33) ' .
                     'AND GREATEST(`m`.`create_datetime`,`m`.`last_edit_datetime`,IFNULL(`r1`.`read`,0),IFNULL(`r2`.`read`,0))>:since ' .
-                ') `m`',
-      'fields' => [
-        'json' => ['messages']
-      ]
-    ],
+                ') `m`';
+      return $query($sql, $data, [ 'json_fields' => ['messages'] ]);
+
     // Получить сообщения по списку id
-    'getMessages' => [
-      'sql' => 'SELECT `m`.`id_message`  AS `id`,' .
+    case 'getMessages':
+      $sql = 'SELECT `m`.`id_message`  AS `id`,' .
                 'IF(`m`.`sender_owner_type`=1,`m`.`sender_owner`,NULL) AS `from`,' .
                 'CASE WHEN `m`.`id_message_type`=1 THEN `m`.`value` WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>"$.text" ELSE NULL END AS `text`,' .
                 'CASE WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>"$.eventType" ELSE NULL END AS `event_type`,' .
@@ -570,30 +703,29 @@ $out = call_user_func(function() {
                 'AND `r1`.`id_user`=:u_id ' .
               'LEFT JOIN `messages_read` `r2` ' .
                 'ON `r2`.`id_message`=`m`.`id_message` ' .
-                'AND `r2`.`id_user`=' . ($current_user_role == 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1) ') .
+                'AND `r2`.`id_user`=' . ($context['u_role'] === 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1) ') .
               'WHERE `m`.`id_message` IN(:ids) ' .
-                  ($current_user_role == 2 ?
+                  ($context['u_role'] === 2 ?
                     'AND SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1)=:u_id '
                   :
                     'AND `o`.`client`=:u_id '
                   ) .
                 'AND `m`.`active_status`>0 ' .
                 'AND `m`.`recipient_owner_type`=31 ' .
-                'AND `m`.`id_message_type` IN(1,31,32,33)',
-      'fields' => [
-        'numeric' => ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'related', 'deleted', 'unread']
-      ]
-    ],
+                'AND `m`.`id_message_type` IN(1,31,32,33)';
+      $numeric_fields = ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'related', 'deleted', 'unread'];
+      return $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
+
     // Пометить сообщения прочитанными
-    'markMessagesAsRead' => [
-      'sql' => 'INSERT IGNORE INTO `messages_read` ' .
+    case 'markMessagesAsRead':
+      $sql = 'INSERT IGNORE INTO `messages_read` ' .
                 'SELECT `m`.`id_message`,' .
                   ':u_id AS `id_user`,' .
                   'NOW() AS `read` ' .
                 'FROM `message` `m` ' .
                 'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,":",1) ' .
                 'WHERE `m`.`id_message` IN(:ids) ' .
-                  ($current_user_role == 2 ?
+                  ($context['u_role'] === 2 ?
                     'AND SUBSTRING_INDEX(`m`.`recipient_owner`,":",-1)=:u_id '
                   :
                     'AND `o`.`client`=:u_id '
@@ -601,11 +733,12 @@ $out = call_user_func(function() {
                   'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
                   'AND `m`.`active_status`>0 ' .
                   'AND `m`.`recipient_owner_type`=31 ' .
-                  'AND `m`.`id_message_type` IN(1,31,32,33)'
-    ],
+                  'AND `m`.`id_message_type` IN(1,31,32,33)';
+      return $query($sql, $data);
+
     // Добавить сообщение
-    'postMessage' => [
-      'sql' => 'INSERT INTO `message`(' .
+    case 'postMessage':
+      $sql = 'INSERT INTO `message`(' .
                   '`sender_owner`,' .
                   '`sender_owner_type`,' .
                   '`recipient_owner`,' .
@@ -665,11 +798,12 @@ $out = call_user_func(function() {
                   'AND `id_message_type` IN(1,32,33)' .
                 '))' .
                 'AND :type IN(1,32,33) ' .
-                'AND ' . ($current_user_role == 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id')
-    ],
+                'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id');
+      return $query($sql, $data);
+
     // Открыть/закрыть чат
-    'chatOpenClose' => [
-      'sql' => 'UPDATE `order` `o` ' .
+    case 'chatOpenClose':
+      $sql = 'UPDATE `order` `o` ' .
                 'LEFT JOIN `order_driver` `d` ' .
                   'ON `d`.`id_order`=`o`.`id_order` ' .
                   'AND `d`.`id_user`=SUBSTRING_INDEX(:id,":",-1) ' .
@@ -713,125 +847,14 @@ $out = call_user_func(function() {
                   'AND (' .
                     '(:u_role=1 AND `o`.`client`=:u_id) ' .
                     'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
-                  ')',
-    ]
-  ];
+                  ')';
+      $query($sql, $data);
 
-  $data = json_decode($_REQUEST['s_t_data'], true);
-  if (json_last_error() !== JSON_ERROR_NONE) json_exit('400', 'error', 'Bad JSON', NULL);
-  if (!isset( $data['action'] )) json_exit('400', 'error', 'No action', NULL);
-  if (!isset( $actions[$data['action']] )) json_exit('400', 'error', 'Unknown action', NULL);
-
-  if (!isset($actions[$data['action']]['sql'])) {
-    json_exit('400', 'error', 'SQL query not defined for action', NULL);
-  }
-  $sql = $actions[$data['action']]['sql'];
-  if (isset($actions[$data['action']]['fields']['json']) && is_array($actions[$data['action']]['fields']['json'])) {
-    $json_fields = $actions[$data['action']]['fields']['json'];
-  }
-  else {
-    $json_fields = [];
-  }
-  if (isset($actions[$data['action']]['fields']['numeric']) && is_array($actions[$data['action']]['fields']['numeric'])) {
-    $numeric_fields = $actions[$data['action']]['fields']['numeric'];
-  }
-  else {
-    $numeric_fields = [];
-  }
-  unset($data['action']);
-  $data['u_id'] = $current_user_id;
-  $data['u_role'] = $current_user_role;
-
-  $escape = function($value) {
-    if (is_null($value)) {
-      return 'NULL';
-    }
-    elseif (is_bool($value)) {
-      return $value ? 1 : 0;
-    }
-    else {
-      $value = real_escape_string($value);
-      if (!is_numeric($value) || !is_finite($value)) $value = "'$value'";
-      return $value;
-    }
-  };
-
-  foreach ($data as &$value) {
-    if (is_array($value)) {
-      if ($value === []) {
-        $value = "''";
-        continue;
-      }
-      elseif (array_keys($value) === range(0, count($value) - 1)) {
-        $values = [];
-        foreach ($value as $item) {
-          if (is_array($item)) break;
-          $values[] = $escape($item);
-        }
-        if (count($values) === count($value)) {
-          $value = join(',', $values);
-          continue;
-        }
-      }
-      $value = $escape(json_encode($value, JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
-    }
-    else {
-      $value = $escape($value);
+    default:
+      json_exit('400', 'error', 'Unknown action', NULL);
     }
   }
-  unset($value);
-  $sql = preg_replace_callback(
-    '/\'(?:[^\'\\\\]+|\\\\.)*\'(*SKIP)(*FAIL)|"(?:[^"\\\\]+|\\\\.)*"(*SKIP)(*FAIL)|`(?:[^`]*)`(*SKIP)(*FAIL)|:([A-Za-z_]+)/',
-    function($matches) use($data) {
-      if (!isset( $data[$matches[1]] )) {
-        json_exit('400', 'error', "Variable unset: $matches[1]", NULL);
-      }
-      return $data[$matches[1]];
-    },
-    $sql
-  );
-
-  $result = @query($sql);
-  if (!$result) {
-    $err = error_db();
-    if (!$err) $err = 'MySQL error';
-    json_exit('500', 'error', $err, NULL);
+  catch (Exception $e) {
+    json_exit(strval($e->getCode()), 'error', $e->getMessage(), NULL);
   }
-
-  $query_type = strtolower(substr($sql, 0, 6));
-  if ($query_type === 'select') {
-    $out = [];
-    while ($row = fetch_assoc($result)) {
-      if ($json_fields) {
-        foreach ($row as $key => &$value) {
-          if (!is_null($value) && in_array($key, $json_fields)) {
-            $decoded_json = json_decode($value, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-              json_exit('500', 'error', "Failed to decode JSON field '$key': " . json_last_error_msg(), NULL);
-            }
-            $value = $decoded_json;
-          }
-        }
-        unset($value);
-      }
-      if ($numeric_fields) {
-        foreach ($row as $key => &$value) {
-          if (!is_null($value) && in_array($key, $numeric_fields)) {
-            $value = floatval($value);
-          }
-        }
-        unset($value);
-      }
-      if (count(array_keys($row)) === 1) $out[] = array_values($row)[0];
-      else $out[] = $row;
-    }
-  }
-  elseif ($query_type === 'insert') {
-    $out = [ 'id' => insert_id() ];
-  }
-  else {
-    $out = $result;
-  }
-
-  return $out;
 });
