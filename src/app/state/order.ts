@@ -15,7 +15,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
-import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as FileAPI from './api/dropbox';
 import * as TripAPI from './api/trips';
 import * as OrderAPI from './api/orders';
@@ -187,7 +186,7 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       Array.isArray(data.contractor_offers) ? data.contractor_offers :
       !!data.contractor_offer && 'object' === typeof data.contractor_offer ? [ data.contractor_offer ] :
       [];
-      
+
     const contractorOffers = offersData.reduce((ret, data) => {
       const offer = {
         contractorId: Number(data.id),
@@ -208,7 +207,7 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       if (offer.contractorId > 0 && offer.price >= 0) {
         ret.push(offer);
       }
-      
+
       return ret;
     }, [] as Offer[]);
 
@@ -219,7 +218,7 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       data.started_at ??
       data.appointed_at ??
       data.created_at;
-      
+
     // заполняем основные свойства заказа
     const order: Order = {
       id: Number(data.id),
@@ -241,10 +240,10 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
     if (!order.id || !order.clientId || !order.productId || !order.city) {
       return ret;
     }
-    
+
     const contractorId = data.contractor || data.invited_contractor;
     if (contractorId) order.contractorId = contractorId;
-    
+
     if (order.type === OrderType.Direct) {
       const services = (data.services || []).reduce((ret, data) => {
         const service = {
@@ -254,12 +253,12 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
         if (service.service && service.price >= 0) {
           ret.push(service);
         }
-        
+
         return ret;
       }, [] as OrderServiceDetails[]);
       order.services = services;
     }
-    
+
     if (data.contractor_price !== null) {
       order.contractorPrice = Number(data.contractor_price ?? 0);
     }
@@ -267,7 +266,7 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
     if (order.status !== OrderStatus.PUBLISHED && order.status !== OrderStatus.REQUESTED && data.agreed_price !== null) {
       order.agreedPrice = Number(data.agreed_price ?? 0);
     }
-    
+
     ret.push(order);
 
     return ret;
@@ -275,120 +274,6 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
 
   return result;
 }
-
-/**
- * Преобразует сырые данные API в структуру Order
- * @param rawData Данные поездок от API
- * @returns Список заказов
- */
-/*
-function parseOrders(userId: number, rawData: Awaited<ReturnType<typeof TripAPI.getTripsByIds>>): Order[] {
-  const result = rawData.reduce((ret, trip) => {
-    if (trip.b_id && trip.u_id) {
-      let c_state = 0;  // статус назначенного исполнителя, если есть
-      // очищаем список прикреплённых файлов
-      const images = Array.isArray(trip.b_options?.images) ? trip.b_options.images : [];
-      const attachments = images
-        .map(Number)
-        .filter(id => Number.isInteger(id) && id > 0);
-
-      // заполняем основные свойства заказа
-      const order: Partial<Order> = {
-        id: Number(trip.b_id),
-        type: Number(trip.b_only_offer) === 1 ? OrderType.Direct : OrderType.Market,
-        clientId: Number(trip.u_id),
-        city: Number(trip.city_start ?? 0),
-        address: String(trip.b_start_address ?? ''),
-        productId: Number(trip.b_options?.product ?? 0),
-        description: String(trip.b_options?.description ?? ''),
-        desiredPrice: Number(trip.b_options?.desiredPrice ?? 0),
-        createdAt: new Date(Date.parse(trip.b_created) || 0),
-        attachments,
-        contractorOffers: []
-      };
-      // отбрасываем бракованные данные
-      if (!order.id || !order.clientId || !order.productId || !order.city) {
-        return ret;
-      }
-      order.updatedAt = order.createdAt;  // начальное значение, будет меняться
-      const b_state = Number(trip.b_state);  // внутренний статус заказа в API
-      // обрабатываем исполнителей, откликнувшихся на заказ
-      if (trip.drivers?.length) {
-        for (const driver of trip.drivers) {
-          const d_id = Number(driver.u_id);
-          const d_state = Number(driver.c_state ?? 0);
-          const d_price = Number(driver.c_options?.price ?? 0);
-          if (d_state === TripAPI.DriverState.Offering) {
-            // не назначенный исполнитель
-            order.contractorOffers!.push({
-              contractorId: d_id,
-              price: d_price,
-              comment: String(driver.c_options?.comment ?? ''),
-              readyIn: driver.c_options?.readyIn && 'object' === typeof driver.c_options.readyIn ?
-                driver.c_options.readyIn as { value: number; unit: TimeUnit; } :
-                { value: 0, unit: TimeUnit.HOURS },
-              createdAt: new Date(Date.parse(driver.c_becomed_candidate) || 0)
-            });
-            if (d_id === userId && b_state === TripAPI.TripState.New) {
-              // текущий пользователь является мастером, откликнувшимся на заказ
-              order.contractorPrice = d_price;
-            }
-          }
-          else if (
-            d_state === TripAPI.DriverState.Assigned || d_state === TripAPI.DriverState.Waiting ||
-            d_state === TripAPI.DriverState.Driving || d_state === TripAPI.DriverState.Completed
-          ) {
-            // назначенный исполнитель
-            c_state = d_state;
-
-            if (d_state === TripAPI.DriverState.Assigned) order.updatedAt = new Date(Date.parse(driver.c_appointed) || 0);
-            else if (d_state === TripAPI.DriverState.Waiting) order.updatedAt = new Date(Date.parse(driver.c_arrived) || 0);
-            else if (d_state === TripAPI.DriverState.Driving) order.updatedAt = new Date(Date.parse(driver.c_started) || 0);
-            else order.updatedAt = new Date(Date.parse(driver.c_completed) || 0);
-
-            order.contractorId = d_id;
-            order.contractorPrice = d_price;
-          }
-        }
-      }
-      // общее количество откликнувшихся водителей
-      order.contractorOffersCount = trip.drivers_count != null ? Number(trip.drivers_count) : order.contractorOffers!.length;
-      // проверяем, предложен ли заказ конкретному мастеру
-      if (order.type === OrderType.Direct) {
-        if (!order.contractorId) {
-          if (trip.b_offer) order.contractorId = userId;
-          else if (trip.b_offers?.[0]?.u_id) order.contractorId = Number(trip.b_offers[0].u_id);
-        }
-        order.services = Array.isArray(trip.b_options?.services) ? trip.b_options.services : [];
-      }
-
-      // маппинг статусов
-      if (b_state === TripAPI.TripState.New) order.status = OrderStatus.PUBLISHED;
-      else if (b_state === TripAPI.TripState.Offering) order.status = OrderStatus.REQUESTED;
-      else if (b_state === TripAPI.TripState.Assigned) {
-        if (c_state === TripAPI.DriverState.Waiting) order.status = OrderStatus.IN_PROGRESS;
-        else if (c_state === TripAPI.DriverState.Driving) order.status = OrderStatus.COMPLETED;
-        else order.status = OrderStatus.APPOINTED;
-        order.agreedPrice = order.contractorPrice;
-      }
-      else if (b_state === TripAPI.TripState.Cancelled) {
-        order.status = OrderStatus.CANCELLED;
-        order.updatedAt = new Date(Date.parse(trip.b_canceled) || 0);
-      }
-      else if (b_state === TripAPI.TripState.Completed) {
-        order.status = OrderStatus.CLOSED;
-        order.agreedPrice = order.contractorPrice;
-      }
-
-      ret.push(order as Order);
-    }
-
-    return ret;
-  }, [] as Order[]);
-
-  return result;
-}
-*/
 
 // Группы заказов для выборки
 type OrderStage = 'new' | 'active' | 'finished';
@@ -472,7 +357,7 @@ export type OrderCreationData = {
   /** Фотографии к заказу */
   attachments?: File[];
   /** Предложенная стоимость работ */
-  price: number;
+  price?: number;
 }
 
 export type OrderUpdateData = {
@@ -497,6 +382,7 @@ export type OrderUpdateData = {
  * @returns ID созданного заказа
  */
 async function createOrder(
+  // todo: Добавление изображений не протестировано, потому что нет в UI
   userId: number,
   {
     cityId,
@@ -509,47 +395,22 @@ async function createOrder(
     price
   }: OrderCreationData
 ): Promise<number | null> {
-  const orderOptions: Record<string, any> = {
-    product: productId,
+  const orderOptions: OrderAPI.OrderCreationParams = {
+    cityId,
+    address,
+    productId,
     description,
-    desiredPrice: price
+    price: price!
   };
 
   if (contractorId) {
-    orderOptions.services = services;
+    orderOptions.contractorId = contractorId;
+    orderOptions.services = services!.map(item => item.service);
   }
 
-  // todo: Здесь возможно появление файлов, не связанных с заказами. Нужно предусмотреть очистку.
-  if (attachments?.length) {
-    const images = await Promise.all(
-      attachments
-        .filter(file => isImage(file.type))
-        .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
-    );
-    if (userId !== authorizedUserId()) throw new Error('User was changed.');
-    const uploaded = await Promise.all(
-      images.map(image => FileAPI.uploadFile(image.name, image.data, 0))
-    );
-    if (userId !== authorizedUserId()) throw new Error('User was changed.');
-    orderOptions.images = uploaded.filter(Boolean);
-  }
+  if (attachments) orderOptions.attachments = attachments;
 
-  const orderCreationData: TripAPI.TripCreationData = {
-    city_start: cityId,
-    b_start_address: address,
-    b_start_datetime: 'any',
-    b_max_waiting: CONFIG.ORDERS?.initialLifetime ?? 604800,
-    b_options: orderOptions,
-    b_payment_way: 1,
-    b_only_offer: contractorId ? 1 : 0
-  }
-
-  // todo: сделать подобие транзакции или перенести на бэкенд
-  const orderId = await TripAPI.createTrip(orderCreationData);
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
-  if (contractorId && orderId) {
-    await TripAPI.inviteDriver(orderId, contractorId);
-  }
+  const orderId = await OrderAPI.createOrder(orderOptions);
 
   return orderId;
 }
@@ -563,25 +424,29 @@ export function useCreateOrder() {
   const mutation = useMutation({
     mutationFn: async (orderData: OrderCreationData, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (user.role !== UserRole.Client) throw new Error('User must be a client.');
       if (!orderData.cityId || !orderData.address || !orderData.productId) throw new Error('Mandatory parameter is empty.');
       if (orderData.contractorId && !orderData.services?.length) throw new Error('Mandatory parameter is empty.');
+      if (!orderData.contractorId && !(orderData.price! >= 0)) throw new Error('Invalid price.');
 
       if (orderData.contractorId) {
         const contractorUser = (await getUserById(client, user.id, orderData.contractorId)) as { services?: ServicesMap };
         if (!contractorUser.services?.[orderData.productId]) throw new Error('Bad contractor');
         const contractorServices = contractorUser.services[orderData.productId];
         let validServices = 0;
+        let totalPrice = 0;
         for (const orderService of orderData.services!) {
           for (const contractorService of contractorServices) {
             if (orderService.service === contractorService.service && orderService.price === contractorService.price) {
               validServices++;
+              totalPrice += orderService.price;
               break;
             }
           }
         }
         if (orderData.services!.length !== validServices) throw new Error('Bad services data');
+        orderData.price = totalPrice;
       }
 
       const ret = await createOrder(user.id, orderData);
@@ -639,74 +504,20 @@ export function useFinishedOrders(includeMarket: boolean, includeDirect: boolean
 
 /**
  * Редактировать заказ (доступно в определенных статусах)
- * @param orderId - ID заказа
- * @param address Адрес выполнения услуги
- * @param description Описание заказа
- * @param attachments Изображения к заказу
- * @param desiredPrice Предложенная стоимость работ
+ * @param data.id - ID заказа
+ * @param data.address Адрес выполнения услуги
+ * @param data.description Описание заказа
+ * @param data.attachments Изображения к заказу
+ * @param data.desiredPrice Предложенная стоимость работ
  * @returns Промис, который разрешается со списками обновлённых и удалённых прикреплённых файлов для инвалидации кэша
  */
-async function updateOrder(userId, { orderId, address, description, attachments, desiredPrice }: OrderUpdateData) {
-  const updates: TripAPI.TripEditData = {};
-  const ret: { updatedFiles: number[]; deletedFiles: number[] } = { updatedFiles: [], deletedFiles: [] };
-  if (address !== undefined) updates.b_start_address = address;
-  if (description !== undefined || attachments || desiredPrice !== undefined) {
-    updates.b_options = {};
-    if (description !== undefined) updates.b_options.description = description;
-    if (desiredPrice !== undefined) updates.b_options.desiredPrice = desiredPrice;
-    if (attachments) {
-      const fileAttachments = attachments.filter(file => file instanceof File);
-      const idAttachments = attachments.filter(file => 'number' === typeof file);
-
-      const oldData = await TripAPI.getTripsByIds([ orderId ]);
-      if (userId !== authorizedUserId()) throw new Error('User was changed.');
-
-      let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
-      if (Array.isArray(oldData[0]?.b_options?.images)) {
-        const oldIds = (oldData[0].b_options.images ?? [])
-          .map(Number)
-          .filter(id => Number.isInteger(id) && id > 0 && !idAttachments.includes(id));
-        oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
-        if (userId !== authorizedUserId()) throw new Error('User was changed.');
-      }
-
-      // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
-      //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
-      const newAttachments = idAttachments;
-      if (fileAttachments.length) {
-        const images = await Promise.all(
-          fileAttachments
-            .filter(file => isImage(file.type))
-            .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
-        );
-        if (userId !== authorizedUserId()) throw new Error('User was changed.');
-
-        const uploads = images.map(image => {
-          const fileIndex = oldFilesInfo.findIndex(file => file?.json?.name === image.name);
-          if (fileIndex >= 0) {
-            const oldId = Number(oldFilesInfo[fileIndex]!.dl_id || 0);
-            oldFilesInfo[fileIndex] = null;
-            ret.updatedFiles.push(oldId);
-            return FileAPI.updateFile(oldId, image.data);
-          }
-          return FileAPI.uploadFile(image.name, image.data, 0);
-        });
-        const deletedIds = oldFilesInfo.filter(Boolean).map(file => Number(file!.dl_id));
-        ret.deletedFiles = deletedIds;
-        const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
-        if (deletes.length) {
-          await Promise.all(deletes);
-          if (userId !== authorizedUserId()) throw new Error('User was changed.');
-        }
-        const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
-        if (userId !== authorizedUserId()) throw new Error('User was changed.');
-        newAttachments.push(...uploaded);
-        updates.b_options.images = newAttachments;
-      }
-    }
-  }
-  await TripAPI.updateTrip(orderId, updates);
-  return ret;
+function updateOrder(data: OrderUpdateData) {
+  const params: OrderAPI.OrderUpdateParams = { id: data.orderId };
+  if (data.address) params.address = data.address;
+  if (data.description !== undefined) params.description = data.description;
+  if (data.attachments) params.attachments = data.attachments;
+  if (data.desiredPrice! > 0) params.price = data.desiredPrice;
+  return OrderAPI.updateOrder(params);
 }
 
 /**
@@ -724,7 +535,7 @@ export function useUpdateOrder() {
         desiredPrice === undefined
       ) return;
       if (!user.id) throw new Error('User must be authorized.');
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (user.role !== UserRole.Client) throw new Error('User must be a client.');
       if (!orderId) throw new Error('Order ID not specified.');
 
@@ -734,7 +545,7 @@ export function useUpdateOrder() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (
@@ -743,23 +554,15 @@ export function useUpdateOrder() {
       ) {
         throw new Error('Incorrect order state.');
       }
-      if (
-        (address === undefined || address === order.address) &&
-        (description === undefined || description === order.description) &&
-        (desiredPrice === undefined || desiredPrice === order.desiredPrice) &&
-        !attachments
-      ) {
-        return;
-      }
+      const payload = { orderId } as OrderUpdateData;
+      if (address !== undefined && address !== '' && address !== order.address) payload.address = address;
+      if (description !== undefined && description !== order.description) payload.description = description;
+      if (desiredPrice !== undefined && desiredPrice >= 0 && desiredPrice !== order.desiredPrice) payload.desiredPrice = desiredPrice;
+      if (attachments && (attachments.length !== order.attachments.length || attachments.some((e, i) => e !== order.attachments[i]))) payload.attachments = attachments;
+      if (Object.keys(payload).length <= 1) return;
 
-      const results = await updateOrder(user.id, { orderId, address, description, attachments, desiredPrice });
+      await updateOrder(payload);
       client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
-      for (const id of results.deletedFiles) {
-        client.removeQueries({ queryKey: [ 'files', id ] });
-      }
-      for (const id of results.updatedFiles) {
-        client.invalidateQueries({ queryKey: [ 'files', id ] });
-      }
       return;
     }
   });
@@ -802,7 +605,7 @@ export function useCancelOrder() {
   const mutation = useMutation({
     mutationFn: async ({ orderId, reason } : { orderId: number, reason: string }, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
@@ -811,7 +614,7 @@ export function useCancelOrder() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (
         !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ] as OrderStatus[])
@@ -914,7 +717,7 @@ export function useCreateOffer() {
   const mutation = useMutation({
     mutationFn: async ({ orderId, price, comment, readyIn }: CreateOfferData, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (user.role !== UserRole.Contractor) throw new Error('User must be a contractor.');
       if (!orderId) throw new Error('Order ID not specified.');
       if (!price || !comment || !readyIn) throw new Error('Mandatory parameter is empty.');
@@ -925,7 +728,7 @@ export function useCreateOffer() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
       if (order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('Offer already exists.');
@@ -971,7 +774,7 @@ export function useUpdateOffer() {
   const mutation = useMutation({
     mutationFn: async ({ orderId, price, comment, readyIn }: Partial<CreateOfferData>, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (user.role !== UserRole.Contractor) throw new Error('User must be a contractor.');
       if (!orderId) throw new Error('Order ID not specified.');
 
@@ -981,7 +784,7 @@ export function useUpdateOffer() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
-      if (user.id !== authorizedUserId()) throw new Error('User was changed.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       const offer = order.contractorOffers.find(offer => offer.contractorId === user.id);
       if (order.status !== OrderStatus.PUBLISHED || !offer) throw new Error('Incorrect order state.');

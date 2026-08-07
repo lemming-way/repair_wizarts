@@ -28,13 +28,13 @@ export type OrderRecord = {
   client: number;
   /** Идентификатор мастера */
   contractor: number | null;
-  /** ID города начала заказа */
+  /** ID города заказа */
   city: number | null;
-  /** Адрес начальной точки заказа */
+  /** Адрес заказа */
   address: string;
-  /** Широта начальной точки заказа */
+  /** Широта точки заказа */
   latitude: number | null;
-  /** Долгота начальной точки заказа */
+  /** Долгота точки заказа */
   longitude: number | null;
   /** Статус заказа */
   order_status: number,
@@ -107,6 +107,26 @@ type ContractorRecord = {
   } | null;
   /** Дата и время создания предложения */
   created_at: string;
+};
+
+/** Структура данных для создания заказа */
+export type OrderCreationParams = {
+  /** ID города заказа */
+  cityId: number;
+  /** Адрес заказа */
+  address: string;
+  /** Предложенная цена */
+  price: number;
+  /** Мастер, которому предложен заказ - только для прямых заказов */
+  contractorId?: number;
+  /** Заказанная услуга по классификатору */
+  productId: number;
+  /** Список заказанных услуг по прайсу мастера - только для прямых заказов */
+  services?: string[];
+  /** Описание заказа */
+  description: string;
+  /** Прикреплённые изображения */
+  attachments?: File[];
 };
 
 /** Параметр для выборки заказов */
@@ -182,4 +202,55 @@ export async function getOrdersByIds(orderIds: number[]): Promise<OrderRecord[]>
   );
   const data = result && Array.isArray(result) ? result : [];
   return data;
+}
+
+/**
+ * Создать новый заказ.
+ * Вызывается клиентом.
+ * @param options - параметры создаваемого заказа
+ * @returns Промис, который разрешается с ID созданного заказа
+ */
+export async function createOrder({ attachments, ...data }: OrderCreationParams): Promise<number> {
+  const payload = { is_var: 1, s_t_data: { ...data, action: 'createOrder' } };
+  if (attachments) {
+    let index = 0;
+    for (const file of attachments) {
+      payload[`attachments[${index}]`] = file;
+      index++;
+    }
+  }
+  const result = await post<{id: number}>('script/template/repair_api', payload);
+  const id = Number(result.id);
+  if (!Number.isInteger(id) || id <= 0) throw new Error('No order ID returned');
+  return id;
+}
+
+export type OrderUpdateParams = {
+  id: number,
+  address?: string;
+  description?: string;
+  attachments?: Array<File | number>;
+  price?: number;
+}
+
+/**
+ * Изменить данные заказа.
+ * Вызывается клиентом. Можно менять описание, цену, адрес и фотографии к заказу, но только до одобрения исполнителя.
+ * @param options - изменяемые параметры заказа
+ * @returns Промис, который после успешного обновления данных
+ */
+export function updateOrder({ attachments, ...data }: OrderUpdateParams): Promise<void> {
+  const fileAttachments = {};
+  const idAttachments = {};
+  if (attachments) {
+    let index = 0;
+    for (const fileOrNumber of attachments) {
+      if (fileOrNumber instanceof Blob) fileAttachments[`attachments[${index}]`] = fileOrNumber;
+      else idAttachments[index] = fileOrNumber;
+      index++;
+    }
+    (data as any).attachments = idAttachments;
+  }
+  const payload = { is_var: 1, s_t_data: { ...data, action: 'updateOrder' }, ...fileAttachments };
+  return post<void>('script/template/repair_api', payload);
 }

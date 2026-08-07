@@ -16,6 +16,7 @@ const MarketOrder = (props) => {
   const {
     id,
     contractorId,
+    address,
     desiredPrice,
     description,
     contractorsCount,
@@ -26,27 +27,10 @@ const MarketOrder = (props) => {
   } = props;
 
   const text = useLanguage();
-  const { categories, subcategories, products } = useProducts();
+  const { products } = useProducts();
 
   const { updateOrder } = useUpdateOrder();
   const { cancelOrder } = useCancelOrder();
-
-  const subcategoryIdFromProduct = products?.[productId]?.parent ?? '';
-  const categoryIdFromSubcategory = subcategories?.[subcategoryIdFromProduct]?.parent ?? '';
-
-  const [selectedCategoryId, setSelectedCategoryId] = useState(categoryIdFromSubcategory);
-  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState(subcategoryIdFromProduct);
-  const [selectedProductId, setSelectedProductId] = useState(productId);
-
-  useEffect(() => {
-    if (productId && !selectedSubcategoryId) {
-      const subId = products[productId]?.parent;
-      setSelectedSubcategoryId(subId);
-      if (subId && !selectedCategoryId) {
-        setSelectedCategoryId(subcategories[subId]?.parent);
-      }
-    }
-  }, [subcategories, products, productId, selectedSubcategoryId, selectedCategoryId]);
 
   const [photos, setPhotos] = useState(attachments);
 
@@ -79,6 +63,7 @@ const MarketOrder = (props) => {
   };
 
   const [price, setPrice] = useState(desiredPrice);
+  const [newAddress, setNewAddress] = useState(address);
   const [message, setMessage] = useState(description);
 
   const title = products?.[productId]?.name || '';
@@ -96,6 +81,7 @@ const MarketOrder = (props) => {
     await updateOrder({
       orderId: id,
       desiredPrice: Number(price),
+      address: newAddress,
       description: message,
       attachments: photos,
     });
@@ -244,9 +230,25 @@ const MarketOrder = (props) => {
                         </div>
 
                         <form
-                          onSubmit={onSubmit}
+                          onSubmit={(e) => { onSubmit(e); close(); }}
                           style={{ display: 'flex', flexDirection: 'column' }}
                         >
+                          <p className="form__light-text">
+                            {text('Address')}
+                            <img
+                              className="modal_edit__icon"
+                              src="/img/pencil_modal.svg"
+                              alt=""
+                            />
+                          </p>
+                          <input
+                            type="text"
+                            style={{ width: '200px', marginBottom: '20px' }}
+                            placeholder={text('Address')}
+                            value={address}
+                            onChange={(e) => setNewAddress(e.target.value)}
+                          />
+
                           <p className="form__light-text">
                             {text('Order description')}
                             <img
@@ -262,74 +264,6 @@ const MarketOrder = (props) => {
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                           ></textarea>
-
-                          <p className="form__light-text">
-                            {text('Service category')}
-                            <img
-                              className="modal_edit__icon"
-                              src="/img/multi_box.png"
-                              alt=""
-                            />
-                          </p>
-                          <div className="modal__many_select">
-                            <select
-                              className="pick__price"
-                              value={selectedCategoryId}
-                              onChange={(e) => {
-                                setSelectedCategoryId(Number(e.target.value));
-                                setSelectedSubcategoryId('');
-                                setSelectedProductId('');
-                              }}
-                            >
-                              <option value="" disabled>
-                                {text('Category')}
-                              </option>
-                              {Object.entries(categories).map(([id, category]) => (
-                                <option key={id} value={id}>
-                                  {category.name}
-                                </option>
-                              ))}
-                            </select>
-                            <select
-                              className="pick__price"
-                              value={selectedSubcategoryId}
-                              disabled={!selectedCategoryId}
-                              onChange={(e) => {
-                                setSelectedSubcategoryId(Number(e.target.value));
-                                setSelectedProductId('');
-                              }}
-                            >
-                              <option value="" disabled>
-                                {text('Type of category')}
-                              </option>
-                              {selectedCategoryId && categories[selectedCategoryId]?.subcategories.map(subId => {
-                                const subcategory = subcategories[subId];
-                                return subcategory ? (
-                                  <option key={subId} value={subId}>
-                                    {subcategory.name}
-                                  </option>
-                                ) : null;
-                              })}
-                            </select>
-                            <select
-                              className="pick__price"
-                              value={selectedProductId}
-                              onChange={(e) => setSelectedProductId(Number(e.target.value))}
-                              disabled={!selectedSubcategoryId}
-                            >
-                              <option value="" disabled>
-                                {text('Service')}
-                              </option>
-                              {selectedSubcategoryId && subcategories[Number(selectedSubcategoryId)]?.products.map(prodId => {
-                                const product = products[prodId];
-                                return product ? (
-                                  <option key={prodId} value={prodId}>
-                                    {product.name}
-                                  </option>
-                                ) : null;
-                              })}
-                            </select>
-                          </div>
 
                           <p className="form__light-text">
                             {text('Budget')}
@@ -351,7 +285,6 @@ const MarketOrder = (props) => {
                             style={{ width: '200px', margin: 'auto' }}
                             className="done button__edit"
                             type="submit"
-                            onClick={close}
                           >
                             {text('Save')}
                           </button>

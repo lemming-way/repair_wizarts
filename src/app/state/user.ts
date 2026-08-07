@@ -605,7 +605,7 @@ export type UserUpdatePayload = {
  */
 export async function updateUser(queryClient: QueryClient, userId: number | undefined, payload: UserUpdatePayload): Promise<void> {
   if (!userId) throw new Error('User must be authorized.');
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+  if (userId !== authorizedUserId()) throw new Error('User has changed.');
 
   // todo: Может быть, добавить полную проверку для phone, email, language, currency, locality
   const updatedFiles = [] as number[];
@@ -673,7 +673,7 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
     const idPhotos = payload.photos.filter(file => 'number' === typeof file);
 
     const oldData = await UserAPI.getAuthUser();
-    if (Number(oldData.u_id) !== userId || userId !== authorizedUserId()) throw new Error('User was changed.');
+    if (Number(oldData.u_id) !== userId || userId !== authorizedUserId()) throw new Error('User has changed.');
 
     let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
     if (Array.isArray(oldData.u_details?.photos)) {
@@ -681,7 +681,7 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
         .map(Number)
         .filter(id => Number.isInteger(id) && id > 0 && !idPhotos.includes(id));
       oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
-      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+      if (userId !== authorizedUserId()) throw new Error('User has changed.');
     }
     // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
     //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
@@ -692,7 +692,7 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
           .filter(file => isImage(file.type))
           .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
       );
-      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+      if (userId !== authorizedUserId()) throw new Error('User has changed.');
 
       const uploads = photos.map(image => {
         const fileIndex = oldFilesInfo.findIndex(file => file?.json?.name === image.name);
@@ -709,10 +709,10 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
       const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
       if (deletes.length) {
         await Promise.all(deletes);
-        if (userId !== authorizedUserId()) throw new Error('User was changed.');
+        if (userId !== authorizedUserId()) throw new Error('User has changed.');
       }
       const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
-      if (userId !== authorizedUserId()) throw new Error('User was changed.');
+      if (userId !== authorizedUserId()) throw new Error('User has changed.');
       newPhotos.push(...uploaded);
       apiUserData.u_details = { ...apiUserData.u_details, photos: newPhotos };
     }
@@ -752,7 +752,7 @@ export function useUpdateUser() {
  */
 export async function updateUserAvatar(queryClient: QueryClient, userId: number, photoFile: File): Promise<void> {
   if (!userId) throw new Error('User must be authorized.');
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+  if (userId !== authorizedUserId()) throw new Error('User has changed.');
 
   const base64Photo = await fileToBase64(photoFile);
   await UserAPI.updateUser({ u_photo: base64Photo }, UserRole.Client);
@@ -783,7 +783,7 @@ export function useUpdateUserAvatar() {
  */
 export async function setContractorActive(queryClient: QueryClient, userId: number, isActive: boolean): Promise<void> {
   if (!userId) throw new Error('User must be authorized.');
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+  if (userId !== authorizedUserId()) throw new Error('User has changed.');
 
   await UserAPI.updateUser({ u_active: isActive ? 1 : 0 });
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
@@ -817,7 +817,7 @@ export function useSetContractorActive() {
  */
 export async function updateUserPassword(userId: number, oldPassword: string, newPassword: string): Promise<void> {
   if (!userId) throw new Error('User must be authorized.');
-  if (userId !== authorizedUserId()) throw new Error('User was changed.');
+  if (userId !== authorizedUserId()) throw new Error('User has changed.');
 
   await UserAPI.updatePassword(oldPassword, newPassword);
 }

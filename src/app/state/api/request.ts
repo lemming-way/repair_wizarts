@@ -60,7 +60,7 @@ function appendFormValue(formData: FormData, key: string, value: unknown) {
   if (value === undefined || value === null) {
     return;
   }
-  if (value instanceof File || value instanceof Blob) {
+  if (value instanceof Blob) {
     formData.append(key, value);
   } else if (value instanceof Date) {
     formData.append(key, value.toISOString());

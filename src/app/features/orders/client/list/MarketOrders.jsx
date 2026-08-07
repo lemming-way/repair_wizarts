@@ -12,7 +12,7 @@ function MarketOrders() {
   const { orders: activeOrders } = useClientOrders(true, false);
   const { orders: archiveOrders } = useFinishedOrders(true, false);
   const tabsFilter = window.location.hash;
-  
+
   useEffect(() => {
     document.title = text('Added devices');
   }, [text]);
@@ -86,6 +86,7 @@ function MarketOrders() {
                 <MarketOrder
                   productId={v.productId}
                   contractorId={v.contractorId}
+                  address={v.address}
                   desiredPrice={v.desiredPrice}
                   agreedPrice={v.agreedPrice}
                   description={v.description}
