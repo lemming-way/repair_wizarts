@@ -54,54 +54,69 @@ type SuccessResponse = {
 };
 
 /**
- * Добавляет значение в FormData. Обрабатывает массивы и объекты (сериализуя их в JSON).
+ * Тип тела запроса
  */
-function appendFormValue(formData: FormData, key: string, value: unknown) {
+type QueryData = FormData | URLSearchParams;
+
+/**
+ * Добавляет значение в QueryData. Обрабатывает массивы и объекты (сериализуя их в JSON).
+ * Если добавляется File или Blob, то преобразует URLSearchParams в FormData.
+ */
+function appendFormValue(queryData: QueryData, key: string, value: unknown): QueryData {
   if (value === undefined || value === null) {
-    return;
+    return queryData;
   }
   if (value instanceof Blob) {
-    formData.append(key, value);
+    if (!(queryData instanceof FormData)) {
+      const formData = new FormData();
+      for (const [k, v] of queryData) formData.append(k, v);
+      formData.append(key, value);
+      return formData;
+    }
+    queryData.append(key, value);
   } else if (value instanceof Date) {
-    formData.append(key, value.toISOString());
+    queryData.append(key, value.toISOString());
   } else if (typeof value === 'object') {
-    formData.append(key, JSON.stringify(value));
+    queryData.append(key, JSON.stringify(value));
   } else {
-    formData.append(key, String(value));
+    queryData.append(key, String(value));
   }
+  return queryData;
 }
 
 /**
- * Подготавливает тело POST запроса в формате FormData.
+ * Подготавливает тело POST запроса в формате URLSearchParams или FormData.
  * Добавляет параметры авторизации при необходимости.
  */
-function prepareFormDataBody(
+function prepareQueryBody(
   data: RequestOptions['data'],
   withFullAuthUser: boolean,
-  includeAuth: AuthToken | null
-): FormData {
-  const formData = new FormData();
+  includeAuth: AuthToken | null,
+  initialData?: URLSearchParams
+): QueryData {
+  let queryData: QueryData = initialData || new URLSearchParams();
 
-  // Обрабатываем только объекты и FormData
-  if (data instanceof FormData) {
-    data.forEach((value, key) => formData.append(key, value));
+  // Обрабатываем только объекты, URLSearchParams и FormData
+  if (data instanceof FormData || data instanceof URLSearchParams) {
+    if (data instanceof FormData && [...data.values()].some(value => value instanceof Blob)) queryData = new FormData();
+    for (const [key, value] of data) {
+      (queryData as FormData).append(key, value);
+    }
   } else if (data && typeof data === 'object' && !Array.isArray(data)) {
-    Object.entries(data as Record<string, unknown>).forEach(([key, value]) => {
-      appendFormValue(formData, key, value);
-    });
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) queryData = appendFormValue(queryData, key, value);
   }
-  // Если data не FormData и не Object, оно игнорируется
+  // Если data не URLSearchParams, не FormData и не Object, оно игнорируется
 
   if (withFullAuthUser) {
-      formData.append('au', 'f');
+      queryData.append('au', 'f');
   }
 
   if (includeAuth) {
-      formData.append('token', includeAuth.token);
-      formData.append('u_hash', includeAuth.u_hash);
+      queryData.append('token', includeAuth.token);
+      queryData.append('u_hash', includeAuth.u_hash);
   }
 
-  return formData;
+  return queryData;
 }
 
 /**
@@ -110,7 +125,7 @@ function prepareFormDataBody(
 export type RequestOptions = {
   method?: 'GET' | 'POST';
   path: string; // Endpoint
-  data?: Record<string, unknown> | FormData | null | undefined; // Данные запроса
+  data?: Record<string, unknown> | URLSearchParams | FormData | null | undefined; // Данные запроса
   noParse?: boolean; // Получить сырые JSON данные
   asBlob?: boolean; // Получить данные как Blob
   noAuth?: boolean; // Отключает авторизацию для POST запросов
@@ -139,16 +154,18 @@ async function request<T extends APIBaseType = Record<string, unknown>>(opts: Re
   const method = opts.method || 'GET';
   let url = `${API_BASE_URL}${opts.path}`;
 
-  let formDataBody: FormData | undefined;
+  let queryBody: QueryData | undefined;
 
   if (method === 'POST') {
     const token = getToken();
     const includeAuth = opts.noAuth !== true && !!token?.token && !!token?.u_hash ? token : null;
-    formDataBody = prepareFormDataBody(opts.data, opts.withAuthUser === true && opts.noAuth === true, includeAuth);
+    queryBody = prepareQueryBody(opts.data, opts.withAuthUser === true && opts.noAuth === true, includeAuth);
   } else if (method === 'GET') {
-    if (opts.withAuthUser === true && opts.noAuth === true) {
-      if (url.includes('?')) url += '&au=f';
-      else url += '?au=f';
+    if (opts.data || (opts.withAuthUser === true && opts.noAuth === true)) {
+      const parsedURL = new URL(url);
+      const params = prepareQueryBody(opts.data, opts.withAuthUser === true && opts.noAuth === true, null, parsedURL.searchParams);
+      if (params !== parsedURL.searchParams) throw new Error(`Cannot send files or blobs with GET method.`);
+      url = parsedURL.toString();
     }
   } else {
     throw new Error(`Unsupported HTTP method: ${method}. Only GET and POST are supported.`);
@@ -159,7 +176,7 @@ async function request<T extends APIBaseType = Record<string, unknown>>(opts: Re
       console.debug('[api]', correlationId, method, url);
     }
 
-    const resp = await fetch(url, { method, body: formDataBody });
+    const resp = await fetch(url, { method, body: queryBody });
 
     if (resp.ok) {
       const contentType = resp.headers.get('Content-Type') || '';
@@ -289,8 +306,8 @@ export async function getLongList<T>(path: string, data: RequestOptions['data'],
  * @param path Путь к API.
  * @returns Промис с данными ответа.
  */
-export function get<T extends APIBaseType = Record<string, unknown>>(path: string) {
-  return request<T>({ method: 'GET', path, noAuth: true }) as Promise<T>;
+export function get<T extends APIBaseType = Record<string, unknown>>(path: string, data?: RequestOptions['data']) {
+  return request<T>({ method: 'GET', path, data, noAuth: true }) as Promise<T>;
 }
 
 /**
@@ -299,8 +316,8 @@ export function get<T extends APIBaseType = Record<string, unknown>>(path: strin
  * @param path Путь к API.
  * @returns Промис с данными ответа.
  */
-export function getRawJSON(path: string) {
-  return request({ method: 'GET', path, noParse: true, noAuth: true });
+export function getRawJSON(path: string, data?: RequestOptions['data']) {
+  return request({ method: 'GET', path, data, noParse: true, noAuth: true });
 }
 
 /**
