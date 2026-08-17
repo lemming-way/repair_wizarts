@@ -3,7 +3,7 @@ import { useEffect, useMemo } from 'react';
 import styles from './myoffer.module.css';
 import { useLanguage } from '../state/language';
 
-import '../scss/myoffer.css';
+import '../styles/legacy/myoffer.css';
 import { Link, useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';

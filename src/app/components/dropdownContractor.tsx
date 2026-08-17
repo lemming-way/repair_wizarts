@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-import './scss/setout.css'
+import './styles/legacy/setout.css'
 import { useLanguage } from '../state/language';
 
 function DropdownService() {

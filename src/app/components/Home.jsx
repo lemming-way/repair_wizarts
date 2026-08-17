@@ -1,5 +1,5 @@
 import {useEffect} from 'react';
-import '../scss/swiper.css'
+import '../styles/legacy/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 

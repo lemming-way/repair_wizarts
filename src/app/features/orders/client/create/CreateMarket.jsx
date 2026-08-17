@@ -10,7 +10,7 @@ import { useLanguage } from 'app/state/language';
 import { useGlobalState } from 'app/state/global';
 import { useProducts } from 'app/state/site-data';
 import { useCreateOrder } from 'app/state/order';
-import 'app/scss/added.css';
+import 'app/styles/legacy/added.css';
 import style from './CreateMarket/CreateMarket.module.css';
 
 function CreateMarket() {

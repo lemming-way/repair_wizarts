@@ -1,7 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import 'app/scss/setout.css';
+import 'app/styles/legacy/setout.css';
 import { useLanguage } from 'app/state/language';
 import { useUser, logout, UserRole } from 'app/state/user';
 

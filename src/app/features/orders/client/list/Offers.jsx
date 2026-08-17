@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import 'app/scss/orders.css';
+import 'app/styles/legacy/orders.css';
 import style from './Offers/Offers.module.css';
 import { useProducts } from 'app/state/site-data';
 import { useClientOrders, orderStatusString } from 'app/state/order';

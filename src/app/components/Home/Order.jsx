@@ -4,7 +4,7 @@ import { Link } from "react-router-dom"
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper";
 
-import '../../scss/swiper.css'
+import '../../styles/legacy/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 import { Rating } from "react-simple-star-rating";

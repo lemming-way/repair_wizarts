@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 //~ import { Navigation } from 'swiper';
 //~ import { Swiper, SwiperSlide } from 'swiper/react';
 
-import 'app/scss/detail.scss';
-import 'app/scss/media.css';
+import 'app/styles/legacy/detail.scss';
+import 'app/styles/legacy/media.css';
 
 //~ import style from './CreateDirect/CreateDirect.module.scss';
 import { useLanguage } from 'app/state/language';

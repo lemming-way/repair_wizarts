@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import '../../scss/profileNumber.css';
-import '../../scss/swiper.css';
+import '../../styles/legacy/profileNumber.css';
+import '../../styles/legacy/swiper.css';
 
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';

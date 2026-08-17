@@ -63,7 +63,7 @@ import { useProducts } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
 
-import './scss/swiper.css';
+import './styles/legacy/swiper.css';
 
 function App() {
   const { user, status } = useUser();

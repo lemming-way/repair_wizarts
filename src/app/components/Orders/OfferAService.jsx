@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
-import '../../scss/OfferAService.css'
-import '../../scss/swiper.css'
+import '../../styles/legacy/OfferAService.css'
+import '../../styles/legacy/swiper.css'
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";

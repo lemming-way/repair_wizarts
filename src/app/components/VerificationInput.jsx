@@ -9,7 +9,7 @@ import {
   sendPhoneCode,
   sendPhoneVerificationCode,
 } from '../services/verification.service';
-import '../scss/verification-input.css';
+import '../styles/legacy/verification-input.css';
 
 const VerificationInput = (props) => {
   const { isConfirmed, isEmail, onChangeMask, value } = props;

@@ -1,4 +1,4 @@
-import '../../scss/style.css'
+import '../../styles/legacy/style.css'
 import { Link, useLocation } from "react-router-dom";
 
 const Menu = ({ active, setActive }) => {

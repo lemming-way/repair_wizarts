@@ -4,7 +4,7 @@ import { MultiSelect, ImageSwiper } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
 import { useUser, useUpdateUser, useSetContractorActive, BusinessModel } from 'app/state/user';
 import { useProducts, useCities } from 'app/state/site-data';
-import 'app/scss/profile.css';
+import 'app/styles/legacy/profile.css';
 import style from './ContractorSettings.module.css';
 
 const experienceOptions = [

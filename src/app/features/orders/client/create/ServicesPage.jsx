@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
-import 'app/scss/remont.css';
+import 'app/styles/legacy/remont.css';
 import style from './ServicesPage/ServicesPage.module.css';
 import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';

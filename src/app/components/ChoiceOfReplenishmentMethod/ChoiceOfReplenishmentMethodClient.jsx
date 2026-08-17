@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import '../../scss/ChoiceOfReplenishmentMethod.css';
+import '../../styles/legacy/ChoiceOfReplenishmentMethod.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useQueryClient } from '@tanstack/react-query';

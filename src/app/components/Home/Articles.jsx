@@ -10,7 +10,7 @@ import likeImage from "../../img/like.png"
 import viewImage from "../../img/view.png"
 
 
-import '../../scss/swiper.css'
+import '../../styles/legacy/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 // todo: Добавить реальный вызов API для получения статей

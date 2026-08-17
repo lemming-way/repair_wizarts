@@ -7,8 +7,8 @@ import OrderRow from '../manage/Offer/OrderRow';
 import { useLanguage } from 'app/state/language';
 import { useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds, UserRole } from 'app/state/user';
-import 'app/scss/orders.css';
-import 'app/scss/swiper.css';
+import 'app/styles/legacy/orders.css';
+import 'app/styles/legacy/swiper.css';
 import style from './Offers/Offers.module.css';
 
 function Offers() {

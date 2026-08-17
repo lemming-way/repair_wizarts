@@ -5,7 +5,7 @@ import Popup from 'reactjs-popup';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-import '../../scss/settings-all.css';
+import '../../styles/legacy/settings-all.css';
 import style from './SettingsContractor.module.css';
 import VerificationInput from '../VerificationInput';
 import { useLanguage } from '../../state/language';

@@ -8,7 +8,7 @@ import { useLanguage } from 'app/state/language';
 import { useAcceptInvoice, useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
-import 'app/scss/applications.css';
+import 'app/styles/legacy/applications.css';
 import style from './DirectOrders/DirectOrders.module.css';
 
 function DirectOrders() {

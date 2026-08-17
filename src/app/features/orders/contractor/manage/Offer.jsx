@@ -13,8 +13,8 @@ import { useLanguage } from 'app/state/language';
 import { useOrdersByIds } from 'app/state/order';
 import { useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
-import 'app/scss/orders.css';
-import 'app/scss/swiper.css';
+import 'app/styles/legacy/orders.css';
+import 'app/styles/legacy/swiper.css';
 import style from './Offer/OrderRow.module.css';
 
 function Offer() {

@@ -13,8 +13,8 @@ import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';
 import { useUsersByIds } from 'app/state/user';
 import { useAvailableOrders, orderStatusString } from 'app/state/order';
-import 'app/scss/orders.css';
-import 'app/scss/swiper.css';
+import 'app/styles/legacy/orders.css';
+import 'app/styles/legacy/swiper.css';
 import style from './MarketOrders/MarketOrders.module.css';
 
 function MarketOrders() {
