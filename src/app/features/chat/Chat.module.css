@@ -6,21 +6,30 @@
   overflow: hidden;
   height: calc(100dvh - 70px); /* Высота с учетом фиксированного хедера */
   width: 100%;
-  position: relative; /* Необходим для абсолютного позиционирования дочерних элементов */
+  position: fixed;
+  inset: 52px 0 0;
+  z-index: 20;
+  height: auto;
+  padding: 18px;
+  gap: 16px;
+  background: #eceff3;
 }
 
 .container.contractor {
-  height: calc(100dvh - 120px); /* Высота с учетом фиксированного хедера */
+  inset: 52px 0 0 278px;
+  height: auto;
 }
 
 /* =========================================================================
    Стили для списка чатов (левая панель)
    ========================================================================= */
 .frame_messages {
-  width: 456px; /* Ширина по умолчанию для списка чатов */
+  width: 360px;
   background: #fff;
   height: 100%;
-  border-right: 1px solid #E9EAF1;
+  border: 1px solid #e4e6eb;
+  border-radius: 18px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -37,15 +46,15 @@
 
 .chat_list_toggle_button {
   position: absolute;
-  left: 10px;
-  top: 10px; /* Настройте по необходимости */
+  left: 30px;
+  top: 30px;
   z-index: 101; /* Выше свернутого списка чатов */
   background: #D9573B;
   color: white;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,8 +63,11 @@
   transition: left 0.3s ease-in-out;
 }
 .chat_list_toggle_button.close {
-  left: 466px;
+  left: 370px;
+  top: 28px;
 }
+
+.chat_list_toggle_button img { width: 16px; height: 16px; object-fit: contain; }
 
 .chat_list_toggle_button.hidden {
   display: none; /* Скрыть кнопку, если список чатов уже виден */
@@ -69,7 +81,10 @@
   display: flex;
   flex-direction: column;
   position: relative; /* Для позиционирования контента чата */
-  background: #f6f8f9; /* Фон по умолчанию из Chat.module.css */
+  background: #fff;
+  border: 1px solid #e4e6eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 32px rgba(27, 31, 44, .08);
   overflow: hidden;
 }
 
@@ -154,6 +169,7 @@
   overflow-y: auto;
   height: 100%; /* Занять оставшееся пространство */
   background: #fff;
+  padding: 10px;
 }
 
 .chat_group_header {
@@ -161,15 +177,16 @@
   align-items: center;
   padding: 16px 20px;
   cursor: pointer;
-  background: #f0f0f0; /* Немного другой фон для заголовка группы */
-  border-bottom: 1px solid #E9EAF1;
+  background: #fff;
+  border-radius: 12px;
+  border-bottom: 1px solid #eee;
   position: sticky;
   top: 0;
   z-index: 10; /* Сохранить заголовок видимым при прокрутке элементов чата */
 }
 
 .chat_group_header:hover {
-  background: #e0e0e0;
+  background: #fff5f2;
 }
 
 .chat_group_header .avatar {
@@ -194,6 +211,9 @@
   height: 20px;
   transition: transform 0.2s ease-in-out;
   transform: rotate(180deg);
+  filter: invert(1);
+  flex-shrink: 0;
+  margin-left: 12px;
 }
 
 .chat_group_header.expanded .arrow_icon {
@@ -221,24 +241,30 @@
 }
 
 .chat_group_content.expanded {
-  max-height: 500px; /* Или вычисленное значение для перехода */
+  max-height: 1000px;
 }
+
+.group_time { margin-left: auto; color: #999; font-size: 12px; white-space: nowrap; }
 
 .chat_item {
   display: flex;
   align-items: center;
   padding: 12px 20px;
   cursor: pointer;
-  border-bottom: 1px solid #E9EAF1;
+  margin: 5px 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
   position: relative; /* Для активной подсветки */
 }
 
 .chat_item:hover {
-  background: #f6f8f9;
+  background: #fff5f2;
+  border-color: #f2d5ce;
 }
 
 .chat_item.active {
-  background: #e9eaf1; /* Подсветка для активного чата */
+  background: #fff0ec;
+  border-color: #d9573b;
 }
 
 .chat_item .order_number {
@@ -338,10 +364,10 @@
 .message_feed {
   height: 100%;
   overflow-y: auto;
-  background: #f6f8f9;
+  background: #fff;
   display: flex;
   flex-direction: column;
-  padding: 10px 20px; /* Отступы внутри ленты */
+  padding: 22px 28px;
 }
 
 .scroll_to_bottom_button {
@@ -615,8 +641,12 @@
 .chat_input_area {
   flex-shrink: 0; /* Не сжимать область ввода */
   background-color: #fff;
-  padding: 10px 20px;
+  margin: 0 20px 18px;
+  padding: 10px;
   border-top: 1px solid #E9EAF1;
+  border: 1px solid #e2e2e2;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0,0,0,.05);
   position: relative; /* Для позиционирования всплывающих элементов */
 }
 
@@ -629,7 +659,8 @@
 .message_textarea {
   flex-grow: 1;
   border: 1px solid #E9EAF1;
-  border-radius: 12px;
+  border-radius: 10px;
+  border-color: transparent;
   padding: 10px 15px;
   font-size: 16px;
   line-height: 1.4;
@@ -839,11 +870,22 @@
    Медиа-запросы для адаптивности
    ========================================================================= */
 @media (max-width: 768px) {
+  .container,
+  .container.contractor {
+    inset: 50px 0 0;
+    padding: 0;
+    gap: 0;
+    background: #fff;
+  }
+
   .frame_messages {
     width: 100%;
     position: absolute;
     left: 0;
     top: 0;
+    z-index: 100;
+    border: 0;
+    border-radius: 0;
   }
   .frame_messages.collapsed {
     transform: translateX(-100%);
@@ -853,8 +895,19 @@
     top: 10px;
   }
 
+  .chat_list_toggle_button.close {
+    left: auto;
+    right: 12px;
+    top: 12px;
+  }
+
+  .chat_window_area { border: 0; border-radius: 0; }
+
+  .order_status { display: inline-flex; }
+
   .chat_input_area {
-    padding: 10px;
+    margin: 0 8px 8px;
+    padding: 7px;
   }
 
   .message_bubble {
@@ -865,6 +918,10 @@
     height: 30px;
     margin-right: 5px;
   }
+
+  .input_row { gap: 4px; }
+  .input_actions { gap: 1px; }
+  .message_actions { opacity: 1; }
 }
 
 @media (max-width: 480px) {

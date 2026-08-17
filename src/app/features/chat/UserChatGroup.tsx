@@ -49,12 +49,15 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
 }) => {
   const text = useLanguage();
   const { products } = useProducts();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const displayName = partner?.fullname || partner?.name || text('Unknown user');
   const avatarSrc = partner?.avatar || '/img/user_avatar.png';
 
   const totalUnreadCount = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
+  const groupLastUpdate = chats.reduce<Date | undefined>((latest, chat) =>
+    !chat.lastUpdate || (latest && latest >= chat.lastUpdate) ? latest : chat.lastUpdate,
+  undefined);
 
   const handleChatClick = (orderId: number, contractorId: number) => {
     onChatSelected(orderId, contractorId);
@@ -117,6 +120,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
           <OnlineDotted isVisible={partner?.isOnline} /* className={styles.online_indicator_dot} */ />
         </div>
         <div className={styles.user_name}>{displayName}</div>
+        <span className={styles.group_time}>{getLastUpdateString(groupLastUpdate)}</span>
         {/* todo: Добавить время, когда был на сайте */}
         {!isExpanded && totalUnreadCount > 0 && (
           <span className={styles.chat_group_unread_badge}>{totalUnreadCount}</span>

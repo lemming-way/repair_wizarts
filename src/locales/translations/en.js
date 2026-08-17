@@ -84,6 +84,7 @@ const lang = {
   "Chat": "Chat",
   "My applications": "My applications",
   "My reviews": "My reviews",
+  "Finance": "Finance",
   "Order exchange": "Order exchange",
   "Rating and comments": "Rating and comments",
   "Please top up your balance by 500 rubles": "Please top up your balance by 500 rubles",

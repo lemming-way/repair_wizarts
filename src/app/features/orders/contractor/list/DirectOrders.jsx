@@ -53,7 +53,7 @@ function DirectOrders() {
   }
 
   return (
-    <>
+    <section className={style.page}>
       <div className="mini-text">
         <h1>{text('Applications')}</h1>
       </div>
@@ -148,7 +148,7 @@ function DirectOrders() {
           );
         })}
       </div>
-    </>
+    </section>
   );
 }
 

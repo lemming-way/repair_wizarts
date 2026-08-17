@@ -113,7 +113,7 @@ function MarketOrders() {
   }, [categoryFilter, offersCountFilter, budgetFilter, customPriceRange]);
 
   return (
-    <>
+    <div className={style.page}>
       {isVisibleEmailSettings && (
         <EmailSettings setVisibvleEmailSettings={setVisibvleEmailSettings} />
       )}
@@ -170,7 +170,6 @@ function MarketOrders() {
               {text('New on the exchange')}
               <span>{filteredOrders.length} {text('projects')}</span>
             </h1>
-            <div style={{ flex: 1 }}></div>
             <div className={style.flex_row_select}>
               <p className={style.heading__p}>{text('Show')}</p>
               <Dropdown>
@@ -281,8 +280,8 @@ function MarketOrders() {
                             : text('Price not specified')}
                         </p>
                         <p className={style.status}>
-                          <img src="/img/icon-confirm.png" alt="" />
-                          {orderStatusString[order.status] || text('No status')}
+                          <span className={style.statusIcon}>✓</span>
+                          {text(orderStatusString[order.status] || 'No status')}
                         </p>
                       </div>
                     </div>
@@ -313,7 +312,7 @@ function MarketOrders() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -25,6 +25,13 @@ const Toolbar = () => {
   const { user } = useUser();
 
   const isContractor = user.role === UserRole.Contractor;
+  const financeLink = isContractor ? '/contractor/wallet' : '/client/settings/wallet';
+  const balanceValue = Number(
+    user.details?.balance ?? user.balance ?? user.contractor?.[0]?.balance ?? 0
+  );
+  const formattedBalance = Number.isFinite(balanceValue)
+    ? new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(balanceValue)
+    : '0';
 
   const [isOpen, setIsOpen] = useState(false);
   const toggleMenu = () => {
@@ -134,18 +141,23 @@ const Toolbar = () => {
                 </div>
                 {/* </Link> */}
               </div>
-              <>
-                {/* <p className="contractor__moneys">
-                  <>
-                    {ui.isContractor ? (
-                      <>parseFloat(user.contractor[0].balance).toFixed(2)₽</>
-                    ) : null}
-                  </>
-                </p> */}
-                <div className="contractor__moneys__full">
-                  <Link to="/contractor/wallet">{text('replenish_balance')}</Link>
-                </div>
-              </>
+              <Link
+                to={financeLink}
+                className="header-finance"
+                title={text('replenish_balance')}
+              >
+                <span className="header-finance__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h12" />
+                    <path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z" />
+                    <circle cx="16.5" cy="13.5" r=".7" fill="currentColor" stroke="none" />
+                  </svg>
+                </span>
+                <span className="header-finance__content">
+                  <strong>{formattedBalance} ₽</strong>
+                  <small>{text('Finance')}</small>
+                </span>
+              </Link>
             </div>
           ) : (
             // Вынесла в отдельный компонент кнопки, чтобы сократить код
