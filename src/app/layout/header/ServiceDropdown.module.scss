@@ -8,7 +8,9 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   position: absolute;
   top: calc(100% + 18px) !important;
   left: 15px;
-  width: 270px;
+  width: max-content;
+  min-width: 270px;
+  max-width: calc(100vw - 32px);
   border-radius: 6px;
 
   @include mixins.xl {
@@ -23,9 +25,11 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   }
 
   &_button {
-    background-color: #000 !important;
+    background: transparent !important;
     color: #fff !important;
     font-size: 16px !important;
+    border: 0 !important;
+    padding: 8px 0 !important;
 
     @include mixins.xl {
       padding: 0 !important;
@@ -41,6 +45,11 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
       box-shadow: none !important;
     }
 
+    &:hover {
+      background: transparent !important;
+      color: #fff !important;
+    }
+
     img {
       margin-left: 5px;
       transition: transform 1s ease;
@@ -50,7 +59,9 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   &_item {
     background-color: #131313 !important;
     color: #fff !important;
-    width: 270px;
+    width: max-content;
+    min-width: 270px;
+    max-width: calc(100vw - 32px);
     font-size: 16px !important;
 
     &_lvl3 {
@@ -69,10 +80,19 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
       width: 100%;
       padding: 10px 20px;
       border-bottom: 1px solid #515151;
+      white-space: nowrap;
 
       &:hover {
         border-bottom: 1px solid white;
       }
+    }
+
+    a,
+    a:visited,
+    a:hover,
+    a:focus {
+      color: #fff !important;
+      text-decoration: none;
     }
 
     &_menu {
@@ -87,7 +107,9 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
     align-items: flex-start;
     background-color: #131313 !important;
     color: white;
-    width: 270px;
+    width: max-content;
+    min-width: 270px;
+    max-width: calc(100vw - 32px);
     // height: 100px !important;
     font-size: 16px;
 
@@ -110,7 +132,8 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   &_item_lvl1 {
     background-color: #131313 !important;
     color: white !important;
-    width: 270px;
+    width: 100%;
+    min-width: 270px;
     font-size: 16px !important;
   }
 }
@@ -119,16 +142,50 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
 .Submenu_submenu_lvl3 {
   top: 0 !important;
   left: calc(100% + 2px);
+  background-color: #131313 !important;
+  width: max-content !important;
+  min-width: 270px;
+  max-width: calc(100vw - 32px);
+
+  ul {
+    width: 100% !important;
+    min-width: inherit;
+  }
+
+  .serviceDropdown_item {
+    width: 100% !important;
+    min-width: 100%;
+
+    a,
+    span {
+      width: 100%;
+    }
+  }
+
+  a,
+  a:visited,
+  a:hover,
+  a:focus {
+    color: #fff !important;
+  }
+}
+
+.cityDropdown {
+  left: 50% !important;
+  width: min(320px, calc(100vw - 24px));
+  padding: 0;
+  background-color: #131313 !important;
+  transform: translateX(-50%);
 }
 
 .menu_cities {
-  background-color: #fff !important;
+  max-height: min(420px, calc(100vh - 100px));
+  overflow-y: auto;
+  background-color: #131313 !important;
   border-radius: 10px;
   padding: 12px;
-  position: absolute;
-  top: calc(100% + 18px) !important;
-  left: 115px;
-  width: 320px;
+  position: static;
+  width: 100%;
 
   li {
     padding: 0 !important;
@@ -144,7 +201,8 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   }
 
   input {
-    background-color: #ededed;
+    background-color: #242424;
+    color: #fff;
     padding: 10px;
     width: 100%;
     margin-bottom: 20px;
@@ -158,17 +216,18 @@ $arrowRightIconPath: '/app/img/header/icons/arrow-right-icon.svg';
   }
 
   .sity {
-    background-color: #ededed;
+    background-color: #1d1d1d;
     padding: 10px;
     border-radius: 5px;
-    color: #303030;
+    color: #fff;
     width: 100%;
     margin-bottom: 5px;
     cursor: pointer;
 
     &:hover {
-      background-color: #d1d1d1;
+      background-color: #303030;
     }
+
   }
 }
 

@@ -23,7 +23,7 @@ const WhyChooseUsBlock = () => {
 
   return (
     <div className={`${styles.whyChooseUsBlock} ${styles.appContainer}`}>
-      <h2 className={styles.whyChooseUsBlock_title}> {text("Why RepairWizards and not other contractor sites?")}
+      <h2 className={styles.whyChooseUsBlock_title}> {text("Why Elitegig and not other contractor sites?")}
       </h2>
         <div className={styles.whyChooseUsBlock_cards}>
           {/*Вынесла в отдельный компонент что бы сократить код и переиспользовать карточки в свайпере мобильной версии*/}

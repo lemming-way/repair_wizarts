@@ -9,7 +9,6 @@ import ToolbarButtons from './header/ToolbarButtons';
 import styles from './header/Toolbar.module.scss';
 import ListItem from './ListItem';
 import './header/header.scss';
-import logo from '../img/header/new-logotype.svg';
 import { useLanguage } from '../state/language';
 import { useUser, UserRole } from '../state/user';
 
@@ -53,7 +52,7 @@ const Toolbar = () => {
     <header className={styles['toolbar-header']}>
       <div className={`${styles.toolbar} appContainer`}>
         <Link to="/" className={styles.toolbar_logo}>
-          <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
+          <img className={styles.toolbar_logo_img} src="/img/image.png" alt="Elitegig" />
         </Link>
         <ul className={styles.toolbar_lists}>
           {!isContractor && (
@@ -87,24 +86,22 @@ const Toolbar = () => {
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
         <div className="header__profile">
+          {!isContractor && (
+            <Link
+              to="/client/requests/create/data"
+              className="header__button"
+            >
+              {text('order_on_exchange')}
+            </Link>
+          )}
           {!!user.id ? (
-            <div className="header__profile">
-              {!isContractor && (
-                <Link
-                  to={'/client/requests/create/data'}
-                  className="header__button"
-                >
-                    {text('order_on_exchange')}
-                </Link>
-              )}
-
+            <div className="header__account">
               <a className="header__icons" href="tel:+79697148750">
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
                 <Link
                   to="/chats"
                   className="header__icons"
-                  style={{ display: 'flex', position: 'relative' }}
                   onClick={() => {
                     setVisibleSetout(false);
                   }}
@@ -115,24 +112,14 @@ const Toolbar = () => {
               </Link>
               <div
                 className={visibleSetout ? 'yosetout yosetout--open' : 'yosetout'}
-                style={{ cursor: 'pointer' }}
                 onClick={() => {
                   setVisibleSetout(!visibleSetout);
                 }}
               >
                 <img
                   src={user.avatar || '/img/user_avatar.png'}
-                  width="40px"
-                  height="40px"
+                  className="header__avatar"
                   alt=""
-                  style={{
-                    borderRadius: '20px',
-                    objectFit: 'cover',
-                    border: '2px solid white',
-                    scale: '1.2',
-                    marginLeft: '5px',
-                    marginRight: '5px',
-                  }}
                 />
                 <div className="dropdownuser_arrow-wrap">
                   <img

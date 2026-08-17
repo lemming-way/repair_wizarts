@@ -60,7 +60,6 @@ const ServiceDropdownCities = () => {
       <button
         className={styles.serviceDropdown_button}
         onClick={() => setIsOpen(prev => !prev)}
-        style={{'color': 'white', 'background': 'none', 'border': 'none', 'fontSize': '16px'}}
       >
         <span style={{ fontWeight: 400 }}>{text('City')}</span>
         <img
@@ -75,7 +74,7 @@ const ServiceDropdownCities = () => {
       </button>
       
       {isOpen && (
-        <div className={styles.serviceDropdown} style={{"backgroundColor": "transparent"}}>
+        <div className={`${styles.serviceDropdown} ${styles.cityDropdown}`}>
           <div className={styles.menu_cities}>
             <input 
               type="text" 

@@ -5,6 +5,7 @@
 
   &_login {
     margin-right: 27px;
+    color: #fff;
 
     @include mixins.xl {
       margin-right: 20px;
@@ -16,6 +17,7 @@
   }
 
   &_register {
+    color: #fff;
     background-color: #D9573B;
     padding: 5px 20px;
     border: 1px solid #fff;
@@ -23,6 +25,16 @@
 
     @include mixins.sm {
       padding: 5px 5px;
+    }
+  }
+
+  &_login,
+  &_register {
+    &:visited,
+    &:hover,
+    &:focus,
+    &:active {
+      color: #fff;
     }
   }
 }

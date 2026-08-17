@@ -173,7 +173,7 @@ function Order() {
                 </div>
                 <p className={commonStyle.mini_text}>
                   {text('Pay the performer directly')} <br />
-                  {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
+                  {text('No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.')}
                 </p>
               </div>
             </div>

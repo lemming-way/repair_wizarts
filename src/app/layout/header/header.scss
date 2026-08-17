@@ -2,7 +2,7 @@
     &__profile {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 14px;
 
         @media (max-width: 1200px) {
             margin-right: 20px;
@@ -13,29 +13,77 @@
         }
     }
 
+    &__account {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+    }
+
     &__icons {
-        --size: 30px;
+        --size: 38px;
         width: var(--size);
         height: var(--size);
 
         border-radius: 50%;
-        border: 2px solid white;
+        border: 1px solid #fff;
 
         display: flex;
         justify-content: center;
         align-items: center;
+        position: relative;
+        flex: 0 0 var(--size);
+        transition: border-color .2s ease, background-color .2s ease;
 
         img {
-            width: 60%;
+            width: 17px;
+            height: 17px;
+            object-fit: contain;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, .1);
+            border-color: #d9573b;
         }
     }
 
+    &__avatar {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        border: 2px solid #fff;
+        border-radius: 50%;
+    }
+
     &__button {
-        border: none;
-        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 18px;
+        color: #fff;
+        background-color: #d9573b;
+        border: 1px solid #e77a64;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        transition: background-color .2s ease, border-color .2s ease;
 
         &:hover {
-            background-color: #d9ad3b;
+            color: #fff;
+            background-color: #bd432a;
+            border-color: #bd432a;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 1200px) {
+            margin-left: auto;
         }
 
         @media (max-width: 520px) {
@@ -51,6 +99,64 @@
         display: none;
         }
     }
+}
+
+.header__account .contractor__moneys__full {
+    display: block;
+    position: static;
+    padding: 0;
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 18px;
+        color: #fff;
+        background: #d9573b;
+        border: 1px solid #e77a64;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: background-color .2s ease, border-color .2s ease;
+
+        &:hover {
+            color: #fff;
+            background: #bd432a;
+            border-color: #bd432a;
+        }
+    }
+}
+
+.header__icons .chat-message-counter {
+    position: absolute;
+    top: 0;
+    right: -5px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    color: #fff;
+    background: #d9573b;
+    border: 2px solid #131313;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 17px;
+    text-align: center;
+    transform: translateY(-35%);
+}
+
+.yosetout {
+    position: relative;
+    cursor: pointer;
 }
 
 .contractor__moneys {

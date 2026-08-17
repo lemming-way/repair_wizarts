@@ -46,13 +46,14 @@ function DropdownService() {
             </Link>
           </div>
           <div className="recent ">
-            <span
+            <button
+              type="button"
               className="repair__phonffe dropdown_menu_toolbar_fix"
               onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>
-            </span>
+            </button>
           </div>
         </div>
       ) : (
@@ -82,13 +83,14 @@ function DropdownService() {
             </Link>
           </div>
           <div className="recent ">
-            <span
+            <button
+              type="button"
               className="repair__phonffe dropdown_menu_toolbar_fix"
               onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>
-            </span>
+            </button>
           </div>
         </div>
       )}

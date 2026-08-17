@@ -278,7 +278,7 @@ const lang = {
   "Learn more": "Learn more",
   "Main focus": "Main focus",
   "Menu": "Menu",
-  "No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.": "No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.",
+  "No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.": "No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.",
   "Official prices": "Official prices",
   "Offline": "Offline",
   "On the platform since": "On the platform since",

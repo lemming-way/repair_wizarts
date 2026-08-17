@@ -8,6 +8,8 @@
 
   // Explicit header background to avoid dependency on page background
   &-header {
+    position: relative;
+    z-index: 1000;
     background-color: #131313;
     color: white;
     width: 100%;
@@ -19,6 +21,8 @@
     &_img {
       width: 196px;
       height: 49px;
+      object-fit: contain;
+      mix-blend-mode: screen;
 
       @include mixins.sm {
         width: 170px;
