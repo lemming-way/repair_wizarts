@@ -61,6 +61,7 @@ interface MessageBase {
   format: MessageFormat;
   relatedMessage?: number;
   unread: boolean;
+  partnerRead: boolean;
 }
 
 interface TextMessageBase extends MessageBase {
@@ -243,7 +244,8 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
           messageRec.type === 32 ? MessageFormat.Audio :
           messageRec.type === 33 ? MessageFormat.File :
           MessageFormat.Text,
-        unread: !!messageRec.unread
+        unread: !!messageRec.unread,
+        partnerRead: !!messageRec.partner_read_time
       } as Message;
       if (ret.type === MessageType.System) ret.eventType = String(messageRec.event_type ?? '');
       if (ret.format === MessageFormat.Text) ret.text = String(messageRec.text ?? '');
@@ -321,7 +323,30 @@ async function sendMessage(message: SendMessageParams): Promise<number | null> {
     data.type = 1;
     data.text = message.text;
   }
-  return MessageAPI.postMessage(chatId, message);
+  data.reply_to = message.replyToMessage || null;
+  return MessageAPI.postMessage(chatId, data);
+}
+
+export function useMessageActions() {
+  const { user } = useUser() as { user: UserProfile };
+  const editMutation = useMutation({
+    mutationFn: async ({ id, text }: { id: number; text: string }, { client }) => {
+      await MessageAPI.editMessage(id, text);
+      client.invalidateQueries({ queryKey: ['user', user.id, 'message', id] });
+    }
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async ({ id }: { id: number }, { client }) => {
+      await MessageAPI.deleteMessage(id);
+      client.removeQueries({ queryKey: ['user', user.id, 'message', id] });
+      client.invalidateQueries({ queryKey: ['user', user.id, 'chat'] });
+    }
+  });
+  return { editMessage: editMutation.mutateAsync, deleteMessage: deleteMutation.mutateAsync };
+}
+
+export async function markMessagesRead(ids: number[]) {
+  if (ids.length) await MessageAPI.markMessagesAsRead(ids);
 }
 
 export function useSendMessage() {

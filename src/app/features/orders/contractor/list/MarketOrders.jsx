@@ -218,7 +218,6 @@ function MarketOrders() {
                   className={`fsdfsaooo mobile-big_nav-text_1 ${style.heading_table_row}`}
                 >
                   <p className="inter">{text('Project')}</p>
-                  <div className={style.empty}></div>
                   <p className="inter">{text('Buyer')}</p>
                   <p className="inter">{text('Price')}</p>
                 </div>
@@ -234,7 +233,7 @@ function MarketOrders() {
                     className={`${style.row_order} ${style.first_row}`}
                   >
                     <div className={style.block_title}>
-                      <Link to={`/contractor/requests/offer/${order.id}`}>
+                      <Link className={style.titleLink} to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
                           {products?.[order.productId]?.name || text('Untitled')}
                         </h3>

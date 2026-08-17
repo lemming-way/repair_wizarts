@@ -60,6 +60,7 @@ export type ChatMessageRecord = {
   type: number;
   related: number | null;
   unread: 0 | 1;
+  partner_read_time?: string | null;
 };
 
 
@@ -210,6 +211,20 @@ export async function markMessagesAsRead(ids: number[]): Promise<void> {
   }
   const result = await post<void>('script/template/repair_api', payload);
   return result;
+}
+
+export async function editMessage(id: number, text: string): Promise<void> {
+  await post<void>('script/template/repair_api', {
+    is_var: 1,
+    s_t_data: { action: 'editMessage', id, text }
+  });
+}
+
+export async function deleteMessage(id: number): Promise<void> {
+  await post<void>('script/template/repair_api', {
+    is_var: 1,
+    s_t_data: { action: 'deleteMessage', id }
+  });
 }
 
 /**

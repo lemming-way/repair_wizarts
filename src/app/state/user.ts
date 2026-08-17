@@ -139,6 +139,8 @@ interface ContractorUserProfile extends UserBaseData {
   active: boolean;
   /** Дата регистрации */
   registrationDate: Date;
+  /** Доступные способы выполнения работы */
+  workModes: string[];
 }
 
 export type UserProfile = ClientUserProfile | ContractorUserProfile;
@@ -195,7 +197,10 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     organizationName: u_details?.businessModel === BusinessModel.ServiceCenter && 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
     photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isInteger(id) && id > 0) : [],
     active: Number(data.u_active) === 1,
-    registrationDate: new Date(String(u_details?.registrationDate ?? '') || 0)
+    registrationDate: new Date(String(u_details?.registrationDate ?? '') || 0),
+    workModes: Array.isArray(u_details?.workModes)
+      ? u_details.workModes.filter((mode): mode is string => typeof mode === 'string')
+      : []
   };
 }
 
@@ -593,6 +598,7 @@ export type UserUpdatePayload = {
   businessModel?: BusinessModel;
   organizationName?: string;
   photos?: Array<File | number>;
+  workModes?: string[];
 }
 
 /**
@@ -665,6 +671,9 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
   }
   if (payload.organizationName !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
+  }
+  if (payload.workModes !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, workModes: payload.workModes };
   }
   if (payload.photos !== undefined) {
     const filePhotos = payload.photos.filter(file => file instanceof File);

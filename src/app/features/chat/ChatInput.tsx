@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
+import { Message, MessageFormat } from 'app/state/chat';
 import { AnyMedia, getKeyFor } from 'app/shared/ui';
 import { isImage } from 'app/shared/lib/utilities'; // For basic file type check
 
@@ -17,8 +18,11 @@ interface ChatInputProps {
     contractorId: number,
     message: string,
     files: File[],
+    replyToMessage?: number,
   ) => Promise<void>;
   isBusy: boolean;
+  replyTo: Message | null;
+  onCancelReply: () => void;
 }
 
 const MAX_FILE_SIZE_MB = 10; // Maximum allowed file size in MB
@@ -31,6 +35,8 @@ export const ChatInput: FC<ChatInputProps> = ({
   currentUser,
   onSendMessage,
   isBusy,
+  replyTo,
+  onCancelReply,
 }) => {
   const text = useLanguage();
   const [message, setMessage] = useState('');
@@ -108,7 +114,7 @@ export const ChatInput: FC<ChatInputProps> = ({
     if (!trimmedMessage && previewFiles.length === 0) return;
 
     try {
-      await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles);
+      await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles, replyTo?.id);
       updateMessage('');
       setPreviewFiles([]);
       setIsEmojiPickerVisible(false);
@@ -184,6 +190,12 @@ export const ChatInput: FC<ChatInputProps> = ({
 
   return (
     <div className={styles.chat_input_area} ref={footerRef} onDragOver={handleDragOver} onDrop={handleDrop}>
+      {replyTo && (
+        <div className={styles.reply_preview}>
+          <div><strong>{text('Reply')}</strong><span>{replyTo.format === MessageFormat.Text ? replyTo.text : text('Attachment')}</span></div>
+          <button type="button" onClick={onCancelReply}>×</button>
+        </div>
+      )}
       {/* File previews */}
       {previewFiles.length > 0 && (
         <div className={styles.file_preview_container}>

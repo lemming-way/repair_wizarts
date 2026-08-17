@@ -4,7 +4,7 @@ import { useLanguage } from 'app/state/language';
 import { Order } from 'app/state/order';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { ChatMessage } from './ChatMessage';
-import { Message, MessageType, MessageFormat, useChat, useMessagesByIds } from 'app/state/chat';
+import { Message, MessageType, useChat, useMessagesByIds, useMessageActions, markMessagesRead } from 'app/state/chat';
 
 import styles from './Chat.module.css';
 
@@ -12,6 +12,7 @@ interface MessageFeedProps {
   order: Order;
   contractorId: number;
   currentUser: UserProfile;
+  onReply: (message: Message) => void;
 }
 
 const BATCH_SIZE = 25; // Количество сообщений до и после текущего для окна
@@ -21,6 +22,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   order,
   contractorId,
   currentUser,
+  onReply,
 }) => {
   const text = useLanguage();
   const messageFeedRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,13 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   // Определяем ID сообщений для текущего окна
   const windowedMessageIds = messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize);
   const { messages, isLoading: isMessagesLoading } = useMessagesByIds(windowedMessageIds);
+  const { editMessage, deleteMessage } = useMessageActions();
+  const messagesMap = new Map(messages.map(message => [message.id, message]));
+
+  useEffect(() => {
+    const unreadIds = messages.filter(message => message.unread).map(message => message.id);
+    markMessagesRead(unreadIds).catch(() => {});
+  }, [messages]);
 
   const allUserIds = messages.reduce((ids, message) => {
     if (message.type === MessageType.User && message.from && message.from !== currentUser.id) {
@@ -269,6 +278,16 @@ export const MessageFeed: FC<MessageFeedProps> = ({
               currentUserId={currentUser.id}
               authorName={userName}
               authorAvatar={avatar}
+              relatedMessage={message.relatedMessage ? messagesMap.get(message.relatedMessage) : undefined}
+              onReply={() => onReply(message)}
+              onEdit={async () => {
+                if (message.format !== 'text') return;
+                const value = window.prompt(text('Edit message'), message.text);
+                if (value?.trim()) await editMessage({ id: message.id, text: value.trim() });
+              }}
+              onDelete={async () => {
+                if (window.confirm(text('Delete message for everyone?'))) await deleteMessage({ id: message.id });
+              }}
             />
           );
         })}

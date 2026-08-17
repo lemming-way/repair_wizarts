@@ -179,7 +179,79 @@
 
 
 .swiper {
-    width: 360px;
+    width: 100%;
+    max-width: 100%;
+}
+
+.contractorCardsAnchor {
+    position: absolute;
+    z-index: 10;
+    bottom: 12px;
+    left: 370px;
+}
+
+.contractorCards {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.contractorBigCard {
+    width: min(560px, 46vw);
+    height: auto;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.contractorSmallCard {
+    width: 350px;
+    height: auto;
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.contractorPhotos {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 14px;
+    overflow: hidden;
+}
+
+.contractorPhotos :global(.mySwiper) {
+    height: 130px;
+}
+
+.workModesCard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+
+.workModesCard strong {
+    margin-bottom: 2px;
+}
+
+.workModesCard span {
+    color: #333;
+}
+
+@media (max-width: 1050px) {
+    .contractorCardsAnchor {
+        left: 12px;
+        right: 12px;
+    }
+
+    .contractorCards {
+        flex-direction: column;
+    }
+
+    .contractorBigCard {
+        width: min(500px, calc(100vw - 24px));
+        max-height: 45vh;
+    }
 }
 
 .swiper__slide {

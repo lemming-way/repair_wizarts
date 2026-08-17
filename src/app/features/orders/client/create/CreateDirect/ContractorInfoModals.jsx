@@ -28,19 +28,10 @@ function ContractorInfoModals({
   const contractorCategories = [...new Set(contractorSubcategories.map(s => categories[s.parent]).filter(Boolean))];
 
   return (
-    <div style={{ display: 'flex', position: 'absolute' }}>
-      <div
-        style={{
-          position: 'absolute',
-          zIndex: 1,
-          bottom: '0',
-          left: '370px',
-          display: 'flex',
-          gap: '10px',
-        }}
-      >
+    <div className={style.contractorCardsAnchor}>
+      <div className={style.contractorCards}>
         {showSmallModal && (
-          <div className="info_contractor">
+          <div className={`info_contractor ${style.contractorSmallCard}`}>
             <div
               className="info_contractor__close"
               onClick={handleCloseModals}
@@ -127,10 +118,18 @@ function ContractorInfoModals({
               </span>
               {2/* selectedContractor.repeatOrders  todo: Добавить реальную статистику */}
             </p>
+            {!!selectedContractor.workModes?.length && (
+              <div className={style.workModesCard}>
+                <strong>{text('How do you work')}</strong>
+                {selectedContractor.workModes.map((mode) => (
+                  <span key={mode}>✓ {text(mode)}</span>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {showBigModal && (
-          <div className="info_contractor_big">
+          <div className={`info_contractor_big ${style.contractorBigCard}`}>
             <div>
               <div
                 className="info_contractor__close"
@@ -173,7 +172,7 @@ function ContractorInfoModals({
                 {selectedContractor.description || text('No description')}
               </p>
 
-              <div>
+              <div className={style.contractorPhotos}>
                 <ImageSwiper
                   className={style.swiper}
                   navigation={true}

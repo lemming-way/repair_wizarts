@@ -49,6 +49,17 @@
     width: 150px;
     text-align: center;
     font-size: 20px;
+    color: #222;
+    transition: color .2s;
+}
+
+.link:hover {
+    color: #d9573b;
+}
+
+.link:global(.active2) {
+    color: #d9573b;
+    border-bottom-color: #d9573b;
 }
 
 /* .link {

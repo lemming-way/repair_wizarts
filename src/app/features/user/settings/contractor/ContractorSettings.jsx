@@ -15,6 +15,8 @@ const experienceOptions = [
   { value: 6, label: 'More than 5 years' },
 ];
 
+const workModeOptions = ['At the client', 'In the workshop', 'Remote'];
+
 function ContractorSettings() {
   const text = useLanguage();
 
@@ -41,6 +43,7 @@ function ContractorSettings() {
   });
   const [businessModel, setBusiness] = useState(BusinessModel.IndependentTechnician);
   const [isActive, setIsActive] = useState(true);
+  const [workModes, setWorkModes] = useState([]);
 
   const getFormAttrs = (field) => {
     const value = field.split('.').reduce((obj, key) => obj?.[key], form);
@@ -127,6 +130,7 @@ function ContractorSettings() {
     setBusiness(user.businessModel);
     setIsActive(user.active);
     setPhotos(user.photos || []);
+    setWorkModes(user.workModes || []);
   }, [user, categories, subcategories, products]);
 
   useEffect(() => {
@@ -186,7 +190,8 @@ function ContractorSettings() {
       locality: Number(form.city) || 0,
       businessModel,
       services: newServicesMap,
-      photos
+      photos,
+      workModes
     };
 
     try {
@@ -352,6 +357,24 @@ function ContractorSettings() {
               <label htmlFor="is-active">
                 <p>{text('Receive orders')}</p>
               </label>
+            </div>
+
+            <h4 className={style.workModesTitle}>{text('How do you work')}:</h4>
+            <div className={style.workModes}>
+              {workModeOptions.map((mode) => (
+                <label key={mode} className={style.workModeOption}>
+                  <input
+                    type="checkbox"
+                    checked={workModes.includes(mode)}
+                    onChange={(e) => setWorkModes((current) =>
+                      e.target.checked
+                        ? [...current, mode]
+                        : current.filter((item) => item !== mode)
+                    )}
+                  />
+                  <span>{text(mode)}</span>
+                </label>
+              ))}
             </div>
 
             <h4>{text('Business model')}:</h4>

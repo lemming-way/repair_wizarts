@@ -14,7 +14,7 @@ import {
   useVerifyOrderCompletion,
 } from 'app/state/order';
 import { useUser, UserRole } from 'app/state/user';
-import { MessageFormat, useSetChatOpen, useSendMessage } from 'app/state/chat';
+import { Message, MessageFormat, useSetChatOpen, useSendMessage } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
@@ -51,6 +51,7 @@ export const ChatLayout: FC = () => {
   // Мутации для действий с чатом
   const { setChatOpen } = useSetChatOpen();
   const { sendMessage, isPending: isSendingMessage } = useSendMessage();
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
@@ -147,16 +148,14 @@ export const ChatLayout: FC = () => {
     contractorId: number,
     message: string,
     files: File[],
+    replyToMessage?: number,
   ) => {
-    const payload = {
-      orderId,
-      contractorId,
-      text: message,
-      format: MessageFormat.Text
-    };
-
     try {
-      await sendMessage(payload);
+      if (message) await sendMessage({ orderId, contractorId, text: message, format: MessageFormat.Text, replyToMessage });
+      for (const file of files) {
+        await sendMessage({ orderId, contractorId, file, text: file.name, format: MessageFormat.File, replyToMessage });
+      }
+      setReplyTo(null);
     }
     catch (err: any) {
       console.error('Send message failed:', err);
@@ -255,6 +254,7 @@ export const ChatLayout: FC = () => {
                 order={currentOrder}
                 contractorId={contractorId}
                 currentUser={user}
+                onReply={setReplyTo}
               />
               <ChatInput
                 orderId={orderId}
@@ -263,6 +263,8 @@ export const ChatLayout: FC = () => {
                 currentUser={user}
                 onSendMessage={handleSendMessage}
                 isBusy={isSendingMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(null)}
               />
             </>
           ) : (

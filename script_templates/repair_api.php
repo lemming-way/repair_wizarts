@@ -442,6 +442,15 @@ $out = call_user_func(function() {
                   'AND `m`.`recipient_owner_type`=31 ' .
                   'AND `m`.`id_message_type` IN(1,31,32,33)'
     ],
+    'editMessage' => [
+      'sql' => 'UPDATE `message` SET `value`=:text,`last_edit_datetime`=NOW(),`last_edit_user`=:u_id ' .
+               'WHERE `id_message`=:id AND `sender_owner`=:u_id AND `sender_owner_type`=1 ' .
+               'AND `id_message_type`=1 AND `active_status`>0'
+    ],
+    'deleteMessage' => [
+      'sql' => 'UPDATE `message` SET `active_status`=0,`last_edit_datetime`=NOW(),`last_edit_user`=:u_id ' .
+               'WHERE `id_message`=:id AND `sender_owner`=:u_id AND `sender_owner_type`=1 AND `active_status`>0'
+    ],
     'postMessage' => [
       'sql' => 'INSERT INTO `message`(' .
                   '`sender_owner`,' .

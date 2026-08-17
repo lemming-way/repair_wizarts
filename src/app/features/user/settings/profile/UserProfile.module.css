@@ -1,8 +1,8 @@
 .settingsContainer {
-    padding-top: 100px;
-    padding-left: 10%;
-    max-width: 1200px;
-    margin: 0 auto;
+    width: min(100%, 1000px);
+    padding-top: 24px;
+    margin-left: 0;
+    margin-right: auto;
 }
 
 @media (max-width: 870px) {
@@ -44,10 +44,14 @@
 
 .profileSection {
     display: flex;
-    gap: 40px;
-    margin-bottom: 50px;
-    flex-wrap: wrap;
+    gap: 32px;
+    margin-bottom: 18px;
+    padding: 24px;
     align-items: flex-start;
+    border: 1px solid #e4e4e4;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .05);
 }
 
 @media (max-width: 780px) {
@@ -68,27 +72,27 @@
 }
 
 .profilePicture {
-    width: 150px;
-    height: 150px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
     object-fit: cover;
-    border: 1px solid #ddd;
+    border: 3px solid #f0d1ca;
     cursor: pointer;
 }
 
 .editAvatarButton {
-    background-color: #007bff;
+    background-color: #d9573b;
     color: white;
     border: none;
     padding: 10px 20px;
-    border-radius: 5px;
+    border-radius: 9px;
     cursor: pointer;
     font-size: 1em;
     transition: background-color 0.3s ease;
 }
 
 .editAvatarButton:hover {
-    background-color: #0056b3;
+    background-color: #c8492f;
 }
 
 .mainForm {
@@ -128,7 +132,7 @@
     min-width: 200px;
     padding: 12px 15px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 9px;
     font-size: 1em;
 }
 
@@ -157,11 +161,15 @@
 
 
 .saveButton {
-    background-color: #28a745;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    background-color: #d9573b;
     color: white;
     border: none;
     padding: 12px 25px;
-    border-radius: 5px;
+    border-radius: 9px;
     cursor: pointer;
     font-size: 1.1em;
     transition: background-color 0.3s ease;
@@ -170,18 +178,21 @@
 }
 
 .saveButton:hover {
-    background-color: #218838;
+    background-color: #c8492f;
 }
 
 .passwordChangeSection {
-    margin-top: 50px;
-    padding-top: 30px;
-    border-top: 1px solid #eee;
-    max-width: 500px;
+    width: min(100%, 620px);
+    margin: 0 auto 0 0;
+    padding: 20px 26px 22px;
+    border: 1px solid #e4e4e4;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, .05);
 }
 
 .passwordChangeSection h3 {
-    margin-bottom: 25px;
+    margin-bottom: 16px;
     color: #333;
     font-size: 1.5em;
 }
@@ -189,7 +200,7 @@
 .passwordForm {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
 .inputWrap {
@@ -201,7 +212,7 @@
     padding: 12px 15px;
     padding-right: 50px;
     border: 1px solid #ccc;
-    border-radius: 5px;
+    border-radius: 9px;
     font-size: 1em;
 }
 
@@ -213,4 +224,19 @@
     cursor: pointer;
     width: 24px;
     height: 24px;
+}
+
+@media (max-width: 780px) {
+    .settingsContainer {
+        padding-top: 28px;
+    }
+
+    .profileSection,
+    .passwordChangeSection {
+        padding: 22px;
+    }
+
+    .passwordChangeSection {
+        width: 100%;
+    }
 }

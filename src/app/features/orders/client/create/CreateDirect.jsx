@@ -69,7 +69,7 @@ function CreateDirect() {
   };
 
   const handleShowBigModal = () => {
-    setShowSmallModal(false);
+    setShowSmallModal(true);
     setShowBigModal(true);
   };
 

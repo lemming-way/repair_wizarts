@@ -63,23 +63,12 @@ function MarketOrders() {
           </div>
 
           <div className={styles.table_wrap}>
-            <div
-              className={`big_nav-devicefsadsad df align ${styles.table}`}
-              style={{ marginBottom: 0 }}
-            >
-              <div className="">
-                <h2>{text('Orders')}</h2>
-              </div>
-              <div className="big_nav-text_2 df align">
-                <div className="tex-1 df">
-                  <h2 className="nav-text-left">{text('Price')}</h2>
-
-                  <h2 className="nav-text-center">{text('Offer')}</h2>
-
-                  <h2 className="nav-text-center">{text('Status')}</h2>
-                  <h2 className="nav-text-right">{text('Manage')}</h2>
-                </div>
-              </div>
+            <div className={styles.table}>
+              <span>{text('Orders')}</span>
+              <span>{text('Price')}</span>
+              <span>{text('Offer')}</span>
+              <span>{text('Status')}</span>
+              <span>{text('Manage')}</span>
             </div>
             {(tabsFilter === '#archive' ? archiveOrders : activeOrders)
               .map((v) =>

@@ -28,6 +28,18 @@
     justify-content: center;
 }
 
+.table {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(90px, .7fr) minmax(100px, .7fr) minmax(130px, .8fr) 110px;
+    gap: 20px;
+    align-items: center;
+    padding: 24px 26px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    color: #171717;
+    font-size: 22px;
+}
+
 .mobile__cards {
     display: none;
 

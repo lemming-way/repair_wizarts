@@ -2,6 +2,16 @@
     display: none;
 }
 
+:global(.setting) {
+    width: 100%;
+    margin: 0;
+}
+
+:global(.setting h1) {
+    margin: 0 0 18px;
+    font-size: 38px;
+}
+
 @media (max-width: 800px) {
     .arrows_block {
         display: flex;
