@@ -4,9 +4,27 @@ import { Link } from 'react-router-dom';
 import 'app/styles/legacy/orders.css';
 import style from './Offers/Offers.module.css';
 import { useProducts } from 'app/state/site-data';
-import { useClientOrders, orderStatusString } from 'app/state/order';
+import { useClientOrders, orderStatusString, OrderStatus } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import PaginationPages from 'app/components/Settings/PaginationPages';
+
+
+const getStatusClassName = (status) => {
+  switch (status) {
+    case OrderStatus.COMPLETED:
+    case OrderStatus.CLOSED:
+    case OrderStatus.PAID:
+      return style.status_ok;
+    case OrderStatus.APPOINTED:
+    case OrderStatus.IN_PROGRESS:
+      return style.status_working;
+    case OrderStatus.CANCELLED:
+    case OrderStatus.DISPUTE:
+      return style.status_cancel;
+    default:
+      return style.status_brand;
+  }
+};
 
 function Offers() {
   const { user } = useUser();
@@ -64,42 +82,34 @@ function Offers() {
                     currentPage * contentCount,
                   )
                   .map((item) => {
-                    const currentStatusStyleClass = style.status_ok; // Здесь можно добавить другие цвета
+                    const currentStatusStyleClass = getStatusClassName(item.order.status);
 
                     return (
                       <tr key={`${item.order.id}-${item.offer.contractorId}`}>
                         <td>{products[item.order.productId]?.name ?? 'Неизвестная услуга'}</td>
                         <td>
-                          <img
-                            src={ item.contractor?.avatar || '/img/user_avatar.png' }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              cursor: 'pointer',
-                              width: 70,
-                              borderRadius: 20,
-                              height: 70,
-                            }}
-                          />
-                          <Link to={`/client/requests/my_order/${item.order.id}`}>
-                            {item.contractor?.fullname || 'Неизвестный мастер'}
-                          </Link>
+                          <div className={style.user_cell}>
+                            <img
+                              className={style.avatar}
+                              src={item.contractor?.avatar || '/img/user_avatar.png'}
+                              alt=""
+                            />
+                            <Link to={`/client/requests/my_order/${item.order.id}`}>
+                              {item.contractor?.fullname || 'Неизвестный мастер'}
+                            </Link>
+                          </div>
                         </td>
                         <td>
-                          <img
-                            src={ user.avatar || '/img/user_avatar.png' }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              width: '70px',
-                              borderRadius: '50%',
-                              height: '70px',
-                              objectFit: 'cover',
-                            }}
-                          />
-                          { user.fullname || 'Неизвестный заказчик' }
+                          <div className={style.user_cell}>
+                            <img
+                              className={style.avatar}
+                              src={user.avatar || '/img/user_avatar.png'}
+                              alt=""
+                            />
+                            <span>{user.fullname || 'Неизвестный заказчик'}</span>
+                          </div>
                         </td>
-                        <td>{item.offer.price}</td>
+                        <td className={style.price}>{item.offer.price} ₽</td>
                         <td>
                           <p className={currentStatusStyleClass}>
                             {orderStatusString[item.order.status]}
@@ -120,7 +130,7 @@ function Offers() {
                 currentPage * contentCount,
               )
               .map((item) => {
-                const currentStatusStyleClass = style.status_ok; // Для статуса PUBLISHED всегда будет "Активно"
+                const currentStatusStyleClass = getStatusClassName(item.order.status);
                 return (
                   <div className={style.card_block} key={`${item.order.id}-${item.offer.contractorId}`}>
                     <Link to={`/client/requests/my_order/${item.order.id}`}>
@@ -172,7 +182,7 @@ function Offers() {
               onPageChange={(newPage) => setCurrentPage(newPage)}
             />
             <div className={style.select_pages_wrap}>
-              <p className={style.select_pages_wrap}>Показать:</p>
+              <p className={style.select_pages_label}>Показать:</p>
               <select
                 className={style.select_pages__select}
                 name=""
