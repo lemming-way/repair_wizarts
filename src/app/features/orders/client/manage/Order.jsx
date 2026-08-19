@@ -55,6 +55,7 @@ function Order() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(0); // 0 for site, 1 for cash
 
   const [acceptedContractorId, setAcceptedContractorId] = useState(false);
+  const [expandedServices, setExpandedServices] = useState({});
   // Functions for modals
   const handleCancelOrder = async () => {
     try {
@@ -315,6 +316,13 @@ function Order() {
               if (!contractorProfile) return null; // Skip if profile not found
               
               const contractorProducts = Object.keys(contractorProfile.services);
+              const contractorServiceNames = contractorProducts
+                .map(productId => products[productId]?.name)
+                .filter(Boolean);
+              const servicesAreExpanded = !!expandedServices[offer.contractorId];
+              const visibleServices = servicesAreExpanded
+                ? contractorServiceNames
+                : contractorServiceNames.slice(0, 3);
 
               const businessModelText = contractorProfile.businessModel === BusinessModel.ServiceCenter
                 ? text('Service center')
@@ -401,7 +409,7 @@ function Order() {
                   </div>
 
                   <div className={styles.about_block2}>
-                    <table>
+                    <table className={styles.profileTable}>
                       <tbody>
                         <tr>
                           <td className={styles.light_text}>{text('Experience')}:</td>
@@ -421,10 +429,29 @@ function Order() {
                         )}
                         <tr>
                           <td className={styles.light_text}>{text('Services')}:</td>
-                          <td>
-                            {contractorProducts.length > 0
-                              ? contractorProducts.map(productId => products[productId]?.name).filter(Boolean).join(', ')
-                              : text('not specified')}
+                          <td className={styles.servicesCell}>
+                            {contractorServiceNames.length > 0 ? (
+                              <div className={styles.servicesDropdown}>
+                                <div className={styles.servicesList}>
+                                  {visibleServices.map(serviceName => (
+                                    <span key={serviceName}>{serviceName}</span>
+                                  ))}
+                                </div>
+                                {contractorServiceNames.length > 3 && (
+                                  <button
+                                    type="button"
+                                    className={styles.servicesToggle}
+                                    onClick={() => setExpandedServices(current => ({
+                                      ...current,
+                                      [offer.contractorId]: !current[offer.contractorId],
+                                    }))}
+                                  >
+                                    {servicesAreExpanded ? 'Скрыть' : `Показать все (${contractorServiceNames.length})`}
+                                    <span className={servicesAreExpanded ? styles.arrowUp : ''}>⌄</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : text('not specified')}
                           </td>
                         </tr>
                       </tbody>

@@ -376,8 +376,74 @@
     gap: 30px;
 }
 
-table td {
+.profileTable {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.profileTable td {
     white-space: nowrap;
+    vertical-align: top;
+}
+
+.profileTable .servicesCell {
+    width: 100%;
+    white-space: normal;
+}
+
+.servicesDropdown {
+    width: 100%;
+    min-width: 0;
+}
+
+.servicesList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.servicesList span {
+    position: relative;
+    padding-left: 14px;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+.servicesList span::before {
+    content: '';
+    position: absolute;
+    top: .55em;
+    left: 0;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #d9573b;
+}
+
+.servicesToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 9px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #d9573b;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.servicesToggle span {
+    display: inline-block;
+    font-size: 18px;
+    line-height: 1;
+    transition: transform .2s ease;
+}
+
+.servicesToggle .arrowUp {
+    transform: rotate(180deg);
 }
 
 /* text_block */
@@ -517,7 +583,7 @@ table td {
         margin-bottom: 20px;
     }
 
-    table td {
+    .profileTable td {
         white-space: unset;
     }
 
