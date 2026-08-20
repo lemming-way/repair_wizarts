@@ -10,6 +10,33 @@
     font-size: 34px;
 }
 
+.status_tabs {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    max-width: 640px;
+    margin: 0 0 28px;
+    border-bottom: 1px solid #e1e1e1;
+    overflow-x: auto;
+}
+
+.status_tab {
+    flex: 0 0 auto;
+    padding: 0 0 14px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.status_tab_active {
+    border-bottom-color: #d9573b;
+    color: #d9573b;
+    font-weight: 600;
+}
+
 .orders {
     display: flex;
     flex-direction: column;
@@ -309,6 +336,7 @@
 
 @media (max-width: 600px) {
     .page { min-height: calc(100vh - 250px); }
+    .status_tabs { gap: 24px; margin-bottom: 20px; }
     .summary { grid-template-columns: 1fr 32px; }
     .summary_row { flex-direction: column; align-items: flex-start; gap: 5px; }
     .swiperSlide { height: 180px; }

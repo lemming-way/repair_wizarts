@@ -28,6 +28,7 @@ function ServiceMainContent({
   address,
   setAddress,
   onSubmit,
+  contractorInfo,
 }) {
   const [search, setSearch] = useState('');
 
@@ -215,12 +216,13 @@ function ServiceMainContent({
         </section>
       )}
 
-      <section className="map">
+      <section className={`map ${style.map_container}`}>
         <ContractorsMap
           contractors={contractors}
           selectedContractor={selectedContractor}
           selectContractor={onSelectContractor}
         />
+        {contractorInfo}
       </section>
     </div>
   );

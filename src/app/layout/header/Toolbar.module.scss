@@ -10,6 +10,7 @@
   &-header {
     position: relative;
     z-index: 1000;
+    overflow: visible;
     background-color: #131313;
     color: white;
     width: 100%;
@@ -152,6 +153,32 @@
 
         &:last-child {
           border: none;
+        }
+      }
+    }
+
+    &_profile_menu {
+      position: absolute;
+      top: 58px;
+      right: 10px;
+      z-index: 1002;
+      display: flex;
+      flex-direction: column;
+      min-width: 220px;
+      padding: 8px 16px;
+      border: 1px solid #303030;
+      border-radius: 8px;
+      background: #131313;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, .25);
+
+      a {
+        padding: 13px 0;
+        border-bottom: 1px solid #515151;
+        color: #fff;
+        text-decoration: none;
+
+        &:last-child {
+          border-bottom: 0;
         }
       }
     }

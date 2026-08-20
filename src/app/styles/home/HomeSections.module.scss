@@ -98,6 +98,8 @@
 
 .articleLink :global(.blog__card) {
   height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
 }
 
 .articleLink :global(.blog-card-stats) {

@@ -25,6 +25,15 @@
     border-radius: 8px;
 }
 
+@media (max-width: 720px) {
+    .bldropdown .bldropdownfff-content {
+        position: fixed;
+        top: 52px;
+        right: 10px;
+        z-index: 2147483647;
+    }
+}
+
 
 .fix_hover_drop {
     position: absolute;

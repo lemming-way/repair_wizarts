@@ -231,18 +231,18 @@ function CreateDirect() {
       address={address}
       setAddress={setAddress}
       onSubmit={onSubmit}
-    />
-
-    {/* Условный рендеринг модальных окон */}
-    <ContractorInfoModals
-      selectedContractor={selectedContractor}
-      categories={categories}
-      subcategories={subcategories}
-      products={products}
-      showSmallModal={showSmallModal}
-      showBigModal={showBigModal}
-      handleCloseModals={handleCloseModals}
-      handleShowBigModal={handleShowBigModal}
+      contractorInfo={
+        <ContractorInfoModals
+          selectedContractor={selectedContractor}
+          categories={categories}
+          subcategories={subcategories}
+          products={products}
+          showSmallModal={showSmallModal}
+          showBigModal={showBigModal}
+          handleCloseModals={handleCloseModals}
+          handleShowBigModal={handleShowBigModal}
+        />
+      }
     />
 
     {/* Модальное окно с слайдером (удалено, так как test_price не используется для изображений)

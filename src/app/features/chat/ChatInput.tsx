@@ -25,7 +25,7 @@ interface ChatInputProps {
   onCancelReply: () => void;
 }
 
-const MAX_FILE_SIZE_MB = 10; // Maximum allowed file size in MB
+const MAX_FILE_SIZE_MB = 50; // Maximum allowed file size in MB
 const MAX_FILE_COUNT = 5; // Maximum number of files per message
 
 export const ChatInput: FC<ChatInputProps> = ({

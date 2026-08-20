@@ -9,6 +9,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 20px;
+    overflow-y: auto;
 }
 
 .block {
@@ -18,6 +20,8 @@
     max-width: 630px;
     width: 100%;
     position: relative;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
 }
 
 .modal_edit_offer__block {
@@ -463,14 +467,22 @@
 
 /* Стили, специфичные для ModalEditOrder */
 .modal_edit_order__swiper_row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
     align-items: center;
-    /* Дополнительные стили, если известны */
+    gap: 14px;
+    margin-bottom: 24px;
 }
 
 .modal_edit_order__flex_wrap_row {
-    display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+}
+
+.modal_edit_order__swiper {
+    width: 100%;
+    min-width: 0;
+    height: 86px;
+    padding: 0 32px;
 }
 
 .modal_edit_order__photo_upload {
@@ -479,13 +491,13 @@
 }
 
 .modal_edit_order__photo_upload_block {
-    border: 1px dashed #E9EAF1; /* Примерный стиль, если оригинальный неизвестен */
-    padding: 10px;
+    border: 1px dashed #E9EAF1;
+    padding: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 85px; /* Примерная ширина */
-    height: 60px; /* Примерная высота */
+    width: 86px;
+    height: 86px;
     border-radius: 4px;
 }
 
@@ -493,6 +505,19 @@
     width: 100%;
     height: auto;
     /* Дополнительные стили, если известны */
+}
+
+.modal_edit_order__photo_upload_img label {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+.modal_edit_order__photo_upload_img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .modal_edit_order__hidden_input {
@@ -549,10 +574,16 @@
 /* Стили для слайдов изображений в ModalEditOrder */
 .modal_edit_order__slide_with_delete {
     position: relative;
+    width: 86px !important;
+    height: 86px;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #f3f3f3;
 }
 .modal_edit_order__slide_with_delete img {
-    max-width: 100%;
-    height: auto;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 .modal_edit_order__delete_image_btn {
     position: absolute;
@@ -572,4 +603,32 @@
 }
 .modal_edit_order__delete_image_btn:hover {
     background-color: red;
+}
+
+@media (max-width: 600px) {
+    .wrap {
+        padding: 12px;
+    }
+
+    .block {
+        padding: 42px 18px 24px;
+    }
+
+    .modal_edit_order__swiper_row {
+        grid-template-columns: 70px minmax(0, 1fr);
+    }
+
+    .modal_edit_order__swiper,
+    .modal_edit_order__slide_with_delete {
+        height: 70px;
+    }
+
+    .modal_edit_order__slide_with_delete {
+        width: 70px !important;
+    }
+
+    .modal_edit_order__photo_upload_block {
+        width: 70px;
+        height: 70px;
+    }
 }

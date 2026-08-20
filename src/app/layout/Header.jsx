@@ -119,7 +119,8 @@ const Toolbar = () => {
               </Link>
               <div
                 className={visibleSetout ? 'yosetout yosetout--open' : 'yosetout'}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setVisibleSetout(!visibleSetout);
                 }}
               >
@@ -192,23 +193,39 @@ const Toolbar = () => {
       <div
         className={[
           styles.toolbar_burger2,
-          !!user.id
-            ? styles.toolbar_burger2_visibility_none
-            : styles.toolbar_burger2_visibility_block,
+          styles.toolbar_burger2_visibility_block,
         ].join(' ')}
         onClick={toggleMenu}
       >
         <div className={styles.toolbar_burger2_icon}></div>
       </div>
       {isOpen && (
-        <div className={styles.toolbar_burger2_menu}>
-          <Link onClick={() => setIsOpen(false)} to="/login">
-          {text('login')}
-          </Link>
-          <Link onClick={() => setIsOpen(false)} to="/register">
-          {text('register')}
-          </Link>
-        </div>
+        !!user.id ? (
+          <div className={styles.toolbar_burger2_profile_menu}>
+            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
+              {text('Settings')}
+            </Link>
+            <Link onClick={() => setIsOpen(false)} to={financeLink}>
+              {text('Wallet')}
+            </Link>
+            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
+              {isContractor ? text('Applications') : text('My orders')}
+            </Link>
+            {isContractor && (
+              <Link onClick={() => setIsOpen(false)} to="/contractor/feedback">
+                {text('Reviews')}
+              </Link>
+            )}
+            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
+              {isContractor ? text('Order exchange') : text('All orders')}
+            </Link>
+          </div>
+        ) : (
+          <div className={styles.toolbar_burger2_menu}>
+            <Link onClick={() => setIsOpen(false)} to="/login">{text('login')}</Link>
+            <Link onClick={() => setIsOpen(false)} to="/register">{text('register')}</Link>
+          </div>
+        )
       )}
 
       {/* modile левое меню */}

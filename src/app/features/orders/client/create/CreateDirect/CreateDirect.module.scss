@@ -187,7 +187,11 @@
     position: absolute;
     z-index: 10;
     bottom: 12px;
-    left: 370px;
+    left: 12px;
+}
+
+.map_container {
+    position: relative;
 }
 
 .contractorCards {

@@ -11,7 +11,7 @@
 
 .order_info {
     flex-grow: 1; /* Позволяет блоку информации занимать доступное пространство */
-    min-width: 250px; /* Минимальная ширина для блока информации перед переносом */
+    min-width: 0;
 }
 
 .order_title {
@@ -158,9 +158,36 @@
     }
 }
 
+@media (min-width: 769px) and (max-width: 1100px) {
+    .order_control_block {
+        align-items: flex-start;
+        padding: 14px 18px;
+    }
+
+    .action_buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
 @media (max-width: 480px) {
+    .order_control_block {
+        position: relative;
+        padding: 8px 12px;
+        padding-right: 42px;
+        gap: 6px;
+    }
+
+    .order_info {
+        min-width: 0;
+        width: 100%;
+    }
+
     .order_title {
         font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .order_status_text,
     .order_price {
@@ -171,5 +198,18 @@
         padding: 6px 10px;
         font-size: 12px;
         min-width: unset;
+    }
+
+    .action_buttons {
+        gap: 6px;
+    }
+
+    .dropdown_button {
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        padding: 0;
     }
 }

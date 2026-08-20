@@ -117,7 +117,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
           // onClick={() => showUserInfoCard(partner)}  // TODO: Implement user info card
         >
           <img src={avatarSrc} alt={displayName} className={styles.avatar} />
-          <OnlineDotted isVisible={partner?.isOnline} /* className={styles.online_indicator_dot} */ />
+          <OnlineDotted isVisible={partner?.isOnline} className={styles.online_indicator_dot} />
         </div>
         <div className={styles.user_name}>{displayName}</div>
         <span className={styles.group_time}>{getLastUpdateString(groupLastUpdate)}</span>

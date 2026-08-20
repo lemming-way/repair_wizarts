@@ -24,6 +24,7 @@ function MarketOrders() {
   const [selectValue, setSelectValue] = useState('All offers');
   const [ordersPerPage, setOrdersPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [exchangeStatus, setExchangeStatus] = useState('active');
   // --- Состояния для фильтров ---
   const [categoryFilter, setCategoryFilter] = useState(null); // null - нет фильтра
   const [offersCountFilter, setOffersCountFilter] = useState([]); // [[5, 10], [20, null]]
@@ -203,6 +204,23 @@ function MarketOrders() {
               </Dropdown>
             </div>
           </div>
+
+          <nav className={style.status_tabs} aria-label="Статусы заказов на бирже">
+            {[
+              ['active', 'Активные'],
+              ['completed', 'Выполненные'],
+              ['cancelled', 'Отменённые'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`${style.status_tab} ${exchangeStatus === value ? style.status_tab_active : ''}`}
+                onClick={() => setExchangeStatus(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
 
           {isLoading ? (
             <p>{text('Loading orders...')}</p>

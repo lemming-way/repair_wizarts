@@ -167,6 +167,32 @@
   border: 1px solid #d9573b !important;
 }
 
+.status_tabs {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin: 0 0 18px;
+  border-bottom: 1px solid #e1e1e1;
+  overflow-x: auto;
+}
+
+.status_tab {
+  flex: 0 0 auto;
+  padding: 0 0 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #333;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.status_tab_active {
+  border-bottom-color: #d9573b;
+  color: #d9573b;
+  font-weight: 600;
+}
+
 /*  */
 .main__row {
   width: 100%;

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import ModalConfirmContractor from './Order/ModalConfirmContractor';
@@ -48,7 +50,7 @@ function Order() {
 
   // For image modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [currentImageModalSrc, setCurrentImageModalSrc] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Payment related state (stubs as per request)
   const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
@@ -81,14 +83,14 @@ function Order() {
     }
   };
 
-  const openImageModal = (imageSrc) => {
-    setCurrentImageModalSrc(imageSrc);
+  const openImageModal = (imageIndex) => {
+    setCurrentImageIndex(imageIndex);
     setIsImageModalOpen(true);
   };
 
   const closeImageModal = () => {
     setIsImageModalOpen(false);
-    setCurrentImageModalSrc('');
+    setCurrentImageIndex(0);
   };
 
   // Conditional rendering for action buttons
@@ -274,13 +276,17 @@ function Order() {
               >
                 {currentOrder.attachments.map((src, index) => (
                   <SwiperSlide key={getKeyFor(src)}>
-                    <div className={styles.miniSlider}>
+                    <button
+                      type="button"
+                      className={styles.miniSlider}
+                      onClick={() => openImageModal(index)}
+                      aria-label={`${text('Open image')} ${index + 1}`}
+                    >
                       <AnyImage
-                        onClick={() => openImageModal(src)}
                         src={src}
                         alt={`${text('Order image')} ${index + 1}`}
                       />
-                    </div>
+                    </button>
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -508,7 +514,7 @@ function Order() {
             </button>
 
             <Swiper
-              initialSlide={currentOrder.attachments.indexOf(currentImageModalSrc)}
+              initialSlide={currentImageIndex}
               navigation={true}
               modules={[Navigation]}
               className={styles.modalSwiper}

@@ -5,7 +5,7 @@
         gap: 14px;
 
         @media (max-width: 1200px) {
-            margin-right: 20px;
+            margin-right: 30px;
         }
 
         @media (max-width: 500px) {
@@ -87,9 +87,7 @@
         }
 
         @media (max-width: 520px) {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin: 0;
+            display: none;
         }
     }
 
@@ -229,6 +227,7 @@
 
 .yosetout {
     position: relative;
+    z-index: 10002;
     cursor: pointer;
 }
 

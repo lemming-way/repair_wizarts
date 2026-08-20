@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useNavigate } from 'react-router-dom';
@@ -25,6 +25,7 @@ function DirectOrders() {
   const { products, isLoading: isLoadingProducts } = useProducts();
 
   const { acceptInvoice } = useAcceptInvoice();
+  const [activeTab, setActiveTab] = useState('mine');
 
   useEffect(() => {
     document.title = text('Applications');
@@ -57,6 +58,23 @@ function DirectOrders() {
       <div className="mini-text">
         <h1>{text('Applications')}</h1>
       </div>
+      <nav className={style.status_tabs} aria-label="Фильтр заявок">
+        {[
+          ['mine', 'Мои заявки'],
+          ['completed', 'Выполнено'],
+          ['cancelled', 'Отменено'],
+          ['all', 'Все'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`${style.status_tab} ${activeTab === value ? style.status_tab_active : ''}`}
+            onClick={() => setActiveTab(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       {orders.length === 0 && (
         <div className={style.empty_orders}>
           <img src="/img/robot.png" alt="" />
