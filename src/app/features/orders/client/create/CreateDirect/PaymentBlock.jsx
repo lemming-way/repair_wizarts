@@ -88,7 +88,8 @@ function PaymentBlock({
           </div>
         </div>
 
-        <div
+        <button
+          type="button"
           className={style.button_go}
           onClick={() => {
             setVisibleBlockPayment(false);
@@ -96,7 +97,7 @@ function PaymentBlock({
           }}
         >
           {text('Continue')}
-        </div>
+        </button>
       </div>
     </div>
   );

@@ -1,13 +1,13 @@
 
 .main_block_history {
-    padding: 100px 50px 30px 10%;
+    padding: 100px 0 30px 30px;
 }
 
 
 
 @media (max-width: 980px) {
     .main_block_history {
-        padding: 90px 20px 30px;
+        padding: 90px 0 30px 10px;
     } 
 }
 
@@ -18,25 +18,23 @@
 }
 
 .table_wrap {
-    /* width: min-content; */
-    overflow-x: scroll;
-    max-width: 98vw;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 .table {
-    margin-top: 20px;
-    /* width: 100%; */
-    /* max-width: 1200px; */
+    margin: 20px 0 0;
+    width: max-content;
     table-layout: auto;
-
 }
 
-.table > * {
-    text-align: center;
+.table th,
+.table td {
+    text-align: left;
 }
 
 .table th {
-    /* width: calc(100% / 6); */
     padding: 10px 0;
 }
 

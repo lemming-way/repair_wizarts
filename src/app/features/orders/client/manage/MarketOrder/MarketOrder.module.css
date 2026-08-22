@@ -13,6 +13,15 @@
     display: none;
 }
 
+.card__count a {
+    color: #d9573b;
+    transition: color .2s ease;
+}
+
+.card__count a:hover {
+    color: #c8492f;
+}
+
 .photo_upload_block {
     width: 120px;
     height: 100px;

@@ -170,6 +170,22 @@
     }
 }
 
+@media (min-width: 481px) and (max-width: 800px) {
+    .order_control_block {
+        position: relative;
+        padding-right: 52px;
+    }
+
+    .dropdown_button {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+    }
+}
+
 @media (max-width: 480px) {
     .order_control_block {
         position: relative;

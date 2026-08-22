@@ -28,9 +28,11 @@
 @media (max-width: 720px) {
     .bldropdown .bldropdownfff-content {
         position: fixed;
-        top: 52px;
+        top: 62px;
         right: 10px;
-        z-index: 2147483647;
+        z-index: 1003;
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
     }
 }
 

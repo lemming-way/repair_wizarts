@@ -359,19 +359,31 @@
 }
 
 .button_go {
-    margin-top: 53px;
-    padding: 13px 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    margin: 0 auto;
+    padding: 12px 24px;
     width: 150px;
-    // max-width: 250px;
     background: #D9573B;
     border-radius: 10px;
     font-style: normal;
     font-weight: 400;
     border: 0;
     cursor: pointer;
-    font-size: 20px;
+    font-size: 18px;
     color: #FFFFFF;
-    margin: auto;
+    line-height: 1;
+    transition: background-color .2s ease, transform .1s ease;
+}
+
+.button_go:hover {
+    background: #c8492f;
+}
+
+.button_go:active {
+    transform: translateY(1px);
 }
 
 @media (max-width: 1400px) {
@@ -456,11 +468,15 @@
 
 }
 
+.modal_from_row {
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
 @media (max-width: 550px) {
     .modal_from_row {
         display: flex;
         flex-direction: column;
-        gap: 10px;
     }
 }
 

@@ -283,10 +283,22 @@ export const MessageFeed: FC<MessageFeedProps> = ({
               onEdit={async () => {
                 if (message.format !== 'text') return;
                 const value = window.prompt(text('Edit message'), message.text);
-                if (value?.trim()) await editMessage({ id: message.id, text: value.trim() });
+                if (!value?.trim()) return;
+                try {
+                  await editMessage({ id: message.id, text: value.trim() });
+                } catch (error) {
+                  console.error('Failed to edit message:', error);
+                  window.alert(text('Failed to edit message. Please try again.'));
+                }
               }}
               onDelete={async () => {
-                if (window.confirm(text('Delete message for everyone?'))) await deleteMessage({ id: message.id });
+                if (!window.confirm(text('Delete message for everyone?'))) return;
+                try {
+                  await deleteMessage({ id: message.id });
+                } catch (error) {
+                  console.error('Failed to delete message:', error);
+                  window.alert(text('Failed to delete message. Please try again.'));
+                }
               }}
             />
           );

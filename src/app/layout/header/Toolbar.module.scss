@@ -170,6 +170,18 @@
       border-radius: 8px;
       background: #131313;
       box-shadow: 0 8px 16px rgba(0, 0, 0, .25);
+      max-height: calc(100vh - 68px);
+      overflow-y: auto;
+
+      @include mixins.xl {
+        position: fixed;
+        top: 58px;
+        right: 8px;
+        bottom: auto;
+        height: max-content;
+        max-height: calc(100dvh - 66px);
+        z-index: 1004;
+      }
 
       a {
         padding: 13px 0;
@@ -193,13 +205,16 @@
 
     &_menu {
       display: block;
-      position: absolute;
+      position: fixed;
       top: 65px;
+      bottom: 0;
       left: -120%;
       background-color: black;
       color: white;
-      height: 100vh;
+      height: auto;
+      min-height: calc(100dvh - 65px);
       width: 400px;
+      overflow-y: auto;
       transition: all 1s ease;
       z-index: 887;
 

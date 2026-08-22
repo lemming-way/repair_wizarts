@@ -479,6 +479,15 @@
 
   .block_author img {
     width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: block;
+  }
+
+  .block_author > div:first-child {
+    flex: 0 0 50px;
+    width: 50px;
+    height: 50px;
   }
 
   .col {
@@ -589,7 +598,13 @@
     align-items: center;
     justify-content: center;
     gap: 10px;
+    min-height: auto;
+    padding: 20px 0 0;
+    bottom: auto;
+  }
 
-    bottom: -65px;
+  .pagination_wrap > .select_pages_wrap {
+    width: auto;
+    justify-content: center;
   }
 }

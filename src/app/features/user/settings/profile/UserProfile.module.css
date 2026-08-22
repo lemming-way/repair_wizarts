@@ -105,7 +105,7 @@
 
 @media (max-width: 450px) {
     .mainForm {
-        width: 95vw;
+        width: 100%;
         max-width: none;
     }
 
@@ -238,5 +238,55 @@
 
     .passwordChangeSection {
         width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .settingsContainer {
+        width: 100%;
+        padding: 30px 0 0;
+    }
+
+    .profileSection {
+        width: 100%;
+        padding: 20px;
+        gap: 18px;
+        border-radius: 15px;
+    }
+
+    .mainForm {
+        width: 100%;
+        max-width: none;
+        gap: 14px;
+    }
+
+    .formRow {
+        flex-wrap: nowrap;
+        gap: 12px;
+    }
+
+    .formRow > input,
+    .formRow > textarea,
+    .formRow > select,
+    .inputField {
+        width: calc(50% - 6px);
+        min-width: 0;
+        padding: 12px 13px;
+    }
+
+    .saveButton {
+        width: 100%;
+        align-self: stretch;
+        margin-top: 8px;
+    }
+
+    .avatarUploadBlock {
+        min-width: 0;
+    }
+
+    .passwordChangeSection {
+        width: 100%;
+        padding: 20px;
+        border-radius: 15px;
     }
 }

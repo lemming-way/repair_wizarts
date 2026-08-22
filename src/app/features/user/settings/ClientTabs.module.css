@@ -8,11 +8,17 @@
     gap: 20px;
 
     /* border-bottom: 1px solid grey; */
-    max-width: max-content;
+    max-width: 830px;
     width: 100%;
-
-    /* overflow-x: auto; */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 7px;
+}
+
+.navigator_block::-webkit-scrollbar {
+    display: none;
 }
 
 .navigator_block::before {
@@ -51,6 +57,24 @@
     font-size: 20px;
     color: #222;
     transition: color .2s;
+    flex: 0 0 150px;
+}
+
+@media (max-width: 600px) {
+    .navigator_block {
+        gap: 0;
+        scroll-snap-type: x proximity;
+    }
+
+    .navigator_block::before {
+        top: 58px;
+    }
+
+    .link {
+        flex-basis: 145px;
+        padding: 17px 20px;
+        scroll-snap-align: start;
+    }
 }
 
 .link:hover {

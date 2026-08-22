@@ -53,6 +53,19 @@ export const ChatLayout: FC = () => {
   const { sendMessage, isPending: isSendingMessage } = useSendMessage();
   const [replyTo, setReplyTo] = useState<Message | null>(null);
 
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
+
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
   const { acceptOffer } = useAcceptOffer();
@@ -214,7 +227,7 @@ export const ChatLayout: FC = () => {
             onClick={() => setIsChatListVisible(true)}
             title={text('Open chat list')}
           >
-            <img src="/img/arrowleft-white.png" alt="Open" style={{ transform: 'rotate(180deg)' }}/> {/* Корректируем иконку */}
+            <img src="/img/arrowleft-white.png" alt="Open" />
           </button>
       )}
 
