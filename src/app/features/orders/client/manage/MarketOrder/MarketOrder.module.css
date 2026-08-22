@@ -33,8 +33,72 @@
     max-height: 90vh;
     padding: 32px;
     overflow-y: auto;
-    border-radius: 16px;
+    border-radius: 18px !important;
     background: #fff;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, .16);
+}
+
+.deleteModal {
+    position: relative;
+    width: min(680px, calc(100vw - 32px));
+    padding: 42px 36px 36px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 18px 55px rgba(0, 0, 0, .16);
+    text-align: center;
+}
+
+.deleteModalTitle {
+    margin: 22px 40px 20px;
+    font-size: 26px;
+    line-height: 1.25;
+}
+
+.deleteModalText {
+    max-width: 540px;
+    margin: 0 auto;
+    color: #454545;
+    font-size: 17px;
+    line-height: 1.45;
+}
+
+.deleteModalActions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.cancelDeleteButton,
+.confirmDeleteButton {
+    min-width: 160px;
+    min-height: 48px;
+    padding: 11px 24px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease;
+}
+
+.cancelDeleteButton {
+    border-color: #efb4a7;
+    color: #b8442c;
+    background: #fff1ed;
+}
+
+.cancelDeleteButton:hover {
+    background: #ffe3dc;
+}
+
+.confirmDeleteButton {
+    color: #fff;
+    background: #d9573b;
+}
+
+.confirmDeleteButton:hover {
+    background: #c8492f;
 }
 
 .closeButton {
@@ -137,7 +201,8 @@
     align-items: center;
     gap: 8px;
     margin: 8px 0 0;
-    color: #777;
+    color: #5f5f5f;
+    font-weight: 500;
 }
 
 .fieldIcon {
@@ -147,7 +212,8 @@
     height: 21px !important;
     margin: 0 !important;
     object-fit: contain;
-    opacity: .65;
+    opacity: .82;
+    filter: contrast(1.15);
     order: -1;
 }
 
@@ -459,6 +525,31 @@
     .modalTitle {
         margin-bottom: 22px;
         font-size: 22px;
+    }
+
+    .deleteModal {
+        padding: 34px 20px 24px;
+        border-radius: 14px;
+    }
+
+    .deleteModalTitle {
+        margin: 18px 30px 16px;
+        font-size: 22px;
+    }
+
+    .deleteModalText {
+        font-size: 15px;
+    }
+
+    .deleteModalActions {
+        flex-direction: column-reverse;
+        gap: 10px;
+        margin-top: 22px;
+    }
+
+    .cancelDeleteButton,
+    .confirmDeleteButton {
+        width: 100%;
     }
 
     .selectGrid {

@@ -616,7 +616,11 @@ const lang = {
   "Withdraw funds": "Вывести средства",
   "YY:": "ГГ:",
   "CVC:": "CVC:",
-  "Your review has been sent for moderation": "Ваш отзыв отправлен на модерацию"
+  "Your review has been sent for moderation": "Ваш отзыв отправлен на модерацию",
+  "Registration selection": "Выбор регистрации",
+  "User registration": "Регистрация клиента",
+  "Registration type for users (clients only)": "Для клиентов, которые хотят заказывать услуги",
+  "Service and contractor registration": "Регистрация исполнителей"
 };
 
 export default lang;

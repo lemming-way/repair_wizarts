@@ -519,7 +519,11 @@ const lang = {
   "Withdraw funds": "Withdraw funds",
   "YY:": "YY:",
   "CVC:": "CVC:",
-  "Your review has been sent for moderation": "Your review has been sent for moderation"
+  "Your review has been sent for moderation": "Your review has been sent for moderation",
+  "Registration selection": "Registration selection",
+  "User registration": "Client registration",
+  "Registration type for users (clients only)": "For clients who want to order services",
+  "Service and contractor registration": "Contractor registration"
 };
 
 export default lang;

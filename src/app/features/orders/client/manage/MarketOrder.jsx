@@ -337,48 +337,33 @@ const MarketOrder = (props) => {
                   >
                     {(close) => (
                       <div
-                        className="modal-content"
-                        style={{
-                          textAlign: 'center',
-                          backgroundColor: 'white',
-                          maxWidth: '95%',
-                        }}
+                        className={style.deleteModal}
                       >
-                        <span onClick={close}>
+                        <button type="button" className={style.closeButton} onClick={close}>
                           <img
-                            className="close"
                             src="/img/img-delete.png"
-                            alt=""
+                            alt={text('Close')}
                           />
-                        </span>
-                        <h1>{text('Confirm deletion')}</h1>
-                        <p style={{ width: '80%', margin: 'auto' }}>
+                        </button>
+                        <h1 className={style.deleteModalTitle}>{text('Confirm deletion')}</h1>
+                        <p className={style.deleteModalText}>
                           {text('Do you confirm the stop of the project? Sellers will not be able to add their offers to it anymore.')}
                         </p>
-                        <div className="df" style={{ justifyContent: 'center' }}>
-                          <div className={style.form__row}>
+                        <div className={style.deleteModalActions}>
                             <button
-                              className="btn_6PopUpBack"
+                              className={style.cancelDeleteButton}
                               type="button"
-                              style={{
-                                margin: 0,
-                                backgroundColor: 'unset',
-                                color: 'black',
-                                border: '1px solid black',
-                              }}
                               onClick={close}
                             >
                               {text('Cancel')}
                             </button>
                             <button
-                              className="btn_6PopUp"
+                              className={style.confirmDeleteButton}
                               type="button"
-                              style={{ margin: 0 }}
                               onClick={() => handleCancelOrder(close)}
                             >
                               {text('Delete')}
                             </button>
-                          </div>
                         </div>
                       </div>
                     )}

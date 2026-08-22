@@ -120,3 +120,11 @@
     display: block;
   }
 }
+
+.toolbar_logo_img {
+  display: block;
+  width: 150px;
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
+}

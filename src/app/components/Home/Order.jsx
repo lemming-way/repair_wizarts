@@ -54,7 +54,7 @@ function Order() {
                         </div>
                     ) : (
                         <Swiper
-                            slidesPerView={4}
+                            slidesPerView={3}
                             spaceBetween={30}
                             navigation={true}
                             modules={[Navigation]}
@@ -68,9 +68,6 @@ function Order() {
                                 },
                                 1099: {
                                     slidesPerView: 3
-                                },
-                                1585: {
-                                    slidesPerView: 4
                                 },
                             }}
                         >

@@ -6,7 +6,6 @@ import styles from './MobileMenu.module.scss';
 import ListItem from '../ListItem';
 import { useLanguage } from 'app/state/language';
 import { useUser, UserRole } from 'app/state/user';
-import logo from 'app/img/header/new-logotype.svg';
 
 
 const MobileMenu = ({ setMenuActive }) => {
@@ -25,7 +24,7 @@ const MobileMenu = ({ setMenuActive }) => {
   return (
     <div className={styles.mobileMenu}>
       <Link to="/" className={styles.logo_sidebar}>
-        <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
+        <img className={styles.toolbar_logo_img} src="/img/image.png" alt="Elitegig" />
       </Link>
 
       <ul className={styles.mobileMenu_lists}>
@@ -38,7 +37,7 @@ const MobileMenu = ({ setMenuActive }) => {
             openItem={openServices}
             onClick={() => setOpenServices(!openServices)}
           />
-          {openServices && <ServiceDropDownMobile />}
+          {openServices && <ServiceDropDownMobile onNavigate={() => setMenuActive(false)} />}
           <ListItem
             link="#"
             name={text('City')}

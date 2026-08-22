@@ -8,5 +8,16 @@
 
   &_list {
     font-size: 14px;
+
+    &_item a {
+      display: block;
+      width: 100%;
+      color: #fff;
+      text-decoration: none;
+
+      &:hover {
+        color: #d9573b;
+      }
+    }
   }
 }
