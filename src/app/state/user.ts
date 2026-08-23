@@ -18,9 +18,8 @@ import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import CONFIG from 'config';
 import { setToken, clearToken, isUserAuthorized, authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
-import { fileToBase64, isImage, randomString } from 'app/shared/lib/utilities';
+import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as UserAPI from './api/user';
-import * as CarAPI from './api/cars';
 import * as FileAPI from './api/dropbox';
 
 /**
@@ -332,37 +331,11 @@ export async function login(
         if (authorizedUserId() !== userId) return;
 
         const checkState = Number(authResult.auth_user.u_check_state);
-        let userChecked = checkState === 2;
         const userUnchecked = !checkState || !Number.isInteger(checkState) || checkState === 1;
-        const drivenCar = await CarAPI.getDrivenCar();
         if (authorizedUserId() !== userId) return;
-
-        let carToDrive: number|null = null;
-        if (!drivenCar) {
-          const userCars = await CarAPI.getUserCars();
-          if (authorizedUserId() !== userId) return;
-
-          if (userCars.length === 0 && userUnchecked) {
-            const carData = {
-              seats: 1,
-              registration_plate: randomString(12)
-            };
-            carToDrive = Number(await CarAPI.createCar(carData));
-            if (authorizedUserId() !== userId) return;
-          }
-          else if (userCars.length > 0) {
-            carToDrive = Number(userCars[0].c_id);
-          }
-        }
 
         if (userUnchecked) {
           await UserAPI.makeUserVerified();
-          if (authorizedUserId() !== userId) return;
-          userChecked = true;
-        }
-
-        if (!drivenCar && userChecked && Number.isInteger(carToDrive) && carToDrive! > 0) {
-          CarAPI.driveCar(carToDrive!);  // можно не ждать
         }
       }
     }
@@ -543,18 +516,10 @@ export async function registerContractor(queryClient: QueryClient, payload: Regi
     if (authorizedUserId() !== userId) return;
   }
 
-  const carData = {
-    seats: 1,
-    registration_plate: randomString(12)
-  }
-  const carId = Number(await CarAPI.createCar(carData));
-  if (authorizedUserId() !== userId) return;
-
   await UserAPI.makeUserVerified();
   if (authorizedUserId() !== userId) return;
 
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
-  if (carId) CarAPI.driveCar(carId);  // можно не ждать
 }
 
 /**

@@ -3,11 +3,12 @@
  *
  * @summary
  * **Типы данных:**
- * Order, TimeUnit, Offer, OrderType, OrderStatus, OrderCreationData, OrderUpdateData, CreateOfferData
+ * Order, OrderServiceDetails, Offer, OrderType, OrderStatus, OrderCreationData, OrderUpdateData, CreateOfferData
  *
  * **Функции, влияющие на глобальное состояние:**
  * useCreateOrder, useUpdateOrder, useCancelOrder, useCreateOffer, useUpdateOffer, useAcceptOffer,
- * useRevokeOffer, useAcceptInvoice, useStartOrderWork, useCompleteOrderByContractor, useVerifyOrderCompletion
+ * useRevokeOffer, useAcceptInvoice, useRejectInvoice, useStartOrderWork, useFinishOrderWork,
+ * useConfirmOrderCompletion
  *
  * **Функции, не влияющие на глобальное состояние:**
  * useContractors, useClientOrders, useFinishedOrders, useOrdersByIds, useContractorOrders, useAvailableOrders
@@ -15,10 +16,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
-import * as FileAPI from './api/dropbox';
-import * as TripAPI from './api/trips';
-import * as OrderAPI from './api/orders';
-import { getDrivenCar } from './api/cars';
+import * as OrderAPI from './api/order';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
 import type { ServicesMap, UserProfile } from './user';
@@ -47,10 +45,13 @@ export type Order = {
   contractorOffersCount: number;
 };
 
-export enum OrderType {
-  Market = 'market',
-  Direct = 'direct'
-}
+export const OrderType = {
+  Market: 'market',
+  Direct: 'direct'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type OrderType = typeof OrderType[keyof typeof OrderType];
 
 export type OrderServiceDetails = {
   service: string;
@@ -290,19 +291,19 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
 
   let filter = 0;
   for (const type of types) {
-    if (type === OrderType.Market) filter |= TripAPI.TripFilter.public;
-    else if (type === OrderType.Direct) filter |= TripAPI.TripFilter.offer;
+    if (type === OrderType.Market) filter |= OrderAPI.OrdersFilter.market;
+    else if (type === OrderType.Direct) filter |= OrderAPI.OrdersFilter.direct;
   }
 
   for (const stage of stages) {
-    if (stage === 'new') filter |= TripAPI.TripFilter.now;
-    else if (stage === 'active') filter |= TripAPI.TripFilter.current;
-    else if (stage === 'finished') filter |= TripAPI.TripFilter.archive;
+    if (stage === 'new') filter |= OrderAPI.OrdersFilter.new;
+    else if (stage === 'active') filter |= OrderAPI.OrdersFilter.current;
+    else if (stage === 'finished') filter |= OrderAPI.OrdersFilter.finished;
   }
 
   const { data, ...rest } = useQuery({
-    queryKey: [ 'orders', user.id, 'list', types, stages ],
-    queryFn: () => TripAPI.getTripIds(filter),
+    queryKey: [ 'user', user.id, 'orders', types, stages ],
+    queryFn: () => OrderAPI.getOrderIds(filter),
     staleTime: CONFIG.API?.ordersListRefetchTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersListRefetchTime ?? 120000,
     enabled: !!user.id && user.role === userRole &&  // Доступно только пользователю с заданной ролью
@@ -325,8 +326,8 @@ const [ getOrderById, useOrdersByIds ] = createBatchLoader({
     const data = await OrderAPI.getOrdersByIds(ids);
     return data ? parseOrders(data) : [];
   },
-  createQueryKey: (userId, orderId) => [ 'orders', userId, orderId ],
-  extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[2]) ],
+  createQueryKey: (userId, orderId) => [ 'user', userId, 'order', orderId ],
+  extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[3]) ],
   staleTime: CONFIG.API?.ordersDataRefetchTime ?? 300000,
   dataKey: 'orders'
 });
@@ -453,9 +454,9 @@ export function useCreateOrder() {
       // Инвалидация списка новых заказов
       const orderType = orderData.contractorId ? OrderType.Direct : OrderType.Market;
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'orders' &&
+        queryKey[0] === 'user' &&
         queryKey[1] === user.id &&
-        queryKey[2] === 'list' &&
+        queryKey[2] === 'orders' &&
         Array.isArray(queryKey[3]) &&
         Array.isArray(queryKey[4]) &&
         queryKey[3].includes(orderType) &&
@@ -540,7 +541,7 @@ export function useUpdateOrder() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
@@ -552,7 +553,7 @@ export function useUpdateOrder() {
         !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED ] as OrderStatus[])
         .includes(order.status)
       ) {
-        throw new Error('Incorrect order state.');
+        throw new Error('Invalid order state.');
       }
       const payload = { orderId } as OrderUpdateData;
       if (address !== undefined && address !== '' && address !== order.address) payload.address = address;
@@ -562,7 +563,7 @@ export function useUpdateOrder() {
       if (Object.keys(payload).length <= 1) return;
 
       await updateOrder(payload);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       return;
     }
   });
@@ -581,7 +582,7 @@ export function useUpdateOrder() {
  * @returns Промис, который разрешается после успешной отмены
  */
 function cancelOrderByClient(orderId: number, reason: string): Promise<void> {
-  return TripAPI.cancelTripByClient(orderId, reason);
+  return OrderAPI.cancelOrderByClient(orderId, reason);
 }
 
 /**
@@ -591,7 +592,7 @@ function cancelOrderByClient(orderId: number, reason: string): Promise<void> {
  * @returns Промис, который разрешается после успешной отмены
  */
 function cancelOrderByContractor(orderId: number, reason: string): Promise<void> {
-  return TripAPI.cancelTripByDriver(orderId, reason);
+  return OrderAPI.cancelOrderByContractor(orderId, reason);
 }
 
 /**
@@ -609,35 +610,37 @@ export function useCancelOrder() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
-      if (
-        !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ] as OrderStatus[])
-        .includes(order.status)
-      ) {
-        throw new Error('Cannot cancel an ongoing order.');
-      }
 
       if (user.role === UserRole.Contractor) {
+        if (order.status !== OrderStatus.APPOINTED) throw new Error('Invalid order state.');
         await cancelOrderByContractor(orderId, reason);
       }
       else {
+        if (
+          !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ] as OrderStatus[])
+          .includes(order.status)
+        ) {
+          throw new Error('Invalid order state.');
+        }
         await cancelOrderByClient(orderId, reason);
       }
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков заказов
       // - заказ может быть либо в списке "new", либо в списке "active"
       // - при отмене заказчиком перемещается в "завершённые"
-      // - при отмене мастером перемещается в "новые"
+      // - при отмене мастером прямого заказа перемещается в "завершённые"
+      // - при отмене мастером заказа с биржи перемещается в "новые"
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey, state: {data} }) => (
-        queryKey[0] === 'orders' &&
+        queryKey[0] === 'user' &&
         queryKey[1] === user.id &&
-        queryKey[2] === 'list' &&
+        queryKey[2] === 'orders' &&
         Array.isArray(queryKey[3]) &&
         Array.isArray(queryKey[4]) &&
         queryKey[3].includes(order.type) &&
@@ -645,18 +648,23 @@ export function useCancelOrder() {
           (
             stage === 'new' &&
             (
+              (user.role === UserRole.Contractor && order.type === OrderType.Market) ||
+              (user.role === UserRole.Client && Array.isArray(data) && data.includes(orderId))
+            )
+          ) ||
+          (
+            stage === 'active' &&
+            (
               user.role === UserRole.Contractor ||
               (Array.isArray(data) && data.includes(orderId))
             )
           ) ||
           (
-            stage === 'active' &&
-            Array.isArray(data) &&
-            data.includes(orderId)
-          ) ||
-          (
             stage === 'finished' &&
-            user.role === UserRole.Client
+            (
+              user.role === UserRole.Client ||
+              (user.role === UserRole.Contractor && order.type === OrderType.Direct)
+            )
           )
         )
       )});
@@ -696,16 +704,13 @@ export type CreateOfferData = {
  * @returns Промис, который разрешается после размещения предложения
  */
 async function createOffer({ orderId, price, comment, readyIn }: CreateOfferData): Promise<void> {
-  const result = await getDrivenCar();
-  const carId = Number(result?.c_id);
-  if (!Number.isInteger(carId) || carId <= 0) throw new Error('User has no car');
-
-  const options = {
+  const data = {
     price,
     comment,
-    readyIn
+    readyInTime: readyIn.value,
+    readyInUnit: readyIn.unit,
   };
-  return TripAPI.createOffer(orderId, carId, options);
+  return OrderAPI.createOffer(orderId, data);
 }
 
 /**
@@ -723,18 +728,18 @@ export function useCreateOffer() {
       if (!price || !comment || !readyIn) throw new Error('Mandatory parameter is empty.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('Offer already exists.');
 
       await createOffer({ orderId, price, comment, readyIn });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
     }
@@ -757,11 +762,14 @@ export function useCreateOffer() {
  */
 function updateOffer({ orderId, price, comment, readyIn }: Partial<CreateOfferData> & { orderId: number }): Promise<void> {
   if (price === undefined && comment === undefined && !readyIn) return Promise.resolve();
-  const c_options = {} as Partial<CreateOfferData>;
-  if (price !== undefined) c_options.price = price;
-  if (comment !== undefined) c_options.comment = comment;
-  if (readyIn !== undefined) c_options.readyIn = readyIn;
-  return TripAPI.updateTrip(orderId, { c_options });
+  const data = {} as Partial<OrderAPI.OfferData>;
+  if (price !== undefined) data.price = price;
+  if (comment !== undefined) data.comment = comment;
+  if (readyIn !== undefined) {
+    data.readyInTime = readyIn.value;
+    data.readyInUnit = readyIn.unit;
+  }
+  return OrderAPI.updateOffer(orderId, data);
 }
 
 /**
@@ -779,7 +787,7 @@ export function useUpdateOffer() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
@@ -787,7 +795,7 @@ export function useUpdateOffer() {
       if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       const offer = order.contractorOffers.find(offer => offer.contractorId === user.id);
-      if (order.status !== OrderStatus.PUBLISHED || !offer) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.PUBLISHED || !offer) throw new Error('Invalid order state.');
       if (
         (price === undefined || offer.price === price) &&
         (comment === undefined || offer.comment === comment) &&
@@ -797,7 +805,7 @@ export function useUpdateOffer() {
       }
 
       await updateOffer({ orderId, price, comment, readyIn });
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
     }
@@ -817,7 +825,7 @@ export function useUpdateOffer() {
  * @returns Промис, который разрешается после успешного назначения исполнителя
  */
 function acceptOffer(orderId: number, contractorId: number): Promise<void> {
-  return TripAPI.acceptOffer(orderId, contractorId);
+  return OrderAPI.acceptOffer(orderId, contractorId);
 }
 
 /**
@@ -835,24 +843,24 @@ export function useAcceptOffer() {
       if (!contractorId) throw new Error('Contractor ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order || order.clientId !== user.id) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (!order.contractorOffers.some(offer => offer.contractorId === contractorId)) throw new Error('No offer from the contractor.');
 
       await acceptOffer(orderId, contractorId);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков новых и активных заказов
       // - заказ перемещается из "новых" в "активные"
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'orders' &&
+        queryKey[0] === 'user' &&
         queryKey[1] === user.id &&
-        queryKey[2] === 'list' &&
+        queryKey[2] === 'orders' &&
         Array.isArray(queryKey[3]) &&
         Array.isArray(queryKey[4]) &&
         queryKey[3].includes(OrderType.Market) &&
@@ -874,15 +882,6 @@ export function useAcceptOffer() {
 }
 
 /**
- * Отозвать предложение (для мастера)
- * @param orderId - ID заказа
- * @returns Промис, который разрешается после успешного отзыва предложения
- */
-function revokeOffer(orderId: number, reason: string = ''): Promise<void> {
-  return TripAPI.cancelTripByDriver(orderId, reason);
-}
-
-/**
  * Возвращает мутацию назначения отзыва предложения от мастера.
  * Хук может быть вызван без дополнительных условий, но отзыв предложения доступен только мастеру,
  * сделавшему предложение о выполнении заказа.
@@ -897,17 +896,17 @@ export function useRevokeOffer() {
       if (!reason) reason = '';
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (!order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('No offer from the contractor.');
 
-      await revokeOffer(orderId, reason);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      await cancelOrderByContractor(orderId, reason);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
     }
@@ -961,27 +960,13 @@ export function useContractorFinishedOrders(includeMarket: boolean, includeDirec
   return useOrders(UserRole.Contractor, types, ['finished']);
 }
 
-//~ /**
- //~ * Отказаться от персонального заказа (для мастера)
- //~ * @param orderId - ID заказа
- //~ * @param reason - Причина отказа
- //~ * @returns Результат отказа
- //~ */
-//~ declare function rejectOrderByContractor(
-  //~ orderId: number,
-  //~ reason: string
-//~ ): Promise<{ success: boolean }>;
-
 /**
  * Подтвердить готовность принять заказ (после выбора клиентом)
  * @param orderId - ID заказа
  * @returns Промис, который разрешается после успешного завершения операции
  */
-async function acceptInvoice(orderId: number, price: number): Promise<void> {
-  const result = await getDrivenCar();
-  const carId = Number(result?.c_id);
-  if (!Number.isInteger(carId) || carId <= 0) throw new Error('User has no car');
-  return TripAPI.acceptInvoice(orderId, carId, { price });
+async function acceptInvoice(orderId: number): Promise<void> {
+  return OrderAPI.acceptInvoice(orderId);
 }
 
 /**
@@ -998,23 +983,23 @@ export function useAcceptInvoice() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.REQUESTED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
 
-      await acceptInvoice(orderId, order.desiredPrice);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      await acceptInvoice(orderId);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков новых и активных заказов
       // - заказ перемещается из "новых" в "активные"
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'orders' &&
+        queryKey[0] === 'user' &&
         queryKey[1] === user.id &&
-        queryKey[2] === 'list' &&
+        queryKey[2] === 'orders' &&
         Array.isArray(queryKey[3]) &&
         Array.isArray(queryKey[4]) &&
         queryKey[3].includes(OrderType.Direct) &&
@@ -1036,12 +1021,64 @@ export function useAcceptInvoice() {
 }
 
 /**
+ * Возвращает мутацию отказа от выполнения прямого заказа мастером
+ * Хук может быть вызван без дополнительных условий, но принятие заказа доступно только мастеру,
+ * для которого есть предложение о выполнении заказа.
+ */
+export function useRejectInvoice() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async ({ orderId, reason }: { orderId: number, reason?: string }, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.role !== UserRole.Contractor) throw new Error('User must be a contractor.');
+      if (!orderId) throw new Error('Order ID not specified.');
+      if (!reason) reason = '';
+
+      const order = await client.fetchQuery({
+        queryKey: [ 'user', user.id, 'order', orderId ],
+        queryFn: getOrderById,
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
+      });
+
+      if (!order) throw new Error('Order not found.');
+      if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
+      if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
+
+      await cancelOrderByContractor(orderId, reason);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
+      // Инвалидация списков новых и завершённых/отменённых заказов
+      // - заказ перемещается из "новых" в "завершённые"
+      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
+        queryKey[0] === 'user' &&
+        queryKey[1] === user.id &&
+        queryKey[2] === 'orders' &&
+        Array.isArray(queryKey[3]) &&
+        Array.isArray(queryKey[4]) &&
+        queryKey[3].includes(OrderType.Direct) &&
+        queryKey[4].some(stage => stage === 'new' || stage === 'finished')
+      )});
+      for (const { queryKey } of filteredQueries) {
+          client.invalidateQueries({ queryKey });
+      }
+
+      return;
+    }
+  });
+
+  const { mutateAsync, ...ret } = mutation;
+  return {
+    ...ret,
+    rejectInvoice: mutateAsync
+  }
+}
+
+/**
  * Начать работу над заказом
  * @param orderId - ID заказа
  * @returns Промис, который разрешается после успешного завершения операции
  */
 function startOrderWork(orderId: number): Promise<void> {
-  return TripAPI.setArriveState(orderId);
+  return OrderAPI.startOrderWork(orderId);
 }
 
 /**
@@ -1058,17 +1095,17 @@ export function useStartOrderWork() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.APPOINTED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.APPOINTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
 
       await startOrderWork(orderId);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
     }
@@ -1086,8 +1123,8 @@ export function useStartOrderWork() {
  * @param orderId - ID заказа
  * @returns Промис, который разрешается после успешного завершения операции
  */
-function completeOrderByContractor(orderId: number): Promise<void> {
-  return TripAPI.startTrip(orderId);
+function finishOrderWork(orderId: number): Promise<void> {
+  return OrderAPI.finishOrderWork(orderId);
 }
 
 /**
@@ -1095,7 +1132,7 @@ function completeOrderByContractor(orderId: number): Promise<void> {
  * Хук может быть вызван без дополнительных условий, но завершение работы доступно только мастеру,
  * выполняющему заказ.
  */
-export function useCompleteOrderByContractor() {
+export function useFinishOrderWork() {
   const { user } = useUser() as { user: UserProfile };
   const mutation = useMutation({
     mutationFn: async (orderId: number, { client }) => {
@@ -1104,17 +1141,17 @@ export function useCompleteOrderByContractor() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.IN_PROGRESS) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.IN_PROGRESS) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
 
-      await completeOrderByContractor(orderId);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      await finishOrderWork(orderId);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
     }
@@ -1123,7 +1160,7 @@ export function useCompleteOrderByContractor() {
   const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    completeOrderByContractor: mutateAsync
+    finishOrderWork: mutateAsync
   }
 }
 
@@ -1134,8 +1171,8 @@ export function useCompleteOrderByContractor() {
  * @param orderId - ID заказа
  * @returns Промис, который разрешается после успешного завершения операции
  */
-function verifyOrderCompletion(orderId: number): Promise<void> {
-  return TripAPI.finishTrip(orderId);
+function confirmOrderCompletion(orderId: number): Promise<void> {
+  return OrderAPI.completeOrder(orderId);
 }
 
 /**
@@ -1143,7 +1180,7 @@ function verifyOrderCompletion(orderId: number): Promise<void> {
  * Хук может быть вызван без дополнительных условий, но подтверждение выполнения доступно только клиенту,
  * создавшему заказ.
  */
-export function useVerifyOrderCompletion() {
+export function useConfirmOrderCompletion() {
   const { user } = useUser() as { user: UserProfile };
   const mutation = useMutation({
     mutationFn: async (orderId: number, { client }) => {
@@ -1152,23 +1189,23 @@ export function useVerifyOrderCompletion() {
       if (!orderId) throw new Error('Order ID not specified.');
 
       const order = await client.fetchQuery({
-        queryKey: [ 'orders', user.id, orderId ],
+        queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.COMPLETED) throw new Error('Incorrect order state.');
+      if (order.status !== OrderStatus.COMPLETED) throw new Error('Invalid order state.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
 
-      await verifyOrderCompletion(orderId);
-      client.invalidateQueries({ queryKey: [ 'orders', user.id, orderId ] });
+      await confirmOrderCompletion(orderId);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков активных и завершённых заказов
       // - заказ перемещается из "активных" в "завершённые"
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'orders' &&
+        queryKey[0] === 'user' &&
         queryKey[1] === user.id &&
-        queryKey[2] === 'list' &&
+        queryKey[2] === 'orders' &&
         Array.isArray(queryKey[3]) &&
         Array.isArray(queryKey[4]) &&
         queryKey[3].includes(order.type) &&
@@ -1185,7 +1222,7 @@ export function useVerifyOrderCompletion() {
   const { mutateAsync, ...ret } = mutation;
   return {
     ...ret,
-    verifyOrderCompletion: mutateAsync
+    confirmOrderCompletion: mutateAsync
   }
 }
 
@@ -1205,23 +1242,6 @@ export function useVerifyOrderCompletion() {
 //~ ): Promise<{ success: boolean; disputeId: number }>;
 
 // ==================== 7. Вспомогательные и системные ====================
-
-export function useFileById(fileId: number | null) {
-  const queryResult = useQuery({
-    queryKey: [ 'files', fileId ],
-    queryFn: () => FileAPI.fetchFile(fileId ?? 0),
-    staleTime: CONFIG.API?.filesStaleTime ?? 1800000,
-    enabled: !!fileId
-  });
-
-  const { data: { blob, type, filename } = {}, ...ret } = queryResult;
-  return {
-    ...ret,
-    blob,
-    type,
-    filename
-  };
-}
 
 //~ /**
  //~ * Получить статистику по заказам для дашборда

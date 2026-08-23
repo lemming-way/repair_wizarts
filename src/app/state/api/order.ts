@@ -181,11 +181,11 @@ export async function getContractorsByProduct({ productId, cityId, minRating, is
 // createOrder
 
 /**
- * Получить список ID заказов клиента или мастера с фильтрацией по статусу
- * @param status - Статус заказов для фильтрации
+ * Получить список ID заказов клиента или мастера с фильтрацией
+ * @param filter - маска фильтра из набора `OrdersFilter`
  * @returns Промис, который разрешается со списком ID заказов
  */
-export function getOrderIds(filter: OrdersFilter): Promise<number[]> {
+export function getOrderIds(filter: number): Promise<number[]> {
   return post<number[]>('script/template/repair_api', { is_var: 1, s_t_data: { action: 'getOrderIds', flags: filter } });
 }
 
@@ -252,5 +252,198 @@ export function updateOrder({ attachments, ...data }: OrderUpdateParams): Promis
     (data as any).attachments = idAttachments;
   }
   const payload = { is_var: 1, s_t_data: { ...data, action: 'updateOrder' }, ...fileAttachments };
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Отменить заказ (для клиента).
+ * Работа над заказом не должна быть начата.
+ * Заказ отменяется полностью.
+ * @param orderId - ID заказа
+ * @param reason - Причина отмены
+ * @returns Промис, который разрешается после успешной отмены
+ */
+export async function cancelOrderByClient(orderId: number, reason: string): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'cancelOrderByClient',
+      id: orderId,
+      reason
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Отменить заказ (для мастера).
+ * Работа над заказом не должна быть начата.
+ * Для заказов с биржи отзывается предложение мастера и заказ возвращается на биржу. Прямой заказ отменяется полностью.
+ * @param orderId - ID заказа
+ * @param reason - Причина отмены
+ * @returns Промис, который разрешается после успешной отмены
+ */
+export async function cancelOrderByContractor(orderId: number, reason: string): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'cancelOrderByContractor',
+      id: orderId,
+      reason
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+
+/**
+ * Принять прямой заказ от клиента (для мастера)
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного обновления
+ */
+export async function acceptInvoice(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'acceptDirectOrder',
+      id: orderId,
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+export type OfferData = {
+  price: number,
+  comment: string,
+  readyInTime: number,
+  readyInUnit: string
+};
+
+/**
+ * Отправить предложение по заказу (для мастера)
+ * @param orderId - ID заказа
+ * @param data.price - Цена мастера
+ * @param data.comment - Комментарий для заказчика
+ * @param data.readyInTime - Срок начала работ
+ * @param data.readyInUnit - Единица измерения времени `readyInTime`
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function createOffer(orderId: number, data: OfferData): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'createOffer',
+      id: orderId,
+      price: data.price,
+      comment: data.comment,
+      readyInTime: data.readyInTime,
+      readyInUnit: data.readyInUnit
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Отправить предложение по заказу (для мастера)
+ * @param orderId - ID заказа
+ * @param data.price - Цена мастера
+ * @param data.comment - Комментарий для заказчика
+ * @param data.readyInTime - Срок начала работ
+ * @param data.readyInUnit - Единица измерения времени `readyInTime`
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function updateOffer(orderId: number, data: Partial<OfferData>): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'updateOffer',
+      id: orderId,
+    }
+  } as any;
+
+  if (data.price) payload.s_t_data.price = data.price;
+  if ('string' === typeof data.comment) payload.s_t_data.comment = data.comment;
+  if ('number' === typeof data.readyInTime && 'string' === typeof data.readyInUnit) {
+    payload.s_t_data.readyInTime = data.readyInTime;
+    payload.s_t_data.readyInUnit = data.readyInUnit;
+  }
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+
+/**
+ * Принять предложение от мастера (для клиента)
+ * @param orderId - ID заказа
+ * @param userId - ID мастера
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function acceptOffer(orderId: number, userId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'acceptOffer',
+      id: orderId,
+      contractor: userId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+
+/**
+ * Начать работу
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function startOrderWork(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'startOrderWork',
+      id: orderId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Завершить работу
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function finishOrderWork(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'finishOrderWork',
+      id: orderId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+
+/**
+ * Полностью завершить заказ
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function completeOrder(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'completeOrder',
+      id: orderId
+    }
+  };
+
   return post<void>('script/template/repair_api', payload);
 }

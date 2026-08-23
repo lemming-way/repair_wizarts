@@ -8,7 +8,7 @@ import type {
   IframeHTMLAttributes,
 } from 'react';
 import { useState, useEffect } from 'react';
-import { useFileById } from 'app/state/order';
+import { useFileById } from 'app/state/uploaded';
 import { useLanguage } from 'app/state/language';
 
 const imagesMap = new WeakMap<object, string>();

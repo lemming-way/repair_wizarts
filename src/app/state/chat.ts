@@ -13,7 +13,7 @@ import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import CONFIG from 'config';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as FileAPI from './api/dropbox';
-import * as MessageAPI from './api/messages';
+import * as MessageAPI from './api/message';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
 import { UserRole, useUser } from './user';

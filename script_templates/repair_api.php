@@ -3,11 +3,20 @@
 ini_set( 'display_errors', 0 );
 
 $out = call_user_func(function() {
+  // нужные константы
+  $car_lock_name = 'F6qD_car_insertion_lock';
+
   /********************************************************************
                          Вспомогательные функции
   ********************************************************************/
 
-  $die = function($code, $message) {
+  $in_transaction = false;
+
+  $die = function($code, $message) use(&$in_transaction) {
+    if ($in_transaction) {
+      $result = @query('ROLLBACK');
+      $in_transaction = false;
+    }
     json_exit("$code", 'error', $message);
   };
 
@@ -91,8 +100,13 @@ $out = call_user_func(function() {
     }
   };
 
+  $errno_db = function() {
+    global $link;
+    return mysqli_errno($link);
+  };
+
   // Выполнение SQL запроса с подстановкой переменных и возвратом полученного результата
-  $query = function($sql, $data, $options = []) use($sql_escape) {
+  $query = function($sql, $data, $options = []) use($sql_escape, $errno_db) {
     if (!$sql) return null;
     if (isset($options['json_fields']) && is_array($options['json_fields'])) {
       $json_fields = $options['json_fields'];
@@ -135,7 +149,7 @@ $out = call_user_func(function() {
       '/\'(?:[^\'\\\\]+|\\\\.)*\'(*SKIP)(*FAIL)|"(?:[^"\\\\]+|\\\\.)*"(*SKIP)(*FAIL)|`(?:[^`]*)`(*SKIP)(*FAIL)|:([A-Za-z_][A-Za-z0-9_]*)/',
       function($matches) use($data) {
         if (!isset( $data[$matches[1]] )) {
-          throw new Exception("Variable unset: $matches[1]", 400);
+          throw new Exception("Variable not set: $matches[1]", 400);
         }
         return $data[$matches[1]];
       },
@@ -145,8 +159,10 @@ $out = call_user_func(function() {
     $result = @query($sql);
     if (!$result) {
       $err = error_db();
+      $errno = $errno_db();
       if (!$err) $err = 'MySQL error';
-      throw new Exception($err, 500);
+      if (!$errno) $errno = 500;
+      throw new Exception($err, $errno);
     }
 
     if ($result === true) {
@@ -181,6 +197,39 @@ $out = call_user_func(function() {
     }
 
     return $ret;
+  };
+
+  // Выполнение SQL запроса для получения одной строки результата
+  $query_one = function($sql, $data, $options = []) use($query) {
+    $result = $query($sql, $data, $options);
+    if (isset($result[0])) return $result[0];
+    else return null;
+  };
+
+  $query_transaction = function() use(&$in_transaction, $errno_db) {
+    if ($in_transaction) return;
+    $result = @query('START TRANSACTION');
+    if (!$result) {
+      $err = error_db();
+      $errno = $errno_db();
+      if (!$err) $err = 'MySQL error';
+      if (!$errno) $errno = 500;
+      throw new Exception($err, $errno);
+    }
+    $in_transaction = true;
+  };
+
+  $query_commit = function() use(&$in_transaction, $errno_db) {
+    if (!$in_transaction) return;
+    $result = @query('COMMIT');
+    if (!$result) {
+      $err = error_db();
+      $errno = $errno_db();
+      if (!$err) $err = 'MySQL error';
+      if (!$errno) $errno = 500;
+      throw new Exception($err, $errno);
+    }
+    $in_transaction = false;
   };
 
   try {
@@ -233,11 +282,16 @@ $out = call_user_func(function() {
                   'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
                   'WHERE `u`.`id_user`=:u_id '.
                     'AND `o`.`id_order_status`=1 ' .
-                    'AND CASE ' .
-                      'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
-                      'THEN JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
-                      'ELSE 0 ' .
-                    'END' .
+                    'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
+                    'AND JSON_CONTAINS_PATH(' .
+                      'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
+                      '\'one\', '.
+                      'CONCAT(' .
+                        '\'$.services."\',' .
+                        'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
+                        '\'"\'' .
+                      ')' .
+                    ')' .
                 ') `o` '
               :
                 'FROM `order` `o` '
@@ -367,11 +421,16 @@ $out = call_user_func(function() {
                       '(' .
                         '`id_order_status`=1 ' .
                         'AND `u`.`id_city`=`o`.`city_from`' .
-                        'AND CASE ' .
-                          'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
-                          'THEN JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
-                          'ELSE 0 ' .
-                        'END' .
+                        'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
+                        'AND JSON_CONTAINS_PATH(' .
+                          'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
+                          '\'one\', '.
+                          'CONCAT(' .
+                            '\'$.services."\',' .
+                            'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
+                            '\'"\'' .
+                          ')' .
+                        ')' .
                       ')' .
                       'OR (`o`.`id_order_status`=6 AND `ods2`.`id_order` IS NOT NULL) ' .
                       'OR `driving`>0' .
@@ -400,18 +459,23 @@ $out = call_user_func(function() {
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
                   'FROM `order_driver_select` `ds` ' .
                   'JOIN `order` `o` ON `o`.`id_order`=`ds`.`id_order` ' .
-                  'WHERE `ds`.`id_user`=:u_id AND `ds`.`cancel`=0 AND `o`.`id_order_status`=6 ' .
+                  'WHERE `ds`.`id_user`=:u_id AND `o`.`only_offer`>0 ' .
                   'UNION ' .
                   'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
                   'FROM `users` `u` ' .
                   'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
                   'WHERE `u`.`id_user`=:u_id '.
                     'AND `o`.`id_order_status`=1 ' .
-                    'AND CASE ' .
-                      'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
-                      'THEN JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
-                      'ELSE 0 ' .
-                    'END' .
+                    'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
+                    'AND JSON_CONTAINS_PATH(' .
+                      'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
+                      '\'one\', '.
+                      'CONCAT(' .
+                        '\'$.services."\',' .
+                        'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
+                        '\'"\'' .
+                      ')' .
+                    ')' .
                 ') `o` '
               :
                 'FROM `order` `o` '
@@ -452,9 +516,9 @@ $out = call_user_func(function() {
                 'NULLIF(`o`.`cancel_datetime`,0) AS `canceled_at`,' .
                 '`o`.`cancel_reason` AS `cancel_reason`,' .
                 'NULLIF(`o`.`complete_datetime`,0) AS `completed_at`,' .
-                '`o`.`price_estimate` AS `desired_price`,' .
+                'ROUND(`o`.`sum`,2) AS `desired_price`,' .
                 '`c`.`price_estimate` AS `contractor_price`,' .
-                'ROUND(`o`.`sum`,2) AS `agreed_price`,' .
+                '`o`.`price_estimate` AS `agreed_price`,' .
                 ($context['u_role'] === 2 ?
                   'IF(`d`.`id_order_driver_status` IN(1,3,4,5,6),JSON_OBJECT(' .
                     '\'id\',`d`.`id_user`,' .
@@ -479,10 +543,10 @@ $out = call_user_func(function() {
                   'ON `o`.`only_offer`>0 AND `ds`.`id_order`=`o`.`id_order` AND `ds`.`id_user`=:u_id '
               :
                 'LEFT JOIN LATERAL (' .
-                  'SELECT `id_user`,0 AS `cancel` ' .
+                  'SELECT `ds`.`id_user`,0 AS `cancel` ' .
                   'FROM `order_driver_select` `ds` ' .
                   'WHERE `ds`.`id_order`=`o`.`id_order` AND `ds`.`cancel`=0 ' .
-                  'ORDER BY `ds`.`create_datetime` ' .
+                  'ORDER BY `ds`.`create_datetime` DESC ' .
                   'LIMIT 1' .
                 ') `ds` ON `o`.`only_offer`>0 '
               ) .
@@ -525,13 +589,18 @@ $out = call_user_func(function() {
                     '(' .
                       '`o`.`id_order_status`=1 ' .
                       'AND `u`.`id_city`=`o`.`city_from` ' .
-                      'AND CASE ' .
-                        'WHEN JSON_VALID(`u`.`json`) AND JSON_VALID(`o`.`options`) AND `o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
-                        'THEN JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
-                        'ELSE 0 ' .
-                      'END' .
+                      'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
+                      'AND JSON_CONTAINS_PATH(' .
+                        'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
+                        '\'one\', '.
+                        'CONCAT(' .
+                          '\'$.services."\',' .
+                          'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
+                          '\'"\'' .
+                        ')' .
+                      ')' .
                     ')' .
-                    'OR (`o`.`id_order_status`=6 AND `ds`.`id_order` IS NOT NULL) ' .
+                    'OR `ds`.`id_order` IS NOT NULL ' .
                     'OR `d`.`id_order` IS NOT NULL' .
                   ')'
                 :
@@ -548,57 +617,62 @@ $out = call_user_func(function() {
       return $query($sql, $data, $options);
 
     // Создать новый заказ
+    // todo: для прямых заказов фильтровать пустые услуги
     case 'createOrder':
       if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
       if ($context['u_role'] !== 1) $die(403, 'Wrong user role');
       // очистка исходных данных
       $var_names = [ 'cityId', 'address', 'productId', 'description', 'price' ];
-      if (isset($context['data']['contractorId'])) {
+      if (isset($data['contractorId'])) {
         $var_names[] = 'services';
       }
       else {
         $var_names[] = 'price';
       }
       foreach ($var_names as $name) {
-        if (!isset($context['data'][$name])) $die(400, "Variable $name not set");
+        if (!isset($data[$name])) $die(400, "Variable '$name' not set");
       }
-      $city_id = intval($context['data']['cityId']);
-      $address = trim(strval($context['data']['address']));
-      $product_id = intval($context['data']['productId']);
-      $price = round(floatval($context['data']['price']), 2);
-      if (isset($context['data']['contractorId'])) {
+      $city_id = intval($data['cityId']);
+      $address = trim(strval($data['address']));
+      $product_id = intval($data['productId']);
+      $price = round(floatval($data['price']), 2);
+      if (isset($data['contractorId'])) {
         $is_direct = true;
-        $contractor_id = intval($context['data']['contractorId']);
+        $contractor_id = intval($data['contractorId']);
         if ($contractor_id <= 0) $die(400, 'Bad contractor ID');
-        if (!is_array($context['data']['services'])) $die(400, 'Bad services data');
-        $result = $query(
+        if (!is_array($data['services'])) $die(400, 'Bad services data');
+        $result = $query_one(
           'SELECT `json`->>\'$.services\' `services` FROM `users` WHERE `id_user`=:user AND `id_city`=:city AND `deleted`=0',
           [ 'user' => $contractor_id, 'city' => $city_id ],
           [ 'json_fields' => ['services'] ]
         );
-        if (empty($result)) $die(400, 'Contractor not found');
-        if (!isset($result[0]) || !is_array($result[0])) $die(400, 'Bad contractor');
-        $products = $result[0];
+        if ($result === null) $die(400, 'Contractor not found');
+        if (!$result || !is_array($result)) $die(400, 'Bad contractor');
+        $products = $result;
         if (!isset($products[$product_id])) $die(400, 'Contractor does not provide this service');
         $contractor_services = $products[$product_id];
         $service_names = [];
-        foreach ($context['data']['services'] as $service) {
+        $actual_price = 0;
+        foreach ($data['services'] as $service) {
           $srv_name = trim(strval($service));
           if (!$srv_name) $die(400, 'Bad services data');
           foreach ($contractor_services as $service_data) {
             if (!empty($service_data['service']) && $service_data['service'] === $srv_name) {
               $service_names[] = $srv_name;
+              $srv_price = isset($service_data['price']) ? floatval($service_data['price']) : 0;
+              $actual_price = round($actual_price + $srv_price, 2);
               continue 2;
             }
           }
           $die(400, 'Contractor does not provide this service');
         }
+        if ($price !== $actual_price) $die(400, 'Price changed');
       }
       else {
         $is_direct = false;
       }
       if (!$address || $product_id <= 0 || $price <= 0) $die(400, 'Wrong data');
-      $description = trim(strval($context['data']['description']));
+      $description = trim(strval($data['description']));
       $order_data = [
         'client' => $context['u_id'],
         'city' => $city_id,
@@ -645,8 +719,8 @@ $out = call_user_func(function() {
           $response = upload_to_dropbox(file_get_contents($file['tmp_name']), $filename_upload, $upload_id);
           if (!empty($response['error'])) $die(500, $response['error']);
           $order_data['images'][] = $upload_id;
-          $attachments[$index]['id'] = $upload_id;
-          $attachments[$index]['dropbox_response'] = $response['data'];
+          $attachments[$index]['id'] = $sql_escape($upload_id);
+          $attachments[$index]['dropbox_response'] = $sql_escape($response['data']);
         }
       }
       else {
@@ -654,25 +728,27 @@ $out = call_user_func(function() {
       }
 
       // Только когда все файлы успешно загружены, открываем транзакцию
-      $query('START TRANSACTION', []);
+      $query_transaction();
 
-      $result = $query(
+      $result = $query_one(
         'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
         [ 'user' => $context['u_id'] ]
       );
-      if (empty($result)) $die(400, 'User not found');
-      $username = join(' ', array_filter(array_map('trim', [ $result[0]['name'], $result[0]['middle'], $result[0]['family'] ]), 'strlen'));
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
 
       if ($is_direct) {
         // Повторная проверка после начала транзакции - теоретически что-нибудь могло измениться
-        $result = $query(
-          'SELECT `json`->>\'$.services\' `services` FROM `users` WHERE `id_user`=:user AND `id_city`=:city AND `deleted`=0 FOR SHARE',
+        $result = $query_one(
+          'SELECT `name`,`family`,`middle`,`json`->>\'$.services\' `services` FROM `users` ' .
+          'WHERE `id_user`=:user AND `id_city`=:city AND `deleted`=0 FOR SHARE',
           [ 'user' => $contractor_id, 'city' => $city_id ],
           [ 'json_fields' => ['services'] ]
         );
-        if (empty($result)) $die(400, 'Contractor not found');
-        if (!isset($result[0]) || !is_array($result[0])) $die(400, 'Bad contractor');
-        $products = $result[0];
+        if ($result === null) $die(400, 'Contractor not found');
+        if (!$result || !is_array($result)) $die(400, 'Bad contractor');
+        $username_contractor = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+        $products = $result;
         if (!isset($products[$product_id])) $die(400, 'Contractor does not provide this service');
         $contractor_services = $products[$product_id];
         $services = [];
@@ -698,38 +774,13 @@ $out = call_user_func(function() {
       $result = $query('SELECT 1 FROM `city` WHERE `id_city`=:city FOR SHARE', [ 'city' => $city_id ]);
       if (!$result) $die(400, 'City not found');
 
-      if ($attachments) {
-        foreach ($attachments as $file) {
-          $result = $query(
-            'UPDATE `dropbox_link` ' .
-            'SET `private`=0,`json`=JSON_SET(' .
-              '`json`,' .
-              '\'$.response\',CAST(:response AS JSON),' .
-              '\'$.orderId\',:orderId' .
-            ') WHERE `id_dropbox_link`=:fileId',
-            [
-              'fileId' => $file['id'],
-              'orderId' => $order_id,
-              'response' => $file['dropbox_response']
-            ]
-          );
-          if (empty($result['rows'])) $die(500, 'Database error.');
-        }
-
-        $result = $query('INSERT INTO `users_dropbox_link`(`id_user`,`id_dropbox_link`) VALUES' .
-          join(',', array_map(function($file) use($context) { return "($context[u_id],$file[id])"; }, $attachments)),
-          []
-        );
-        if (!$result) $die(500, 'Database insert error.');
-      }
-
-      $result = $query(
+      $ret = $query(
         'INSERT INTO `order`('.
           '`client`,`from`,`to`,`datetime_start_plan`,`comment`,`flight_number`,`terminal`,`passenger_count`,`luggage_count`,' .
           '`placard`,`id_payment_method`,`id_order_status`,`max_rating`,`last_edit_datetime`,`create_datetime`,`create_user`,' .
-          '`confirm_limit_datetime`,`confirm_datetime`,`pay_datetime`,`approve_datetime`,`cancel_datetime`,' .
+          '`confirm_limit_datetime`,`confirm_datetime`,`sum`,`pay_datetime`,`approve_datetime`,`cancel_datetime`,' .
           '`complete_datetime`,`estimated_waiting_datetime`,`max_waiting_datetime`,`code`,`process_datetime`,' .
-          '`pending_datetime`,`log`,`options`,`contact`,`create_ip`,`offer_datetime`,`price_estimate`,`only_offer`,`city_from`' .
+          '`pending_datetime`,`log`,`options`,`contact`,`create_ip`,`offer_datetime`,`only_offer`,`city_from`' .
         ') VALUES(' .
           ':client,' .  // client
           ':address,' .   // from
@@ -738,7 +789,7 @@ $out = call_user_func(function() {
           ($is_direct ? '6,' : '1,') .   // id_order_status
           '5,0,' .   // max_rating, last_edit_datetime
           'NOW(0),:client,' .   // create_datetime, create_user
-          '0,0,0,0,0,' .   // confirm_limit_datetime, confirm_datetime, pay_datetime, approve_datetime, cancel_datetime
+          '0,0,:price,0,0,0,' .   // confirm_limit_datetime, confirm_datetime, sum, pay_datetime, approve_datetime, cancel_datetime
           '0,0,' .   // complete_datetime, estimated_waiting_datetime
           'NOW(0)+INTERVAL 14 DAY,' .   //  max_waiting_datetime
           '\'\',' .   // code
@@ -752,14 +803,44 @@ $out = call_user_func(function() {
           '),' .
           '\'\',0,' .   // contact, create_ip
           ($is_direct ? 'NOW(0),' : '0,') .   // offer_datetime
-          ':price,' .   // price_estimate
           ($is_direct ? '1,' : '0,') .   // only_offer
           ':city' .    // city_from
         ')',
         $order_data
       );
-      if (empty($result['id'])) $die(500, 'Database insert error.');
-      $order_id = $result['id'];
+      if (empty($ret['id'])) $die(500, 'Database insert error.');
+      $order_id = $ret['id'];
+
+      if ($attachments) {
+        $updates = [];
+        $inserts = [];
+        $oid = $sql_escape($order_id);
+        $uid = $sql_escape($context['u_id']);
+        foreach ($attachments as $file) {
+          $updates[] = "ROW($file[id],$oid,$file[dropbox_response])";
+          $inserts[] = "($uid,$file[id])";
+        }
+        if ($updates) {
+          $result = $query(
+            'UPDATE `dropbox_link` ' .
+            'JOIN (VALUES ' . join(',', $updates) . ') `data`(`file`,`order`,`response`) ' .
+            'SET `private`=0,`json`=JSON_SET(' .
+              '`json`,' .
+              '\'$.response\',CAST(`response` AS JSON),' .
+              '\'$.orderId\',`order`' .
+            ') WHERE `file`=`id_dropbox_link`',
+            []
+          );
+          if (!isset($result['rows']) || $result['rows'] !== count($updates)) $die(500, 'Database error.');
+        }
+
+        if ($inserts) {
+          $result = $query('INSERT INTO `users_dropbox_link`(`id_user`,`id_dropbox_link`) VALUES' . join(',', $inserts),
+            []
+          );
+          if (!isset($result['rows']) || $result['rows'] !== count($inserts)) $die(500, 'Database insert error.');
+        }
+      }
 
       if ($is_direct) {
         $result = $query(
@@ -780,40 +861,44 @@ $out = call_user_func(function() {
           [
             'order' => $order_id,
             'contractor' => $contractor_id,
-            'value' => [ 'text' => "Пользователь $username предложил Вам заказ.", 'eventType' => 'DIRECT_ORDER' ]
+            'value' => [ 'text' => "Пользователь $username предложил заказ пользователю $username_contractor.", 'eventType' => 'DIRECT_ORDER' ]
           ]
         );
         if (empty($result['id'])) $die(500, 'Database insert error.');
       }
 
-      $query('COMMIT', []);
+      $query_commit();
 
-      return [ 'id' => $order_id ];
+      return $ret;
 
     // Изменить заказ
     case 'updateOrder':
       if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
       if ($context['u_role'] !== 1) $die(403, 'Wrong user role');
       // очистка исходных данных
-      $order_id = isset($context['data']['id']) ? intval($context['data']['id']) : 0;
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
       if ($order_id <= 0) $die(400, 'Order ID not set');
       $result = $query(
-        'SELECT 1 FROM `order` WHERE `id_order`=:order && `client`=:client && `id_order_status` IN(1,6)',
+        'SELECT 1 FROM `order` WHERE `id_order`=:order AND `client`=:client AND `id_order_status` IN(1,6)',
         [ 'order' => $order_id, 'client' => $context['u_id'] ]
       );
       if (!$result) $die(400, 'Order not found');
 
-      $address = isset($context['data']['address']) ? trim(strval($context['data']['address'])) : '';
-      $description = isset($context['data']['description']) ? trim(strval($context['data']['description'])) : null;
-      $price = isset($context['data']['price']) ? round(floatval($context['data']['price']), 2) : 0;
+      $address = isset($data['address']) ? trim(strval($data['address'])) : '';
+      $description = isset($data['description']) ? trim(strval($data['description'])) : null;
+      $price = isset($data['price']) ? round(floatval($data['price']), 2) : 0;
 
       // добавление изображений
       $attachments = [];
-      if ((isset($context['data']['attachments']) && is_array($context['data']['attachments'])) || !empty($context['files']['attachments'])) {
+      if ((isset($data['attachments']) && is_array($data['attachments'])) || !empty($context['files']['attachments'])) {
         $has_attachments = true;
-        $old_attachments = isset($context['data']['attachments']) && is_array($context['data']['attachments']) ? $context['data']['attachments'] : [];
+        $old_attachments = isset($data['attachments']) && is_array($data['attachments']) ? $data['attachments'] : [];
+        $dupes = [];
         foreach ($old_attachments as $index => $file_id) {
-          if (!is_int($index) || $index < 0 || $index > 9 || !is_int($file_id)) $die(400, 'Invalid attachments data');
+          if (!is_int($index) || $index < 0 || $index > 9 || !is_int($file_id) || in_array($file_id, $dupes, true)) {
+            $die(400, 'Invalid attachments data');
+          }
+          $dupes[] = $file_id;
         }
 
         if (!empty($context['files']['attachments'])) {
@@ -850,8 +935,8 @@ $out = call_user_func(function() {
             // загрузить файл на dropbox
             $response = upload_to_dropbox(file_get_contents($file['tmp_name']), $filename_upload, $upload_id);
             if (!empty($response['error'])) $die(500, $response['error']);
-            $attachments[$index]['id'] = $upload_id;
-            $attachments[$index]['dropbox_response'] = $response['data'];
+            $attachments[$index]['id'] = $sql_escape($upload_id);
+            $attachments[$index]['dropbox_response'] = $sql_escape($response['data']);
           }
         }
       }
@@ -860,21 +945,28 @@ $out = call_user_func(function() {
       }
 
       // Только когда все файлы успешно загружены, открываем транзакцию
-      $query('START TRANSACTION', []);
-      $result = $query(
-        'SELECT `from`,`options`->>\'$.description\' `description`,`options`->>\'$.images\' `attachments`,' .
-          '`price_estimate`,`only_offer` ' .
-        'FROM `order` WHERE `id_order`=:order && `client`=:client && `id_order_status` IN(1,6) FOR UPDATE',
-        [ 'order' => $order_id, 'client' => $context['u_id'] ],
-        [ 'json_fields' => ['attachments'], 'numeric_fields' => ['price_estimate', 'only_offer'] ]
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
       );
-      if (!$result) $die(400, 'Order not found');
-      $order_data = $result[0];
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT `from`,ROUND(`o`.`sum`,2) `sum`,`options`->>\'$.description\' `description`,' .
+          '`options`->>\'$.images\' `attachments`,`only_offer` ' .
+        'FROM `order` WHERE `id_order`=:order AND `client`=:client AND `id_order_status` IN(1,6) FOR UPDATE',
+        [ 'order' => $order_id, 'client' => $context['u_id'] ],
+        [ 'json_fields' => ['attachments'], 'numeric_fields' => ['sum', 'only_offer'] ]
+      );
+      if ($result === null) $die(400, 'Order not found');
+      $order_data = $result;
       $saved_attachments = isset($order_data['attachments']) && is_array($order_data['attachments']) ? $order_data['attachments'] : [];
 
       if ($has_attachments) {
         if ($old_attachments) {
-          $result = $query(
+          $result = $query_one(
             'SELECT COUNT(*) `c` FROM `dropbox_link` `l` ' .
             'JOIN `users_dropbox_link` `u` ON `u`.`id_dropbox_link`=`l`.`id_dropbox_link` ' .
             'WHERE `l`.`id_dropbox_link` IN(:files) AND `l`.`deleted`=0 AND `l`.`json`->>\'$.orderId\'=:order ' .
@@ -883,9 +975,9 @@ $out = call_user_func(function() {
             [ 'files' => array_values($old_attachments),'user' => $context['u_id'], 'order' => $order_id ],
             [ 'numeric_fields' => ['c'] ]
           );
-          if ($result[0] !== count($old_attachments)) $die(500, 'Bad attachments data.');
+          if ($result !== count($old_attachments)) $die(500, 'Bad attachments data.');
         }
-        $deleted_attachments = array_diff($saved_attachments, $old_attachments);
+        $deleted_attachments = array_values(array_diff($saved_attachments, $old_attachments));
         if ($deleted_attachments) {
           // Не удаляем файлы из Dropbox - это сделает сборщик мусора
           $result = $query(
@@ -899,28 +991,35 @@ $out = call_user_func(function() {
           if ($result['rows'] !== count($deleted_attachments)) $die(500, 'Database error.');
         }
         if ($attachments) {
+          $updates = [];
+          $inserts = [];
+          $oid = $sql_escape($order_id);
+          $uid = $sql_escape($context['u_id']);
           foreach ($attachments as $file) {
-            $result = $query(
-              'UPDATE `dropbox_link` ' .
-              'SET `private`=0,`json`=JSON_SET(' .
-                '`json`,' .
-                '\'$.response\',CAST(:response AS JSON),' .
-                '\'$.orderId\',:orderId' .
-              ') WHERE `id_dropbox_link`=:fileId',
-              [
-                'fileId' => $file['id'],
-                'orderId' => $order_id,
-                'response' => $file['dropbox_response']
-              ]
-            );
-            if (empty($result['rows'])) $die(500, 'Database error.');
+            $updates[] = "ROW($file[id],$oid,$file[dropbox_response])";
+            $inserts[] = "($uid,$file[id])";
           }
 
-          $result = $query('INSERT INTO `users_dropbox_link`(`id_user`,`id_dropbox_link`) VALUES' .
-            join(',', array_map(function($file) use($context) { return "($context[u_id],$file[id])"; }, $attachments)),
-            []
-          );
-          if (!$result) $die(500, 'Database insert error.');
+          if ($updates) {
+            $result = $query(
+              'UPDATE `dropbox_link` ' .
+              'JOIN (VALUES ' . join(',', $updates) . ') `data`(`file`,`order`,`response`) ' .
+              'SET `private`=0,`json`=JSON_SET(' .
+                '`json`,' .
+                '\'$.response\',CAST(`response` AS JSON),' .
+                '\'$.orderId\',`order`' .
+              ') WHERE `file`=`id_dropbox_link`',
+              []
+            );
+            if (!isset($result['rows']) || $result['rows'] !== count($updates)) $die(500, 'Database error.');
+          }
+
+          if ($inserts) {
+            $result = $query('INSERT INTO `users_dropbox_link`(`id_user`,`id_dropbox_link`) VALUES' . join(',', $inserts),
+              []
+            );
+            if (!isset($result['rows']) || $result['rows'] !== count($inserts)) $die(500, 'Database insert error.');
+          }
         }
 
         $new_attachments = [];
@@ -932,8 +1031,8 @@ $out = call_user_func(function() {
 
       $updates = [];
       if ($address && $address !== $order_data['from']) $updates[] = '`from`=:address';
-      if ($price > 0 && $price !== $order_data['price_estimate'] && $order_data['only_offer'] === 0) {
-        $updates[] = '`price_estimate`=:price';
+      if ($price > 0 && $price !== $order_data['sum'] && $order_data['only_offer'] === 0) {
+        $updates[] = '`sum`=:price';
       }
       if (
         (isset($description) && $description !== $order_data['description']) ||
@@ -945,46 +1044,763 @@ $out = call_user_func(function() {
         ')';
       }
       if ($updates) {
-        $result = $query(
+        $updates[] = '`last_edit_datetime`=NOW(0)';
+        $updates[] = '`last_edit_user`=:client';
+        $ret = $query(
           'UPDATE `order` SET ' . join(',', $updates) . ' WHERE `id_order`=:order',
-          [ 'order' => $order_id, 'address' => $address, 'price' => $price, 'description' => $description, 'attachments' => $new_attachments ]
+          [
+            'order' => $order_id, 'client' => $context['u_id'], 'address' => $address,
+            'price' => $price, 'description' => $description, 'attachments' => $new_attachments
+          ]
         );
-        if (!$result['rows']) $die(500, 'Database error.');
+        if (empty($ret['rows'])) $die(500, 'Database error.');
+
+        if ($order_data['only_offer'] === 0) {
+          $result = $query(
+            'SELECT `id_user` FROM `order_driver` ' .
+            'WHERE `id_order`=:order AND `id_order_driver_status`=1 AND `not_deleted`=1 FOR SHARE',
+            [ 'order' => $order_id ],
+            [ 'numeric_fields' => ['id_user'] ]
+          );
+          $active_drivers = $result ? $result : [];
+        }
+        else {
+          $result = $query_one(
+            'SELECT `id_user` FROM `order_driver_select` WHERE `id_order`=:order AND `cancel`=0 ' .
+            'ORDER BY `create_datetime` DESC LIMIT 1 FOR SHARE',
+            [ 'order' => $order_id ],
+            [ 'numeric_fields' => ['id_user'] ]
+          );
+          $active_drivers = $result ? [ $result ] : [];
+        }
+        if ($active_drivers) {
+          $inserts = [];
+          $oid = $sql_escape($order_id);
+          foreach ($active_drivers as $driver) {
+            $uid = $sql_escape($driver);
+            $value = $sql_escape(json_encode([
+              'text' => "Пользователь $username изменил условия заказа.",
+              'eventType' => 'ORDER_UPDATE'
+            ], JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
+            $inserts[] = "(4,2,CONCAT($oid,':',$uid),31,'',$value,0,NOW(0),31)";
+          }
+          $result = $query(
+            'INSERT INTO `message`(' .
+              '`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+              '`last_edit_datetime`,`create_datetime`,`id_message_type`' .
+            ') VALUES' . join(',', $inserts),
+            []
+          );
+          if (!isset($result['rows']) || $result['rows'] !== count($inserts)) $die(500, 'Database insert error.');
+        }
       }
       else {
-        $result = [ 'rows' => 0 ];
+        $ret = [ 'rows' => 0 ];
       }
 
-      $query('COMMIT', []);
-      return $result;
+      $query_commit();
+      return $ret;
 
     // Клиент отменяет заказ
     case 'cancelOrderByClient':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 1) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+      if (!isset($data['reason'])) $die(400, "Variable 'reason' not set");
+      $reason = trim(strval($data['reason']));
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT `id_order_status` FROM `order` WHERE `order`.`id_order`=:order AND `client`=:client FOR UPDATE',
+        [ 'order' => $order_id, 'client' => $context['u_id'] ],
+        [ 'numeric_fields' => ['id_order_status'] ]
+      );
+      if ($result === null) $die(400, 'Order not found');
+      $ostate = $result;
+      if ($ostate !== 1 && $ostate !== 6 && $ostate !== 2) {
+        $die(400, 'Invalid order state');
+      }
+      $result = $query(
+        'SELECT `id_user`,`id_order_driver_status` FROM `order_driver` ' .
+        'WHERE `id_order`=:order AND `id_order_driver_status` IN(1,3,4,5,6) AND `not_deleted`=1 FOR SHARE',
+        [ 'order' => $order_id ],
+        [ 'numeric_fields' => ['id_user','id_order_driver_status'] ]
+      );
+      $active_drivers = [];
+      foreach ($result as $driver) {
+        $active_drivers[] = $driver['id_user'];
+        if ($ostate === 2 && $driver['id_order_driver_status'] !== 1 && $driver['id_order_driver_status'] !== 3) {
+          $die(400, 'Invalid order state');
+        }
+      }
+      if ($ostate === 6) {
+        $result = $query_one(
+          'SELECT `id_user` FROM `order_driver_select` WHERE `id_order`=:order AND `cancel`=0 ' .
+          'ORDER BY `create_datetime` DESC LIMIT 1 FOR SHARE',
+          [ 'order' => $order_id ],
+          [ 'numeric_fields' => ['id_user'] ]
+        );
+        if ($result && !in_array($result, $active_drivers, true)) {
+          $active_drivers[] = $result;
+        }
+      }
+
+      $ret = $query(
+        'UPDATE `order` SET `id_order_status`=3,`cancel_reason`=:reason,`cancel_datetime`=NOW(0),' .
+          '`last_edit_datetime`=NOW(0),`last_edit_user`=:client ' .
+        'WHERE `id_order`=:order',
+        [ 'order' => $order_id, 'client' => $context['u_id'], 'reason' => $reason ]
+      );
+      if (empty($ret['rows'])) $die(500, 'Database error.');
+
+      if ($active_drivers) {
+        $inserts = [];
+        $oid = $sql_escape($order_id);
+        foreach ($active_drivers as $driver) {
+          $uid = $sql_escape($driver);
+          $value = $sql_escape(json_encode([
+            'text' => "Пользователь $username отменил заказ.",
+            'eventType' => 'ORDER_CANCEL'
+          ], JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
+          $inserts[] = "(4,2,CONCAT($oid,':',$uid),31,'',$value,0,NOW(0),31)";
+        }
+        $result = $query(
+          'INSERT INTO `message`' .
+          '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+          '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+          'VALUES' . join(',', $inserts),
+          []
+        );
+        if (!isset($result['rows']) || $result['rows'] !== count($inserts)) $die(500, 'Database insert error.');
+      }
+
+      $query_commit();
+      return $ret;
 
     // Мастер отменяет заказ
     case 'cancelOrderByContractor':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+      if (!isset($data['reason'])) $die(400, "Variable 'reason' not set");
+      $reason = trim(strval($data['reason']));
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT `id_order_status`,`id_order_driver_status`,`s`.`id_order` IS NOT NULL `is_offer` ' .
+        'FROM `order` `o` ' .
+        'LEFT JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` AND `d`.`id_user`=:contractor AND `not_deleted`=1 ' .
+        'LEFT JOIN `order_driver_select` `s` ON `only_offer`>0 AND `s`.`id_order`=`o`.`id_order` AND `s`.`id_user`=:contractor AND `cancel`=0 ' .
+        'WHERE `o`.`id_order`=:order ' .
+        'FOR UPDATE OF `o`,`d` FOR SHARE OF `s`',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ],
+        [ 'numeric_fields' => ['id_order_status', 'id_order_driver_status', 'is_offer'] ]
+      );
+      if ($result === null) $die(400, 'Order not found');
+      $ostate = $result['id_order_status'];
+      $dstate = $result['id_order_driver_status'];
+      $is_offer = $result['is_offer'] > 0;
+      if ($dstate === null && !$is_offer) $die(400, 'Order not found');
+      if ($ostate !== 1 && $ostate !== 6 && ($ostate !== 2 || ($dstate !== 1 && $dstate !== 3))) {
+        $die(400, 'Invalid order state');
+      }
+
+      if ($is_offer) {
+        // Полная отмена заказа
+        $ret = $query(
+          'UPDATE `order` SET `id_order_status`=3,`cancel_reason`=:reason,`cancel_datetime`=NOW(0),' .
+            '`last_edit_datetime`=NOW(0),`last_edit_user`=:contractor ' .
+          'WHERE `id_order`=:order',
+          [ 'order' => $order_id, 'contractor' => $context['u_id'], 'reason' => $reason ]
+        );
+        if (empty($ret['rows'])) $die(500, 'Database error.');
+      }
+      else {
+        // Только отзыв предложения
+        $result = $query(
+          'UPDATE `order_driver` SET `id_order_driver_status`=2,`cancel_reason`=:reason,`cancel_datetime`=NOW(0) ' .
+          'WHERE `id_order`=:order AND `id_user`=:contractor',
+          [ 'order' => $order_id, 'contractor' => $context['u_id'], 'reason' => $reason ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+
+        $ret = $query(
+          'UPDATE `order` SET ' .
+            ($dstate === 3 ? '`id_order_status`=1,`approve_datetime`=0,' : '') .
+            '`last_edit_datetime`=NOW(0),`last_edit_user`=:contractor ' .
+          'WHERE `id_order`=:order',
+          [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+        );
+        if (empty($ret['rows'])) $die(500, 'Database error.');
+      }
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $context['u_id'],
+          'value' => [
+            'text' => $is_offer || $dstate === 3 ?
+              "Пользователь $username отказался выполнять заказ." :
+              "Пользователь $username отозвал своё предложение.",
+            'eventType' => 'ORDER_CANCEL'
+          ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $query_commit();
+      return $ret;
 
     // Принять прямой заказ от клиента
     case 'acceptDirectOrder':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+
+      // Блокировка нужна, чтобы не создать две машины сразу
+      $result = $query_one(
+        'SELECT GET_LOCK(:lock,5) `lock`',
+        [ 'lock' => "{$car_lock_name}_{$context['u_id']}" ],
+        [ 'numeric_fields' => ['lock'] ]
+      );
+      if (!$result) $die(500, 'Database lock error');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT ROUND(`o`.`sum`,2) `sum` FROM `order` `o` JOIN `order_driver_select` `s` ON `s`.`id_order`=`o`.`id_order` ' .
+        'WHERE `o`.`id_order`=:order AND `only_offer`>0 AND `id_order_status`=6 AND `s`.`id_user`=:contractor AND `cancel`=0 ' .
+        'FOR UPDATE OF `o` FOR SHARE OF `s`',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ],
+        [ 'numeric_fields' => ['sum'] ]
+      );
+      if ($result === null) $die(400, 'Order not found');
+      $price = $result;
+
+      // Получим ID машины или создадим новую
+      // Примечание: НЕ использовать в этом запросе FOR SHARE/FOR UPDATE. Мы уже взяли блокировку GET_LOCK
+      $car_id = $query_one(
+        'SELECT `car`.`id_car` FROM `car_users` JOIN `car` ON `car_users`.`id_car`=`car`.`id_car` ' .
+        'WHERE `car_users`.`id_user`=:contractor LIMIT 1',
+        [ 'contractor' => $context['u_id'] ],
+        [ 'numeric_fields' => ['id_car'] ]
+      );
+      if (!$car_id) {
+        do {
+          // Существует гипотетический риск коллизии в `license_plate`, хотя практически он около нуля
+          try {
+            $result = $query(
+              'INSERT INTO `car`(`seats`,`license_plate`,`photo_link`,`json`) ' .
+              'VALUES(4,LPAD(CONV(ROUND(RAND()*4503599627370496),10,36),10,\'$\'),\'\',\'{}\')'
+            );
+            $car_id = isset($result['id']) ? $result['id'] : 0;
+          }
+          catch (Exception $e) {
+            if ($e->getCode() !== 1062) {  // ER_DUP_ENTRY
+              throw $e;
+            }
+          }
+        } while (!$car_id);
+        $result = $query(
+          'INSERT INTO `car_users` VALUES(:car,:contractor,1)',
+          [ 'car' => $car_id, 'contractor' => $context['u_id'] ]
+        );
+        // В таблице car_users нет AUTO_INCREMENT ключа
+        if (empty($result['rows'])) $die(500, 'Database insert error.');
+      }
+
+      $result = $query(
+        'INSERT INTO `order_driver`(' .
+          '`id_order`,`id_user`,`id_car`,`id_payment_method`,`pay_datetime`,`index`,`max_rating`,`candidacy_datetime`,`appoint_datetime`,' .
+          '`cancel_datetime`,`arrive_datetime`,`start_datetime`,`complete_datetime`,`id_order_driver_status`,`price_estimate`,`options`' .
+        ') VALUES(' .
+          ':order,:contractor,:car,1,0,' .  // id_order, id_user, id_car, id_payment_method, pay_datetime
+          'IFNULL((SELECT `index`+1 FROM `order_driver` `d` WHERE `id_order`=:order ORDER BY `index` DESC LIMIT 1 FOR UPDATE),1),' .  // index
+          '5,0,NOW(0),0,0,' .  // max_rating, candidacy_datetime, appoint_datetime, cancel_datetime, arrive_datetime
+          '0,0,3,:price,\'{}\'' .  // start_datetime, complete_datetime, id_order_driver_status, price_estimate, options
+        ')',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'], 'car' => $car_id, 'price' => $price ]
+      );
+      // В таблице order_driver нет AUTO_INCREMENT ключа
+      if (empty($result['rows'])) $die(500, 'Database insert error.');
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $context['u_id'],
+          'value' => [ 'text' => "Пользователь $username принял заказ.", 'eventType' => 'ORDER_APPOINT' ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $ret = $query(
+        'UPDATE `order` SET `price_estimate`=:price,`id_order_status`=2,`last_edit_datetime`=NOW(0),`last_edit_user`=:contractor,`approve_datetime`=NOW(0) ' .
+        'WHERE `id_order`=:order',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'], 'price' => $price ]
+      );
+      if (empty($ret['rows'])) $die(500, 'Database error.');
+
+      $query_commit();
+      try {
+        // Даже если здесь будет сбой, при закрытии соединения блокировка всё равно снимется.
+        $query('SELECT RELEASE_LOCK(:lock)', [ 'lock' => "{$car_lock_name}_{$context['u_id']}" ]);
+      }
+      catch (Exception $e) {}
+
+      return $ret;
 
     // Создать предложение мастера
     case 'createOffer':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+      $price = isset($data['price']) ? round(floatval($data['price']), 2) : 0;
+      $comment = isset($data['comment']) ? trim(strval($data['comment'])) : '';
+      $ready_in =
+        isset($data['readyInTime']) && isset($data['readyInUnit']) ?
+        [ 'value' => intval($data['readyInTime']), 'unit' => trim(strval($data['readyInUnit'])) ] :
+        null;
+      if (!isset($data['comment'])) $var = 'comment';
+      elseif ($price <= 0) $var = 'price';
+      elseif (!isset($data['readyInTime'])) $var = 'readyInTime';
+      elseif (!isset($data['readyInUnit'])) $var = 'readyInUnit';
+      else $var = false;
+      if ($var) $die(400, "Variable '$var' not set");
 
-    // Отозвать предложение мастера
-    case 'revokeOffer':
+      // Блокировка нужна, чтобы не создать две машины сразу
+      $result = $query_one(
+        'SELECT GET_LOCK(:lock,5) `lock`',
+        [ 'lock' => "{$car_lock_name}_{$context['u_id']}" ],
+        [ 'numeric_fields' => ['lock'] ]
+      );
+      if (!$result) $die(500, 'Database lock error');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT `id_order_driver_status`,`not_deleted` FROM `order` `o` ' .
+        'LEFT JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` AND `d`.`id_user`=:contractor ' .
+        'WHERE `o`.`id_order`=:order AND `only_offer`=0 AND `id_order_status`=1 ' .
+        'FOR UPDATE',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ],
+        [ 'numeric_fields' => ['id_order_driver_status', 'not_deleted'] ]
+      );
+      if ($result === null) $die(400, 'Order not found');
+
+      if ($result['id_order_driver_status'] === null) {
+        // Ещё нет предложения от этого мастера
+        // Получим ID машины или создадим новую
+        // Примечание: НЕ использовать в этом запросе FOR SHARE/FOR UPDATE. Мы уже взяли блокировку GET_LOCK
+        $car_id = $query_one(
+          'SELECT `car`.`id_car` FROM `car_users` JOIN `car` ON `car_users`.`id_car`=`car`.`id_car` ' .
+          'WHERE `car_users`.`id_user`=:contractor LIMIT 1',
+          [ 'contractor' => $context['u_id'] ],
+          [ 'numeric_fields' => ['id_car'] ]
+        );
+        if (!$car_id) {
+          do {
+            // Существует гипотетический риск коллизии в `license_plate`, хотя практически он около нуля
+            try {
+              $result = $query(
+                'INSERT INTO `car`(`seats`,`license_plate`,`photo_link`,`json`) ' .
+                'VALUES(4,LPAD(CONV(ROUND(RAND()*4503599627370496),10,36),10,\'$\'),\'\',\'{}\')'
+              );
+              $car_id = isset($result['id']) ? $result['id'] : 0;
+            }
+            catch (Exception $e) {
+              if ($e->getCode() !== 1062) {  // ER_DUP_ENTRY
+                throw $e;
+              }
+            }
+          } while (!$car_id);
+          $result = $query(
+            'INSERT INTO `car_users` VALUES(:car,:contractor,1)',
+            [ 'car' => $car_id, 'contractor' => $context['u_id'] ]
+          );
+          // В таблице car_users нет AUTO_INCREMENT ключа
+          if (empty($result['rows'])) $die(500, 'Database insert error.');
+        }
+
+        $result = $query(
+          'INSERT INTO `order_driver`(' .
+            '`id_order`,`id_user`,`id_car`,`id_payment_method`,`pay_datetime`,`index`,`max_rating`,`candidacy_datetime`,`appoint_datetime`,' .
+            '`cancel_datetime`,`arrive_datetime`,`start_datetime`,`complete_datetime`,`id_order_driver_status`,`price_estimate`,`options`' .
+          ') VALUES(' .
+            ':order,:contractor,:car,1,0,' .  // id_order, id_user, id_car, id_payment_method, pay_datetime
+            'IFNULL((SELECT `index`+1 FROM `order_driver` `d` WHERE `id_order`=:order ORDER BY `index` DESC LIMIT 1 FOR UPDATE),1),' .  // index
+            '5,NOW(0),0,0,0,' .  // max_rating, candidacy_datetime, appoint_datetime, cancel_datetime, arrive_datetime
+            '0,0,1,:price,' .  // start_datetime, complete_datetime, id_order_driver_status, price_estimate
+            'JSON_OBJECT(\'comment\',:comment,\'readyIn\',CAST(:readyIn AS JSON))' .  // options
+          ')',
+          [
+            'order' => $order_id, 'contractor' => $context['u_id'], 'car' => $car_id,
+            'price' => $price, 'comment' => $comment, 'readyIn' => $ready_in
+          ]
+        );
+        // В таблице order_driver нет AUTO_INCREMENT ключа
+        if (empty($result['rows'])) $die(500, 'Database insert error.');
+
+        $offer_created = true;
+      }
+      elseif ($result['not_deleted'] === 0 || $result['id_order_driver_status'] === 2) {
+        // Существующее предложение удалено или отменено
+        $result = $query(
+          'UPDATE `order_driver` SET ' .
+          '`candidacy_datetime`=NOW(0),' .
+          '`appoint_datetime`=0,' .
+          '`cancel_datetime`=0,' .
+          '`arrive_datetime`=0,' .
+          '`start_datetime`=0,' .
+          '`complete_datetime`=0,' .
+          '`id_order_driver_status`=1,' .
+          '`not_deleted`=1,' .
+          '`price_estimate`=:price,' .
+          '`options`=JSON_OBJECT(\'comment\',:comment,\'readyIn\',CAST(:readyIn AS JSON)) ' .
+          'WHERE `id_order`=:order AND `id_user`=:contractor',
+          [
+            'order' => $order_id, 'contractor' => $context['u_id'],
+            'price' => $price, 'comment' => $comment, 'readyIn' => $ready_in
+          ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+        $offer_created = true;
+      }
+      else {
+        $offer_created = false;
+      }
+
+      if ($offer_created) {
+        $ret = $query(
+          'INSERT INTO `message`' .
+          '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+          '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+          'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+          [
+            'order' => $order_id,
+            'contractor' => $context['u_id'],
+            'value' => [ 'text' => "Пользователь $username откликнулся на заказ.", 'eventType' => 'CONTRACTOR_OFFER' ]
+          ]
+        );
+        if (empty($ret['id'])) $die(500, 'Database insert error.');
+
+        $ret = $query(
+          'UPDATE `order` SET `last_edit_datetime`=NOW(0),`last_edit_user`=:contractor WHERE `id_order`=:order',
+          [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+        );
+        if (empty($ret['rows'])) $die(500, 'Database error.');
+      }
+      else {
+        $ret = [ 'rows' => 0 ];
+      }
+
+      $query_commit();
+      try {
+        // Даже если здесь будет сбой, при закрытии соединения блокировка всё равно снимется.
+        $query('SELECT RELEASE_LOCK(:lock)', [ 'lock' => "{$car_lock_name}_{$context['u_id']}" ]);
+      }
+      catch (Exception $e) {}
+
+      return $ret;
+
+    // Обновить предложение мастера
+    case 'updateOffer':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+      $price = isset($data['price']) ? round(floatval($data['price']), 2) : null;
+      $comment = isset($data['comment']) ? trim(strval($data['comment'])) : null;
+      $ready_in =
+        isset($data['readyInTime']) && isset($data['readyInUnit']) ?
+        [ 'value' => intval($data['readyInTime']), 'unit' => trim(strval($data['readyInUnit'])) ] :
+        null;
+      if ($comment === null && $price === null && $ready_in === null) $die(400, 'No data to update');
+      if ($price !== null && $price <= 0) $die(400, 'Invalid price');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT 1 FROM `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+        'WHERE `o`.`id_order`=:order AND `d`.`id_user`=:contractor AND `only_offer`=0 AND `id_order_status`=1 ' .
+          'AND `not_deleted`=1 AND `id_order_driver_status`=1 ' .
+        'FOR UPDATE',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'Offer not found');
+      $ret = $query(
+        'UPDATE `order_driver` SET ' .
+        ($price !== null ? '`price_estimate`=:price' : '') .
+        ($comment !== null || $ready_in !== null ?
+          ($price !== null ? ',' : '') .
+          '`options`=JSON_SET(`options`' .
+            ($comment !== null ? ',\'comment\',:comment' : '') .
+            ($ready_in !== null ? ',\'readyIn\',CAST(:readyIn AS JSON)' : '') .
+          ') '
+          : ''
+        ) .
+        'WHERE `id_order`=:order AND `id_user`=:contractor',
+        [
+          'order' => $order_id, 'contractor' => $context['u_id'],
+          'price' => $price, 'comment' => $comment, 'readyIn' => $ready_in
+        ]
+      );
+      if (!isset($ret['rows'])) $die(500, 'Database error.');  // Здесь rows может быть 0
+
+      if ($ret['rows'] > 0) {
+        $result = $query(
+          'INSERT INTO `message`' .
+          '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+          '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+          'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+          [
+            'order' => $order_id,
+            'contractor' => $context['u_id'],
+            'value' => [ 'text' => "Пользователь $username обновил своё предложение.", 'eventType' => 'OFFER_UPDATE' ]
+          ]
+        );
+        if (empty($result['id'])) $die(500, 'Database insert error.');
+
+        $result = $query(
+          'UPDATE `order` SET `last_edit_datetime`=NOW(0),`last_edit_user`=:contractor WHERE `id_order`=:order',
+          [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+      }
+
+      $query_commit();
+      return $ret;
 
     // Принять предложение мастера
     case 'acceptOffer':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 1) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+      $contractor_id = isset($data['contractor']) ? intval($data['contractor']) : 0;
+      if ($contractor_id <= 0) $die(400, "Variable 'contractor' not set");
+
+      $query_transaction();
+      $result = $query(
+        'SELECT `id_user`,`name`,`family`,`middle` FROM `users` WHERE `id_user` IN(:client,:contractor) AND `deleted`=0 FOR SHARE',
+        [ 'client' => $context['u_id'], 'contractor' => $contractor_id ],
+        [ 'numeric_fields' => ['id_user'] ]
+      );
+      if (!$result) $die(400, 'User not found');
+      foreach ($result as $user) {
+        $namestr = join(' ', array_filter(array_map('trim', [ $user['name'], $user['middle'], $user['family'] ]), 'strlen'));
+        if ($user['id_user'] === $context['u_id']) $username = $namestr;
+        else $username_contractor = $namestr;
+      }
+      if (!isset($username)) $die(400, 'User not found');
+      if (!isset($username_contractor)) $die(400, 'User not found');
+
+      $ret = $query(
+        'UPDATE `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+        'SET `o`.`price_estimate`=`d`.`price_estimate`,`id_order_status`=2,`last_edit_datetime`=NOW(0),' .
+          '`last_edit_user`=:client,`approve_datetime`=NOW(0),`appoint_datetime`=NOW(0),`id_order_driver_status`=3 ' .
+        'WHERE `o`.`id_order`=:order AND `client`=:client AND `only_offer`=0 AND `id_order_status`=1 ' .
+          'AND `d`.`id_user`=:contractor AND `id_order_driver_status`=1 AND `not_deleted`=1 ',
+        [ 'order' => $order_id, 'client' => $context['u_id'], 'contractor' => $contractor_id ]
+      );
+      if (empty($ret['rows'])) $die(400, 'Offer not found');
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $contractor_id,
+          'value' => [ 'text' => "Пользователь $username выбрал исполнителя $username_contractor.", 'eventType' => 'ORDER_APPOINT' ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $query_commit();
+      return $ret;
 
     // Начать работу над заказом
     case 'startOrderWork':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $ret = $query(
+        'UPDATE `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+        'SET `last_edit_datetime`=NOW(0),`last_edit_user`=:contractor,`start_datetime`=NOW(0),`id_order_driver_status`=5 ' .
+        'WHERE `o`.`id_order`=:order AND `id_order_status`=2 AND `d`.`id_user`=:contractor ' .
+          'AND `not_deleted`=1 AND `id_order_driver_status`=3 ',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+      );
+      if (empty($ret['rows'])) $die(400, 'Order not found');
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $context['u_id'],
+          'value' => [ 'text' => "Пользователь $username приступил к работе.", 'eventType' => 'ORDER_START' ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $query_commit();
+      return $ret;
 
     // Завершить работу над заказом
-    case 'completeOrderWork':
+    case 'finishOrderWork':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 2) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $ret = $query(
+        'UPDATE `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+        'SET `last_edit_datetime`=NOW(0),`last_edit_user`=:contractor,`d`.`complete_datetime`=NOW(0),`id_order_driver_status`=6 ' .
+        'WHERE `o`.`id_order`=:order AND `id_order_status`=2 AND `d`.`id_user`=:contractor ' .
+          'AND `not_deleted`=1 AND `id_order_driver_status`=5 ',
+        [ 'order' => $order_id, 'contractor' => $context['u_id'] ]
+      );
+      if (empty($ret['rows'])) $die(400, 'Order not found');
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $context['u_id'],
+          'value' => [ 'text' => "Пользователь $username завершил работу.", 'eventType' => 'ORDER_FINISH' ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $query_commit();
+      return $ret;
 
     // Подтвердить завершение заказа
-    case 'finishOrder':
-      break;
+    case 'completeOrder':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      if ($context['u_role'] !== 1) $die(403, 'Wrong user role');
+      // очистка исходных данных
+      $order_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($order_id <= 0) $die(400, 'Order ID not set');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
+        [ 'user' => $context['u_id'] ]
+      );
+      if ($result === null) $die(400, 'User not found');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+
+      $result = $query_one(
+        'SELECT `id_user` FROM `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
+        'WHERE `o`.`id_order`=:order AND `client`=:client AND `id_order_status`=2 ' .
+          'AND `not_deleted`=1 AND `id_order_driver_status`=6 ' .
+        'LIMIT 1 FOR UPDATE OF `o` FOR SHARE OF `d`',
+        [ 'order' => $order_id, 'client' => $context['u_id'] ],
+        [ 'numeric_fields' => ['id_user'] ]
+      );
+      if (!$result) $die(400, 'Order not found');
+      $contractor = $result;
+
+      $ret = $query(
+        'UPDATE `order` SET `last_edit_datetime`=NOW(0),`last_edit_user`=:client,`complete_datetime`=NOW(0),`id_order_status`=4 ' .
+        'WHERE `id_order`=:order',
+        [ 'order' => $order_id, 'client' => $context['u_id'] ]
+      );
+      if (empty($ret['rows'])) $die(400, 'Order not found');
+
+      $result = $query(
+        'INSERT INTO `message`' .
+        '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
+        '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        [
+          'order' => $order_id,
+          'contractor' => $contractor,
+          'value' => [ 'text' => "Пользователь $username подтвердил выполнение работы.", 'eventType' => 'ORDER_COMPLETE' ]
+        ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+
+      $query_commit();
+      return $ret;
 
     // ================================================
     //                  Сообщения/чаты
@@ -1014,41 +1830,40 @@ $out = call_user_func(function() {
                   ($context['u_role'] === 2 ?
                     'FROM (' .
                      'SELECT `id_order`,`id_user` FROM `order_driver` `d` ' .
-                     'WHERE `d`.`id_user`=:u_id AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`>0 ' .
+                     'WHERE `d`.`id_user`=:u_id AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`=1 ' .
                      'UNION ' .
                      'SELECT `id_order`,`id_user` FROM `order_driver_select` `ds` ' .
-                     'WHERE `ds`.`id_user`=:u_id AND `cancel`=0' .
+                     'WHERE `ds`.`id_user`=:u_id' .
                     ') `uids` ' .
                     'JOIN `order` `o` ON `o`.`id_order`=`uids`.`id_order` '
                   :
                     'FROM `order` `o` ' .
                     'JOIN LATERAL (' .
                      'SELECT `id_order`,`id_user` FROM `order_driver` `d` ' .
-                     'WHERE `d`.`id_order`=`o`.`id_order` AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`>0 ' .
+                     'WHERE `d`.`id_order`=`o`.`id_order` AND `id_order_driver_status` IN(1,2,3,4,5,6) AND `not_deleted`=1 ' .
                      'UNION ' .
                      'SELECT `id_order`,`id_user` FROM `order_driver_select` `ds` ' .
-                     'WHERE `ds`.`id_order`=`o`.`id_order` AND `cancel`=0' .
+                     'WHERE `ds`.`id_order`=`o`.`id_order`' .
                     ') `uids` '
                   ) .
                   'LEFT JOIN `order_driver` `d` '.
                     'ON `d`.`id_order`=`o`.`id_order` ' .
                     'AND `d`.`id_user`=`uids`.`id_user` ' .
                     'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
-                    'AND `d`.`not_deleted`>0 ' .
+                    'AND `d`.`not_deleted`=1 ' .
                   'LEFT JOIN `order_driver_select` `ds` ' .
                     'ON `ds`.`id_order`=`o`.`id_order` ' .
                     'AND `ds`.`id_user`=`uids`.`id_user` ' .
-                    'AND `cancel`=0 ' .
                   'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
                     ($context['u_role'] === 2 ? '' : 'AND `o`.`client`=:u_id ') .
                   'GROUP BY `contractor`,`o`.`id_order` ' .
                   'HAVING `has_unread`>0 ' .
                     'OR ' .
                     ($context['u_role'] === 2 ?
-                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
+                      'JSON_CONTAINS(IF(JSON_VALID(`d`.`options`),`d`.`options`,NULL),\'{"chatOpen":true}\',\'$\') ' .
                       'OR `ds`.`order_select_type`=\'Active\''
                     :
-                      'JSON_CONTAINS(`o`.`options`,CAST(`contractor` AS JSON),\'$.chatOpen\')'
+                      'JSON_CONTAINS(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),CAST(`contractor` AS JSON),\'$.chatOpen\')'
                     ) .
                 ') `inner`';
       return $query($sql, $data);
@@ -1072,13 +1887,18 @@ $out = call_user_func(function() {
                     'NULL' .
                   ')) AS `first_unread`,' .
                   'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time`,' .
-                  '(' .
-                    '(:u_role=1 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\')) ' .
-                    'OR (:u_role=2 AND (' .
-                      'JSON_CONTAINS(`d`.`options`,\'{"chatOpen":true}\',\'$\') ' .
+                  ($context['u_role'] === 2 ?
+                    '(' .
+                      'JSON_CONTAINS(IF(JSON_VALID(`d`.`options`),`d`.`options`,NULL),\'{"chatOpen":true}\',\'$\') ' .
                       'OR `ds`.`order_select_type`=\'Active\'' .
-                    '))' .
-                  ') AS `is_open` ' .
+                    ')'
+                  :
+                    'JSON_CONTAINS(' .
+                      'IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),' .
+                      'CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),' .
+                      '\'$.chatOpen\'' .
+                    ')'
+                  ) . ' AS `is_open` ' .
                 'FROM JSON_TABLE(' .
                   'JSON_ARRAY(:ids),\'$[*]\' ' .
                   'COLUMNS(`id` VARCHAR(255) PATH \'$\')' .
@@ -1089,11 +1909,10 @@ $out = call_user_func(function() {
                   'ON `d`.`id_user`=SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
                   'AND `d`.`id_order`=`o`.`id_order` ' .
                   'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
-                  'AND `d`.`not_deleted`>0 ' .
+                  'AND `d`.`not_deleted`=1 ' .
                 'LEFT JOIN `order_driver_select` `ds` ' .
                   'ON `ds`.`id_user`=SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
                   'AND `ds`.`id_order`=`o`.`id_order` ' .
-                  'AND `ds`.`cancel`=0 ' .
                 'LEFT JOIN `message` `m` ' .
                   'ON `m`.`recipient_owner_type`=31 ' .
                   'AND `m`.`recipient_owner`=`ids`.`id` ' .
@@ -1103,10 +1922,11 @@ $out = call_user_func(function() {
                   'AND `r`.`id_user`=:u_id ' .
                 'WHERE `o`.`id_order_status` IN(1,2,3,4,6) ' .
                   'AND (`d`.`id_user` IS NOT NULL OR `ds`.`id_user` IS NOT NULL) ' .
-                  'AND (' .
-                    '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                    'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
-                  ') ' .
+                  'AND ' .
+                    ($context['u_role'] === 2 ?
+                      '(`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id)' :
+                      '`o`.`client`=:u_id'
+                    ) . ' ' .
                 'GROUP BY `ids`.`id`';
       $numeric_fields = ['order', 'client', 'contractor', 'unread_count', 'first_unread', 'is_open'];
       return $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
@@ -1253,34 +2073,33 @@ $out = call_user_func(function() {
                 'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
                 'JOIN `users` `u2` ' .
                 'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) ' .
-                'AND `u2`.`id_user`=SUBSTRING_INDEX(:chat_id,\':\',-1) ' .
-                'AND JSON_VALID(`u1`.`json`) ' .
-                'AND JSON_VALID(`u2`.`json`) ' .
-                'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-                'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-                'AND (' .
-                  'EXISTS(' .
-                    'SELECT 1 FROM `order_driver` `d` ' .
-                    'WHERE `d`.`id_user`=`u2`.`id_user` ' .
-                      'AND `d`.`id_order`=`o`.`id_order` ' .
-                      'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
-                      'AND `d`.`not_deleted`>0' .
-                  ') OR EXISTS(' .
-                    'SELECT 1 FROM `order_driver_select` `ds` ' .
-                    'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
-                      'AND `ds`.`id_order`=`o`.`id_order` ' .
-                      'AND `ds`.`cancel`=0 ' .
-                  ')' .
-                ') ' .
-                'AND (:reply_to IS NULL OR EXISTS(' .
-                  'SELECT 1 FROM `message` ' .
-                  'WHERE `id_message`=:reply_to ' .
-                  'AND `recipient_owner`=:chat_id ' .
-                  'AND `recipient_owner_type`=31 ' .
-                  'AND `id_message_type` IN(1,32,33)' .
-                '))' .
-                'AND :type IN(1,32,33) ' .
-                'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id');
+                  'AND `u2`.`id_user`=SUBSTRING_INDEX(:chat_id,\':\',-1) ' .
+                  'AND JSON_VALID(`u1`.`json`) ' .
+                  'AND JSON_VALID(`u2`.`json`) ' .
+                  'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                  'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                  'AND (' .
+                    'EXISTS(' .
+                      'SELECT 1 FROM `order_driver` `d` ' .
+                      'WHERE `d`.`id_user`=`u2`.`id_user` ' .
+                        'AND `d`.`id_order`=`o`.`id_order` ' .
+                        'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                        'AND `d`.`not_deleted`=1' .
+                    ') OR EXISTS(' .
+                      'SELECT 1 FROM `order_driver_select` `ds` ' .
+                      'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
+                        'AND `ds`.`id_order`=`o`.`id_order`' .
+                    ')' .
+                  ') ' .
+                  'AND (:reply_to IS NULL OR EXISTS(' .
+                    'SELECT 1 FROM `message` ' .
+                    'WHERE `id_message`=:reply_to ' .
+                    'AND `recipient_owner`=:chat_id ' .
+                    'AND `recipient_owner_type`=31 ' .
+                    'AND `id_message_type` IN(1,32,33)' .
+                  '))' .
+                  'AND :type IN(1,32,33) ' .
+                  'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id');
       return $query($sql, $data);
 
     // Открыть/закрыть чат
@@ -1290,47 +2109,45 @@ $out = call_user_func(function() {
                   'ON `d`.`id_order`=`o`.`id_order` ' .
                   'AND `d`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
                   'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
-                  'AND `d`.`not_deleted`>0 ' .
+                  'AND `d`.`not_deleted`=1 ' .
                 'LEFT JOIN `order_driver_select` `ds` ' .
                   'ON `ds`.`id_order`=`o`.`id_order` ' .
                   'AND `ds`.`id_user`=SUBSTRING_INDEX(:id,\':\',-1) ' .
-                  'AND `ds`.`cancel`=0 ' .
                 'SET ' .
-                  '`o`.`options`=IFNULL(' .
-                    'CASE ' .
-                      'WHEN :u_role=1 AND :open>0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') IS NOT TRUE THEN ' .
-                        'JSON_MERGE_PRESERVE(`o`.`options`,JSON_OBJECT(\'chatOpen\',JSON_ARRAY(IFNULL(`d`.`id_user`,`ds`.`id_user`)))) ' .
-                      'WHEN :u_role=1 AND :open=0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') THEN ' .
-                        'JSON_REMOVE(`o`.`options`,' .
-                          'CONCAT(' .
-                            '\'$.chatOpen[\',' .
-                            'FIND_IN_SET(IFNULL(`d`.`id_user`,`ds`.`id_user`),REGEXP_REPLACE(`o`.`options`->\'$.chatOpen\',\'[\\\\[\\\\]\\\\s]\',\'\'))-1,' .
-                            '\']\'' .
-                          ')' .
-                        ') ' .
-                      'ELSE `o`.`options` ' .
-                    'END,' .
-                    '`o`.`options`' .
-                  '),' .
-                  '`d`.`options`=IFNULL(' .
-                    'IF(:u_role=2,' .
+                  ($context['u_role'] === 2 ?
+                    '`d`.`options`=IFNULL(' .
                       'JSON_MERGE_PATCH(`d`.`options`,JSON_OBJECT(\'chatOpen\',:open>0)),' .
                       '`d`.`options`' .
                     '),' .
-                    '`d`.`options`' .
-                  '),' .
-                  '`ds`.`order_select_type`=IF(:u_role=2,' .
-                    'IF(:open>0,\'Active\',\'Processing\'),' .
-                    '`ds`.`order_select_type`' .
-                  ')' .
+                    '`ds`.`order_select_type`=IF(:open>0,\'Active\',\'Processing\') '
+                  :
+                    '`o`.`options`=IFNULL(' .
+                      'CASE ' .
+                        'WHEN :open>0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') IS NOT TRUE THEN ' .
+                          'JSON_MERGE_PRESERVE(`o`.`options`,JSON_OBJECT(\'chatOpen\',JSON_ARRAY(IFNULL(`d`.`id_user`,`ds`.`id_user`)))) ' .
+                        'WHEN :open=0 AND JSON_CONTAINS(`o`.`options`,CAST(IFNULL(`d`.`id_user`,`ds`.`id_user`) AS JSON),\'$.chatOpen\') THEN ' .
+                          'JSON_REMOVE(`o`.`options`,' .
+                            'CONCAT(' .
+                              '\'$.chatOpen[\',' .
+                              'FIND_IN_SET(IFNULL(`d`.`id_user`,`ds`.`id_user`),REGEXP_REPLACE(`o`.`options`->\'$.chatOpen\',\'[\\\\[\\\\]\\\\s]\',\'\'))-1,' .
+                              '\']\'' .
+                            ')' .
+                          ') ' .
+                        'ELSE `o`.`options` ' .
+                      'END,' .
+                      '`o`.`options`' .
+                    ') '
+                  ) .
                 'WHERE `o`.`id_order`=SUBSTRING_INDEX(:id,\':\',1) ' .
                   'AND `o`.`id_order_status` IN(1,2,3,4,6) ' .
                   'AND (`d`.`id_user` IS NOT NULL OR `ds`.`id_user` IS NOT NULL) ' .
-                  'AND (' .
-                    '(:u_role=1 AND `o`.`client`=:u_id) ' .
-                    'OR (:u_role=2 AND (`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id))' .
-                  ')';
-      $query($sql, $data);
+                  'AND ' .
+                    ($context['u_role'] === 2 ?
+                      '(`d`.`id_user`=:u_id OR `ds`.`id_user`=:u_id)'
+                    :
+                      '`o`.`client`=:u_id'
+                    );
+      return $query($sql, $data);
 
     default:
       $die(400, 'Unknown action');

@@ -9,9 +9,10 @@ import {
   useCancelOrder,
   useAcceptOffer,
   useAcceptInvoice,
+  useRejectInvoice,
   useStartOrderWork,
-  useCompleteOrderByContractor,
-  useVerifyOrderCompletion,
+  useFinishOrderWork,
+  useConfirmOrderCompletion,
 } from 'app/state/order';
 import { useUser, UserRole } from 'app/state/user';
 import { MessageFormat, useSetChatOpen, useSendMessage } from 'app/state/chat';
@@ -56,9 +57,10 @@ export const ChatLayout: FC = () => {
   const { cancelOrder } = useCancelOrder();
   const { acceptOffer } = useAcceptOffer();
   const { acceptInvoice } = useAcceptInvoice();
+  const { rejectInvoice } = useRejectInvoice();
   const { startOrderWork } = useStartOrderWork();
-  const { completeOrderByContractor } = useCompleteOrderByContractor();
-  const { verifyOrderCompletion } = useVerifyOrderCompletion();
+  const { finishOrderWork } = useFinishOrderWork();
+  const { confirmOrderCompletion } = useConfirmOrderCompletion();
 
   // Колбэки для OrderChatControl
   const handleCancelOrder = useCallback(async (order: Order, reason: string) => {
@@ -96,6 +98,15 @@ export const ChatLayout: FC = () => {
     }
   }, [acceptInvoice]);
 
+  const handleRejectInvoice = useCallback(async (orderId: number, reason: string) => {
+    try {
+      await rejectInvoice({ orderId, reason });
+    } catch (error: any) {
+      console.error('Failed to reject invoice:', error);
+      alert(error.message); // todo: сделать нормальное сообщение об ошибке
+    }
+  }, [rejectInvoice]);
+
   const handleStartWork = useCallback(async (orderId: number) => {
     try {
       await startOrderWork(orderId);
@@ -106,19 +117,19 @@ export const ChatLayout: FC = () => {
 
   const handleCompleteWork = useCallback(async (orderId: number) => {
     try {
-      await completeOrderByContractor(orderId);
+      await finishOrderWork(orderId);
     } catch (error: any) {
       alert(`Failed to complete work: ${error.message}`);
     }
-  }, [completeOrderByContractor, text]);
+  }, [finishOrderWork, text]);
 
   const handleVerifyCompletion = useCallback(async (orderId: number) => {
     try {
-      await verifyOrderCompletion(orderId);
+      await confirmOrderCompletion(orderId);
     } catch (error: any) {
       alert(`Failed to verify completion: ${error.message}`);
     }
-  }, [verifyOrderCompletion, text]);
+  }, [confirmOrderCompletion, text]);
 
   const handleShowDisputeModal = useCallback((orderId: number) => {
     setDisputeOrderId(orderId);
@@ -246,6 +257,7 @@ export const ChatLayout: FC = () => {
                 onCancelOrder={handleCancelOrder}
                 onAcceptOffer={handleAcceptOffer}
                 onAcceptInvoice={handleAcceptInvoice}
+                onRejectInvoice={handleRejectInvoice}
                 onStartWork={handleStartWork}
                 onCompleteWork={handleCompleteWork}
                 onVerifyCompletion={handleVerifyCompletion}

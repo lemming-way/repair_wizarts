@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
-import { useAcceptInvoice, useAvailableOrders } from 'app/state/order';
+import { useAcceptInvoice, useRejectInvoice, useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
 import 'app/scss/applications.css';
@@ -25,6 +25,7 @@ function DirectOrders() {
   const { products, isLoading: isLoadingProducts } = useProducts();
 
   const { acceptInvoice } = useAcceptInvoice();
+  const { rejectInvoice } = useRejectInvoice();
 
   useEffect(() => {
     document.title = text('Applications');
@@ -39,13 +40,17 @@ function DirectOrders() {
       }
     } catch (error) {
       console.error('Error accepting order:', error);
-      // todo: Возможно, отобразить ошибку пользователю
+      // todo: Отобразить ошибку пользователю
     }
   };
 
-  const handleDeclineOrder = (orderId) => {
-    // Заглушка для отказа от заказа
-    console.log(`Decline order with ID: ${orderId}`);
+  const handleDeclineOrder = async (orderId) => {
+    try {
+      await rejectInvoice({ orderId, reason: '' });   // todo: Добавить заполнение причины отказа (опционально)
+    } catch (error) {
+      console.error('Error declining order:', error);
+      // todo: Отобразить ошибку пользователю
+    }
   };
 
   if (isLoadingOrders || isLoadingClients || isLoadingProducts) {
@@ -96,7 +101,7 @@ function DirectOrders() {
               </summary>
               <div className={style.details_body}>
                 {
-                  order.services?.map((item,index) => 
+                  order.services?.map((item,index) =>
                     <p key={index} className={style.text}>{item.service}</p>
                   )
                 }

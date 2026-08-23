@@ -18,6 +18,7 @@ interface OrderChatControlProps {
   onCancelOrder: (order: Order, reason: string) => Promise<void>;
   onAcceptOffer: (orderId: number, contractorId: number) => Promise<void>;
   onAcceptInvoice: (orderId: number) => Promise<void>;
+  onRejectInvoice: (orderId: number, reason: string) => Promise<void>;
   onStartWork: (orderId: number) => Promise<void>;
   onCompleteWork: (orderId: number) => Promise<void>;
   onVerifyCompletion: (orderId: number) => Promise<void>;
@@ -32,6 +33,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   onCancelOrder,
   onAcceptOffer,
   onAcceptInvoice,
+  onRejectInvoice,
   onStartWork,
   onCompleteWork,
   onVerifyCompletion,
@@ -65,6 +67,10 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
     await onAcceptInvoice(order.id);
   };
 
+  const handleRejectInvoice = async() => {
+    await onRejectInvoice(order.id, '');  // todo: Добавить ввод причины отказа
+  };
+
   const handleStartWorkClick = async () => {
     await onStartWork(order.id);
   };
@@ -96,9 +102,14 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
       case OrderStatus.REQUESTED:
         if (isContractor) {
           return (
-            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptInvoice}>
-              {text('Accept invoice')}
-            </button>
+            <>
+              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptInvoice}>
+                {text('Accept invoice')}
+              </button>
+              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRejectInvoice}>
+                {text('Reject invoice')}
+              </button>
+            </>
           );
         }
         break;
