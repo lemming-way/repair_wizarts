@@ -173,7 +173,9 @@ async function request<T extends APIBaseType = Record<string, unknown>>(opts: Re
 
   try {
     if (isDebug) {
-      console.debug('[api]', correlationId, method, url);
+      const filteredData = queryBody ? [...queryBody].filter(pair => pair[0] !== 'token' && pair[0] !== 'u_hash') : [];
+      if (filteredData.length) console.debug('[api]', correlationId, method, url, filteredData);
+      else console.debug('[api]', correlationId, method, url);
     }
 
     const resp = await fetch(url, { method, body: queryBody });
