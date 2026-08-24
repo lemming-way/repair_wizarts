@@ -11,6 +11,7 @@
 import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
+import { objectMapper } from 'app/shared/lib/objectMapper';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as FileAPI from './api/dropbox';
 import * as MessageAPI from './api/message';
@@ -97,7 +98,7 @@ export type Message = SystemMessage | TextMessage | AudioMessage | FileMessage;
 
 export function useActiveChats() {
   const { user } = useUser() as { user: UserProfile };
-  const { data, ...ret } = useQuery({
+  const idsResult = useQuery({
     queryKey: [ 'user', user.id, 'active-chats' ],
     queryFn: MessageAPI.getActiveChatIds,
     refetchInterval: CONFIG.API?.chatsDataRefetchTime ?? 300000,
@@ -105,9 +106,9 @@ export function useActiveChats() {
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
 
-  const result = useChatsByIds(data || []);
+  const result = useChatsByIds(idsResult.data || []);
 
-  if (!ret.isSuccess) return { ...ret, chats: EMPTY_ARRAY };
+  if (!idsResult.isSuccess) return objectMapper(idsResult, { data: null, chats() { return EMPTY_ARRAY; } });
   return result;
 }
 
@@ -166,11 +167,7 @@ export function useSetChatOpen() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    setChatOpen: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, setChatOpen: 'mutateAsync' });
 }
 
 const lastChatRefetchTime: Map<string, string> = new Map();
@@ -212,7 +209,7 @@ async function getChatMessageIds(client: QueryClient, userId: number, orderId: n
 export function useChat(orderId: number, contractorId: number) {
   const chatId = `${orderId}:${contractorId}`;
   const { user } = useUser() as { user: UserProfile };
-  const { data, ...ret } = useQuery({
+  const result = useQuery({
     queryKey: [ 'user', user.id, 'chat', chatId ],
     queryFn: ({ client }) => getChatMessageIds(client, user.id, orderId, contractorId),
     refetchInterval: CONFIG.API?.chatMessagesRefetchTime ?? 10000,
@@ -220,11 +217,7 @@ export function useChat(orderId: number, contractorId: number) {
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
 
-  const messageIds = data || EMPTY_ARRAY;
-  return {
-    ...ret,
-    messageIds
-  };
+  return objectMapper(result, { data: null, messageIds(target) { return target.data as number[] || EMPTY_ARRAY; } });
 }
 
 const [ getMessageById, useMessagesByIds ] = createBatchLoader({
@@ -341,9 +334,5 @@ export function useSendMessage() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    sendMessage: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, sendMessage: 'mutateAsync' });
 }

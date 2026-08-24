@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import CONFIG from 'config';
+import { objectMapper } from 'app/shared/lib/objectMapper';
 import { useGlobalState } from './global';
 import { SiteData, getSiteData, getSiteDataVersion, getServices } from './api/site-data';
 
@@ -98,12 +99,7 @@ export function useCities(country: string = 'ru') {
     enabled: !!primary.data,
     staleTime: Infinity
   });
-  const { data, ...ret } = queryResult;
-  const cities: Record<number, CityData> = data || EMPTY_OBJECT;
-  return {
-    ...ret,
-    cities
-  }
+  return objectMapper(queryResult, { data: null, cities(target) { return (target.data || EMPTY_OBJECT) as Record<number, CityData>; } });
 }
 
 export type Categories = Record<number, {
@@ -187,18 +183,16 @@ async function fetchProducts() {
   return productsData;
 }
 
-const emptyProductsData = { categories: {}, subcategories: {}, products: {} };
-
 export function useProducts() {
   const queryResult = useQuery({
     queryKey: [ OFFERINGS_QUERY_KEY ],
     queryFn: fetchProducts,
     staleTime: CONFIG.API?.siteDataStaleTime ?? Infinity
   });
-  const { data, ...ret } = queryResult;
-  const productsData: ProductsData = data || emptyProductsData;
-  return {
-    ...ret,
-    ...productsData
-  }
+  return objectMapper(queryResult, {
+    data: null,
+    categories(target) { return (target.data?.categories || EMPTY_OBJECT) as Categories; },
+    subcategories(target) { return (target.data?.subcategories || EMPTY_OBJECT) as Subcategories; },
+    products(target) { return (target.data?.products || EMPTY_OBJECT) as Products; }
+  });
 }

@@ -108,27 +108,14 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
 
   const combineFetchResults = (results: UseQueryResult<T | null, unknown>[]) => {
     // Агрегируем состояния загрузки и ошибок
-    const ret = {
-      isLoading: false,
-      isFetching: false,
-      isError: false,
-      error: null as unknown,
-      isSuccess: true,
-      [dataKey]: [] as T[]
+    return {
+      get isLoading() { return results.some(result => result.isLoading); },
+      get isFetching() { return results.some(result => result.isFetching); },
+      get isError() { return results.some(result => result.isError); },
+      get error() { for (const result of results ) { const e = result.error; if (e) return e; } return null; },
+      get isSuccess() { return results.every(result => result.isSuccess); },
+      get [dataKey]() { return results.filter(result => !!result.data).map(result => result.data) as T[]; }
     } as CombinedResult & {[P in K]: T[]};
-
-    for (const query of results) {
-      ret.isLoading ||= query.isLoading;
-      ret.isFetching ||= query.isFetching;
-      if (query.isError && !ret.error) {
-        ret.isError = true;
-        ret.error = query.error;
-      }
-      ret.isSuccess &&= query.isSuccess;
-      if (query.data) ret[dataKey].push(query.data as T);
-    }
-
-    return ret;
   }
 
   const useItemsByIds = (ids: ID[]) => {

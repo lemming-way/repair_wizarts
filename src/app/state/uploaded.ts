@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import CONFIG from 'config';
+import { objectMapper } from 'app/shared/lib/objectMapper';
 import { fetchFile } from './api/dropbox';
 
 export function useFileById(fileId: number | null) {
@@ -18,11 +19,10 @@ export function useFileById(fileId: number | null) {
     enabled: !!fileId
   });
 
-  const { data: { blob, type, filename } = {}, ...ret } = queryResult;
-  return {
-    ...ret,
-    blob,
-    type,
-    filename
-  };
+  return objectMapper(queryResult, {
+    data: null,
+    blob(target) { return target.data?.blob; },
+    type(target) { return target.data?.type; },
+    filename(target) { return target.data?.filename; }
+  });
 }

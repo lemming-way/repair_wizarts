@@ -16,6 +16,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
+import { objectMapper } from 'app/shared/lib/objectMapper';
 import * as OrderAPI from './api/order';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
@@ -127,7 +128,7 @@ export function useContractors({ product, city, rating, isOnline }: {
   isOnline?: boolean;
 }) {
   const { user } = useUser() as { user: UserProfile };
-  const { data, ...rest } = useQuery({
+  const idsResult = useQuery({
     queryKey: [ 'contractors', product, city, rating, isOnline ],
     queryFn: () => OrderAPI.getContractorsByProduct({ productId: product, cityId: city, minRating: rating, isOnline }),
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity,
@@ -135,10 +136,10 @@ export function useContractors({ product, city, rating, isOnline }: {
     // потому что пользователь может смениться во время выполнения асинхронных операций
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
   });
+  const usersResult = useUsersByIds(idsResult.data || []);
 
-  const { users: contractors, ...rest2 } = useUsersByIds(data || []);
-  if (rest.isSuccess) return { ...rest2, contractors };
-  else return { ...rest, contractors: EMPTY_ARRAY };
+  if (idsResult.isSuccess) return objectMapper(usersResult, { users: null, contractors: 'users' });
+  else return objectMapper(idsResult, { data: null, contractors() { return EMPTY_ARRAY; } });
 }
 
 //~ /**
@@ -301,7 +302,7 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
     else if (stage === 'finished') filter |= OrderAPI.OrdersFilter.finished;
   }
 
-  const { data, ...rest } = useQuery({
+  const idsResult = useQuery({
     queryKey: [ 'user', user.id, 'orders', types, stages ],
     queryFn: () => OrderAPI.getOrderIds(filter),
     staleTime: CONFIG.API?.ordersListRefetchTime ?? 120000,
@@ -311,14 +312,14 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
              !!(filter & 3) && !!(filter & 28)   // Хотя бы один фильтр каждого типа
   });
 
-  const result = useOrdersByIds(data || []);
+  const ordersResult = useOrdersByIds(idsResult.data || []);
 
-  if (!rest.isSuccess) return { ...rest, orders: EMPTY_ARRAY };
+  if (!idsResult.isSuccess) return objectMapper(idsResult, { data: null, orders() { return EMPTY_ARRAY; } });
 
   // todo: Нужно обновить данные заказов, если статус заказа на сервере изменился, а в кэше - нет
   // todo: Подумать, как это сделать
 
-  return result;
+  return ordersResult;
 }
 
 const [ getOrderById, useOrdersByIds ] = createBatchLoader({
@@ -470,11 +471,7 @@ export function useCreateOrder() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    createOrder: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, createOrder: 'mutateAsync' });
 }
 
 /**
@@ -568,11 +565,7 @@ export function useUpdateOrder() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    updateOrder: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, updateOrder: 'mutateAsync' });
 }
 
 /**
@@ -676,11 +669,7 @@ export function useCancelOrder() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    cancelOrder: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, cancelOrder: 'mutateAsync' });
 }
 
 // ==================== 4. Работа с предложениями (откликами мастеров) ====================
@@ -745,11 +734,7 @@ export function useCreateOffer() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    createOffer: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, createOffer: 'mutateAsync' });
 }
 
 /**
@@ -811,11 +796,7 @@ export function useUpdateOffer() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    updateOffer: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, updateOffer: 'mutateAsync' });
 }
 
 /**
@@ -874,11 +855,7 @@ export function useAcceptOffer() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    acceptOffer: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, acceptOffer: 'mutateAsync' });
 }
 
 /**
@@ -912,11 +889,7 @@ export function useRevokeOffer() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    revokeOffer: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, revokeOffer: 'mutateAsync' });
 }
 
 // ==================== 5. Управление заказами (сторона мастера) ====================
@@ -1013,11 +986,7 @@ export function useAcceptInvoice() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    acceptInvoice: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, acceptInvoice: 'mutateAsync' });
 }
 
 /**
@@ -1065,11 +1034,7 @@ export function useRejectInvoice() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    rejectInvoice: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, rejectInvoice: 'mutateAsync' });
 }
 
 /**
@@ -1111,11 +1076,7 @@ export function useStartOrderWork() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    startOrderWork: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, startOrderWork: 'mutateAsync' });
 }
 
 /**
@@ -1157,11 +1118,7 @@ export function useFinishOrderWork() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    finishOrderWork: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, finishOrderWork: 'mutateAsync' });
 }
 
 // ==================== 6. Подтверждение и завершение (клиент) ====================
@@ -1219,11 +1176,7 @@ export function useConfirmOrderCompletion() {
     }
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    confirmOrderCompletion: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, confirmOrderCompletion: 'mutateAsync' });
 }
 
 //~ /**

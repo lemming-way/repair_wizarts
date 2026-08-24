@@ -18,6 +18,7 @@ import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import CONFIG from 'config';
 import { setToken, clearToken, isUserAuthorized, authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
+import { objectMapper } from 'app/shared/lib/objectMapper';
 import { fileToBase64, isImage } from 'app/shared/lib/utilities';
 import * as UserAPI from './api/user';
 import * as FileAPI from './api/dropbox';
@@ -232,12 +233,7 @@ export function useUser() {
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
 
-  const { data, ...ret } = queryResult;
-  const user = (data as UserProfile) || EMPTY_OBJECT;
-  return {
-    ...ret,
-    user
-  };
+  return objectMapper(queryResult, { data: null, user(target) { return (target.data as UserProfile) || EMPTY_OBJECT } });
 }
 
 const [ fetchUserById, useUsersByIds ] = createBatchLoader({
@@ -382,11 +378,7 @@ export function useLogin() {
       login(client, loginValue, password, keepAuthorized),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    login: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, login: 'mutateAsync' });
 }
 
 /**
@@ -492,11 +484,7 @@ export function useRegisterClient() {
     mutationFn: (payload: RegisterPayload, { client }) => registerClient(client, payload),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    register: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, register: 'mutateAsync' });
 }
 
 /**
@@ -530,11 +518,7 @@ export function useRegisterContractor() {
     mutationFn: (payload: RegisterPayload, { client }) => registerContractor(client, payload),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    register: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, register: 'mutateAsync' });
 }
 
 /**
@@ -702,11 +686,7 @@ export function useUpdateUser() {
     mutationFn: (payload: UserUpdatePayload, { client }) => updateUser(client, user.id, payload),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    save: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, save: 'mutateAsync' });
 }
 
 /**
@@ -733,11 +713,7 @@ export function useUpdateUserAvatar() {
     mutationFn: (photoFile: File, { client }) => updateUserAvatar(client, user.id, photoFile),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    save: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, save: 'mutateAsync' });
 }
 
 /**
@@ -767,11 +743,7 @@ export function useSetContractorActive() {
     },
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    setContractorActive: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, setContractorActive: 'mutateAsync' });
 }
 
 /**
@@ -797,11 +769,7 @@ export function useUpdateUserPassword() {
       updateUserPassword(user.id, oldPassword, newPassword),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    update: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, update: 'mutateAsync' });
 }
 
 /**
@@ -822,9 +790,5 @@ export function usePasswordRecovery() {
     mutationFn: (loginValue: string) => recoverPassword(loginValue),
   });
 
-  const { mutateAsync, ...ret } = mutation;
-  return {
-    ...ret,
-    recover: mutateAsync
-  }
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, recover: 'mutateAsync' });
 }
