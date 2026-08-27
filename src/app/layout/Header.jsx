@@ -205,7 +205,7 @@ const Toolbar = () => {
 
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
-      {isContractor && (
+      {(isContractor || !user.id) && (
         <div
           className={[
             styles.toolbar_burger2,
