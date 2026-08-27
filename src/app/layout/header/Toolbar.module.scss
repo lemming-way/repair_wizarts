@@ -278,6 +278,24 @@
       }
     }
 
+    &_profile_rating {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      em {
+        color: #fff;
+        font-size: 16px;
+        font-style: normal;
+      }
+
+      span {
+        color: #c8c8c8;
+        font-size: 25px;
+        letter-spacing: 2px;
+      }
+    }
+
     &_menu,
     &_profile_menu {
       visibility: hidden;

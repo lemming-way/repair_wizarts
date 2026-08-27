@@ -226,7 +226,13 @@ const Toolbar = () => {
             <div className={styles.toolbar_burger2_profile_header}>
               <img src={user.avatar || '/img/user_avatar.png'} alt="" />
               <strong>{user.name || ''}</strong>
-              {isContractor && <span>★★★★★</span>}
+              {isContractor && (
+                <div className={styles.toolbar_burger2_profile_rating}>
+                  <em>{user.contractor?.[0]?.rating ?? '0.0'}</em>
+                  <span>★★★★★</span>
+                  <em>({user.contractor?.[0]?.number_of_feedbacks ?? 0})</em>
+                </div>
+              )}
             </div>
             <Link onClick={() => setIsOpen(false)} to={financeLink}>
               <img src="/img/img-exit.png" alt="" />
