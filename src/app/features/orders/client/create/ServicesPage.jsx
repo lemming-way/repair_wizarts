@@ -52,6 +52,13 @@ function ServicesPage() {
     >
       <h1>{search || selectedSubcategory?.name || ''}</h1>
       <p>{text('Select an iPhone model to find out the cost of repair.')  /* todo: Изменить текст */}</p>
+      <Link
+        to={'/client/requests/create/data'}
+        className={`header__button ${style.orderButton}`}
+        style={{ padding: '15px 40px' }}
+      >
+        {text('Order on exchange')}
+      </Link>
       {categoryListItems.length > 0 && (
         <nav className={style.categoryList} aria-label={selectedSubcategory?.name}>
           {categoryListItems.map(product => (
@@ -67,13 +74,6 @@ function ServicesPage() {
           ))}
         </nav>
       )}
-      <Link
-        to={'/client/requests/create/data'}
-        className={`header__button ${style.orderButton}`}
-        style={{ padding: '15px 40px' }}
-      >
-        {text('Order on exchange')}
-      </Link>
 
       <div className={`remont__card__list ${style.cardList}`} style={{ marginTop: 100 }}>
         {currentProducts.length === 0

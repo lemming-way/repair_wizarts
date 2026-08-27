@@ -5,7 +5,7 @@
     position: relative;
 
     display: flex;
-    gap: 20px;
+    gap: 0;
 
     /* border-bottom: 1px solid grey; */
     /* max-width: max-content; */
@@ -22,12 +22,6 @@
 
 .navigator_block::-webkit-scrollbar {
     display: none;
-}
-
-@media (max-width: 650px) {
-    .navigator_block {
-        max-width: calc(100vw - 40px);
-    }
 }
 
 .navigator_block::before {
@@ -86,6 +80,11 @@
         padding: 17px 20px !important;
         translate: none !important;
         scroll-snap-align: start;
+    }
+
+    .link:global(.active2) {
+        border-bottom: 0 !important;
+        background: linear-gradient(#d9573b, #d9573b) left bottom 5px / 100% 4px no-repeat;
     }
 }
 

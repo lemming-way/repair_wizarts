@@ -58,8 +58,9 @@ function Offers() {
   return (
     <>
       <div className={style.order_row} style={{ marginBottom: 20 }}>
-        <div>
+        <div className={style.header_content}>
           <h1 className={style.heading}>{text('Exchange orders')}</h1>
+          <div className={style.navigation_row}>
           <div className="df" style={{ paddingBottom: 0 }}>
             <div className="two-input">
               {/* todo: здесь глюк с навигацией: обе ссылки ведут к одному URL */}
@@ -77,25 +78,25 @@ function Offers() {
               </Link>
             </div>
           </div>
+          <nav className={style.status_tabs} aria-label="Статусы откликов">
+            {[
+              ['active', 'Активные'],
+              ['completed', 'Выполненные'],
+              ['cancelled', 'Отменённые'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`${style.status_tab} ${activeStatus === value ? style.status_tab_active : ''}`}
+                onClick={() => setActiveStatus(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          </div>
         </div>
       </div>
-
-      <nav className={style.status_tabs} aria-label="Статусы откликов">
-        {[
-          ['active', 'Активные'],
-          ['completed', 'Выполненные'],
-          ['cancelled', 'Отменённые'],
-        ].map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className={`${style.status_tab} ${activeStatus === value ? style.status_tab_active : ''}`}
-            onClick={() => setActiveStatus(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
 
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '20px' }}>{text('Loading...')}</div>

@@ -21,7 +21,7 @@
     right: 0;
     background-image:
       url("/app/img/home/whyChooseUsBlock/dialog.svg"),
-      url("/app/img/home/whyChooseUsBlock/mobile-phone.svg");
+      var(--mobile-phone-image);
     background-repeat: no-repeat;
     background-size: 100%, 70%;
     background-position: right top 250px, right 70px bottom;
@@ -38,7 +38,7 @@
   }
 
   @include mixins.md {
-    margin-bottom: 0;
+    margin-bottom: 50px;
   }
 
   &_title {

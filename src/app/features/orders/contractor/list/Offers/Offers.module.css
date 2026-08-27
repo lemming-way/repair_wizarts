@@ -11,13 +11,36 @@
     margin-bottom: 20px;
 }
 
+.header_content {
+    width: 100%;
+}
+
+.navigation_row {
+    display: flex;
+    align-items: flex-end;
+    gap: 32px;
+    width: 100%;
+}
+
 .status_tabs {
     display: flex;
     align-items: center;
     gap: 30px;
-    margin: 0 0 18px;
+    width: max-content;
+    margin: 0;
     border-bottom: 1px solid #e1e1e1;
     overflow-x: auto;
+}
+
+@media (max-width: 700px) {
+    .navigation_row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .status_tabs {
+    }
 }
 
 .status_tab {

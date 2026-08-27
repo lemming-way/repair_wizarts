@@ -2,6 +2,7 @@
     position: relative;
     display: inline-block;
     z-index: 10001;
+    overflow: visible !important;
 }
 
 .yosetout {
@@ -20,9 +21,25 @@
     min-width: 163px;
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     padding: 12px 16px;
-    z-index: 10002;
+    z-index: 100000;
+    max-height: calc(100vh - 80px);
+    overflow-y: auto;
     border: 1px solid #303030;
     border-radius: 8px;
+}
+
+.profile-dropdown-portal {
+    position: fixed !important;
+    display: block !important;
+    z-index: 1000000 !important;
+    overflow: visible !important;
+}
+
+.profile-dropdown-portal .bldropdownfff-content {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    z-index: 1000000 !important;
 }
 
 @media (max-width: 720px) {

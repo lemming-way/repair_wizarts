@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -21,6 +22,8 @@ import { logout, useUser, UserRole } from '../state/user';
 
 const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
+  const profileMenuRef = useRef(null);
+  const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 70, right: 15 });
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const { user } = useUser();
@@ -126,9 +129,17 @@ const Toolbar = () => {
                 <div className="chat-message-counter">1</div>
               </Link>
               <div
+                ref={profileMenuRef}
                 className={visibleSetout ? 'yosetout yosetout--open' : 'yosetout'}
                 onClick={(event) => {
                   event.stopPropagation();
+                  if (!visibleSetout && profileMenuRef.current) {
+                    const rect = profileMenuRef.current.getBoundingClientRect();
+                    setProfileMenuPosition({
+                      top: rect.bottom + 8,
+                      right: window.innerWidth - rect.right,
+                    });
+                  }
                   setVisibleSetout(!visibleSetout);
                 }}
               >
@@ -143,10 +154,6 @@ const Toolbar = () => {
                     className="dropdownuser_arrow"
                     alt=""
                   />
-                </div>
-
-                <div className="bldropdown">
-                  {visibleSetout ? <DropdownSetout /> : null}
                 </div>
                 {/* </Link> */}
               </div>
@@ -216,29 +223,47 @@ const Toolbar = () => {
       >
         {!!user.id ? (
           <>
-            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
-              {text('Settings')}
-            </Link>
+            <div className={styles.toolbar_burger2_profile_header}>
+              <img src={user.avatar || '/img/user_avatar.png'} alt="" />
+              <strong>{user.name || ''}</strong>
+              {isContractor && <span>★★★★★</span>}
+            </div>
             <Link onClick={() => setIsOpen(false)} to={financeLink}>
-              {text('Wallet')}
+              <img src="/img/img-exit.png" alt="" />
+              <span>{text('Wallet')}</span>
+            </Link>
+            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
+              <img src="/img/img-contact.png" alt="" />
+              <span>{text('Settings')}</span>
+            </Link>
+            <Link onClick={() => setIsOpen(false)} to="/chats">
+              <img src="/img/img-massage.png" alt="" />
+              <span>{text('Chat')}</span>
+              <b>1</b>
             </Link>
             <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
-              {isContractor ? text('Applications') : text('My orders')}
+              <img src="/img/img-list.png" alt="" />
+              <span>{isContractor ? text('Applications') : text('My orders')}</span>
+              <b>1</b>
             </Link>
             {isContractor && (
               <Link onClick={() => setIsOpen(false)} to="/contractor/feedback">
-                {text('Reviews')}
+                <img src="/img/img-white-star.png" alt="" />
+                <span>{text('Reviews')}</span>
+                <b>1</b>
               </Link>
             )}
             <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
-              {isContractor ? text('Order exchange') : text('All orders')}
+              <img src="/img/img-list-2.png" alt="" />
+              <span>{isContractor ? text('Order exchange') : text('All orders')}</span>
             </Link>
             <button
               type="button"
               className={styles.toolbar_burger2_logout}
               onClick={handleLogout}
             >
-              {text('Logout')}
+              <img src="/img/img-exit-2.png" alt="" />
+              <span>{text('Logout')}</span>
             </button>
           </>
         ) : (
@@ -259,6 +284,17 @@ const Toolbar = () => {
             <MobileMenu/>
           </div>
       </div> */}
+      {visibleSetout &&
+        createPortal(
+          <div
+            className="bldropdown profile-dropdown-portal yosetout"
+            style={profileMenuPosition}
+            onClick={() => setVisibleSetout(false)}
+          >
+            <DropdownSetout />
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

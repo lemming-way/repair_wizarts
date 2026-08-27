@@ -7,13 +7,10 @@ import { useProducts, useCities } from 'app/state/site-data';
 import 'app/styles/legacy/profile.css';
 import style from './ContractorSettings.module.css';
 
-const experienceOptions = [
-  { value: 1, label: '1 year' },
-  { value: 2, label: '2 years' },
-  { value: 3, label: '3 years' },
-  { value: 5, label: '5 years' },
-  { value: 6, label: 'More than 5 years' },
-];
+const experienceOptions = Array.from({ length: 15 }, (_, index) => ({
+  value: index + 1,
+  label: `${index + 1} ${index === 0 ? 'year' : 'years'}`,
+}));
 
 const fourthLevelOptions = [
   { value: 'mock-1', label: 'Настройка оборудования' },
@@ -355,6 +352,8 @@ function ContractorSettings() {
               value={experience}
               isSelectAll={false}
               menuPlacement="bottom"
+              menuPosition="fixed"
+              menuPortalTarget={document.body}
             />
           </div>
 

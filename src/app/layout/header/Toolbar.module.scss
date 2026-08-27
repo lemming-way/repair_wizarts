@@ -9,12 +9,15 @@
   // Explicit header background to avoid dependency on page background
   &-header {
     position: relative;
-    z-index: 1000;
+    z-index: 10000;
     overflow: visible;
     background-color: #131313;
     color: white;
     width: 100%;
+    border-bottom: 1px solid #fff;
   }
+
+  overflow: visible;
 
   &_logo {
     padding: 10px 0;
@@ -188,6 +191,91 @@
           border-bottom: 0;
         }
       }
+
+      img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        flex: 0 0 22px;
+      }
+
+      a,
+      &_logout {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      a b {
+        display: none;
+      }
+
+      @include mixins.xl {
+        width: min(308px, 82vw);
+        padding: 18px 0;
+        background: #131313;
+
+        a {
+          position: relative;
+          padding: 14px 60px;
+          border: 0;
+          font-size: 16px;
+
+          b {
+            position: absolute;
+            top: 3px;
+            left: 75px;
+            display: grid;
+            width: 21px;
+            height: 21px;
+            place-items: center;
+            border-radius: 50%;
+            background: #e1563e;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 400;
+          }
+        }
+
+        a img {
+          width: 22px;
+          height: 22px;
+          flex-basis: 22px;
+          object-fit: contain;
+        }
+      }
+    }
+
+    &_profile_header {
+      display: none;
+
+      @include mixins.xl {
+        display: flex;
+        min-height: 172px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        img {
+          width: 92px;
+          height: 92px;
+          padding: 3px;
+          border: 1px solid #fff;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        strong {
+          font-size: 16px;
+        }
+
+        span {
+          color: #c8c8c8;
+          font-size: 25px;
+          letter-spacing: 2px;
+        }
+      }
     }
 
     &_menu,
@@ -197,7 +285,8 @@
       @include mixins.xl {
         position: fixed;
         top: 70px;
-        right: -120%;
+        right: auto;
+        left: 0;
         bottom: 0;
         width: min(320px, 85vw);
         height: auto;
@@ -206,7 +295,8 @@
         border-radius: 0;
         box-shadow: none;
         overflow-y: auto;
-        transition: right 0.6s ease, visibility 0s linear 0.6s;
+        transform: translateX(-100%);
+        transition: transform 0.6s ease, visibility 0s linear 0.6s;
         z-index: 1004;
       }
     }
@@ -215,12 +305,15 @@
       visibility: visible;
 
       @include mixins.xl {
-        right: 0;
+        transform: translateX(0);
         transition-delay: 0s;
       }
     }
 
     &_logout {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       margin-top: auto;
       padding: 16px 0;
       border: 0;
@@ -229,6 +322,16 @@
       background: transparent;
       text-align: left;
       cursor: pointer;
+
+      img {
+        width: 24px;
+        height: 24px;
+      }
+
+      @include mixins.xl {
+        padding: 18px 60px;
+        font-size: 16px;
+      }
     }
   }
 

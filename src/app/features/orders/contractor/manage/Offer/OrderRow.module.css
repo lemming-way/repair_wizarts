@@ -105,15 +105,23 @@
 
 .swiper {
   width: 240px;
+  height: 110px;
+  overflow: hidden;
   border-radius: 10px;
+  background: #f5f5f5;
 }
 
 .swiper img {
-  object-fit: cover;
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover !important;
+  object-position: center;
 }
 
 .swiperSlide {
   position: relative;
+  height: 110px;
 }
 
 .imageButton {
@@ -440,6 +448,8 @@
   width: 100px;
   height: 100px;
   border-radius: 50px;
+  object-fit: cover;
+  object-position: center;
 }
 @media (max-width: 900px) {
   .order_row {
@@ -483,6 +493,21 @@
   .icon_chat {
     display: none;
     left: -70px;
+  }
+
+  .right {
+    width: 100%;
+    align-items: center;
+  }
+
+  .swiper {
+    width: min(280px, 100%);
+    height: 160px;
+  }
+
+  .swiper img,
+  .swiperSlide {
+    height: 160px;
   }
 }
 
