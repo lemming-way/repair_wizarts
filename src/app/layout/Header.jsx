@@ -186,7 +186,13 @@ const Toolbar = () => {
 
       <div
         className={styles.toolbar_burger}
-        onClick={() => setMenuActive(!menuActive)}
+        onClick={() => {
+          if (isContractor) {
+            setMenuActive(!menuActive);
+          } else {
+            setIsOpen(!isOpen);
+          }
+        }}
       ></div>
 
       {/*Вынесла в отдельный компонент кнопки, чтобы сократить код*/}
@@ -205,15 +211,17 @@ const Toolbar = () => {
 
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
-      <div
-        className={[
-          styles.toolbar_burger2,
-          styles.toolbar_burger2_visibility_block,
-        ].join(' ')}
-        onClick={toggleMenu}
-      >
-        <div className={styles.toolbar_burger2_icon}></div>
-      </div>
+      {isContractor && (
+        <div
+          className={[
+            styles.toolbar_burger2,
+            styles.toolbar_burger2_visibility_block,
+          ].join(' ')}
+          onClick={toggleMenu}
+        >
+          <div className={styles.toolbar_burger2_icon}></div>
+        </div>
+      )}
       <div
         className={`${
           !!user.id
