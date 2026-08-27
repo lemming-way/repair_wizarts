@@ -6,6 +6,7 @@ import HeroSectionSearchBar from "./components/HeroSectionSearchBar/HeroSectionS
 import HeroSectionSwiper from "./components/HeroSectionSwiper/HeroSectionSwiper";
 import styles from './HeroSection.module.scss';
 import { useLanguage } from 'app/state/language';
+import { useUser } from 'app/state/user';
 
 interface Props {
   title?: string;
@@ -13,6 +14,7 @@ interface Props {
 
 const HeroSection: React.FC<Props> = ({title}) => {
   const text = useLanguage();
+  const { user } = useUser();
 
   return (
     <div className={styles.heroSection}>
@@ -29,12 +31,14 @@ const HeroSection: React.FC<Props> = ({title}) => {
           <h4 className={styles.heroSection_block_content_subtitle}>{text("Departure")}</h4>
           {/*Вынесла в отдельный компонет счетчики, что бы сократить код*/}
           <HeroSectionCounters />
-          <Link
-            to="/register"
-            className={styles.heroSection_block_content_button}
-          >
-           {text("Become a member")}
-          </Link>
+          {!user.id && (
+            <Link
+              to="/register"
+              className={styles.heroSection_block_content_button}
+            >
+              {text("Become a member")}
+            </Link>
+          )}
         </div>
         <div className={styles.heroSection_block_swiper}>
           {/*Вынесла в отдельный компонет swiper, что бы сократить код*/}

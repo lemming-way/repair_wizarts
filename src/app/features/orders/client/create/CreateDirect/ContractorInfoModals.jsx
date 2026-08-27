@@ -7,6 +7,16 @@ import { useLanguage } from 'app/state/language';
 import { BusinessModel } from 'app/state/user'
 import style from './CreateDirect.module.scss';
 
+const mockFourthLevelCategories = [
+  'Настройка оборудования',
+  'Диагностика',
+  'Установка программ',
+  'Удалённая помощь',
+  'Обслуживание систем',
+  'Консультация специалиста',
+  'Срочный выезд',
+];
+
 function ContractorInfoModals({
   selectedContractor,
   categories,
@@ -156,6 +166,12 @@ function ContractorInfoModals({
                   {text('Offerings')}
                 </span>
                 {contractorProducts.map(item => item.name).join(', ')}
+              </p>
+              <p className="info_contractor_big__text-about">
+                <span className="info_contractor_big__text-about-light">
+                  Категории 4-го уровня
+                </span>
+                {mockFourthLevelCategories.join(', ')}
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">

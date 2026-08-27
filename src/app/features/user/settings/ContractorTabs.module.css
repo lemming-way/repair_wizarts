@@ -13,8 +13,15 @@
     /* width: 100%; */
 
     width: 100%;
-    /* overflow-x: auto; */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 7px;
+}
+
+.navigator_block::-webkit-scrollbar {
+    display: none;
 }
 
 @media (max-width: 650px) {
@@ -60,6 +67,26 @@
     white-space: nowrap;
     color: #222;
     transition: color .2s;
+    flex: 0 0 150px;
+}
+
+@media (max-width: 650px) {
+    .navigator_block {
+        gap: 0;
+        scroll-snap-type: x proximity;
+        touch-action: pan-x;
+    }
+
+    .navigator_block::before {
+        top: 58px;
+    }
+
+    .link {
+        flex-basis: 145px;
+        padding: 17px 20px !important;
+        translate: none !important;
+        scroll-snap-align: start;
+    }
 }
 
 .link:hover,

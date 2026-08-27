@@ -83,7 +83,12 @@ const ServiceDropdownCities = () => {
               placeholder={text('select region or city')} 
             />
             {citiesArray.map(city => (
-              <div key={city.id} className={styles.sity} onClick={() => setCity(city.id)}>
+              <div
+                key={city.id}
+                className={`${styles.sity} ${String(currentCity) === city.id ? styles.sity_selected : ''}`}
+                onClick={() => setCity(city.id)}
+                aria-selected={String(currentCity) === city.id}
+              >
                 {city.name} {/* <span className={styles.small}>{menuItem[1]}</span> */}
               </div>
             ))}

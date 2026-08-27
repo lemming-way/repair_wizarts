@@ -11,6 +11,32 @@
     margin-bottom: 20px;
 }
 
+.status_tabs {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin: 0 0 18px;
+    border-bottom: 1px solid #e1e1e1;
+    overflow-x: auto;
+}
+
+.status_tab {
+    flex: 0 0 auto;
+    padding: 0 0 12px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    background: transparent;
+    color: #333;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.status_tab_active {
+    border-bottom-color: #d9573b;
+    color: #d9573b;
+    font-weight: 600;
+}
+
 .empty_block {
     display: flex;
     flex-direction: column;
@@ -81,4 +107,3 @@
 .button_back_v2:hover {
     background-color: rgb(222, 222, 222);
 }
-

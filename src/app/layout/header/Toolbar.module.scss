@@ -175,11 +175,6 @@
 
       @include mixins.xl {
         position: fixed;
-        top: 58px;
-        right: 8px;
-        bottom: auto;
-        height: max-content;
-        max-height: calc(100dvh - 66px);
         z-index: 1004;
       }
 
@@ -194,6 +189,47 @@
         }
       }
     }
+
+    &_menu,
+    &_profile_menu {
+      visibility: hidden;
+
+      @include mixins.xl {
+        position: fixed;
+        top: 70px;
+        right: -120%;
+        bottom: 0;
+        width: min(320px, 85vw);
+        height: auto;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow-y: auto;
+        transition: right 0.6s ease, visibility 0s linear 0.6s;
+        z-index: 1004;
+      }
+    }
+
+    &_menu_active {
+      visibility: visible;
+
+      @include mixins.xl {
+        right: 0;
+        transition-delay: 0s;
+      }
+    }
+
+    &_logout {
+      margin-top: auto;
+      padding: 16px 0;
+      border: 0;
+      border-top: 1px solid #515151;
+      color: #fff;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+    }
   }
 
   &_mobile {
@@ -206,13 +242,13 @@
     &_menu {
       display: block;
       position: fixed;
-      top: 65px;
+      top: 70px;
       bottom: 0;
       left: -120%;
       background-color: black;
       color: white;
       height: auto;
-      min-height: calc(100dvh - 65px);
+      min-height: calc(100dvh - 70px);
       width: 400px;
       overflow-y: auto;
       transition: all 1s ease;

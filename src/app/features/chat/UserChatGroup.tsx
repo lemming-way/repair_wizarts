@@ -49,7 +49,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
 }) => {
   const text = useLanguage();
   const { products } = useProducts();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const displayName = partner?.fullname || partner?.name || text('Unknown user');
   const avatarSrc = partner?.avatar || '/img/user_avatar.png';

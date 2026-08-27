@@ -192,6 +192,16 @@
 
 .map_container {
     position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1458px;
+    margin-right: auto;
+    margin-left: auto;
+    padding: 0 15px;
+
+    > div:first-child {
+        height: 680px !important;
+    }
 }
 
 .contractorCards {
@@ -243,18 +253,37 @@
 }
 
 @media (max-width: 1050px) {
+    .map_container > div:first-child {
+        height: 760px !important;
+    }
+
     .contractorCardsAnchor {
+        top: 20px;
+        bottom: auto;
         left: 12px;
         right: 12px;
     }
 
     .contractorCards {
-        flex-direction: column;
+        position: relative;
+        display: block;
     }
 
-    .contractorBigCard {
+    .contractorSmallCard {
+        position: relative;
+        z-index: 1;
+        width: min(500px, calc(100vw - 54px));
+    }
+
+    .contractorCards .contractorBigCard {
+        position: absolute !important;
+        z-index: 2;
+        top: 140px;
+        left: 20px;
         width: min(500px, calc(100vw - 24px));
-        max-height: 45vh;
+        max-width: calc(100% - 24px);
+        max-height: 560px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
     }
 }
 
@@ -284,6 +313,14 @@
     display: flex;
     justify-content: center;
     gap: 30px;
+}
+
+.iphone_desktop {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .iphone_mobile {

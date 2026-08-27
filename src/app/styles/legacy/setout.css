@@ -15,7 +15,7 @@
     position: absolute;
     line-height: 18px;
     right: 0px;
-    top: 42px;
+    top: 35px;
     background: #131313;
     min-width: 163px;
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
@@ -28,7 +28,7 @@
 @media (max-width: 720px) {
     .bldropdown .bldropdownfff-content {
         position: fixed;
-        top: 62px;
+        top: 70px;
         right: 10px;
         z-index: 1003;
         max-height: calc(100vh - 70px);

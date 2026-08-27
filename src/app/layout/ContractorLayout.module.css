@@ -12,7 +12,7 @@
 
 .main_block :global(.fixed-content) {
     position: fixed !important;
-    z-index: 1001;
+    z-index: 1;
     top: 0;
     bottom: 0;
     left: 0;

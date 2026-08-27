@@ -15,6 +15,16 @@ const experienceOptions = [
   { value: 6, label: 'More than 5 years' },
 ];
 
+const fourthLevelOptions = [
+  { value: 'mock-1', label: 'Настройка оборудования' },
+  { value: 'mock-2', label: 'Диагностика' },
+  { value: 'mock-3', label: 'Установка программ' },
+  { value: 'mock-4', label: 'Удалённая помощь' },
+  { value: 'mock-5', label: 'Обслуживание систем' },
+  { value: 'mock-6', label: 'Консультация специалиста' },
+  { value: 'mock-7', label: 'Срочный выезд' },
+];
+
 const workModeOptions = ['At the client', 'In the workshop', 'Remote'];
 
 function ContractorSettings() {
@@ -23,6 +33,7 @@ function ContractorSettings() {
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
   const [productOptionSelected, setProductOptionSelected] = useState([]);
+  const [fourthLevelOptionSelected, setFourthLevelOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
   const [photos, setPhotos] = useState([]);
 
@@ -254,6 +265,7 @@ function ContractorSettings() {
                 setCategoryOptionSelected(selected);
                 setSubcategoryOptionSelected([]);
                 setProductOptionSelected([]);
+                setFourthLevelOptionSelected([]);
               }}
               value={categoryOptionSelected}
               menuPlacement="bottom"
@@ -267,6 +279,7 @@ function ContractorSettings() {
               onChange={(selected) => {
                 setSubcategoryOptionSelected(selected);
                 setProductOptionSelected([]);
+                setFourthLevelOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               menuPlacement="bottom"
@@ -278,12 +291,24 @@ function ContractorSettings() {
               isMulti={true}
               placeholder={text('Services')}
               options={productOptions}
-              onChange={(selected) =>
-                setProductOptionSelected(selected)
-              }
+              onChange={(selected) => {
+                setProductOptionSelected(selected);
+                setFourthLevelOptionSelected([]);
+              }}
               value={productOptionSelected}
               menuPlacement="bottom"
               isDisabled={!subcategoryOptionSelected.length}
+            />
+            <MultiSelect
+              key="fourth_level"
+              isSelectAll={true}
+              isMulti={true}
+              placeholder="Категории 4-го уровня"
+              options={fourthLevelOptions}
+              onChange={setFourthLevelOptionSelected}
+              value={fourthLevelOptionSelected}
+              menuPlacement="bottom"
+              isDisabled={!productOptionSelected.length}
             />
           </div>
 

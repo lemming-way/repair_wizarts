@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import arrowRight from 'app/img/header/icons/arrow-right-icon.svg';
 import styles from './ServiceDropDownMobile.module.scss';
@@ -20,7 +21,13 @@ const ServiceDropdownMobile = ({ onNavigate }: ServiceDropdownMobileProps) => {
         {Object.entries(categories).map(([id, category]) => (
           <li key={id}>
             <div className={styles.serviceDropdown_list_item}>
-              <span>{category.name}</span>
+              <Link
+                to={`/categories/${id}`}
+                className={styles.serviceDropdown_list_item_link}
+                onClick={onNavigate}
+              >
+                {category.name}
+              </Link>
               <img
                 className={styles.serviceDropdown_list_item_arrow}
                 src={arrowRight}

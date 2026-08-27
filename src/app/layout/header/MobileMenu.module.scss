@@ -101,6 +101,21 @@
     &:hover {
       background-color: #d1d1d1;
     }
+
+    &_selected {
+      color: #fff;
+      background-color: #d9573b;
+
+      &::after {
+        content: '✓';
+        margin-left: auto;
+        font-weight: 700;
+      }
+
+      &:hover {
+        background-color: #d9573b;
+      }
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import MobileMenu from './header/MobileMenu';
 import DropdownSetout from './header/dropdownSetout';
@@ -10,7 +11,7 @@ import styles from './header/Toolbar.module.scss';
 import ListItem from './ListItem';
 import './header/header.scss';
 import { useLanguage } from '../state/language';
-import { useUser, UserRole } from '../state/user';
+import { logout, useUser, UserRole } from '../state/user';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -23,6 +24,8 @@ const Toolbar = () => {
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const { user } = useUser();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const isContractor = user.role === UserRole.Contractor;
   const financeLink = isContractor ? '/contractor/wallet' : '/client/settings/wallet';
@@ -34,6 +37,11 @@ const Toolbar = () => {
     : '0';
 
   const [isOpen, setIsOpen] = useState(false);
+  const handleLogout = async () => {
+    setIsOpen(false);
+    await logout(queryClient);
+    navigate('/');
+  };
   const toggleMenu = () => {
     console.log('click');
     console.log(isOpen);
@@ -199,9 +207,15 @@ const Toolbar = () => {
       >
         <div className={styles.toolbar_burger2_icon}></div>
       </div>
-      {isOpen && (
-        !!user.id ? (
-          <div className={styles.toolbar_burger2_profile_menu}>
+      <div
+        className={`${
+          !!user.id
+            ? styles.toolbar_burger2_profile_menu
+            : styles.toolbar_burger2_menu
+        } ${isOpen ? styles.toolbar_burger2_menu_active : ''}`}
+      >
+        {!!user.id ? (
+          <>
             <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
               {text('Settings')}
             </Link>
@@ -219,14 +233,21 @@ const Toolbar = () => {
             <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
               {isContractor ? text('Order exchange') : text('All orders')}
             </Link>
-          </div>
+            <button
+              type="button"
+              className={styles.toolbar_burger2_logout}
+              onClick={handleLogout}
+            >
+              {text('Logout')}
+            </button>
+          </>
         ) : (
-          <div className={styles.toolbar_burger2_menu}>
+          <>
             <Link onClick={() => setIsOpen(false)} to="/login">{text('login')}</Link>
             <Link onClick={() => setIsOpen(false)} to="/register">{text('register')}</Link>
-          </div>
-        )
-      )}
+          </>
+        )}
+      </div>
 
       {/* modile левое меню */}
       {/* <div className={styles.toolbar_mobile2}>

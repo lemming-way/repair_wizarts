@@ -2,8 +2,98 @@
     min-height: calc(100vh - 71px - 280px);
 }
 
+.categoryList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 28px;
+}
+
+.categoryListItem {
+    flex: 0 0 auto;
+    padding: 10px 16px;
+    border: 1px solid #d9573b;
+    border-radius: 8px;
+    color: #222;
+    background: #fff;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.categoryListItem:hover {
+    color: #fff;
+    background: #d9573b;
+}
+
 @media (max-width: 770px) {
     .devices_block {
         min-height: calc(100vh - 71px - 475px);
+    }
+
+    .orderButton {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .categoryList {
+        flex-wrap: nowrap;
+        width: 100%;
+        padding-bottom: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-x;
+    }
+
+    .categoryList::-webkit-scrollbar {
+        display: none;
+    }
+
+    .categoryListItem {
+        scroll-snap-align: start;
+    }
+
+    .cardList {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 28px 12px;
+        margin-top: 60px !important;
+    }
+
+    :global(#root) main .devices_block .cardList .card {
+        width: 100% !important;
+        min-width: 0;
+    }
+
+    :global(#root) main .devices_block .cardList .card .cardImage {
+        box-sizing: border-box;
+        width: min(100%, 180px);
+        aspect-ratio: 1;
+        margin: 0 auto;
+        padding: 20px !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    :global(#root) main .devices_block .cardList .card .cardImage .productImage {
+        display: block !important;
+        width: 70px !important;
+        height: 100px !important;
+        padding: 0 !important;
+        object-fit: contain !important;
+    }
+
+    .card p {
+        padding-top: 16px !important;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 420px) {
+    :global(#root) main .devices_block .cardList .card .cardImage {
+        width: min(100%, 150px);
     }
 }

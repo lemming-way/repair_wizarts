@@ -12,6 +12,8 @@ import SERVER_PATH from '../../../config/SERVER_PATH'
 import backgroundImg from '../../img/article.png'
 import calendarIcon from '../../img/calendar.png'
 import groupIcon from '../../img/group.png'
+import likeImage from '../../img/like.png'
+import viewImage from '../../img/view.png'
 // todo: Добавить реальные вызовы API для статей
 // import {
 //     getArticle,
@@ -19,6 +21,7 @@ import groupIcon from '../../img/group.png'
 // } from '../../services/article.service'
 import { useLanguage } from '../../state/language'
 import { useUser } from '../../state/user'
+import homeStyles from '../../styles/home/HomeSections.module.scss'
 
 // Фиктивные данные для статьи
 const mockArticleData = (id) => ({
@@ -76,7 +79,7 @@ const Article = (props) => {
     const [offsetContent, setOffsetContent] = useState(true)
 
     return (
-        <div className={styles.container}>
+        <div className={styles.container} style={{padding: 0}}>
             <div className={styles.header} style={headerStyle}>
                 <div className={styles.headerContainer}>
                     <h2 className={styles.headerTitle}>{data.title}</h2>
@@ -130,21 +133,24 @@ const Article = (props) => {
                     </div>
                 : null}
                 <div className={styles.bodyActions}>
-                    <Link to={user.id ? "/client/requests/create/data" : "/register/client"} className={styles.bodyButton}>Оформить ремонт</Link>
+                    <Link to={user.id ? "/client/requests/create/data" : "/register/client"} className={styles.bodyButton}>Оформить услугу</Link>
                 </div>
             </div>
             <ArticleComments
                 articleId={id}
                 likes={data.likes}
             />
-            <div className={styles.articles}>
+            <section className={`blog ${homeStyles.section}`}>
+                <div className="container ircontainer">
+                    <h2 className={homeStyles.title}>Другие статьи</h2>
+                    <div className="blog__card__list">
                 <Suspense fallback={<div className="swiper-loading" />}>
                     <Swiper
                         slidesPerView={4}
                         spaceBetween={30}
                         navigation={true}
                         modules={[Navigation]}
-                        className="mySwiper"
+                        className={`mySwiper ${homeStyles.slider} ${homeStyles.articleSlider}`}
                         breakpoints={{
                             0: {
                                 slidesPerView: 2
@@ -164,7 +170,7 @@ const Article = (props) => {
                             <SwiperSlide className="swiper-slier" key={v.id}>
                                 <Link
                                     to={"/articles/" + v.id}
-                                    className={styles.articlesLink}
+                                    className={homeStyles.articleLink}
                                     onClick={() => document.documentElement.scrollTop = 0}
                                 >
                                     <div className="blog__card">
@@ -174,9 +180,19 @@ const Article = (props) => {
                                             alt=""
                                         />
                                         <div className="blog__card__content">
-                                            <h4 className={styles.articlesTitle}>{v.title}</h4>
-                                            <p className={styles.articlesContent}>{filterText(v.text)}</p>
-                                            <span className={styles.articlesDate}>{formatDate(v.created_at)}</span>
+                                            <h4 className="blog-card__title">{v.title}</h4>
+                                            <p className="blog-card__description">{filterText(v.text)}</p>
+                                            <span className="blog-card__date">{formatDate(v.created_at)}</span>
+                                            <div className="blog-card-stats">
+                                                <div className="blog-card-stats__item">
+                                                    <img src={likeImage} className="blog-card-stats__picture" alt="" />
+                                                    <span className="blog-card-stats__count">{v.likes}</span>
+                                                </div>
+                                                <div className="blog-card-stats__item">
+                                                    <img src={viewImage} className="blog-card-stats__picture blog-card-stats__view-picture" alt="" />
+                                                    <span className="blog-card-stats__count">{v.views}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </Link>
@@ -184,7 +200,9 @@ const Article = (props) => {
                         ))}
                     </Swiper>
                 </Suspense>
-            </div>
+                    </div>
+                </div>
+            </section>
         </div>
     )
 }
