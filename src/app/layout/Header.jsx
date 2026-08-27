@@ -186,13 +186,7 @@ const Toolbar = () => {
 
       <div
         className={styles.toolbar_burger}
-        onClick={() => {
-          if (isContractor) {
-            setMenuActive(!menuActive);
-          } else {
-            setIsOpen(!isOpen);
-          }
-        }}
+        onClick={() => setMenuActive(!menuActive)}
       ></div>
 
       {/*Вынесла в отдельный компонент кнопки, чтобы сократить код*/}
@@ -222,7 +216,7 @@ const Toolbar = () => {
           <div className={styles.toolbar_burger2_icon}></div>
         </div>
       )}
-      <div
+      {(isContractor || !user.id) && <div
         className={`${
           !!user.id
             ? styles.toolbar_burger2_profile_menu
@@ -286,7 +280,7 @@ const Toolbar = () => {
             <Link onClick={() => setIsOpen(false)} to="/register">{text('register')}</Link>
           </>
         )}
-      </div>
+      </div>}
 
       {/* modile левое меню */}
       {/* <div className={styles.toolbar_mobile2}>
