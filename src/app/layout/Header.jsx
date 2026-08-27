@@ -225,7 +225,7 @@ const Toolbar = () => {
           <>
             <div className={styles.toolbar_burger2_profile_header}>
               <img src={user.avatar || '/img/user_avatar.png'} alt="" />
-              <strong>{user.name || ''}</strong>
+              <strong>{[user.name, user.lastname].filter(Boolean).join(' ')}</strong>
               {isContractor && (
                 <div className={styles.toolbar_burger2_profile_rating}>
                   <em>{user.contractor?.[0]?.rating ?? '0.0'}</em>
@@ -249,13 +249,13 @@ const Toolbar = () => {
             </Link>
             <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
               <img src="/img/img-list.png" alt="" />
-              <span>{isContractor ? text('Applications') : text('My orders')}</span>
+              <span>{isContractor ? 'Мои заявки' : text('My orders')}</span>
               <b>1</b>
             </Link>
             {isContractor && (
               <Link onClick={() => setIsOpen(false)} to="/contractor/feedback">
                 <img src="/img/img-white-star.png" alt="" />
-                <span>{text('Reviews')}</span>
+                <span>Мои отзывы</span>
                 <b>1</b>
               </Link>
             )}
