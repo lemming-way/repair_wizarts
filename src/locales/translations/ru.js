@@ -209,7 +209,7 @@ const lang = {
   "Added devices": "Добавленные устройства",
   "Current": "Актуальное",
   "Archive": "Архив",
-  "Add device": "Добавить устройство",
+  "Add device": "Добавить услугу",
   "Orders": "Заказы",
   "Offer": "Предложение",
   "Manage": "Управлять",

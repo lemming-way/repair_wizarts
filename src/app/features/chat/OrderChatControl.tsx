@@ -215,19 +215,20 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
       <div className={styles.action_buttons}>
         {renderActionButtons()}
       </div>
-      <Dropdown
-        title={
-          <>
-            <div className={styles.button_dotted}>
-              <div></div>
-              <div></div>
-              <div></div>
-            </div>
-          </>
-        }
-        buttonClassName={styles.dropdown_button}
-        menuClassName={styles.dropdown_menu}
-      >
+      <div className={styles.dropdown_wrap}>
+        <Dropdown
+          title={
+            <>
+              <div className={styles.button_dotted}>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+            </>
+          }
+          buttonClassName={styles.dropdown_button}
+          menuClassName={styles.dropdown_menu}
+        >
           <Dropdown.Item
             className={styles.dropdown_item}
             onClick={() => onCloseChat(order.id, chatContractorId)}
@@ -235,7 +236,8 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
             <img src="/img/icons/trash.png" alt="" />
             {text('Close chat')}
           </Dropdown.Item>
-      </Dropdown>
+        </Dropdown>
+      </div>
     </div>
   );
 };

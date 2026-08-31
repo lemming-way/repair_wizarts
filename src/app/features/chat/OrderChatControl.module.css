@@ -1,4 +1,5 @@
 .order_control_block {
+    position: relative;
     background-color: #ffffff;
     padding: 16px 22px 16px 64px;
     border-bottom: 1px solid #e9eaf1;
@@ -7,6 +8,10 @@
     align-items: center;
     flex-wrap: wrap; /* Разрешить перенос элементов на меньших экранах */
     gap: 15px; /* Отступы между элементами */
+}
+
+.dropdown_wrap {
+    position: relative;
 }
 
 .order_info {
@@ -167,6 +172,25 @@
     .action_buttons {
         width: 100%;
         justify-content: flex-start;
+    }
+
+    .dropdown_wrap {
+        position: absolute;
+        top: 14px;
+        right: 18px;
+    }
+
+    .dropdown_wrap .dropdown_button {
+        position: static;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+    }
+
+    .dropdown_wrap .dropdown_menu {
+        top: 100%;
+        right: 0;
+        left: auto;
     }
 }
 

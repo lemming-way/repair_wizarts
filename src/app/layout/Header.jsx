@@ -22,6 +22,8 @@ import { logout, useUser, UserRole } from '../state/user';
 
 const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
+  const toolbarHeaderRef = useRef(null);
+  const [drawerTop, setDrawerTop] = useState(65);
   const profileMenuRef = useRef(null);
   const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 70, right: 15 });
   const [menuActive, setMenuActive] = useState(false);
@@ -66,8 +68,24 @@ const Toolbar = () => {
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
+
+  useEffect(() => {
+    const updateDrawerTop = () => {
+      const headerBottom = toolbarHeaderRef.current?.getBoundingClientRect().bottom ?? 0;
+      setDrawerTop(Math.max(0, headerBottom));
+    };
+
+    updateDrawerTop();
+    window.addEventListener('scroll', updateDrawerTop, { passive: true });
+    window.addEventListener('resize', updateDrawerTop);
+    return () => {
+      window.removeEventListener('scroll', updateDrawerTop);
+      window.removeEventListener('resize', updateDrawerTop);
+    };
+  }, []);
+
   return (
-    <header className={styles['toolbar-header']}>
+    <header ref={toolbarHeaderRef} className={styles['toolbar-header']}>
       <div className={`${styles.toolbar} appContainer`}>
         <Link to="/" className={styles.toolbar_logo}>
           <img className={styles.toolbar_logo_img} src="/img/image.png" alt="Elitegig" />
@@ -192,8 +210,9 @@ const Toolbar = () => {
       {/*Вынесла в отдельный компонент кнопки, чтобы сократить код*/}
       {/* мобильное меню в левом бургере */}
       <div className={styles.toolbar_mobile}>
-        <div
-          className={
+          <div
+            style={{ top: `${drawerTop}px` }}
+            className={
             menuActive
               ? `${styles.toolbar_mobile_menu} ${styles.toolbar_mobile_menu_active}`
               : `${styles.toolbar_mobile_menu}`
@@ -202,6 +221,13 @@ const Toolbar = () => {
           <MobileMenu setMenuActive={setMenuActive} />
         </div>
       </div>
+      {menuActive && (
+        <div
+          className={styles.toolbar_mobile_top_backdrop}
+          style={{ height: `${drawerTop}px` }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
@@ -216,7 +242,15 @@ const Toolbar = () => {
           <div className={styles.toolbar_burger2_icon}></div>
         </div>
       )}
+      {(isContractor || !user.id) && isOpen && (
+        <div
+          className={styles.toolbar_burger2_top_backdrop}
+          style={{ height: `${drawerTop}px` }}
+          aria-hidden="true"
+        />
+      )}
       {(isContractor || !user.id) && <div
+        style={{ '--drawer-top': `${drawerTop}px` }}
         className={`${
           !!user.id
             ? styles.toolbar_burger2_profile_menu
