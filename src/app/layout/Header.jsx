@@ -244,7 +244,9 @@ const Toolbar = () => {
       )}
       {(isContractor || !user.id) && isOpen && (
         <div
-          className={styles.toolbar_burger2_top_backdrop}
+          className={`${styles.toolbar_burger2_top_backdrop} ${
+            !user.id ? styles.toolbar_burger2_top_backdrop_right : ''
+          }`}
           style={{ height: `${drawerTop}px` }}
           aria-hidden="true"
         />

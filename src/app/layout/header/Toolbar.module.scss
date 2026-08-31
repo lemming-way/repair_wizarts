@@ -268,6 +268,14 @@
         pointer-events: none;
         transition: height 0.12s linear;
       }
+
+      &_right {
+        @include mixins.xl {
+          right: 0;
+          left: auto;
+          width: min(320px, 85vw);
+        }
+      }
     }
 
     &_profile_header {
@@ -276,6 +284,7 @@
       @include mixins.xl {
         display: flex;
         min-height: 172px;
+        margin-bottom: 16px;
         flex-direction: column;
         align-items: center;
         justify-content: center;
@@ -343,6 +352,14 @@
         overflow-y: auto;
         transform: translateX(-100%);
         z-index: 1004;
+      }
+    }
+
+    &_menu {
+      @include mixins.xl {
+        right: 0;
+        left: auto;
+        transform: translateX(100%);
       }
     }
 

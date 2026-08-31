@@ -186,18 +186,19 @@
 .contractorCardsAnchor {
     position: absolute;
     z-index: 10;
-    bottom: 12px;
-    left: 12px;
+    top: 16px;
+    bottom: auto;
+    left: max(52px, calc((100vw - 1458px) / 2 + 51px));
 }
 
 .map_container {
     position: relative;
     box-sizing: border-box;
-    width: 100%;
-    max-width: 1458px;
-    margin-right: auto;
-    margin-left: auto;
-    padding: 0 15px;
+    width: 100vw;
+    max-width: none;
+    margin-right: 0;
+    margin-left: calc(50% - 50vw);
+    padding: 0;
 
     > div:first-child {
         height: 680px !important;

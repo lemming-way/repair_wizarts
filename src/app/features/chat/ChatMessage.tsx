@@ -1,5 +1,6 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { formatMarkdown } from 'app/shared/lib/markdown';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, useUsersByIds } from 'app/state/user';
@@ -26,6 +27,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   authorName, relatedMessage, onReply, onEdit, onDelete
 }) => {
   const text = useLanguage();
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
   const isOwnMessage = (message.type === MessageType.User && message.from === currentUserId);
 
@@ -35,6 +37,8 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   const isTextMessage = message.format === MessageFormat.Text;
   const isAudioMessage = message.format === MessageFormat.Audio;
   const isAttachment = message.format === MessageFormat.File;
+  const attachmentFileId = 'fileId' in message ? message.fileId : null;
+  const isImageAttachment = isAttachment && /\.(avif|bmp|gif|jpe?g|png|svg|webp)$/i.test(message.caption || '');
 
   const avatarSrc = authorAvatar || '/img/user_avatar.png';
   const displayName = authorName || (isAdministratorMessage ? text('Administrator') : text('Unknown user'));
@@ -52,7 +56,7 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   const messageContainerStyle = isOwnMessage ? styles.align_right : isSystemMessage ? styles.align_center : styles.align_left;
   const messageBubbleStyle = isOwnMessage ? styles.own_message : isAdministratorMessage ? styles.admin_message : styles.partner_message;
 
-  return (
+  return <>
     <div
       className={`${styles.chat_message_container} ${messageContainerStyle}`}
       data-message={message.id}
@@ -92,12 +96,32 @@ export const ChatMessage: FC<ChatMessageProps> = ({
             )}
             {relatedMessage && <button type="button" className={styles.quoted_message} onClick={() => document.querySelector(`[data-message="${relatedMessage.id}"]`)?.scrollIntoView({ behavior: 'smooth' })}>{relatedMessage.format === MessageFormat.Text ? relatedMessage.text : text('Attachment')}</button>}
             {isTextMessage && <p className={styles.message_text}>{formatMarkdown(message.text)}</p>}
-            {isAttachment && <div className={styles.message_attachment}><AnyMedia src={message.fileId} /><span>{message.caption}</span></div>}
+            {isAttachment && (
+              <div className={`${styles.message_attachment} ${isImageAttachment ? styles.message_attachment_clickable : ''}`}>
+                <AnyMedia
+                  src={message.fileId}
+                  onClick={isImageAttachment ? () => setIsImagePreviewOpen(true) : undefined}
+                />
+                <span>{message.caption}</span>
+              </div>
+            )}
             {isAudioMessage && <AnyMedia src={message.audioId} mediaType="audio" />}
             {isOwnMessage && <span className={styles.read_status}>{message.partnerRead ? '✓✓' : '✓'}</span>}
           </div>
         </div>
       }
     </div>
-  );
+    {isImagePreviewOpen && attachmentFileId && createPortal(
+      <div className={styles.image_preview_overlay} onClick={() => setIsImagePreviewOpen(false)}>
+        <button type="button" className={styles.image_preview_close} onClick={() => setIsImagePreviewOpen(false)} aria-label="Закрыть">×</button>
+        <AnyMedia
+          src={attachmentFileId}
+          mediaType="image"
+          className={styles.image_preview_media}
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>,
+      document.body
+    )}
+  </>;
 };
