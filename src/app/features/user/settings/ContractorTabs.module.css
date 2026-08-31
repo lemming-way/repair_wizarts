@@ -87,7 +87,7 @@
 
     .link:global(.active2) {
         border-bottom: 0 !important;
-        background: linear-gradient(#d9573b, #d9573b) left bottom 5px / 100% 4px no-repeat;
+        background: linear-gradient(#d9573b, #d9573b) left bottom 1px / 100% 4px no-repeat;
     }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
 import MobileMenu from './header/MobileMenu';
@@ -30,6 +30,7 @@ const Toolbar = () => {
   const text = useLanguage();
   const { user } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const isContractor = user.role === UserRole.Contractor;
@@ -272,32 +273,32 @@ const Toolbar = () => {
                 </div>
               )}
             </div>
-            <Link onClick={() => setIsOpen(false)} to={financeLink}>
+            <Link className={location.pathname.startsWith(financeLink) ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={financeLink}>
               <img src="/img/img-exit.png" alt="" />
               <span>{text('Wallet')}</span>
             </Link>
-            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/settings' : '/client/settings') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
               <img src="/img/img-contact.png" alt="" />
               <span>{text('Settings')}</span>
             </Link>
-            <Link onClick={() => setIsOpen(false)} to="/chats">
+            <Link className={location.pathname.startsWith('/chats') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to="/chats">
               <img src="/img/img-massage.png" alt="" />
               <span>{text('Chat')}</span>
               <b>1</b>
             </Link>
-            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/orders' : '/client/requests') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
               <img src="/img/img-list.png" alt="" />
               <span>{isContractor ? 'Мои заявки' : text('My orders')}</span>
               <b>1</b>
             </Link>
             {isContractor && (
-              <Link onClick={() => setIsOpen(false)} to="/contractor/feedback">
+              <Link className={location.pathname.startsWith('/contractor/feedback') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to="/contractor/feedback">
                 <img src="/img/img-white-star.png" alt="" />
                 <span>Мои отзывы</span>
                 <b>1</b>
               </Link>
             )}
-            <Link onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/requests' : '/client/requests/my_orders') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
               <img src="/img/img-list-2.png" alt="" />
               <span>{isContractor ? text('Order exchange') : text('All orders')}</span>
             </Link>

@@ -329,6 +329,12 @@
       }
     }
 
+    &_profile_link_active {
+      color: #fff !important;
+      background: #343434;
+      font-weight: 600;
+    }
+
     &_menu,
     &_profile_menu {
       visibility: hidden;
