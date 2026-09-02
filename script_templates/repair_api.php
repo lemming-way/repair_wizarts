@@ -1984,6 +1984,7 @@ $out = call_user_func(function() {
     // Получить сообщения по списку id
     case 'getMessages':
       $sql = 'SELECT `m`.`id_message`  AS `id`,' .
+                '`m`.`recipient_owner` AS `chat_id`,' .
                 'IF(`m`.`sender_owner_type`=1,`m`.`sender_owner`,NULL) AS `from`,' .
                 'CASE WHEN `m`.`id_message_type`=1 THEN `m`.`value` WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>\'$.text\' ELSE NULL END AS `text`,' .
                 'CASE WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>\'$.eventType\' ELSE NULL END AS `event_type`,' .
@@ -2037,6 +2038,52 @@ $out = call_user_func(function() {
                   'AND `m`.`recipient_owner_type`=31 ' .
                   'AND `m`.`id_message_type` IN(1,31,32,33)';
       return $query($sql, $data);
+
+    // Пометить все сообщения в чате прочитанными
+    case 'markAllAsRead':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      $chat_id = isset($data['id']) ? strval($data['id']) : '';
+      if (!$chat_id) $die(400, 'Chat ID not set');
+      list ($order_id, $contractor_id) = explode(':', $chat_id);
+      $order_id = intval($order_id);
+      $contractor_id = intval($contractor_id);
+      if ($order_id <= 0 || $contractor_id <= 0) $die(400, 'Invalid chat ID');
+      if ($context['u_role'] === 2 && $contractor_id !== $context['u_id']) $die(400, 'Invalid chat ID');
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `client` FROM `order` WHERE `id_order`=:order FOR SHARE',
+        [ 'order' => $order_id ],
+        [ 'numeric_fields' => ['client'] ]
+      );
+      if (empty($result) || ($context['u_role'] !== 2 && $result !== $context['u_id'])) $die(400, 'Invalid chat ID');
+      $ret = $query(
+        'SELECT `m`.`id_message` FROM `message` `m` ' .
+        'LEFT JOIN `messages_read` `r` ON `r`.`id_message`=`m`.`id_message` AND `id_user`=:user ' .
+        'WHERE `m`.`recipient_owner`=CONCAT(:order,\':\',:contractor) ' .
+          'AND (`m`.`sender_owner`<>:user OR `m`.`sender_owner_type`<>1) ' .
+          'AND `m`.`active_status`>0 ' .
+          'AND `m`.`recipient_owner_type`=31 ' .
+          'AND `m`.`id_message_type` IN(1,31,32,33) ' .
+          'AND `r`.`id_message` IS NULL ' .
+        'FOR UPDATE OF `r` FOR SHARE OF `m`',
+        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
+        [ 'numeric_fields' => ['id_message'] ]
+      );
+      if ($ret) {
+        $values = [];
+        foreach ($ret as $id) {
+          $values[] = "($id,:user,NOW(0))";
+        }
+        $result = $query(
+          'INSERT INTO `messages_read` VALUES' . join(',', $values),
+          [ 'user' => $context['u_id'] ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database insert error.');
+      }
+      $query_commit();
+
+      return $ret;
 
     // Добавить сообщение
     case 'postMessage':

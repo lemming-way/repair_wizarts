@@ -12,7 +12,9 @@ import chatStyles from './Chat.module.css';
 interface OrderChatControlProps {
   order: Order;
   chatContractorId: number;
+  isChatUnread: boolean;
   currentUser: UserProfile;
+  onSetChatRead: (orderId: number, contractorId: number) => Promise<void>;
   onCloseChat: (orderId: number, contractorId: number) => Promise<void>;
   // Колбэки для мутаций (или заглушек действий)
   onCancelOrder: (order: Order, reason: string) => Promise<void>;
@@ -28,7 +30,9 @@ interface OrderChatControlProps {
 export const OrderChatControl: FC<OrderChatControlProps> = ({
   order,
   chatContractorId,
+  isChatUnread,
   currentUser,
+  onSetChatRead,
   onCloseChat,
   onCancelOrder,
   onAcceptOffer,
@@ -239,13 +243,23 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         buttonClassName={styles.dropdown_button}
         menuClassName={styles.dropdown_menu}
       >
-          <Dropdown.Item
-            className={styles.dropdown_item}
-            onClick={() => onCloseChat(order.id, chatContractorId)}
-          >
-            <img src="/img/icons/trash.png" alt="" />
-            {text('Close chat')}
-          </Dropdown.Item>
+      {isChatUnread ?
+        <Dropdown.Item
+          className={styles.dropdown_item}
+          onClick={() => onSetChatRead(order.id, chatContractorId)}
+        >
+          <img src="/img/icons/ok.png" alt="" />
+          {text('Mark all read')}
+        </Dropdown.Item>
+        :
+        <Dropdown.Item
+          className={styles.dropdown_item}
+          onClick={() => onCloseChat(order.id, chatContractorId)}
+        >
+          <img src="/img/icons/trash.png" alt="" />
+          {text('Close chat')}
+        </Dropdown.Item>
+      }
       </Dropdown>
     </div>
   );

@@ -15,7 +15,7 @@ import {
   useConfirmOrderCompletion,
 } from 'app/state/order';
 import { useUser, UserRole } from 'app/state/user';
-import { MessageFormat, useSetChatOpen, useSendMessage } from 'app/state/chat';
+import { MessageFormat, useChatsByIds, useSetChatRead, useSetChatOpen, useSendMessage } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
@@ -45,11 +45,16 @@ export const ChatLayout: FC = () => {
   const isChatOpen = !!orderId && !!contractorId && !!currentOrder;
   const [isChatListVisible, setIsChatListVisible] = useState(!isChatOpen); // Скрыть список по умолчанию, если чат открыт
 
+  const chatList = isChatOpen ? [ `${orderId}:${contractorId}`] : [];
+  const { chats } = useChatsByIds(chatList);
+  const currentChat = chats[0];
+
   // Состояния для модальных окон
   const [isVisibleDisputeModal, setIsVisibleDisputeModal] = useState(false);
   const [disputeOrderId, setDisputeOrderId] = useState<number | null>(null);
 
   // Мутации для действий с чатом
+  const { setChatRead } = useSetChatRead();
   const { setChatOpen } = useSetChatOpen();
   const { sendMessage, isPending: isSendingMessage } = useSendMessage();
 
@@ -136,6 +141,14 @@ export const ChatLayout: FC = () => {
     setIsVisibleDisputeModal(true);
   }, []);
 
+  const handleReadChat = useCallback(async (orderId: number, contractorId: number) => {
+    try {
+      await setChatRead({ orderId, contractorId });
+    } catch (error: any) {
+      alert(`Failed to mark chat read: ${error.message}`);
+    }
+  }, [setChatRead]);
+
   const handleOpenChat = useCallback(async (orderId: number, contractorId: number) => {
     try {
       await setChatOpen({ orderId, contractorId, isOpen: true });
@@ -151,7 +164,7 @@ export const ChatLayout: FC = () => {
       alert(`Failed to mark chat closed: ${error.message}`);
     }
     navigate('/chats');
-  }, [navigate]);
+  }, [navigate, setChatOpen]);
 
   const handleSendMessage = useCallback(async (
     orderId: number,
@@ -252,7 +265,9 @@ export const ChatLayout: FC = () => {
               <OrderChatControl
                 order={currentOrder}
                 chatContractorId={contractorId}
+                isChatUnread={currentChat?.unreadCount > 0}
                 currentUser={user}
+                onSetChatRead={handleReadChat}
                 onCloseChat={handleCloseChat}
                 onCancelOrder={handleCancelOrder}
                 onAcceptOffer={handleAcceptOffer}

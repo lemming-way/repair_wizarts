@@ -53,6 +53,7 @@ export enum MessageFormat {
 
 interface MessageBase {
   id: number;
+  chatId: string;
   from?: number;
   modified?: Date;
   editorId?: number;
@@ -154,6 +155,7 @@ export function useSetChatOpen() {
   const mutation = useMutation({
     mutationFn: async ({orderId, contractorId, isOpen}: {orderId: number, contractorId: number, isOpen: boolean}, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!orderId) throw new Error('Order ID not specified.');
       if (!contractorId) throw new Error('Contractor ID not specified.');
 
@@ -227,6 +229,7 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
     const messages = (data ?? []).map(messageRec => {
       const ret = {
         id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
+        chatId: String(messageRec.chat_id ?? ''),
         created: new Date(Date.parse(messageRec.created) || 0),
         type:
           messageRec.type === 31 ? MessageType.System :
@@ -272,6 +275,81 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
  *          и массив `messages` с данными успешно полученных сообщений.
  */
 export { useMessagesByIds };
+
+export function useSetMessagesRead() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async (messageIds: number[], { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!messageIds?.length) throw new Error('Message IDs not specified.');
+
+      const promises = [] as Promise<Message>[];
+      for (const id of messageIds) {
+        promises.push(client.ensureQueryData({
+          queryKey: ['user', user.id, 'message', id],
+          queryFn: getMessageById,
+          staleTime: Infinity  // Изменённые сообщения перезагружаются в getChatMessageIds
+        }));
+      }
+      const messages = await Promise.all(promises);
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+
+      const filteredIds = new Set<number>();
+      const chatIds = new Set<string>();
+      for (const message of messages) {
+        if (message.unread) {
+          filteredIds.add(message.id);
+          chatIds.add(message.chatId);
+        }
+      }
+
+      const filteredArr = [...filteredIds];
+      await MessageAPI.markMessagesAsRead(filteredArr);
+      for (const id of filteredArr) {
+        client.invalidateQueries({ queryKey: [ 'user', user.id, 'message', id ] });
+      }
+      for (const chatId of [...chatIds]) {
+        client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
+      }
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, setMessagesRead: 'mutateAsync' });
+}
+
+export function useSetChatRead() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async ({ orderId, contractorId }: { orderId: number, contractorId: number }, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!orderId) throw new Error('Order ID not specified.');
+      if (!contractorId) throw new Error('Contractor ID not specified.');
+      const chatId = `${orderId}:${contractorId}`;
+
+      // получить чат
+      const chat = await client.ensureQueryData({
+        queryKey: ['user', user.id, 'chat-data', chatId],
+        queryFn: getChatById,
+        staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000
+      });
+      const result = await MessageAPI.markAllAsRead(chatId);
+      if (Array.isArray(result)) {
+        for (const id of result) {
+          client.invalidateQueries({ queryKey: [ 'user', user.id, 'message', id ] });
+        }
+      }
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, setChatRead: 'mutateAsync' });
+}
 
 export type SendMessageParams = {
   orderId: number,
@@ -322,6 +400,7 @@ export function useSendMessage() {
   const mutation = useMutation({
     mutationFn: async (data: SendMessageParams, { client }) => {
       if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!data.orderId) throw new Error('Order ID not specified.');
       if (!data.contractorId) throw new Error('Contractor ID not specified.');
 

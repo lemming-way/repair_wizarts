@@ -47,6 +47,7 @@ type UpdatedChatMessagesResponse = {
  */
 export type ChatMessageRecord = {
   id: number;
+  chat_id: string;
   from: number | null;
   text: string | null;
   event_type: string | null;
@@ -209,6 +210,24 @@ export async function markMessagesAsRead(ids: number[]): Promise<void> {
     }
   }
   const result = await post<void>('script/template/repair_api', payload);
+  return result;
+}
+
+/**
+ * Пометить все сообщения в чате как прочитанные.
+ * Доступно только для авторизованного пользователя.
+ * @param chatId ID чата
+ * @returns Список ID помеченных сообщений.
+ */
+export async function markAllAsRead(chatId: string): Promise<number[]> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'markAllAsRead',
+      id: chatId
+    }
+  }
+  const result = await post<number[]>('script/template/repair_api', payload);
   return result;
 }
 
