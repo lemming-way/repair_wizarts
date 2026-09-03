@@ -1,7 +1,7 @@
 import { Rating } from 'react-simple-star-rating'
 
 import styles from './Reviews.module.css'
-import formatDate from '../../utilities/formatDate'
+import { formatDate } from 'app/shared/lib/formatDate'
 import { useLanguage } from '../../state/language'
 
 const ReviewsReview = (props) => {

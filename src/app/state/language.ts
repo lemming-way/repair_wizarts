@@ -11,19 +11,26 @@ context.keys().forEach( ( name ) => {
 
 export type LanguageFn = ( key: string ) => string;
 
-const getLanguageFunction = ( language: string ): LanguageFn => {
-  return ( key ) => {
-    return translations[ language ]?.[ key ] || key;
+const getLanguageFunction = ( locale: string ): LanguageFn => {
+  const lang = translations[locale] ? locale : locale.split('-')[0];
+  if (!translations[lang]) return (key) => key;
+  return (key) => {
+    return translations[lang][key] || key;
   };
 };
 
-setGlobal( 'languageFn', getLanguageFunction( getGlobal( 'language' ) ?? 'en' ) );
+if (!getGlobal( 'locale' )) setGlobal( 'locale', 'ru' );
+setGlobal( 'languageFn', getLanguageFunction( getGlobal( 'locale' ) ?? 'ru' ) );
 
-export function setLanguage( language: string ): void {
-  setGlobal( 'language', language );
-  setGlobal( 'languageFn', getLanguageFunction( language ) );
+export function setLanguage( locale: string ): void {
+  setGlobal( 'locale', locale );
+  setGlobal( 'languageFn', getLanguageFunction( locale ) );
 }
 
 export function useLanguage(): LanguageFn {
   return useGlobalState( 'languageFn' )!;
+}
+
+export function useCurrentLocale(): string {
+  return useGlobalState( 'locale' )!;
 }

@@ -5,7 +5,7 @@ import Popup from 'reactjs-popup';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
-import formatDate from 'app/utilities/formatDate';
+import { formatDate } from 'app/shared/lib/formatDate';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useProducts } from 'app/state/site-data';
 import { OrderStatus, orderStatusString, useUpdateOrder, useCancelOrder } from 'app/state/order';

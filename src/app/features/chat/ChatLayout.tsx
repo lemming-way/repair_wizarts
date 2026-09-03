@@ -185,7 +185,7 @@ export const ChatLayout: FC = () => {
     catch (err: any) {
       console.error('Send message failed:', err);
     }
-  }, []);
+  }, [sendMessage]);
 
 
   // Обновление видимости списка чатов при изменении URL
@@ -279,9 +279,8 @@ export const ChatLayout: FC = () => {
                 onShowDisputeModal={handleShowDisputeModal}
               />
               <MessageFeed
-                order={currentOrder}
-                contractorId={contractorId}
-                currentUser={user}
+                currentUserId={user.id}
+                chat={currentChat}
               />
               <ChatInput
                 orderId={orderId}

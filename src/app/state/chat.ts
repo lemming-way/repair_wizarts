@@ -217,6 +217,7 @@ export function useChat(orderId: number, contractorId: number) {
     refetchInterval: CONFIG.API?.chatMessagesRefetchTime ?? 10000,
     staleTime: CONFIG.API?.chatMessagesRefetchTime ?? 10000,
     enabled: !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
+             && !!orderId && !!contractorId
   });
 
   return objectMapper(result, { data: null, messageIds(target) { return target.data as number[] || EMPTY_ARRAY; } });

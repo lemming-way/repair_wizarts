@@ -7,7 +7,7 @@ import likeImage from "../../img/like.png"
 //     dislikeArticleComment
 // } from "../../services/article.service"
 import { useLanguage } from '../../state/language'
-import formatDate from "../../utilities/formatDate"
+import { formatDate } from "app/shared/lib/formatDate"
 
 const ArticleComment = (props) => {
     const {

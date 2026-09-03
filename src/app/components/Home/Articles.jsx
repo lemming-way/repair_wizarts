@@ -15,7 +15,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 // todo: Добавить реальный вызов API для получения статей
 // import { getArticles } from '../../services/article.service';
-import formatDate from "../../utilities/formatDate";
+import { formatDate } from "app/shared/lib/formatDate";
 import { useLanguage } from "../../state/language";
 
 // Фиктивные данные для статей

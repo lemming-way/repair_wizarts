@@ -1,46 +1,52 @@
 import type { FC } from 'react';
 import React, { useRef, useEffect, useLayoutEffect, useCallback, useState, useMemo } from 'react';
-import { useLanguage } from 'app/state/language';
-import { Order } from 'app/state/order';
+
+import { useLanguage, useCurrentLocale } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
+import { ChatData, Message, MessageType, MessageFormat, useChat, useMessagesByIds, useSetMessagesRead } from 'app/state/chat';
+import { formatRelativeDate } from 'app/shared/lib/formatDate';
 import { ChatMessage } from './ChatMessage';
-import { Message, MessageType, MessageFormat, useChat, useMessagesByIds, useSetMessagesRead } from 'app/state/chat';
 
 import styles from './Chat.module.css';
 
 interface MessageFeedProps {
-  order: Order;
-  contractorId: number;
-  currentUser: UserProfile;
+  currentUserId: number;
+  chat?: ChatData
 }
 
 const BATCH_SIZE = 25; // Количество сообщений до и после текущего для окна
 const SCROLL_THRESHOLD = 200; // Порог для активации подгрузки сообщений (px от края)
 
 export const MessageFeed: FC<MessageFeedProps> = ({
-  order,
-  contractorId,
-  currentUser,
+  currentUserId,
+  chat
 }) => {
+  const locale = useCurrentLocale();
   const text = useLanguage();
   const messageFeedRef = useRef<HTMLDivElement>(null);
-  const { current: locals } = useRef({
+  const { current: instance } = useRef({
+    lastOrderId: 0,
+    lastContractorId: 0,
+    lastUserId: 0,
     isInitialLoading: false,
     pendingScrollToId: null as number | null,
     lastVisibleMessage: null as number | null,
     lastVisibleMessageTop: null as number | null,
+    firstUnreadMessage: 0,
     isLoadingWindow: false,   // Для предотвращения множественных запросов
     scrollToMessage: (targetId: number) => {},
     scrollToBottom: () => {},
     afterLoading: () => {}
   });
 
+  const orderId = chat?.orderId || 0;
+  const contractorId = chat?.contractorId || 0;
   const [firstRenderedIndex, setFirstRenderedIndex] = useState(0);
   const [windowSize, setWindowSize] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true); // Отслеживание нахождения скролла внизу
 
   // Получаем все ID сообщений чата
-  const { messageIds } = useChat(order.id, contractorId);
+  const { messageIds } = useChat(orderId, contractorId);
 
   // Корректируем размер окна, если необходимо
   // Можно положить этот код в useLayoutEffect, но так тоже сработает
@@ -59,7 +65,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   const { messages, isLoading: isMessagesLoading } = useMessagesByIds(windowedMessageIds);
 
   const allUserIds = messages.reduce((ids, message) => {
-    if (message.type === MessageType.User && message.from && message.from !== currentUser.id) {
+    if (message.type === MessageType.User && message.from && message.from !== currentUserId) {
       ids.add(message.from);
     }
     else if (message.type === MessageType.Admin && message.authorId) {
@@ -73,7 +79,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   const usersMap = new Map(users.map(user => [user.id, user]));
 
   // --- Функция для прокрутки к заданному сообщению по ID ---
-  locals.scrollToMessage = (targetId: number) => {
+  instance.scrollToMessage = (targetId: number) => {
     const messageFeed = messageFeedRef.current;
 
     if (!messageIds.length) return;
@@ -96,22 +102,27 @@ export const MessageFeed: FC<MessageFeedProps> = ({
     if (newFirst !== firstRenderedIndex || newSize !== windowSize) {
       setFirstRenderedIndex(newFirst);
       setWindowSize(newSize);
-      locals.pendingScrollToId = targetId;
-      locals.isLoadingWindow = true;
+      instance.pendingScrollToId = targetId;
+      instance.isLoadingWindow = true;
     }
-    else {
+    else if (!isMessagesLoading) {
       const targetMessageElement = messageFeed?.querySelector(`[data-message="${targetId}"]`);
       if (targetMessageElement) {
-        targetMessageElement.scrollIntoView({ behavior: locals.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
+        targetMessageElement.scrollIntoView({ behavior: instance.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
       }
-      locals.isInitialLoading = false;
+      instance.isInitialLoading = false;
     }
   };
 
   // --- Scroll to bottom function, теперь использует scrollToMessage ---
-  locals.scrollToBottom = () => {
+  instance.scrollToBottom = () => {
     if (messageIds.length > 0) {
-      locals.scrollToMessage(messageIds[messageIds.length - 1]);
+      if (instance.firstUnreadMessage && ( instance.lastVisibleMessage ?? 0 ) < instance.firstUnreadMessage) {
+        instance.scrollToMessage(instance.firstUnreadMessage);
+      }
+      else {
+        instance.scrollToMessage(messageIds[messageIds.length - 1]);
+      }
     }
     else {
       setFirstRenderedIndex(0);
@@ -119,14 +130,24 @@ export const MessageFeed: FC<MessageFeedProps> = ({
     }
   };
 
+  // Сброс состояния и прокрутка вниз при начальной загрузке чата
+  if (
+    orderId !== instance.lastOrderId ||
+    contractorId !== instance.lastContractorId ||
+    currentUserId !== instance.lastUserId
+  ) {
+    instance.lastOrderId = orderId;
+    instance.lastContractorId = contractorId;
+    instance.lastUserId = currentUserId;
+    instance.lastVisibleMessage = null;
+    instance.lastVisibleMessageTop = null;
+    instance.isInitialLoading = true;
+    instance.firstUnreadMessage = chat?.firstUnread || 0;
+  }
   const hasMessages = messageIds.length > 0;
   useLayoutEffect(() => {
-    // Сброс состояния и прокрутка вниз при начальной загрузке чата
-    locals.lastVisibleMessage = null;
-    locals.lastVisibleMessageTop = null;
-    locals.isInitialLoading = true;
-    locals.scrollToBottom();
-  }, [locals, order.id, contractorId, currentUser.id, hasMessages]);
+    instance.scrollToBottom();
+  }, [instance, orderId, contractorId, currentUserId, hasMessages]);
 
   const handleScrollPosition = () => {
     const el = messageFeedRef.current;
@@ -155,12 +176,12 @@ export const MessageFeed: FC<MessageFeedProps> = ({
       }
     }
     if (lastVisible) {
-      locals.lastVisibleMessage = Number(lastVisible.dataset.message);
-      locals.lastVisibleMessageTop = lastVisible.offsetTop - offsetTop - scrollTop;
+      instance.lastVisibleMessage = Number(lastVisible.dataset.message);
+      instance.lastVisibleMessageTop = lastVisible.offsetTop - offsetTop - scrollTop;
     }
     else {
-      locals.lastVisibleMessage = null;
-      locals.lastVisibleMessageTop = null;
+      instance.lastVisibleMessage = null;
+      instance.lastVisibleMessageTop = null;
     }
 
     const atBottom =
@@ -170,29 +191,31 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   };
 
   // --- Эффект для корректировки скролла после загрузки новой порции сообщений ---
-  locals.afterLoading = () => {
+  instance.afterLoading = () => {
+    if (isMessagesLoading) return;
+
     const messageFeed = messageFeedRef.current;
 
-    locals.isLoadingWindow = false;
+    instance.isLoadingWindow = false;
     if (!messages.length) return;
 
-    if (locals.pendingScrollToId) {
+    if (instance.pendingScrollToId) {
       // Прокрутка к заданному сообщению, если запрошено
-      const targetMessageElement = messageFeed?.querySelector(`[data-message="${locals.pendingScrollToId}"]`);
+      const targetMessageElement = messageFeed?.querySelector(`[data-message="${instance.pendingScrollToId}"]`);
       if (targetMessageElement) {
-        targetMessageElement.scrollIntoView({ behavior: locals.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
+        targetMessageElement.scrollIntoView({ behavior: instance.isInitialLoading ? 'auto' : 'smooth', block: 'nearest' });
       }
-      locals.pendingScrollToId = null;
-      locals.isInitialLoading = false;
+      instance.pendingScrollToId = null;
+      instance.isInitialLoading = false;
     }
     else if (isAtBottom) {
-      locals.scrollToBottom();
+      instance.scrollToBottom();
     }
-    else if (locals.lastVisibleMessage && messageFeed) {
-      const msg = messageFeed.querySelector(`[data-message="${locals.lastVisibleMessage}"]`) as HTMLElement;
+    else if (instance.lastVisibleMessage && messageFeed) {
+      const msg = messageFeed.querySelector(`[data-message="${instance.lastVisibleMessage}"]`) as HTMLElement;
       if (msg) {
-        const { offsetTop, scrollTop } = messageFeed;
-        messageFeed.scrollTop = msg.offsetTop - offsetTop - (locals.lastVisibleMessageTop ?? 0);
+        const { offsetTop } = messageFeed;
+        messageFeed.scrollTop = msg.offsetTop - offsetTop - (instance.lastVisibleMessageTop ?? 0);
       }
     }
 
@@ -200,14 +223,14 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   }
 
   useLayoutEffect(() => {
-    locals.afterLoading()
-  }, [locals, messages]);
+    instance.afterLoading()
+  }, [instance, messages, isMessagesLoading]);
 
   // --- Обработчик скролла для подгрузки сообщений ---
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     handleScrollPosition();
 
-    if (!messages.length || locals.isLoadingWindow) {
+    if (!messages.length || instance.isLoadingWindow) {
       return; // Игнорируем скролл, если уже идет загрузка
     }
 
@@ -236,11 +259,13 @@ export const MessageFeed: FC<MessageFeedProps> = ({
     }
 
     if (newFirst !== firstRenderedIndex || newSize !== windowSize) {
-        locals.isLoadingWindow = true;
+        instance.isLoadingWindow = true;
         setFirstRenderedIndex(newFirst);
         setWindowSize(newSize);
     }
   };
+
+  let lastDate = '';
 
   return (
     <div className={styles.message_feed_container}>
@@ -248,7 +273,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
       {!isAtBottom && (
         <button
           className={styles.scroll_to_bottom_button}
-          onClick={locals.scrollToBottom}
+          onClick={instance.scrollToBottom}
           title={text('Scroll to bottom')}
         >
           <img src="/img/arrowleft-white.png" alt="Scroll Down" style={{ transform: 'rotate(-90deg)' }}/>
@@ -269,14 +294,25 @@ export const MessageFeed: FC<MessageFeedProps> = ({
           const user = userId ? usersMap.get(userId) : null;
           const userName = user?.fullname || user?.name;
           const avatar = user?.avatar;
+          const date = formatRelativeDate(message.created, locale);
+          const isDateChanged = date !== lastDate;
+          lastDate = date;
           return (
-            <ChatMessage
-              key={message.id}
-              message={message}
-              currentUserId={currentUser.id}
-              authorName={userName}
-              authorAvatar={avatar}
-            />
+            <>
+              {isDateChanged &&
+                <div key={date} className={styles.date_header}>{date}</div>
+              }
+              {message.id === instance.firstUnreadMessage &&
+                <div key='unread' className={styles.unread_header}>{text('Unread messages')}</div>
+              }
+              <ChatMessage
+                key={message.id}
+                message={message}
+                currentUserId={currentUserId}
+                authorName={userName}
+                authorAvatar={avatar}
+              />
+            </>
           );
         })}
         {firstRenderedIndex + windowSize < messageIds.length - 1 && isMessagesLoading && (
