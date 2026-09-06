@@ -1,11 +1,11 @@
 
 import style from "./OnlineDotted.module.css"
 
-export default function OnlineDotted({isVisible}) {
+export default function OnlineDotted({isVisible, className = ''}) {
     return (
         <>
             { isVisible && 
-                <div className={style.Dotted}></div>
+                <div className={`${style.Dotted} ${className}`}></div>
             }
         </>
     )

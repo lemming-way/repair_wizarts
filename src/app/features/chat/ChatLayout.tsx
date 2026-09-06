@@ -57,6 +57,20 @@ export const ChatLayout: FC = () => {
   const { setChatRead } = useSetChatRead();
   const { setChatOpen } = useSetChatOpen();
   const { sendMessage, isPending: isSendingMessage } = useSendMessage();
+  const [replyTo, setReplyTo] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
@@ -171,22 +185,23 @@ export const ChatLayout: FC = () => {
     contractorId: number,
     message: string,
     files: File[],
+    replyToMessage?: number,
   ) => {
-    const payload = {
-      orderId,
-      contractorId,
-      text: message,
-      format: MessageFormat.Text
-    };
-
     try {
-      await sendMessage(payload);
+      if (message) await sendMessage({ orderId, contractorId, text: message, format: MessageFormat.Text, replyToMessage });
+      for (const file of files) {
+        await sendMessage({ orderId, contractorId, file, text: file.name, format: MessageFormat.File, replyToMessage });
+      }
+      setReplyTo(undefined);
     }
     catch (err: any) {
       console.error('Send message failed:', err);
     }
   }, [sendMessage]);
 
+  // Заготовки
+  const handleEditMessage = () => {};
+  const handleDeleteMessage = () => {};
 
   // Обновление видимости списка чатов при изменении URL
   useEffect(() => {
@@ -239,7 +254,7 @@ export const ChatLayout: FC = () => {
             onClick={() => setIsChatListVisible(true)}
             title={text('Open chat list')}
           >
-            <img src="/img/arrowleft-white.png" alt="Open" style={{ transform: 'rotate(180deg)' }}/> {/* Корректируем иконку */}
+            <img src="/img/arrowleft-white.png" alt="Open" />
           </button>
       )}
 
@@ -281,6 +296,9 @@ export const ChatLayout: FC = () => {
               <MessageFeed
                 currentUserId={user.id}
                 chat={currentChat}
+                onReply={setReplyTo}
+                onEdit={handleEditMessage}
+                onDelete={handleDeleteMessage}
               />
               <ChatInput
                 orderId={orderId}
@@ -289,6 +307,8 @@ export const ChatLayout: FC = () => {
                 currentUser={user}
                 onSendMessage={handleSendMessage}
                 isBusy={isSendingMessage}
+                replyTo={replyTo}
+                onCancelReply={() => setReplyTo(undefined)}
               />
             </>
           ) : (

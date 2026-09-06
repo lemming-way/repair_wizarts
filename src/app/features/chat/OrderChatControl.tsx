@@ -219,7 +219,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
           {text('Order')} №{order.id}: {orderDescription}
         </p>
         <p className={styles.order_status_text}>
-          {text('Status')}: {text(orderStatusString[effectiveOrderStatus])}
+          <span>{text('Status')}: {text(orderStatusString[effectiveOrderStatus])}</span>
         </p>
         {order.agreedPrice && (
           <p className={styles.order_price}>

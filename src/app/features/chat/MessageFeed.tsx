@@ -11,7 +11,10 @@ import styles from './Chat.module.css';
 
 interface MessageFeedProps {
   currentUserId: number;
-  chat?: ChatData
+  chat?: ChatData;
+  onReply: (message: number) => void;
+  onEdit: (message: number) => void;
+  onDelete: (message: number) => void;
 }
 
 const BATCH_SIZE = 25; // Количество сообщений до и после текущего для окна
@@ -19,7 +22,10 @@ const SCROLL_THRESHOLD = 200; // Порог для активации подгр
 
 export const MessageFeed: FC<MessageFeedProps> = ({
   currentUserId,
-  chat
+  chat,
+  onReply,
+  onEdit,
+  onDelete,
 }) => {
   const locale = useCurrentLocale();
   const text = useLanguage();
@@ -63,6 +69,10 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   // Определяем ID сообщений для текущего окна
   const windowedMessageIds = messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize);
   const { messages, isLoading: isMessagesLoading } = useMessagesByIds(windowedMessageIds);
+  // Заготовки
+  const editMessage = () => {};
+  const deleteMessage = () => {};
+  const messagesMap = new Map(messages.map(message => [message.id, message]));
 
   const allUserIds = messages.reduce((ids, message) => {
     if (message.type === MessageType.User && message.from && message.from !== currentUserId) {
@@ -311,6 +321,11 @@ export const MessageFeed: FC<MessageFeedProps> = ({
                 currentUserId={currentUserId}
                 authorName={userName}
                 authorAvatar={avatar}
+                relatedMessage={message.relatedMessage ? messagesMap.get(message.relatedMessage) : undefined}
+                scrollToMessage={instance.scrollToMessage}
+                onReply={() => onReply(message.id)}
+                onEdit={() => onEdit(message.id)}
+                onDelete={() => onDelete(message.id)}
               />
             </>
           );

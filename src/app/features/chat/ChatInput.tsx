@@ -2,6 +2,7 @@ import type { FC } from 'react';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
+import { MessageFormat, useMessagesByIds } from 'app/state/chat';
 import { AnyMedia, getKeyFor } from 'app/shared/ui';
 import { isImage } from 'app/shared/lib/utilities'; // For basic file type check
 
@@ -17,12 +18,45 @@ interface ChatInputProps {
     contractorId: number,
     message: string,
     files: File[],
+    replyToMessage?: number,
   ) => Promise<void>;
   isBusy: boolean;
+  replyTo?: number;
+  onCancelReply: () => void;
 }
 
-const MAX_FILE_SIZE_MB = 10; // Maximum allowed file size in MB
+const MAX_FILE_SIZE_MB = 50; // Maximum allowed file size in MB
 const MAX_FILE_COUNT = 5; // Maximum number of files per message
+
+const AttachIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="m21.4 11.6-8.9 8.9a6 6 0 0 1-8.5-8.5l9.6-9.6a4 4 0 0 1 5.7 5.7l-9.6 9.6a2 2 0 1 1-2.8-2.8l8.9-8.9" />
+  </svg>
+);
+
+const MicrophoneIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="9" y="2" width="6" height="13" rx="3" />
+    <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" />
+  </svg>
+);
+
+const EmojiIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
+  </svg>
+);
+
+const SendIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M22 2 11 13" />
+    <path d="m22 2-7 20-4-9-9-4Z" />
+  </svg>
+);
+
+// Lazy load EmojiPicker
+const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
 export const ChatInput: FC<ChatInputProps> = ({
   orderId,
@@ -31,6 +65,8 @@ export const ChatInput: FC<ChatInputProps> = ({
   currentUser,
   onSendMessage,
   isBusy,
+  replyTo,
+  onCancelReply,
 }) => {
   const text = useLanguage();
   const [message, setMessage] = useState('');
@@ -44,13 +80,13 @@ export const ChatInput: FC<ChatInputProps> = ({
   const { users } = useUsersByIds(partnerId ? [partnerId] : []);
   const chatPartner = users[0];
 
+  const { messages } = useMessagesByIds(replyTo ? [replyTo] : []);
+  const replyToMessage = messages[0];
+
   // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
   const currentUserBlockedPartner = currentUser.blackList?.includes(chatPartner?.id);
   const partnerBlockedCurrentUser = chatPartner?.blackList?.includes(currentUser.id);
   const isBlocked = currentUserBlockedPartner || partnerBlockedCurrentUser;
-
-  // Lazy load EmojiPicker
-  const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
   // Adjust textarea height dynamically
   const updateMessage = (message: string) => {
@@ -73,9 +109,19 @@ export const ChatInput: FC<ChatInputProps> = ({
   };
 
   // Handler for emoji selection
-  const addEmojiToMessage = useCallback((emojiData: any) => {
-    updateMessage(message + emojiData.emoji);
-  }, []);
+  const addEmojiToMessage = (emojiData: { emoji: string }) => {
+    if (textareaRef.current) {
+      const el = textareaRef.current;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      updateMessage(el.value.substring(0, start) + emojiData.emoji + el.value.substring(end));
+      el.selectionStart = el.selectionEnd = start + emojiData.emoji.length;
+      el.focus();
+    }
+    else {
+      updateMessage(message + emojiData.emoji);
+    }
+  };
 
   // Handler for file selection (from input)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +154,7 @@ export const ChatInput: FC<ChatInputProps> = ({
     if (!trimmedMessage && previewFiles.length === 0) return;
 
     try {
-      await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles);
+      await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles, replyTo);
       updateMessage('');
       setPreviewFiles([]);
       setIsEmojiPickerVisible(false);
@@ -178,12 +224,21 @@ export const ChatInput: FC<ChatInputProps> = ({
   // For visual consistency, using a placeholder for the actual emoji picker component
   const EmojiPickerPlaceholder = () => (
     <div style={{ padding: '10px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px' }}>
-      {text('Emoji picker will be here')}
+      {text('Loading Emojis...')}
     </div>
   );
 
   return (
     <div className={styles.chat_input_area} ref={footerRef} onDragOver={handleDragOver} onDrop={handleDrop}>
+      {replyToMessage && (
+        <div className={styles.reply_preview}>
+          <div>
+            <strong>{text('Reply')}</strong>
+            <span>{replyToMessage.format === MessageFormat.Text ? replyToMessage.text : text('Attachment')}</span>
+          </div>
+          <button type="button" onClick={onCancelReply}>×</button>
+        </div>
+      )}
       {/* File previews */}
       {previewFiles.length > 0 && (
         <div className={styles.file_preview_container}>
@@ -266,7 +321,7 @@ export const ChatInput: FC<ChatInputProps> = ({
             title={text('Attach file')}
             disabled={isBlocked || previewFiles.length >= MAX_FILE_COUNT}
           >
-            <img src="/img/chat_img/clip.png" alt="Attach" />
+            <AttachIcon />
           </button>
           <button
             type="button"
@@ -275,12 +330,12 @@ export const ChatInput: FC<ChatInputProps> = ({
             title={text('Record voice message')}
             disabled={isBlocked}
           >
-            <img src="/img/icons/micro.png" alt="Mic" />
+            <MicrophoneIcon />
           </button>
           <div className={styles.emoji_picker_wrap}>
             {isEmojiPickerVisible && (
               <div className={styles.emoji_picker_container} style={{ bottom: footerHeight + 20 }}>
-                <React.Suspense fallback={<div className="emoji-loading">{text('Loading Emojis...')}</div>}>
+                <React.Suspense fallback={<EmojiPickerPlaceholder />}>
                   <EmojiPickerLazy onEmojiClick={addEmojiToMessage} />
                 </React.Suspense>
               </div>
@@ -288,11 +343,11 @@ export const ChatInput: FC<ChatInputProps> = ({
             <button
               type="button"
               className={styles.action_button}
-              onClick={() => setIsEmojiPickerVisible((prev) => !prev)}
-              title={text('Open emoji picker')}
+              onClick={() => setIsEmojiPickerVisible(!isEmojiPickerVisible)}
+              title={text(isEmojiPickerVisible ? 'Close emoji picker' : 'Open emoji picker')}
               disabled={isBlocked}
             >
-              <img src="/img/chat_img/emoji.png" alt="Emoji" />
+              <EmojiIcon />
             </button>
           </div>
           <button
@@ -302,7 +357,7 @@ export const ChatInput: FC<ChatInputProps> = ({
             title={text('Send message')}
             disabled={isBusy || isBlocked || (!message.trim() && previewFiles.length === 0)}
           >
-            <img src="/img/chat_img/plane.png" alt="Send" />
+            <SendIcon />
           </button>
         </div>
       </div>

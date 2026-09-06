@@ -4,6 +4,7 @@ import { simpleMarkdown } from 'app/shared/lib/markdown';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, useUsersByIds } from 'app/state/user';
 import { MessageType, MessageFormat, Message } from 'app/state/chat';
+import { AnyMedia } from 'app/shared/ui';
 
 import styles from './Chat.module.css';
 
@@ -12,13 +13,23 @@ interface ChatMessageProps {
   currentUserId: number;
   authorName?: string;
   authorAvatar?: string;
+  relatedMessage?: Message;
+  scrollToMessage: (id: number) => void;
+  onReply: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 export const ChatMessage: FC<ChatMessageProps> = ({
   message,
   currentUserId,
   authorAvatar,
-  authorName
+  authorName,
+  relatedMessage,
+  scrollToMessage,
+  onReply,
+  onEdit,
+  onDelete
 }) => {
   const text = useLanguage();
 
@@ -66,6 +77,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({
             </div>
           )}
           <div className={styles.message_bubble_content}>
+            <div className={styles.message_actions}>
+              <button type="button" onClick={onReply}>{text('Reply')}</button>
+              {isOwnMessage && isTextMessage && <button type="button" onClick={onEdit}>{text('Edit')}</button>}
+              {isOwnMessage && <button type="button" onClick={onDelete}>{text('Delete')}</button>}
+            </div>
             {!isOwnMessage && (
               <div className={styles.message_author_info}>
                 <span className={isAdministratorMessage ? styles.author_name_admin : styles.author_name}>{displayName}</span>
@@ -80,8 +96,15 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <span className={styles.author_name_own}>{text('You')}</span>
               </div>
             )}
-            {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
             {/* TODO: Render files/audio here later */}
+            {relatedMessage &&
+              <button type="button" className={styles.quoted_message} onClick={() => scrollToMessage(message.id)}>
+                {relatedMessage.format === MessageFormat.Text ? relatedMessage.text : text('Attachment')}
+              </button>}
+            {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
+            {isAttachment && <div className={styles.message_attachment}><AnyMedia src={message.fileId} /><span>{message.caption}</span></div>}
+            {isAudioMessage && <AnyMedia src={message.audioId} mediaType="audio" />}
+            {isOwnMessage && <span className={styles.read_status}>{/* message.partnerRead */false ? '✓✓' : '✓'}</span>}
           </div>
         </div>
       }

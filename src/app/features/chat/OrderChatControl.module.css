@@ -1,6 +1,6 @@
 .order_control_block {
     background-color: #ffffff;
-    padding: 16px 20px 16px 60px;
+    padding: 16px 22px 16px 64px;
     border-bottom: 1px solid #e9eaf1;
     display: flex;
     justify-content: space-between;
@@ -11,7 +11,7 @@
 
 .order_info {
     flex-grow: 1; /* Позволяет блоку информации занимать доступное пространство */
-    min-width: 250px; /* Минимальная ширина для блока информации перед переносом */
+    min-width: 0;
 }
 
 .order_title {
@@ -26,6 +26,15 @@
     font-size: 14px;
     color: #666;
     margin-bottom: 3px;
+}
+
+.order_status_text span {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    color: #b8442c;
+    background: #fff0ec;
+    font-weight: 600;
 }
 
 .action_buttons {
@@ -49,11 +58,11 @@
 
 /* Стили для конкретных кнопок */
 .cancelButton {
-    background-color: #f0ad4e; /* Оранжевый для отмены */
+    background-color: #d9573b;
     color: white;
 }
 .cancelButton:hover {
-    background-color: #ec971f;
+    background-color: #c8492f;
 }
 
 .disputeButton {
@@ -149,9 +158,52 @@
     }
 }
 
+@media (min-width: 769px) and (max-width: 1100px) {
+    .order_control_block {
+        align-items: flex-start;
+        padding: 14px 18px;
+    }
+
+    .action_buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 800px) {
+    .order_control_block {
+        position: relative;
+        padding-right: 52px;
+    }
+
+    .dropdown_button {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+    }
+}
+
 @media (max-width: 480px) {
+    .order_control_block {
+        position: relative;
+        padding: 8px 12px;
+        padding-right: 42px;
+        gap: 6px;
+    }
+
+    .order_info {
+        min-width: 0;
+        width: 100%;
+    }
+
     .order_title {
         font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .order_status_text,
     .order_price {
@@ -162,5 +214,18 @@
         padding: 6px 10px;
         font-size: 12px;
         min-width: unset;
+    }
+
+    .action_buttons {
+        gap: 6px;
+    }
+
+    .dropdown_button {
+        position: absolute;
+        top: 7px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        padding: 0;
     }
 }

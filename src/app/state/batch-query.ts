@@ -116,7 +116,7 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
     const { user } = useUser() as { user: UserProfile };
     const { current: instance } = useRef({
       trackedProps: null as Set<string> | null,
-      lastIds: ids,
+      lastIds: [] as ID[],
       lastResults: null as UseQueryResult<T | null, Error>[] | null,
       currentResults: null as UseQueryResult<T | null, Error>[] | null,
       currentValue: {
@@ -134,8 +134,8 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
     // React Query не вызывает combine при каждом изменении списка запросов. Вместо этого combine вызывается позже
     // через useEffect. Чтобы получать свежие данные при первом вызове хука, мы будем менять ссылку на combineFn
     // при каждом изменении списка ids.
-    if (instance.lastIds.length !== ids.length || instance.lastIds.some((id, index) => id !== ids[index])) {
-      instance.lastIds = ids;
+    if (instance.lastIds?.length !== ids.length || instance.lastIds.some((id, index) => id !== ids[index])) {
+      instance.lastIds = [...ids];
     }
 
     // React Query отслеживает свойства результата, к которым происходит обращение в коде рендера.
@@ -169,6 +169,8 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
       }
 
       return combined;
+      // Добавили instance.lastIds, чтобы принудительно обновлять ссылку на combineFn при получении нового списка ID
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [instance, instance.lastIds]);
 
     const queries = ids.map(itemId => ({
