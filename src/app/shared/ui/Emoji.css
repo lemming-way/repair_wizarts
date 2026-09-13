@@ -1,0 +1,11 @@
+.emoji-picker-placeholder {
+  width: 284px;
+  height: 339px;
+  padding: 10px;
+  background: #f0f0f0;
+  borderRadius: 8px
+}
+
+em-emoji-picker {
+  height: 339px
+}

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { MessageFormat, useMessagesByIds } from 'app/state/chat';
-import { AnyMedia, getKeyFor } from 'app/shared/ui';
+import { AnyMedia, getKeyFor, Emoji } from 'app/shared/ui';
 import { isImage } from 'app/shared/lib/utilities'; // For basic file type check
 
 import styles from './Chat.module.css';
@@ -54,9 +54,6 @@ const SendIcon = () => (
     <path d="m22 2-7 20-4-9-9-4Z" />
   </svg>
 );
-
-// Lazy load EmojiPicker
-const EmojiPickerLazy = React.lazy(() => import('emoji-picker-react'));
 
 export const ChatInput: FC<ChatInputProps> = ({
   orderId,
@@ -109,17 +106,21 @@ export const ChatInput: FC<ChatInputProps> = ({
   };
 
   // Handler for emoji selection
-  const addEmojiToMessage = (emojiData: { emoji: string }) => {
+  const addEmojiToMessage = (emoji: string) => {
     if (textareaRef.current) {
       const el = textareaRef.current;
       const start = el.selectionStart;
       const end = el.selectionEnd;
-      updateMessage(el.value.substring(0, start) + emojiData.emoji + el.value.substring(end));
-      el.selectionStart = el.selectionEnd = start + emojiData.emoji.length;
+      const strPre = el.value.substring(0, start);
+      const strPost = el.value.substring(end);
+      if (strPre && strPre.slice(-1) !== ' ') emoji = ` ${emoji}`;
+      if (strPost && strPost.substring(0, 1) !== ' ') emoji = `${emoji} `;
+      updateMessage(strPre + emoji + strPost);
+      el.selectionStart = el.selectionEnd = start + emoji.length;
       el.focus();
     }
     else {
-      updateMessage(message + emojiData.emoji);
+      updateMessage(message + emoji);
     }
   };
 
@@ -207,7 +208,6 @@ export const ChatInput: FC<ChatInputProps> = ({
 
   // TODO: Implement audio recording logic later
 
-  // Position emoji picker dynamically if needed, similar to Kirill.tsx
   // todo: проверить эту логику. Лучше использовать CSS здесь
   const footerRef = useRef<HTMLDivElement>(null);
   const [footerHeight, setFooterHeight] = useState(0);
@@ -220,13 +220,6 @@ export const ChatInput: FC<ChatInputProps> = ({
     window.addEventListener('resize', measureFooter);
     return () => window.removeEventListener('resize', measureFooter);
   }, []);
-
-  // For visual consistency, using a placeholder for the actual emoji picker component
-  const EmojiPickerPlaceholder = () => (
-    <div style={{ padding: '10px', background: '#f0f0f0', border: '1px solid #ccc', borderRadius: '8px' }}>
-      {text('Loading Emojis...')}
-    </div>
-  );
 
   return (
     <div className={styles.chat_input_area} ref={footerRef} onDragOver={handleDragOver} onDrop={handleDrop}>
@@ -335,9 +328,7 @@ export const ChatInput: FC<ChatInputProps> = ({
           <div className={styles.emoji_picker_wrap}>
             {isEmojiPickerVisible && (
               <div className={styles.emoji_picker_container} style={{ bottom: footerHeight + 20 }}>
-                <React.Suspense fallback={<EmojiPickerPlaceholder />}>
-                  <EmojiPickerLazy onEmojiClick={addEmojiToMessage} />
-                </React.Suspense>
+                <Emoji onSelect={addEmojiToMessage} />
               </div>
             )}
             <button
