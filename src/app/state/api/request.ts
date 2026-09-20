@@ -98,7 +98,14 @@ function prepareQueryBody(
 
   // Обрабатываем только объекты, URLSearchParams и FormData
   if (data instanceof FormData || data instanceof URLSearchParams) {
-    if (data instanceof FormData && [...data.values()].some(value => value instanceof Blob)) queryData = new FormData();
+    if (data instanceof FormData && [...data.values()].some(value => value instanceof Blob)) {
+      queryData = new FormData();
+      if (initialData) {
+        for (const [key, value] of initialData.entries()) {
+          (queryData as FormData).append(key, value);
+        }
+      }
+    }
     for (const [key, value] of data) {
       (queryData as FormData).append(key, value);
     }

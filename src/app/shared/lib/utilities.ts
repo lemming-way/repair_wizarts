@@ -12,7 +12,7 @@ export function fileToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export const IMAGE_TYPES = Object.freeze([ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ]);
+export const IMAGE_TYPES = Object.freeze([ 'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif' ]);
 
 export function isImage(mimeType: string) {
   return IMAGE_TYPES.includes(mimeType);

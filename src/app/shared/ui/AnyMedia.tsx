@@ -10,6 +10,7 @@ import type {
 import { useState, useEffect } from 'react';
 import { useFileById } from 'app/state/uploaded';
 import { useLanguage } from 'app/state/language';
+import { isImage } from 'app/shared/lib/utilities';
 
 const imagesMap = new WeakMap<object, string>();
 let imagesCounter = 0;
@@ -103,7 +104,7 @@ export function AnyMedia({
       }
       else {
         const mtype =
-          imgSrc.type.startsWith('image/') ? 'image' :
+          isImage(imgSrc.type) ? 'image' :
           imgSrc.type.startsWith('audio/') ? 'audio' :
           imgSrc.type.startsWith('video/') ? 'video' :
           'other';

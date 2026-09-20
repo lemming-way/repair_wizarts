@@ -308,15 +308,14 @@ export const MessageFeed: FC<MessageFeedProps> = ({
           const isDateChanged = date !== lastDate;
           lastDate = date;
           return (
-            <>
+            <React.Fragment key={message.id}>
               {isDateChanged &&
-                <div key={date} className={styles.date_header}>{date}</div>
+                <div className={styles.date_header}>{date}</div>
               }
               {message.id === instance.firstUnreadMessage &&
-                <div key='unread' className={styles.unread_header}>{text('Unread messages')}</div>
+                <div className={styles.unread_header}>{text('Unread messages')}</div>
               }
               <ChatMessage
-                key={message.id}
                 message={message}
                 currentUserId={currentUserId}
                 authorName={userName}
@@ -327,7 +326,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
                 onEdit={() => onEdit(message.id)}
                 onDelete={() => onDelete(message.id)}
               />
-            </>
+            </React.Fragment>
           );
         })}
         {firstRenderedIndex + windowSize < messageIds.length - 1 && isMessagesLoading && (

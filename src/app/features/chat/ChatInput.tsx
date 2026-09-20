@@ -4,7 +4,9 @@ import { useLanguage } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { MessageFormat, useMessagesByIds } from 'app/state/chat';
 import { AnyMedia, getKeyFor, Emoji } from 'app/shared/ui';
-import { isImage } from 'app/shared/lib/utilities'; // For basic file type check
+import { simpleMarkdown } from 'app/shared/lib/markdown';
+import { isImage } from 'app/shared/lib/utilities';
+import { AudioRecorder } from './AudioRecorder';
 
 import styles from './Chat.module.css';
 
@@ -18,6 +20,12 @@ interface ChatInputProps {
     contractorId: number,
     message: string,
     files: File[],
+    replyToMessage?: number,
+  ) => Promise<void>;
+  onSendAudio: (
+    orderId: number,
+    contractorId: number,
+    audio: File,
     replyToMessage?: number,
   ) => Promise<void>;
   isBusy: boolean;
@@ -61,6 +69,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   contractorId,
   currentUser,
   onSendMessage,
+  onSendAudio,
   isBusy,
   replyTo,
   onCancelReply,
@@ -68,6 +77,9 @@ export const ChatInput: FC<ChatInputProps> = ({
   const text = useLanguage();
   const [message, setMessage] = useState('');
   const [previewFiles, setPreviewFiles] = useState<File[]>([]);
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [audioFile, setAudioFile] = useState<File|null>(null);
+  const [audioObjectURL, setAudioObjectURL] = useState<string>('');
   const [isEmojiPickerVisible, setIsEmojiPickerVisible] = useState(false);
   const [isAttachmentMenuVisible, setIsAttachmentMenuVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +115,13 @@ export const ChatInput: FC<ChatInputProps> = ({
   // Handler for text input
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateMessage(e.target.value);
+  };
+
+  const handleAudioFile = (audio: File | null) => {
+    if (audioObjectURL) window.URL.revokeObjectURL(audioObjectURL);
+    setAudioFile(audio);
+    if (audio) setAudioObjectURL(window.URL.createObjectURL(audio));
+    else setAudioObjectURL('');
   };
 
   // Handler for emoji selection
@@ -151,17 +170,23 @@ export const ChatInput: FC<ChatInputProps> = ({
 
   // Handler for sending message
   const handleSendMessage = async () => {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage && previewFiles.length === 0) return;
-
     try {
-      await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles, replyTo);
-      updateMessage('');
-      setPreviewFiles([]);
-      setIsEmojiPickerVisible(false);
-      setIsAttachmentMenuVisible(false);
-      if (textareaRef.current) {
-        textareaRef.current.style.height = 'auto'; // Reset textarea height
+      if (audioFile) {
+        await onSendAudio(orderId, contractorId, audioFile, replyTo);
+        handleAudioFile(null);
+      }
+      else {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage && previewFiles.length === 0) return;
+
+        await onSendMessage(orderId, contractorId, trimmedMessage, previewFiles, replyTo);
+        updateMessage('');
+        setPreviewFiles([]);
+        setIsEmojiPickerVisible(false);
+        setIsAttachmentMenuVisible(false);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto'; // Reset textarea height
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -206,8 +231,6 @@ export const ChatInput: FC<ChatInputProps> = ({
     }
   }, [isBlocked, previewFiles, text]);
 
-  // TODO: Implement audio recording logic later
-
   // todo: проверить эту логику. Лучше использовать CSS здесь
   const footerRef = useRef<HTMLDivElement>(null);
   const [footerHeight, setFooterHeight] = useState(0);
@@ -218,7 +241,12 @@ export const ChatInput: FC<ChatInputProps> = ({
     };
     measureFooter();
     window.addEventListener('resize', measureFooter);
-    return () => window.removeEventListener('resize', measureFooter);
+    return () => {
+      window.removeEventListener('resize', measureFooter);
+      if (audioObjectURL) {
+        window.URL.revokeObjectURL(audioObjectURL);
+      }
+    }
   }, []);
 
   return (
@@ -227,7 +255,11 @@ export const ChatInput: FC<ChatInputProps> = ({
         <div className={styles.reply_preview}>
           <div>
             <strong>{text('Reply')}</strong>
-            <span>{replyToMessage.format === MessageFormat.Text ? replyToMessage.text : text('Attachment')}</span>
+            <span>{
+              replyToMessage.format === MessageFormat.Text ? simpleMarkdown(replyToMessage.text, true) :
+              replyToMessage.format === MessageFormat.Audio ? text('Audio') :
+              simpleMarkdown(replyToMessage.caption || text('Attachment'), true)
+            }</span>
           </div>
           <button type="button" onClick={onCancelReply}>×</button>
         </div>
@@ -293,16 +325,32 @@ export const ChatInput: FC<ChatInputProps> = ({
             </div>
         )}
 
+        {
+          // Audio player
+          (isRecording || audioFile) &&
+          <div className={styles.message_voiceinput}>
+            <audio src={isRecording ? '' : audioObjectURL} controls />
+            <button
+              type="button"
+              disabled={isRecording}
+              title={text('Clear voice message')}
+              onClick={() => handleAudioFile(null)}
+            >×</button>
+          </div>
+        }
+
         {/* Textarea */}
+        {/* Не удаляем элемент из DOM, чтобы не терять размер и содержимое. */}
         <textarea
           ref={textareaRef}
           className={styles.message_textarea}
+          style={isRecording || audioFile ? {display: 'none'} : undefined}
           placeholder={text('Enter a message...')}
           value={message}
           onChange={handleMessageChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          disabled={isBlocked}
+          disabled={isBlocked}          
         />
 
         {/* Action buttons */}
@@ -316,15 +364,14 @@ export const ChatInput: FC<ChatInputProps> = ({
           >
             <AttachIcon />
           </button>
-          <button
-            type="button"
+          <AudioRecorder
             className={styles.action_button}
-            onClick={() => console.log('Audio recording started/stopped')} // TODO: Implement audio
-            title={text('Record voice message')}
             disabled={isBlocked}
-          >
-            <MicrophoneIcon />
-          </button>
+            MicrophoneIcon={MicrophoneIcon}
+            onStartRecording={() => setIsRecording(true)}
+            onFinishRecording={() => setIsRecording(false)}
+            setAudioFile={handleAudioFile}
+          />
           <div className={styles.emoji_picker_wrap}>
             {isEmojiPickerVisible && (
               <div className={styles.emoji_picker_container} style={{ bottom: footerHeight + 20 }}>
@@ -346,7 +393,7 @@ export const ChatInput: FC<ChatInputProps> = ({
             className={`${styles.action_button} ${styles.send_button}`}
             onClick={handleSendMessage}
             title={text('Send message')}
-            disabled={isBusy || isBlocked || (!message.trim() && previewFiles.length === 0)}
+            disabled={isBusy || isBlocked || isRecording || (!message.trim() && previewFiles.length === 0 && !audioFile)}
           >
             <SendIcon />
           </button>

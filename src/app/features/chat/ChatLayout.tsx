@@ -188,11 +188,38 @@ export const ChatLayout: FC = () => {
     replyToMessage?: number,
   ) => {
     try {
-      if (message) await sendMessage({ orderId, contractorId, text: message, format: MessageFormat.Text, replyToMessage });
+      if (message || replyToMessage) {
+        const file = files.shift();
+        const format = file ? MessageFormat.File : MessageFormat.Text;
+        await sendMessage({ orderId, contractorId, text: message, format, file, replyToMessage });
+      }
       for (const file of files) {
-        await sendMessage({ orderId, contractorId, file, text: file.name, format: MessageFormat.File, replyToMessage });
+        await sendMessage({ orderId, contractorId, file, format: MessageFormat.File });
       }
       setReplyTo(undefined);
+    }
+    catch (err: any) {
+      console.error('Send message failed:', err);
+    }
+  }, [sendMessage]);
+
+  const handleSendAudio = useCallback(async (
+    orderId: number,
+    contractorId: number,
+    audio: File,
+    replyToMessage?: number,
+  ) => {
+    try {
+      if (audio) {
+        await sendMessage({
+          orderId,
+          contractorId,
+          format: MessageFormat.Audio,
+          audio,
+          replyToMessage
+        });
+        setReplyTo(undefined);
+      }
     }
     catch (err: any) {
       console.error('Send message failed:', err);
@@ -306,6 +333,7 @@ export const ChatLayout: FC = () => {
                 contractorId={contractorId}
                 currentUser={user}
                 onSendMessage={handleSendMessage}
+                onSendAudio={handleSendAudio}
                 isBusy={isSendingMessage}
                 replyTo={replyTo}
                 onCancelReply={() => setReplyTo(undefined)}

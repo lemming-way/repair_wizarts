@@ -63,6 +63,7 @@ interface MessageBase {
   format: MessageFormat;
   relatedMessage?: number;
   unread: boolean;
+  partnerRead: Date | null;
 }
 
 interface TextMessageBase extends MessageBase {
@@ -83,6 +84,7 @@ interface AudioMessage extends MessageBase {
   type: MessageType.User | MessageType.Admin;
   format: MessageFormat.Audio;
   audioId: number;
+  mediaType: string;
 }
 
 interface FileMessage extends MessageBase {
@@ -90,6 +92,9 @@ interface FileMessage extends MessageBase {
   format: MessageFormat.File;
   caption: string;
   fileId: number;
+  fileName: string;
+  fileSize: number;
+  mediaType: string;
 }
 
 /**
@@ -228,26 +233,34 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
     const data = await MessageAPI.getMessagesByIds(ids);
 
     const messages = (data ?? []).map(messageRec => {
+      const partnerRead = messageRec.partner_read_time ? Date.parse(messageRec.partner_read_time) : null;
       const ret = {
         id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
         chatId: String(messageRec.chat_id ?? ''),
         created: new Date(Date.parse(messageRec.created) || 0),
         type:
-          messageRec.type === 31 ? MessageType.System :
+          messageRec.type === MessageAPI.MessageType.System ? MessageType.System :
           !!messageRec.from ? MessageType.User :
           MessageType.Admin,
         format:
-          messageRec.type === 32 ? MessageFormat.Audio :
-          messageRec.type === 33 ? MessageFormat.File :
+          messageRec.type === MessageAPI.MessageType.Audio ? MessageFormat.Audio :
+          messageRec.type === MessageAPI.MessageType.Attachment ? MessageFormat.File :
           MessageFormat.Text,
-        unread: !!messageRec.unread
+        unread: !!messageRec.unread,
+        partnerRead: partnerRead && !Number.isNaN(partnerRead) ? new Date(partnerRead) : null
       } as Message;
       if (ret.type === MessageType.System) ret.eventType = String(messageRec.event_type ?? '');
       if (ret.format === MessageFormat.Text) ret.text = String(messageRec.text ?? '');
-      if (ret.format === MessageFormat.Audio) ret.audioId = Number(messageRec.audio_id ?? 0);
+      if (ret.format === MessageFormat.Audio) {
+        ret.audioId = Number(messageRec.audio_id ?? 0);
+        ret.mediaType = String(messageRec.file_type ?? '');
+      }
       if (ret.format === MessageFormat.File) {
         ret.caption = String(messageRec.caption ?? '');
         ret.fileId = Number(messageRec.file_id ?? 0);
+        ret.fileName = String(messageRec.file_name ?? '');
+        ret.fileSize = Number(messageRec.file_size ?? 0);
+        ret.mediaType = String(messageRec.file_type ?? '');
       }
       if (Number.isInteger(messageRec.from) && messageRec.from! > 0) ret.from = messageRec.from!;
       if (messageRec.modified) {
@@ -369,31 +382,36 @@ async function sendMessage(message: SendMessageParams): Promise<number | null> {
   if (message.format === MessageFormat.Audio) {
     if (!message.audio) throw new Error('Audio file not specified.');
     const type = message.audio.type;
-    if (!type.startsWith('audio/')) throw new Error('Invalid media type.');
-    const format = type.substring(6);
-    if (format !== 'webm' && format !== 'ogg' && !format.startsWith('ogg;')) throw new Error('Invalid media type.');
-    const ext = format === 'webm' ? 'weba' : 'ogg';
-    const base64 = await fileToBase64(message.audio);
-    const fileId = await FileAPI.uploadFile((message.audio as File).name ?? `audio_file.${ext}`, base64, 0);
-    if (!fileId) throw new Error('Audio uploading failed.');
-    data.type = 32;
-    data.file_id = fileId;
+    const validTypes = {
+      'audio/mp4': 'm4a',
+      'audio/aac': 'm4a',
+      'audio/webm': 'webm',
+      'audio/webm;codecs=opus': 'webm',
+      'audio/ogg': 'ogg',
+      'audio/ogg;codecs=opus': 'ogg'
+    };
+    if (!validTypes[type]) throw new Error('Invalid media type.');
+    const ext = validTypes[type];
+    const uploadName = `audio_file.${ext}`;
+    data.type = MessageAPI.MessageType.Audio;
+    data.file = new File(
+      [message.audio],
+      uploadName,
+      { type, lastModified: (message.audio as { lastModified?: number }).lastModified });
   }
   else if (message.format === MessageFormat.File) {
     if (!message.file) throw new Error('Attachment not specified.');
-    const base64 = await fileToBase64(message.file);
-    const fileId = await FileAPI.uploadFile(message.file.name, base64, 0);
-    if (!fileId) throw new Error('File uploading failed.');
-    data.type = 33;
+    data.type = MessageAPI.MessageType.Attachment;
     data.text = message.text ?? '';
-    data.file_id = fileId;
+    data.file = message.file;
   }
   else {
     if (!message.text) throw new Error('Message is empty.');
-    data.type = 1;
+    data.type = MessageAPI.MessageType.Regular;
     data.text = message.text;
   }
-  return MessageAPI.postMessage(chatId, message);
+  if (message.replyToMessage) data.replyTo = message.replyToMessage;
+  return MessageAPI.postMessage(chatId, data);
 }
 
 export function useSendMessage() {

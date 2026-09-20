@@ -5,6 +5,11 @@ ini_set( 'display_errors', 0 );
 $out = call_user_func(function() {
   // нужные константы
   $car_lock_name = 'F6qD_car_insertion_lock';
+  $chat_recipient_type = 31;
+  $message_regular = 1;
+  $message_system = 31;
+  $message_audio = 32;
+  $message_file = 33;
 
   /********************************************************************
                          Вспомогательные функции
@@ -509,13 +514,13 @@ $out = call_user_func(function() {
                 'IF(`o`.`only_offer`>0,1,0) AS `is_direct`,' .
                 '`o`.`rating` AS `client_rating`,' .
                 '`c`.`rating` AS `contractor_rating`,' .
-                '`o`.`create_datetime` AS `created_at`,' .
-                'NULLIF(`c`.`appoint_datetime`,0) AS `appointed_at`,' .
-                'NULLIF(`c`.`start_datetime`,0) AS `started_at`,' .
-                'NULLIF(`c`.`complete_datetime`,0) AS `finished_at`,' .
-                'NULLIF(`o`.`cancel_datetime`,0) AS `canceled_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(`o`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(NULLIF(`c`.`appoint_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `appointed_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(NULLIF(`c`.`start_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `started_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(NULLIF(`c`.`complete_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `finished_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(NULLIF(`o`.`cancel_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `canceled_at`,' .
                 '`o`.`cancel_reason` AS `cancel_reason`,' .
-                'NULLIF(`o`.`complete_datetime`,0) AS `completed_at`,' .
+                'DATE_FORMAT(CONVERT_TZ(NULLIF(`o`.`complete_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `completed_at`,' .
                 'ROUND(`o`.`sum`,2) AS `desired_price`,' .
                 '`c`.`price_estimate` AS `contractor_price`,' .
                 '`o`.`price_estimate` AS `agreed_price`,' .
@@ -523,7 +528,7 @@ $out = call_user_func(function() {
                   'IF(`d`.`id_order_driver_status` IN(1,3,4,5,6),JSON_OBJECT(' .
                     '\'id\',`d`.`id_user`,' .
                     '\'price\',IFNULL(`d`.`price_estimate`,0),' .
-                    '\'created_at\',IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),' .
+                    '\'created_at\',DATE_FORMAT(CONVERT_TZ(IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\'),' .
                     '\'comment\',`d`.`options`->>\'$.comment\',' .
                     '\'ready_in\',`d`.`options`->\'$.readyIn\'' .
                   '),NULL) AS `contractor_offer`,' .
@@ -568,7 +573,7 @@ $out = call_user_func(function() {
                       'JSON_OBJECT(' .
                         '\'id\',`d`.`id_user`,' .
                         '\'price\',IFNULL(`d`.`price_estimate`,0),' .
-                        '\'created_at\',IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),' .
+                        '\'created_at\',DATE_FORMAT(CONVERT_TZ(IF(`d`.`candidacy_datetime`>0,`d`.`candidacy_datetime`,`d`.`appoint_datetime`),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\'),' .
                         '\'comment\',`d`.`options`->>\'$.comment\',' .
                         '\'ready_in\',`d`.`options`->\'$.readyIn\'' .
                       ')' .
@@ -689,7 +694,6 @@ $out = call_user_func(function() {
         if (count($attachments) > 10) $attachments = array_slice($attachments, 0, 10);
         foreach ($attachments as $index => $file) {
           $ext = substr(pathinfo($file['name'],PATHINFO_EXTENSION),0,63);
-          //~ $filename_upload = $base64url_encode(random_bytes(9)) . ($ext ? ".$ext" : '');
           $filename_upload = $base64url_encode(join('', array_map(function() { return chr(rand(0, 255)); }, range(0, 8)))) . ($ext ? ".$ext" : '');
 
           // Записать данные файла в таблицу
@@ -720,7 +724,7 @@ $out = call_user_func(function() {
           if (!empty($response['error'])) $die(500, $response['error']);
           $order_data['images'][] = $upload_id;
           $attachments[$index]['id'] = $sql_escape($upload_id);
-          $attachments[$index]['dropbox_response'] = $sql_escape($response['data']);
+          $attachments[$index]['dropbox_response'] = $sql_escape(json_encode($response['data'], JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
         }
       }
       else {
@@ -906,7 +910,6 @@ $out = call_user_func(function() {
           if (count($attachments) + count($old_attachments) > 10) $die(400, 'Too many attachments');
           foreach ($attachments as $index => $file) {
             $ext = substr(pathinfo($file['name'],PATHINFO_EXTENSION),0,63);
-            //~ $filename_upload = $base64url_encode(random_bytes(9)) . ($ext ? ".$ext" : '');
             $filename_upload = $base64url_encode(join('', array_map(function() { return chr(rand(0, 255)); }, range(0, 8)))) . ($ext ? ".$ext" : '');
 
             // Записать данные файла в таблицу
@@ -936,7 +939,7 @@ $out = call_user_func(function() {
             $response = upload_to_dropbox(file_get_contents($file['tmp_name']), $filename_upload, $upload_id);
             if (!empty($response['error'])) $die(500, $response['error']);
             $attachments[$index]['id'] = $sql_escape($upload_id);
-            $attachments[$index]['dropbox_response'] = $sql_escape($response['data']);
+            $attachments[$index]['dropbox_response'] = $sql_escape(json_encode($response['data'], JSON_UNESCAPED_UNICODE + JSON_UNESCAPED_SLASHES));
           }
         }
       }
@@ -954,7 +957,7 @@ $out = call_user_func(function() {
       $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
 
       $result = $query_one(
-        'SELECT `from`,ROUND(`o`.`sum`,2) `sum`,`options`->>\'$.description\' `description`,' .
+        'SELECT `from`,ROUND(`sum`,2) `sum`,`options`->>\'$.description\' `description`,' .
           '`options`->>\'$.images\' `attachments`,`only_offer` ' .
         'FROM `order` WHERE `id_order`=:order AND `client`=:client AND `id_order_status` IN(1,6) FOR UPDATE',
         [ 'order' => $order_id, 'client' => $context['u_id'] ],
@@ -1516,11 +1519,13 @@ $out = call_user_func(function() {
           'INSERT INTO `message`' .
           '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
           '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-          'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+          'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
           [
             'order' => $order_id,
             'contractor' => $context['u_id'],
-            'value' => [ 'text' => "Пользователь $username откликнулся на заказ.", 'eventType' => 'CONTRACTOR_OFFER' ]
+            'value' => [ 'text' => "Пользователь $username откликнулся на заказ.", 'eventType' => 'CONTRACTOR_OFFER' ],
+            'rtype' => $chat_recipient_type,
+            'mtype' => $message_system
           ]
         );
         if (empty($ret['id'])) $die(500, 'Database insert error.');
@@ -1600,11 +1605,13 @@ $out = call_user_func(function() {
           'INSERT INTO `message`' .
           '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
           '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-          'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+          'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
           [
             'order' => $order_id,
             'contractor' => $context['u_id'],
-            'value' => [ 'text' => "Пользователь $username обновил своё предложение.", 'eventType' => 'OFFER_UPDATE' ]
+            'value' => [ 'text' => "Пользователь $username обновил своё предложение.", 'eventType' => 'OFFER_UPDATE' ],
+            'rtype' => $chat_recipient_type,
+            'mtype' => $message_system
           ]
         );
         if (empty($result['id'])) $die(500, 'Database insert error.');
@@ -1658,11 +1665,13 @@ $out = call_user_func(function() {
         'INSERT INTO `message`' .
         '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
         '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
         [
           'order' => $order_id,
           'contractor' => $contractor_id,
-          'value' => [ 'text' => "Пользователь $username выбрал исполнителя $username_contractor.", 'eventType' => 'ORDER_APPOINT' ]
+          'value' => [ 'text' => "Пользователь $username выбрал исполнителя $username_contractor.", 'eventType' => 'ORDER_APPOINT' ],
+          'rtype' => $chat_recipient_type,
+          'mtype' => $message_system
         ]
       );
       if (empty($result['id'])) $die(500, 'Database insert error.');
@@ -1699,11 +1708,13 @@ $out = call_user_func(function() {
         'INSERT INTO `message`' .
         '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
         '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
         [
           'order' => $order_id,
           'contractor' => $context['u_id'],
-          'value' => [ 'text' => "Пользователь $username приступил к работе.", 'eventType' => 'ORDER_START' ]
+          'value' => [ 'text' => "Пользователь $username приступил к работе.", 'eventType' => 'ORDER_START' ],
+          'rtype' => $chat_recipient_type,
+          'mtype' => $message_system
         ]
       );
       if (empty($result['id'])) $die(500, 'Database insert error.');
@@ -1740,11 +1751,13 @@ $out = call_user_func(function() {
         'INSERT INTO `message`' .
         '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
         '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
         [
           'order' => $order_id,
           'contractor' => $context['u_id'],
-          'value' => [ 'text' => "Пользователь $username завершил работу.", 'eventType' => 'ORDER_FINISH' ]
+          'value' => [ 'text' => "Пользователь $username завершил работу.", 'eventType' => 'ORDER_FINISH' ],
+          'rtype' => $chat_recipient_type,
+          'mtype' => $message_system
         ]
       );
       if (empty($result['id'])) $die(500, 'Database insert error.');
@@ -1790,11 +1803,13 @@ $out = call_user_func(function() {
         'INSERT INTO `message`' .
         '(`sender_owner`,`sender_owner_type`,`recipient_owner`,`recipient_owner_type`,`name`,`value`,' .
         '`last_edit_datetime`,`create_datetime`,`id_message_type`) ' .
-        'VALUES(4,2,CONCAT(:order,\':\',:contractor),31,\'\',:value,0,NOW(0),31)',
+        'VALUES(4,2,CONCAT(:order,\':\',:contractor),:rtype,\'\',:value,0,NOW(0),:mtype)',
         [
           'order' => $order_id,
           'contractor' => $contractor,
-          'value' => [ 'text' => "Пользователь $username подтвердил выполнение работы.", 'eventType' => 'ORDER_COMPLETE' ]
+          'value' => [ 'text' => "Пользователь $username подтвердил выполнение работы.", 'eventType' => 'ORDER_COMPLETE' ],
+          'rtype' => $chat_recipient_type,
+          'mtype' => $message_system
         ]
       );
       if (empty($result['id'])) $die(500, 'Database insert error.');
@@ -1808,6 +1823,7 @@ $out = call_user_func(function() {
 
     // Получить список активных чатов для пользователя
     case 'getActiveChatIds':
+      $data['rtype'] = $chat_recipient_type;
       $sql = 'SELECT CONCAT(`order`,\':\',`contractor`) AS `id`' .
                 'FROM (' .
                   'SELECT ' .
@@ -1821,7 +1837,7 @@ $out = call_user_func(function() {
                       'LEFT JOIN `messages_read` `r` ' .
                         'ON `r`.`id_message`=`m`.`id_message` ' .
                         'AND `r`.`id_user`=:u_id ' .
-                      'WHERE `m`.`recipient_owner_type`=31 ' .
+                      'WHERE `m`.`recipient_owner_type`=:rtype ' .
                         'AND `m`.`recipient_owner`=CONCAT(`o`.`id_order`,\':\',IFNULL(`d`.`id_user`,`ds`.`id_user`)) ' .
                         'AND `m`.`active_status`>0 ' .
                         'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
@@ -1870,6 +1886,7 @@ $out = call_user_func(function() {
 
     // Получить данные чатов по `id`
     case 'getChats':
+      $data['rtype'] = $chat_recipient_type;
       $sql = 'SELECT ' .
                   '`o`.`id_order` AS `order`,' .
                   '`o`.`client` AS `client`,' .
@@ -1886,7 +1903,7 @@ $out = call_user_func(function() {
                     '`m`.`id_message`,' .
                     'NULL' .
                   ')) AS `first_unread`,' .
-                  'GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)) AS `last_time`,' .
+                  'DATE_FORMAT(CONVERT_TZ(GREATEST(MAX(`m`.`create_datetime`),MAX(`m`.`last_edit_datetime`)),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `last_time`,' .
                   ($context['u_role'] === 2 ?
                     '(' .
                       'JSON_CONTAINS(IF(JSON_VALID(`d`.`options`),`d`.`options`,NULL),\'{"chatOpen":true}\',\'$\') ' .
@@ -1914,7 +1931,7 @@ $out = call_user_func(function() {
                   'ON `ds`.`id_user`=SUBSTRING_INDEX(`ids`.`id`,\':\',-1) ' .
                   'AND `ds`.`id_order`=`o`.`id_order` ' .
                 'LEFT JOIN `message` `m` ' .
-                  'ON `m`.`recipient_owner_type`=31 ' .
+                  'ON `m`.`recipient_owner_type`=:rtype ' .
                   'AND `m`.`recipient_owner`=`ids`.`id` ' .
                   'AND `m`.`active_status`>0 ' .
                 'LEFT JOIN `messages_read` `r` ' .
@@ -1933,67 +1950,91 @@ $out = call_user_func(function() {
 
     // Получить id всех сообщений в чате
     case 'getMessageIds':
-      $sql = 'SELECT NOW(0) AS `server_time`,' .
-                'JSON_ARRAYAGG(`id_message`) AS `messages` ' .
-                'FROM (' .
-                  'SELECT *,ROW_NUMBER() OVER(ORDER BY `id_message`) AS `num` ' .
-                  'FROM `message` ' .
-                  'WHERE (' .
-                      'SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id ' .
-                      'OR EXISTS(SELECT 1 FROM `order` WHERE `id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) AND `client`=:u_id)' .
-                    ') ' .
-                    'AND `recipient_owner_type`=31 ' .
-                    'AND `recipient_owner`=:chat_id ' .
-                    'AND `id_message_type` IN(1,31,32,33) ' .
-                    'AND `active_status`>0 ' .
-                ') `m`';
-      return $query($sql, $data, [ 'json_fields' => ['messages'] ]);
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      $chat_id = isset($data['chatId']) ? trim(strval($data['chatId'])) : '';
+      if (!$chat_id) $die(400, 'Chat ID not set');
+      list ($order_id, $contractor_id) = explode(':', $chat_id);
+      $order_id = intval($order_id);
+      $contractor_id = intval($contractor_id);
+      if ($order_id <= 0 || $contractor_id <= 0) $die(400, 'Invalid chat ID');
+      if ($context['u_role'] === 2 && $contractor_id !== $context['u_id']) $die(400, 'Invalid chat ID');
+      $valid_types = [ $message_regular, $message_system, $message_audio, $message_file ];
+      $messages = $query(
+        'SELECT `id_message` ' .
+        'FROM `message` ' .
+        'JOIN `order` `o` ON `id_order`=:order ' .
+        'WHERE `recipient_owner_type`=:rtype ' .
+          'AND `recipient_owner`=:chatId ' .
+          'AND `id_message_type` IN(:types) ' .
+          'AND `active_status`>0 ' .
+          ($context['u_role'] === 1 ? 'AND `o`.`client`=:user ' : '') .
+        'ORDER BY `id_message` ASC',
+        [ 'user' => $context['u_id'], 'chatId' => $chat_id, 'order' => $order_id, 'rtype' => $chat_recipient_type, 'types' => $valid_types ],
+        [ 'numeric_fields' => ['id_message'] ]
+      );
+      $time = $query_one('SELECT NOW(0) AS `server_time`', []);
+      return [ 'messages' => $messages, 'server_time' => $time ];
 
     // Получить id всех сообщений в чате, обновлённых с заданного момента времени
     case 'getUpdatedMessageIds':
-      $sql = 'SELECT NOW(0) AS `server_time`,' .
-                  'JSON_ARRAYAGG(' .
-                    'JSON_OBJECT(' .
-                      '\'id\',`m`.`id_message`,' .
-                      '\'del\',IF(`m`.`active_status`=0,1,0)' .
-                    ')' .
-                  ') `messages` ' .
-                'FROM (' .
-                  'SELECT `m`.*,ROW_NUMBER() OVER(ORDER BY `m`.`id_message`) AS `num` ' .
-                  'FROM `message` `m`' .
-                  'JOIN `order` `o` ' .
-                  'LEFT JOIN `messages_read` `r1` ' .
-                    'ON `r1`.`id_message`=`m`.`id_message` ' .
-                    'AND `r1`.`id_user`=:u_id ' .
-                  'LEFT JOIN `messages_read` `r2` ' .
-                    'ON `r2`.`id_message`=`m`.`id_message` ' .
-                    'AND `r2`.`id_user`=' . ($context['u_role'] === 2 ? '`o`.`client` ' : 'SUBSTRING_INDEX(:chat_id,\':\',-1) ') .
-                  'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) ' .
-                    ($context['u_role'] === 2 ?
-                      'AND SUBSTRING_INDEX(:chat_id,\':\',-1)=:u_id '
-                    :
-                      'AND `o`.`client`=:u_id '
-                    ) .
-                    'AND `m`.`recipient_owner_type`=31 ' .
-                    'AND `m`.`recipient_owner`=:chat_id ' .
-                    'AND `m`.`id_message_type` IN(1,31,32,33) ' .
-                    'AND GREATEST(`m`.`create_datetime`,`m`.`last_edit_datetime`,IFNULL(`r1`.`read`,0),IFNULL(`r2`.`read`,0))>:since ' .
-                ') `m`';
-      return $query($sql, $data, [ 'json_fields' => ['messages'] ]);
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      $chat_id = isset($data['chatId']) ? trim(strval($data['chatId'])) : '';
+      if (!$chat_id) $die(400, 'Chat ID not set');
+      list ($order_id, $contractor_id) = explode(':', $chat_id);
+      $order_id = intval($order_id);
+      $contractor_id = intval($contractor_id);
+      if ($order_id <= 0 || $contractor_id <= 0) $die(400, 'Invalid chat ID');
+      if ($context['u_role'] === 2 && $contractor_id !== $context['u_id']) $die(400, 'Invalid chat ID');
+      $since = isset($data['since']) ? strval($data['since']) : '';
+      if (!$since) $die(400, 'Since time not set');
+      $valid_types = [ $message_regular, $message_system, $message_audio, $message_file ];
+      $messages = $query(
+        'SELECT `m`.`id_message` `id`,IF(`m`.`active_status`=0,1,0) `del` ' .
+        'FROM `message` `m`' .
+        'JOIN `order` `o` ON `o`.`id_order`=:order ' .
+        'LEFT JOIN `messages_read` `r1` ' .
+          'ON `r1`.`id_message`=`m`.`id_message` ' .
+          'AND `r1`.`id_user`=:user ' .
+        'LEFT JOIN `messages_read` `r2` ' .
+          'ON `r2`.`id_message`=`m`.`id_message` ' .
+          'AND `r2`.`id_user`=' . ($context['u_role'] === 2 ? '`o`.`client` ' : ':contractor ') .
+        'WHERE `m`.`recipient_owner_type`=:rtype ' .
+          'AND `m`.`recipient_owner`=:chatId ' .
+          'AND `m`.`id_message_type` IN(:types) ' .
+          ($context['u_role'] !== 2 ? 'AND `o`.`client`=:user ': '') .
+          'AND GREATEST(`m`.`create_datetime`,`m`.`last_edit_datetime`,IFNULL(`r1`.`read`,0),IFNULL(`r2`.`read`,0))>:since ' .
+        'ORDER BY `m`.`id_message` ASC',
+        [
+          'user' => $context['u_id'], 'chatId' => $chat_id, 'order' => $order_id, 'contractor' => $contractor_id,
+          'rtype' => $chat_recipient_type, 'types' => $valid_types, 'since' => $since
+        ],
+        [ 'numeric_fields' => ['id', 'del'] ]
+      );
+      $time = $query_one('SELECT NOW(0) AS `server_time`', []);
+      return [ 'messages' => $messages, 'server_time' => $time ];
 
     // Получить сообщения по списку id
     case 'getMessages':
+      $data['rtype'] = $chat_recipient_type;
+      $data['regular'] = $message_regular;
+      $data['system'] = $message_system;
+      $data['audio'] = $message_audio;
+      $data['file'] = $message_file;
+      $data['allTypes'] = [ $message_regular, $message_system, $message_audio, $message_file ];
       $sql = 'SELECT `m`.`id_message`  AS `id`,' .
                 '`m`.`recipient_owner` AS `chat_id`,' .
                 'IF(`m`.`sender_owner_type`=1,`m`.`sender_owner`,NULL) AS `from`,' .
-                'CASE WHEN `m`.`id_message_type`=1 THEN `m`.`value` WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>\'$.text\' ELSE NULL END AS `text`,' .
-                'CASE WHEN `m`.`id_message_type`=31 THEN `m`.`value`->>\'$.eventType\' ELSE NULL END AS `event_type`,' .
-                'CASE WHEN `m`.`id_message_type`=32 THEN `m`.`value`->>\'$.audio\' ELSE NULL END AS `audio_id`,' .
-                'CASE WHEN `m`.`id_message_type`=33 THEN `m`.`value`->>\'$.caption\' ELSE NULL END AS `caption`,' .
-                'CASE WHEN `m`.`id_message_type`=33 THEN `m`.`value`->>\'$.file\' ELSE NULL END AS `file_id`,' .
-                '`m`.`last_edit_datetime` AS `modified`,' .
+                'CASE WHEN `m`.`id_message_type`=:regular THEN `m`.`value` WHEN `m`.`id_message_type`=:system THEN `m`.`value`->>\'$.text\' ELSE NULL END AS `text`,' .
+                'CASE WHEN `m`.`id_message_type`=:system THEN `m`.`value`->>\'$.eventType\' ELSE NULL END AS `event_type`,' .
+                'CASE WHEN `m`.`id_message_type`=:audio THEN `m`.`value`->>\'$.audio\' ELSE NULL END AS `audio_id`,' .
+                'CASE WHEN `m`.`id_message_type`=:file THEN `m`.`value`->>\'$.caption\' ELSE NULL END AS `caption`,' .
+                'CASE WHEN `m`.`id_message_type`=:file THEN `m`.`value`->>\'$.file\' ELSE NULL END AS `file_id`,' .
+                'CASE WHEN `m`.`id_message_type`=:file THEN `d`.`json`->>\'$.name\' ELSE NULL END AS `file_name`,' .
+                'CASE WHEN `m`.`id_message_type`=:file THEN `d`.`json`->>\'$.size\' ELSE NULL END AS `file_size`,' .
+                '`d`.`json`->>\'$.type\' AS `file_type`,' .
+                'DATE_FORMAT(CONVERT_TZ(`m`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `modified`,' .
                 '`m`.`last_edit_user` AS `editor`,' .
-                '`m`.`create_datetime` AS `created`,' .
+                'DATE_FORMAT(CONVERT_TZ(`m`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created`,' .
                 '`m`.`create_user` AS `author`,' .
                 '`m`.`id_message_type` AS `type`,' .
                 '`m`.`id_message_upper` AS `related`,' .
@@ -2001,6 +2042,10 @@ $out = call_user_func(function() {
                 '`r2`.`read` AS `partner_read_time` ' .
               'FROM `message` `m` ' .
               'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
+              'LEFT JOIN `dropbox_link` `d` ON `id_dropbox_link`=' .
+                'CASE WHEN `m`.`id_message_type`=:file THEN `m`.`value`->>\'$.file\' ' .
+                'WHEN `m`.`id_message_type`=:audio THEN `m`.`value`->>\'$.audio\' ' .
+                'ELSE NULL END ' .
               'LEFT JOIN `messages_read` `r1` ' .
                 'ON `r1`.`id_message`=`m`.`id_message` ' .
                 'AND `r1`.`id_user`=:u_id ' .
@@ -2014,13 +2059,21 @@ $out = call_user_func(function() {
                     'AND `o`.`client`=:u_id '
                   ) .
                 'AND `m`.`active_status`>0 ' .
-                'AND `m`.`recipient_owner_type`=31 ' .
-                'AND `m`.`id_message_type` IN(1,31,32,33)';
-      $numeric_fields = ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'related', 'deleted', 'unread'];
-      return $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
+                'AND `m`.`recipient_owner_type`=:rtype ' .
+                'AND `m`.`id_message_type` IN(:allTypes)';
+      $numeric_fields = ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'file_size', 'related', 'deleted', 'unread'];
+      $result = $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
+      $ret = [];
+      foreach ($result as $message) {
+        $ret[] = array_filter($message, function($value) { return $value !== null; });
+      }
+
+      return $ret;
 
     // Пометить сообщения прочитанными
     case 'markMessagesAsRead':
+      $data['rtype'] = $chat_recipient_type;
+      $data['types'] = [ $message_regular, $message_system, $message_audio, $message_file ];
       $sql = 'INSERT IGNORE INTO `messages_read` ' .
                 'SELECT `m`.`id_message`,' .
                   ':u_id AS `id_user`,' .
@@ -2035,8 +2088,8 @@ $out = call_user_func(function() {
                   ) .
                   'AND (`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) ' .
                   'AND `m`.`active_status`>0 ' .
-                  'AND `m`.`recipient_owner_type`=31 ' .
-                  'AND `m`.`id_message_type` IN(1,31,32,33)';
+                  'AND `m`.`recipient_owner_type`=:rtype ' .
+                  'AND `m`.`id_message_type` IN(:types)';
       return $query($sql, $data);
 
     // Пометить все сообщения в чате прочитанными
@@ -2049,6 +2102,7 @@ $out = call_user_func(function() {
       $contractor_id = intval($contractor_id);
       if ($order_id <= 0 || $contractor_id <= 0) $die(400, 'Invalid chat ID');
       if ($context['u_role'] === 2 && $contractor_id !== $context['u_id']) $die(400, 'Invalid chat ID');
+      $valid_types = [ $message_regular, $message_system, $message_audio, $message_file ];
 
       $query_transaction();
       $result = $query_one(
@@ -2063,11 +2117,11 @@ $out = call_user_func(function() {
         'WHERE `m`.`recipient_owner`=CONCAT(:order,\':\',:contractor) ' .
           'AND (`m`.`sender_owner`<>:user OR `m`.`sender_owner_type`<>1) ' .
           'AND `m`.`active_status`>0 ' .
-          'AND `m`.`recipient_owner_type`=31 ' .
-          'AND `m`.`id_message_type` IN(1,31,32,33) ' .
+          'AND `m`.`recipient_owner_type`=:rtype ' .
+          'AND `m`.`id_message_type` IN(:types) ' .
           'AND `r`.`id_message` IS NULL ' .
         'FOR UPDATE OF `r` FOR SHARE OF `m`',
-        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
+        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id, 'rtype' => $chat_recipient_type, 'types' => $valid_types ],
         [ 'numeric_fields' => ['id_message'] ]
       );
       if ($ret) {
@@ -2087,67 +2141,217 @@ $out = call_user_func(function() {
 
     // Добавить сообщение
     case 'postMessage':
-      $sql = 'INSERT INTO `message`(' .
-                  '`sender_owner`,' .
-                  '`sender_owner_type`,' .
-                  '`recipient_owner`,' .
-                  '`recipient_owner_type`,' .
-                  '`name`,' .
-                  '`value`,' .
-                  '`last_edit_datetime`,' .
-                  '`create_datetime`,' .
-                  '`create_user`,' .
-                  '`id_message_type`,' .
-                  '`id_message_upper`' .
-                ') SELECT ' .
-                  ':u_id,' .                         // sender_owner
-                  '1,' .                             // sender_owner_type
-                  ':chat_id,' .                      // recipient_owner
-                  '31,' .                            // recipient_owner_type
-                  '\'\',' .                            // name
-                  'CASE :type ' .                    // value
-                    'WHEN 1 THEN :text ' .
-                    'WHEN 32 THEN JSON_OBJECT(\'audio\',:file_id) ' .
-                    'WHEN 33 THEN JSON_OBJECT(\'caption\',:text,\'file\',:file_id) ' .
-                    'ELSE \'\' ' .
-                  'END,' .
-                  '0,' .                             // last_edit_datetime
-                  'NOW(0),' .                         // create_datetime
-                  ':u_id,' .                         // create_user
-                  ':type,' .                         // id_message_type
-                  ':reply_to ' .                     // id_message_upper
-                'FROM `order` `o` ' .
-                'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
-                'JOIN `users` `u2` ' .
-                'WHERE `o`.`id_order`=SUBSTRING_INDEX(:chat_id,\':\',1) ' .
-                  'AND `u2`.`id_user`=SUBSTRING_INDEX(:chat_id,\':\',-1) ' .
-                  'AND JSON_VALID(`u1`.`json`) ' .
-                  'AND JSON_VALID(`u2`.`json`) ' .
-                  'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-                  'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-                  'AND (' .
-                    'EXISTS(' .
-                      'SELECT 1 FROM `order_driver` `d` ' .
-                      'WHERE `d`.`id_user`=`u2`.`id_user` ' .
-                        'AND `d`.`id_order`=`o`.`id_order` ' .
-                        'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
-                        'AND `d`.`not_deleted`=1' .
-                    ') OR EXISTS(' .
-                      'SELECT 1 FROM `order_driver_select` `ds` ' .
-                      'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
-                        'AND `ds`.`id_order`=`o`.`id_order`' .
-                    ')' .
-                  ') ' .
-                  'AND (:reply_to IS NULL OR EXISTS(' .
-                    'SELECT 1 FROM `message` ' .
-                    'WHERE `id_message`=:reply_to ' .
-                    'AND `recipient_owner`=:chat_id ' .
-                    'AND `recipient_owner_type`=31 ' .
-                    'AND `id_message_type` IN(1,32,33)' .
-                  '))' .
-                  'AND :type IN(1,32,33) ' .
-                  'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:u_id' : '`u1`.`id_user`=:u_id');
-      return $query($sql, $data);
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      // очистка исходных данных
+      $chat_id = isset($data['chatId']) ? trim(strval($data['chatId'])) : '';
+      if (!$chat_id) $die(400, 'Chat ID not set');
+      list ($order_id, $contractor_id) = explode(':', $chat_id);
+      $order_id = intval($order_id);
+      $contractor_id = intval($contractor_id);
+      if ($order_id <= 0 || $contractor_id <= 0) $die(400, 'Invalid chat ID');
+      if ($context['u_role'] === 2 && $contractor_id !== $context['u_id']) $die(400, 'Invalid chat ID');
+      $mtype = isset($data['type']) ? intval($data['type']) : 1;
+      if ($mtype !== $message_regular && $mtype !== $message_audio && $mtype !== $message_file) $die(400, 'Invalid message type');
+      $text = isset($data['text']) ? trim(strval($data['text'])) : '';
+      if ($mtype === $message_regular && !$text) $die(400, 'Text not set');
+      $reply_to = isset($data['replyTo']) ? intval($data['replyTo']) : null;
+      if ($mtype !== $message_regular) {
+        if (empty($context['files']['attachment'])) $die(400, 'Attachment not set');
+        $file = $context['files']['attachment'];
+        if (empty($file['tmp_name'])) $die(400, 'Invalid attachment');
+        if (
+          $mtype === $message_audio &&
+          $file['type'] !== 'audio/mp4' &&
+          $file['type'] !== 'audio/aac' &&
+          $file['type'] !== 'audio/webm' &&
+          $file['type'] !== 'audio/webm;codecs=opus' &&
+          $file['type'] !== 'audio/ogg' &&
+          $file['type'] !== 'audio/ogg;codecs=opus'
+        ) $die(400, 'Invalid audio');
+      }
+      else {
+        $file = null;
+      }
+      $reply_valid_types = [ $message_regular, $message_audio, $message_file ];
+
+      // Проверка прав доступа
+      $result = $query_one(
+        'SELECT ' .
+          'JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') AS `bl_client`,' .
+          'JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') AS `bl_contractor` ' .
+        'FROM `order` `o` ' .
+        'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
+        'JOIN `users` `u2` ' .
+        'WHERE `o`.`id_order`=:order ' .
+          'AND `u2`.`id_user`=:contractor ' .
+          'AND JSON_VALID(`u1`.`json`) ' .
+          'AND JSON_VALID(`u2`.`json`) ' .
+          'AND (' .
+            'EXISTS(' .
+              'SELECT 1 FROM `order_driver` `d` ' .
+              'WHERE `d`.`id_user`=`u2`.`id_user` ' .
+                'AND `d`.`id_order`=`o`.`id_order` ' .
+                'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                'AND `d`.`not_deleted`=1' .
+            ') OR EXISTS(' .
+              'SELECT 1 FROM `order_driver_select` `ds` ' .
+              'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
+                'AND `ds`.`id_order`=`o`.`id_order`' .
+            ')' .
+          ') ' .
+          ($context['u_role'] === 1 ? 'AND `u1`.`id_user`=:user' : ''),
+          [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
+          [ 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
+      );
+      if (!$result) $die(400, 'Invalid chat ID');
+      if ($context['u_role'] === 1 && $result['bl_client']) $die(400, 'User is blacklisted');
+      if ($context['u_role'] === 2 && $result['bl_contractor']) $die(400, 'User is blacklisted');
+      if ($context['u_role'] === 1 && $result['bl_contractor']) $die(400, 'Partner is blacklisted');
+      if ($context['u_role'] === 2 && $result['bl_client']) $die(400, 'Partner is blacklisted');
+
+      // Проверка связанного сообщения
+      if ($reply_to) {
+        $result = $query_one(
+          'SELECT 1 FROM `message` ' .
+          'WHERE `id_message`=:id AND `recipient_owner`=:chatId AND `recipient_owner_type`=:rtype ' .
+            'AND `id_message_type` IN(:types) AND `active_status`>0',
+          [ 'id' => $reply_to, 'chatId' => $chat_id, 'rtype' => $chat_recipient_type, 'types' => $reply_valid_types ]
+        );
+        if (!$result) $die(400, 'Invalid reply-to message ID');
+      }
+
+      // Загрузка файла
+      if ($file) {
+        $ext = substr(pathinfo($file['name'],PATHINFO_EXTENSION),0,63);
+        $filename_upload = $base64url_encode(join('', array_map(function() { return chr(rand(0, 255)); }, range(0, 8)))) . ($ext ? ".$ext" : '');
+
+        // Записать данные файла в таблицу
+        // Сначала записываем атомарно, без транзакции. Позже бесхозные файлы можно будет удалить.
+        $upload_data = [
+          'name' => $file['name'],
+          'name_upload' => $filename_upload,
+          'type' => $file['type'],
+          'size' => $file['size']
+        ];
+        $result = $query(
+          'INSERT INTO `dropbox_link`(`json`) VALUES(' .
+            'JSON_OBJECT(' .
+              '\'name\',:name,' .
+              '\'name_upload\',:name_upload,' .
+              '\'type\',:type,' .
+              '\'size\',:size,' .
+              '\'created\',NOW(0)' .
+            ')' .
+          ')',
+          $upload_data
+        );
+        if (empty($result['id'])) $die(500, 'Database insert error.');
+        $upload_id = $result['id'];
+
+        // загрузить файл на dropbox
+        $response = upload_to_dropbox(file_get_contents($file['tmp_name']), $filename_upload, $upload_id);
+        if (!empty($response['error'])) $die(500, $response['error']);
+        $file['id'] = $upload_id;
+        $file['dropbox_response'] = $response['data'];
+      }
+
+      // Теперь открываем транзакцию
+      $query_transaction();
+      $result = $query_one(
+        'SELECT 1 ' .
+        'FROM `order` `o` ' .
+        'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
+        'JOIN `users` `u2` ' .
+        'WHERE `o`.`id_order`=:order ' .
+          'AND `u2`.`id_user`=:contractor ' .
+          'AND JSON_VALID(`u1`.`json`) ' .
+          'AND JSON_VALID(`u2`.`json`) ' .
+          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND (' .
+            'EXISTS(' .
+              'SELECT 1 FROM `order_driver` `d` ' .
+              'WHERE `d`.`id_user`=`u2`.`id_user` ' .
+                'AND `d`.`id_order`=`o`.`id_order` ' .
+                'AND `d`.`id_order_driver_status` IN(1,2,3,4,5,6) ' .
+                'AND `d`.`not_deleted`=1' .
+            ') OR EXISTS(' .
+              'SELECT 1 FROM `order_driver_select` `ds` ' .
+              'WHERE `ds`.`id_user`=`u2`.`id_user` ' .
+                'AND `ds`.`id_order`=`o`.`id_order`' .
+            ')' .
+          ') ' .
+          ($context['u_role'] === 1 ? 'AND `u1`.`id_user`=:user ' : '') .
+        'FOR SHARE',
+        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ]
+      );
+      if (!$result) $die(400, 'Invalid chat ID');
+      if ($reply_to) {
+        $result = $query(
+          'SELECT 1 FROM `message` ' .
+          'WHERE `id_message`=:replyTo AND `recipient_owner`=:chatId AND `recipient_owner_type`=:rtype ' .
+            'AND `id_message_type` IN(:mtypes) AND active_status>0 ' .
+          'FOR SHARE',
+          [ 'chatId' => $chat_id, 'replyTo' => $reply_to, 'rtype' => $chat_recipient_type, 'mtypes' => $reply_valid_types ]
+        );
+        if (!$result) $die(400, 'Invalid reply-to message ID');
+      }
+      $ret = $query(
+        'INSERT INTO `message`(' .
+          '`sender_owner`,' .
+          '`sender_owner_type`,' .
+          '`recipient_owner`,' .
+          '`recipient_owner_type`,' .
+          '`name`,' .
+          '`value`,' .
+          '`last_edit_datetime`,' .
+          '`create_datetime`,' .
+          '`create_user`,' .
+          '`id_message_type`,' .
+          '`id_message_upper`' .
+        ') VALUES(' .
+          ':user,' .                         // sender_owner
+          '1,' .                             // sender_owner_type
+          ':chatId,' .                       // recipient_owner
+          ':rtype,' .                        // recipient_owner_type
+          '\'\',' .                          // name
+          (                                  // value
+            $mtype === $message_regular ? ':text' :(
+            $mtype === $message_audio ? 'JSON_OBJECT(\'audio\',:fileId)' :
+            'JSON_OBJECT(\'caption\',:text,\'file\',:fileId)'
+          )) . ',' .
+          '0,' .                             // last_edit_datetime
+          'NOW(0),' .                        // create_datetime
+          ':user,' .                         // create_user
+          ':type,' .                         // id_message_type
+          ':replyTo' .                       // id_message_upper
+        ')',
+        [
+          'user' => $context['u_id'], 'chatId' => $chat_id, 'type' => $mtype, 'text' => $text, 'replyTo' => $reply_to,
+          'fileId' => $file ? $file['id'] : null, 'rtype' => $chat_recipient_type
+        ]
+      );
+      if (empty($ret['id'])) $die(500, 'Database insert error.');
+      if ($file) {
+        $result = $query(
+          'UPDATE `dropbox_link` ' .
+          'SET `private`=0,`json`=JSON_SET(' .
+            '`json`,' .
+            '\'$.response\',CAST(:response AS JSON),' .
+            '\'$.messageId\',:message' .
+          ') WHERE `id_dropbox_link`=:id',
+          [ 'id' => $file['id'], 'response' => $file['dropbox_response'], 'message' => $ret['id'] ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+        $result = $query(
+          'INSERT INTO `users_dropbox_link`(`id_user`,`id_dropbox_link`) VALUES(:user,:id)',
+          [ 'user' => $context['u_id'], 'id' => $file['id'] ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+      }
+      $query_commit();
+
+      return $ret;
 
     // Открыть/закрыть чат
     case 'chatOpenClose':

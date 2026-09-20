@@ -1,5 +1,6 @@
 
 const formatters = new Map<string, Intl.DateTimeFormat>();
+const dateTimeFormatters = new Map<string, Intl.DateTimeFormat>();
 const relativeFormatters = new Map<string, Intl.RelativeTimeFormat>();
 
 export function formatDate(
@@ -10,6 +11,19 @@ export function formatDate(
   const key = `${locale};${style}`;
   if (!formatters.has(key)) formatters.set(key, new Intl.DateTimeFormat(locale, { dateStyle: style }));
   const formatter = formatters.get(key);
+  const dateObject = date instanceof Date ? date : new Date(date);
+  if (isNaN(dateObject.getTime())) return '';
+  return formatter!.format(dateObject);
+}
+
+export function formatDateTime(
+  date: string | number | Date,
+  locale: string = 'ru',
+  style: 'full' | 'long' | 'medium' | 'short' = 'short'
+) {
+  const key = `${locale};${style}`;
+  if (!dateTimeFormatters.has(key)) dateTimeFormatters.set(key, new Intl.DateTimeFormat(locale, { dateStyle: style, timeStyle: 'short' }));
+  const formatter = dateTimeFormatters.get(key);
   const dateObject = date instanceof Date ? date : new Date(date);
   if (isNaN(dateObject.getTime())) return '';
   return formatter!.format(dateObject);

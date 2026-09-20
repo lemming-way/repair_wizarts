@@ -48,19 +48,23 @@ type UpdatedChatMessagesResponse = {
 export type ChatMessageRecord = {
   id: number;
   chat_id: string;
-  from: number | null;
-  text: string | null;
-  event_type: string | null;
-  audio_id: number | null;
-  caption: string | null;
-  file_id: number | null;
+  from?: number;
+  text?: string;
+  event_type?: string;
+  audio_id?: number;
+  caption?: string;
+  file_id?: number;
+  file_name?: string;
+  file_type?: string;
+  file_size?: number;
   modified: string;
-  editor: number | null;
+  editor?: number;
   created: string;
-  author: number | null;
+  author?: number;
   type: number;
-  related: number | null;
+  related?: number;
   unread: 0 | 1;
+  partner_read_time?: string;
 };
 
 
@@ -112,11 +116,11 @@ export async function getAllChatMessages(orderId: number, contractorId: number):
     is_var: 1,
     s_t_data: {
       action: 'getMessageIds',
-      chat_id: `${orderId}:${contractorId}`,
+      chatId: `${orderId}:${contractorId}`,
     }
   };
-  const result = await post<AllChatMessagesResponse[]>('script/template/repair_api', payload);
-  return result[0] ?? { server_time: '', messages: [] };
+  const result = await post<AllChatMessagesResponse>('script/template/repair_api', payload);
+  return result ?? { server_time: '', messages: [] };
 }
 
 /**
@@ -132,12 +136,12 @@ export async function getUpdatedChatMessages(orderId: number, contractorId: numb
     is_var: 1,
     s_t_data: {
       action: 'getUpdatedMessageIds',
-      chat_id: `${orderId}:${contractorId}`,
+      chatId: `${orderId}:${contractorId}`,
       since
     }
   };
-  const result = await post<UpdatedChatMessagesResponse[]>('script/template/repair_api', payload);
-  return result[0] ?? { server_time: '', messages: [] };
+  const result = await post<UpdatedChatMessagesResponse>('script/template/repair_api', payload);
+  return result ?? { server_time: '', messages: [] };
 }
 
 /**
@@ -158,11 +162,21 @@ export async function getMessagesByIds(ids: number[]): Promise<ChatMessageRecord
   return result;
 }
 
+export const MessageType = {
+  Regular: 1,
+  System: 31,
+  Audio: 32,
+  Attachment: 33
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+type MessageType = typeof MessageType[keyof typeof MessageType];
+
 type PostMessageData = {
-  type?: 1 | 32 | 33;
+  type?: typeof MessageType['Regular' | 'Audio' | 'Attachment'];
   text?: string;
-  file_id?: number;
-  reply_to?: number;
+  file?: File;
+  replyTo?: number;
 }
 
 /**
@@ -175,19 +189,21 @@ export async function postMessage(id: string, message: PostMessageData): Promise
   const {
     type = 1,
     text = '',
-    file_id = null,
-    reply_to = null
+    file = null,
+    replyTo = null
   } = message;
   const payload = {
     is_var: 1,
     s_t_data: {
       action: 'postMessage',
-      chat_id: id,
+      chatId: id,
       type,
       text,
-      file_id,
-      reply_to
+      replyTo
     }
+  } as Record<string, unknown>;
+  if (file) {
+    payload.attachment = file;
   }
   const result = await post<{id?: string | number}>('script/template/repair_api', payload);
   const messageId = Number(result.id);

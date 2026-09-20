@@ -1,12 +1,35 @@
 import type { FC } from 'react';
 import React from 'react';
 import { simpleMarkdown } from 'app/shared/lib/markdown';
+import { formatDateTime } from 'app/shared/lib/formatDate';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, useUsersByIds } from 'app/state/user';
 import { MessageType, MessageFormat, Message } from 'app/state/chat';
+import { getFileById } from 'app/state/uploaded';
 import { AnyMedia } from 'app/shared/ui';
+import { isImage } from 'app/shared/lib/utilities';
 
 import styles from './Chat.module.css';
+import downloadIcon from 'app/img/download.svg';
+
+const downloadFile = async (fileId: number, fileName: string) => {
+  try {
+    const result = await getFileById(fileId);
+    if (!result) return;
+    const objectUrl = window.URL.createObjectURL(result.blob);
+    const link = document.createElement('a');
+    link.href = objectUrl;
+    link.download = fileName || result.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(objectUrl);
+  }
+  catch(error) {
+    console.error('Ошибка при скачивании файла:', error);
+  }
+};
+
 
 interface ChatMessageProps {
   message: Message;
@@ -40,7 +63,9 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   const isAdministratorMessage = message.type === MessageType.Admin;
   const isTextMessage = message.format === MessageFormat.Text;
   const isAudioMessage = message.format === MessageFormat.Audio;
-  const isAttachment = message.format === MessageFormat.File;
+  const isFile = message.format === MessageFormat.File;
+  const isInlineFile = isFile && (isImage(message.mediaType) || message.mediaType.startsWith('video/') || message.mediaType.startsWith('audio/'));
+  const isAttachment = isFile && !isInlineFile;
 
   const avatarSrc = authorAvatar || '/img/user_avatar.png';
   const displayName = authorName || (isAdministratorMessage ? text('Administrator') : text('Unknown user'));
@@ -96,15 +121,35 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <span className={styles.author_name_own}>{text('You')}</span>
               </div>
             )}
-            {/* TODO: Render files/audio here later */}
             {relatedMessage &&
-              <button type="button" className={styles.quoted_message} onClick={() => scrollToMessage(message.id)}>
-                {relatedMessage.format === MessageFormat.Text ? relatedMessage.text : text('Attachment')}
-              </button>}
+              <button type="button" className={styles.quoted_message} onClick={() => {scrollToMessage(relatedMessage.id)}}>{
+                relatedMessage.format === MessageFormat.Text ? simpleMarkdown(relatedMessage.text, true) :
+                relatedMessage.format === MessageFormat.Audio ? text('Audio') :
+                simpleMarkdown(relatedMessage.caption || text('Attachment'), true)
+              }</button>}
             {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
-            {isAttachment && <div className={styles.message_attachment}><AnyMedia src={message.fileId} /><span>{message.caption}</span></div>}
-            {isAudioMessage && <AnyMedia src={message.audioId} mediaType="audio" />}
-            {isOwnMessage && <span className={styles.read_status}>{/* message.partnerRead */false ? '✓✓' : '✓'}</span>}
+            {isInlineFile && <div className={styles.message_media}><AnyMedia src={message.fileId} /><span>{simpleMarkdown(message.caption)}</span></div>}
+            {isAttachment &&
+              <div className={styles.message_attachment}>
+                <div className={styles.download_properties}>
+                  <div className={styles.download_icon} title={text('Download file')} onClick={() => downloadFile(message.fileId, message.fileName)}>
+                    <img src={downloadIcon} alt={text('Download file')} />
+                  </div>
+                  <div>
+                    <p title={text('File name')}>{message.fileName}</p>
+                    <p title={text('File size')}>{message.fileSize} {text('bytes')}</p>
+                  </div>
+                </div>
+                <div className={styles.download_caption}>{simpleMarkdown(message.caption)}</div>
+              </div>
+            }
+            {isAudioMessage && <AnyMedia className={styles.message_audio} src={message.audioId} mediaType="audio" />}
+            {isOwnMessage &&
+              <span className={styles.read_status}
+                title={message.partnerRead ? `${text('Прочитано')} ${formatDateTime(message.partnerRead)}` : ''}
+              >
+                {message.partnerRead ? '✓✓' : '✓'}
+              </span>}
           </div>
         </div>
       }

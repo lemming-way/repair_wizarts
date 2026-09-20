@@ -11,6 +11,11 @@ import CONFIG from 'config';
 import { objectMapper } from 'app/shared/lib/objectMapper';
 import { fetchFile } from './api/dropbox';
 
+export function getFileById(fileId: number) {
+  if (!fileId) return null;
+  return fetchFile(fileId);
+}
+
 export function useFileById(fileId: number | null) {
   const queryResult = useQuery({
     queryKey: [ 'files', fileId ],

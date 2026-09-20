@@ -11,25 +11,34 @@ const regExps = {
   it2:  /_([^_\r\n]+)_/
 };
 
-export function simpleMarkdown(text: string) {
-  return formatMarkdownRecursive(text, [ 'pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2' ]);
+export function simpleMarkdown(text: string, oneline: boolean = false) {
+  return formatMarkdownRecursive(text, [ 'pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2' ], oneline);
 }
 
-function formatMarkdownRecursive(text: string, rules: string[]): ReactElement {
+function formatMarkdownRecursive(text: string, rules: string[], oneline?: boolean): ReactElement {
   if (rules[0] === 'pre') {
     const match = regExps.pre.exec(text);
     if (match) {
       const before = text.substring(0, match.index);
       const after = text.substring(match.index + match[0].length);
-      return (
-        <>
-          {before && formatMarkdownRecursive(before, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
-          <pre>
-            {match[2]}
-          </pre>
-          {after && formatMarkdownRecursive(after, ['pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
-        </>
-      );
+      return oneline ? 
+      <>
+        {before && formatMarkdownRecursive(before, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+        {' '}
+        <code>
+          {match[2]}
+        </code>
+        {' '}
+        {after && formatMarkdownRecursive(after, ['pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+      </>
+      :
+      <>
+        {before && formatMarkdownRecursive(before, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+        <pre>
+          {match[2]}
+        </pre>
+        {after && formatMarkdownRecursive(after, ['pre', 'para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+      </>;
     }
     else rules.shift();
   }
@@ -38,14 +47,21 @@ function formatMarkdownRecursive(text: string, rules: string[]): ReactElement {
     const match = regExps.para.exec(text);
     if (match) {
       const after = text.substring(match.index + match[0].length);
-      return (
-        <>
-          <p>
-            {match[1] && formatMarkdownRecursive(match[1], ['code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
-          </p>
-          {after && formatMarkdownRecursive(after, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
-        </>
-      );
+      return oneline ?
+      <>
+        <span>
+          {match[1] && formatMarkdownRecursive(match[1], ['code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
+        </span>
+        {' '}
+        {after && formatMarkdownRecursive(after, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+      </>
+      :
+      <>
+        <p>
+          {match[1] && formatMarkdownRecursive(match[1], ['code', 'bold', 'bold2', 'strike', 'it', 'it2'])}
+        </p>
+        {after && formatMarkdownRecursive(after, ['para', 'code', 'bold', 'bold2', 'strike', 'it', 'it2'], oneline)}
+      </>;
     }
     else rules.shift();
   }

@@ -66,9 +66,8 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
   const getTimeSinceLastOnline = (lastOnline: Date) => {
     if (!lastOnline || !Number.isFinite(lastOnline.getTime()) || lastOnline.getTime() === 0) return text('never');
 
-    const now = new Date();
     const diffInMinutes = Math.floor(
-      (now.getTime() - lastOnline.getTime()) / (1000 * 60),
+      (Date.now() - lastOnline.getTime()) / (1000 * 60),
     );
 
     if (diffInMinutes < 1) return text('just now');
