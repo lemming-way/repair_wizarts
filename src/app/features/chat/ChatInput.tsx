@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
 import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
 import { MessageFormat, useMessagesByIds } from 'app/state/chat';
@@ -28,8 +28,14 @@ interface ChatInputProps {
     audio: File,
     replyToMessage?: number,
   ) => Promise<void>;
+  onUpdateMessage: (
+    messageId: number,
+    message: string,
+  ) => Promise<void>;
   isBusy: boolean;
   replyTo?: number;
+  editMessage?: number;
+  onCancelEdit: () => void;
   onCancelReply: () => void;
 }
 
@@ -70,8 +76,11 @@ export const ChatInput: FC<ChatInputProps> = ({
   currentUser,
   onSendMessage,
   onSendAudio,
+  onUpdateMessage,
   isBusy,
   replyTo,
+  editMessage,
+  onCancelEdit,
   onCancelReply,
 }) => {
   const text = useLanguage();
@@ -83,7 +92,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   const [isEmojiPickerVisible, setIsEmojiPickerVisible] = useState(false);
   const [isAttachmentMenuVisible, setIsAttachmentMenuVisible] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectURLRef = useRef<string>('');
 
   const partnerId = currentUser.role === UserRole.Contractor ? contractorId : clientId;
   const { users } = useUsersByIds(partnerId ? [partnerId] : []);
@@ -91,6 +100,8 @@ export const ChatInput: FC<ChatInputProps> = ({
 
   const { messages } = useMessagesByIds(replyTo ? [replyTo] : []);
   const replyToMessage = messages[0];
+  const { messages: editMessages } = useMessagesByIds(editMessage ? [editMessage] : []);
+  const originalMessage = editMessages[0];
 
   // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
   const currentUserBlockedPartner = currentUser.blackList?.includes(chatPartner?.id);
@@ -112,15 +123,27 @@ export const ChatInput: FC<ChatInputProps> = ({
     setMessage(message);
   };
 
+  useLayoutEffect(() => {
+    if (editMessage && originalMessage) {
+      updateMessage(originalMessage.format === MessageFormat.Text ? originalMessage.text : (originalMessage as {caption:string}).caption);
+    }
+    else {
+      updateMessage('');
+    }
+  }, [editMessage, originalMessage]);
+
   // Handler for text input
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateMessage(e.target.value);
   };
 
   const handleAudioFile = (audio: File | null) => {
-    if (audioObjectURL) window.URL.revokeObjectURL(audioObjectURL);
+    if (objectURLRef.current) window.URL.revokeObjectURL(objectURLRef.current);
     setAudioFile(audio);
-    if (audio) setAudioObjectURL(window.URL.createObjectURL(audio));
+    if (audio) {
+      objectURLRef.current = window.URL.createObjectURL(audio);
+      setAudioObjectURL(objectURLRef.current);
+    }
     else setAudioObjectURL('');
   };
 
@@ -171,7 +194,14 @@ export const ChatInput: FC<ChatInputProps> = ({
   // Handler for sending message
   const handleSendMessage = async () => {
     try {
-      if (audioFile) {
+      if (editMessage) {
+        const trimmedMessage = message.trim();
+        if (!trimmedMessage && previewFiles.length === 0) return;
+
+        await onUpdateMessage(editMessage, trimmedMessage);
+        updateMessage('');
+      }
+      else if (audioFile) {
         await onSendAudio(orderId, contractorId, audioFile, replyTo);
         handleAudioFile(null);
       }
@@ -243,15 +273,23 @@ export const ChatInput: FC<ChatInputProps> = ({
     window.addEventListener('resize', measureFooter);
     return () => {
       window.removeEventListener('resize', measureFooter);
-      if (audioObjectURL) {
-        window.URL.revokeObjectURL(audioObjectURL);
+      if (objectURLRef.current) {
+        window.URL.revokeObjectURL(objectURLRef.current);
       }
     }
   }, []);
 
   return (
     <div className={styles.chat_input_area} ref={footerRef} onDragOver={handleDragOver} onDrop={handleDrop}>
-      {replyToMessage && (
+      {editMessage && (
+        <div className={styles.reply_preview}>
+          <div>
+            <strong>{text('Edit message')}</strong>
+          </div>
+          <button type="button" onClick={onCancelEdit}>×</button>
+        </div>
+      )}
+      {!editMessage && replyToMessage && (
         <div className={styles.reply_preview}>
           <div>
             <strong>{text('Reply')}</strong>
@@ -265,7 +303,7 @@ export const ChatInput: FC<ChatInputProps> = ({
         </div>
       )}
       {/* File previews */}
-      {previewFiles.length > 0 && (
+      {!editMessage && previewFiles.length > 0 && (
         <div className={styles.file_preview_container}>
           {previewFiles.map((file) => (
             <div key={getKeyFor(file)} className={styles.file_preview_item}>
@@ -298,7 +336,7 @@ export const ChatInput: FC<ChatInputProps> = ({
       {/* Input row */}
       <div className={styles.input_row}>
         {/* Attachment menu */}
-        {isAttachmentMenuVisible && (
+        {!editMessage && isAttachmentMenuVisible && (
             <div className={styles.attachment_menu} style={{ bottom: footerHeight + 20 }}>
                 <label className={styles.attachment_option}>
                     <img src="/img/chat_img/img.png" alt="" />
@@ -360,13 +398,13 @@ export const ChatInput: FC<ChatInputProps> = ({
             className={styles.action_button}
             onClick={() => setIsAttachmentMenuVisible((prev) => !prev)}
             title={text('Attach file')}
-            disabled={isBlocked || previewFiles.length >= MAX_FILE_COUNT}
+            disabled={!!editMessage || isBlocked || previewFiles.length >= MAX_FILE_COUNT}
           >
             <AttachIcon />
           </button>
           <AudioRecorder
             className={styles.action_button}
-            disabled={isBlocked}
+            disabled={!!editMessage || isBlocked}
             MicrophoneIcon={MicrophoneIcon}
             onStartRecording={() => setIsRecording(true)}
             onFinishRecording={() => setIsRecording(false)}

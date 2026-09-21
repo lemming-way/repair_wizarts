@@ -104,8 +104,8 @@ export const ChatMessage: FC<ChatMessageProps> = ({
           <div className={styles.message_bubble_content}>
             <div className={styles.message_actions}>
               <button type="button" onClick={onReply}>{text('Reply')}</button>
-              {isOwnMessage && isTextMessage && <button type="button" onClick={onEdit}>{text('Edit')}</button>}
-              {isOwnMessage && <button type="button" onClick={onDelete}>{text('Delete')}</button>}
+              {isOwnMessage && message.isEditable && <button type="button" onClick={onEdit}>{text('Edit')}</button>}
+              {isOwnMessage && message.isDeletable && <button type="button" onClick={onDelete}>{text('Delete')}</button>}
             </div>
             {!isOwnMessage && (
               <div className={styles.message_author_info}>

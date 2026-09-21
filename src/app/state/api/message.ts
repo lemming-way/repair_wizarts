@@ -65,6 +65,8 @@ export type ChatMessageRecord = {
   related?: number;
   unread: 0 | 1;
   partner_read_time?: string;
+  editable: 0 | 1;
+  deletable: 0 | 1;
 };
 
 
@@ -209,6 +211,46 @@ export async function postMessage(id: string, message: PostMessageData): Promise
   const messageId = Number(result.id);
   if (Number.isInteger(messageId) && messageId > 0) return messageId;
   else return null;
+}
+
+/**
+ * Изменить сообщение в чате.
+ * Доступно только для авторизованного пользователя.
+ * Доступно только автору сообщения.
+ * @param id ID сообщения
+ * @param text Новый текст сообщения
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function editMessage(id: number, text: string): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'editMessage',
+      id,
+      text
+    }
+  }
+  const result = await post<void>('script/template/repair_api', payload);
+  return result;
+}
+
+/**
+ * Удалить сообщение из чата.
+ * Доступно только для авторизованного пользователя.
+ * Доступно только автору сообщения.
+ * @param id ID сообщения
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function deleteMessage(id: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'deleteMessage',
+      id
+    }
+  }
+  const result = await post<void>('script/template/repair_api', payload);
+  return result;
 }
 
 /**

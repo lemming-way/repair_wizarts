@@ -15,7 +15,7 @@ import {
   useConfirmOrderCompletion,
 } from 'app/state/order';
 import { useUser, UserRole } from 'app/state/user';
-import { MessageFormat, useChatsByIds, useSetChatRead, useSetChatOpen, useSendMessage } from 'app/state/chat';
+import { MessageFormat, useChatsByIds, useSetChatRead, useSetChatOpen, useSendMessage, useUpdateMessage, useDeleteMessage } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
@@ -57,7 +57,11 @@ export const ChatLayout: FC = () => {
   const { setChatRead } = useSetChatRead();
   const { setChatOpen } = useSetChatOpen();
   const { sendMessage, isPending: isSendingMessage } = useSendMessage();
+  const { updateMessage, isPending: isUpdatingMessage } = useUpdateMessage();
+  const { deleteMessage, isPending: isDeletingMessage } = useDeleteMessage();
+
   const [replyTo, setReplyTo] = useState<number | undefined>(undefined);
+  const [editMessageID, setEditMessageID] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const previousBodyOverflow = document.body.style.overflow;
@@ -180,6 +184,7 @@ export const ChatLayout: FC = () => {
     navigate('/chats');
   }, [navigate, setChatOpen]);
 
+  // Мутации для действий с сообщениями
   const handleSendMessage = useCallback(async (
     orderId: number,
     contractorId: number,
@@ -202,6 +207,21 @@ export const ChatLayout: FC = () => {
       console.error('Send message failed:', err);
     }
   }, [sendMessage]);
+
+  const handleUpdateMessage = useCallback(async (
+    messageId: number,
+    message: string,
+  ) => {
+    try {
+      if (messageId) {
+        await updateMessage({ messageId, text: message });
+        setEditMessageID(undefined);
+      }
+    }
+    catch (err: any) {
+      console.error('Update message failed:', err);
+    }
+  }, [updateMessage]);
 
   const handleSendAudio = useCallback(async (
     orderId: number,
@@ -226,9 +246,24 @@ export const ChatLayout: FC = () => {
     }
   }, [sendMessage]);
 
-  // Заготовки
-  const handleEditMessage = () => {};
-  const handleDeleteMessage = () => {};
+  const handleEditMessage = (id: number) => {
+    setEditMessageID(id);
+  };
+
+  const cancelEditMessage = () => {
+    setEditMessageID(undefined);
+  };
+
+  const handleDeleteMessage = async (id: number) => {
+    // todo: сделать здесь нормальный UI
+    if (!window.confirm(text('Delete message for everyone?'))) return;
+    try {
+      await deleteMessage(id);
+    } catch (error) {
+      console.error('Failed to delete message:', error);
+      window.alert(text('Failed to delete message. Please try again.'));
+    }
+  };
 
   // Обновление видимости списка чатов при изменении URL
   useEffect(() => {
@@ -334,8 +369,11 @@ export const ChatLayout: FC = () => {
                 currentUser={user}
                 onSendMessage={handleSendMessage}
                 onSendAudio={handleSendAudio}
+                onUpdateMessage={handleUpdateMessage}
                 isBusy={isSendingMessage}
                 replyTo={replyTo}
+                editMessage={editMessageID}
+                onCancelEdit={cancelEditMessage}
                 onCancelReply={() => setReplyTo(undefined)}
               />
             </>

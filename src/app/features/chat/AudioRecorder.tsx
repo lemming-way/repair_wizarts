@@ -1,4 +1,4 @@
-import { ComponentType, useState, useRef, useEffect } from 'react';
+import { ComponentType, useState, useRef, useEffect, useLayoutEffect } from 'react';
 
 import { useLanguage } from 'app/state/language';
 
@@ -208,8 +208,18 @@ export function AudioRecorder({
 
   // Очистка ресурсов при размонтировании
   useEffect(() => {
-    return () => recorderInstance.stopStreamAndRecorder();
+    const recorderInstance = recorderInstanceRef.current;
+    return () => recorderInstance!.stopStreamAndRecorder();
   }, []);
+  
+  // Принудительная остановка записи
+  useLayoutEffect(() => {
+    if (disabled && isRecording) {
+      const recorderInstance = recorderInstanceRef.current;
+      recorderInstance!.recorder?.stop();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [disabled]);
 
   async function handleMicClick() {
     if (!CAN_RECORD_AUDIO) return;

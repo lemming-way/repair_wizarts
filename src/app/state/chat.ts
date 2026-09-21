@@ -36,20 +36,26 @@ export type ChatData = {
 /**
  * Типы сообщений
  */
-export enum MessageType {
-  User = 'user',
-  System = 'system',
-  Admin = 'administrator'
-}
+export const MessageType = {
+  User: 'user',
+  System: 'system',
+  Admin: 'administrator'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type MessageType = typeof MessageType[keyof typeof MessageType];
 
 /**
  * Форматы сообщений
  */
-export enum MessageFormat {
-  Text = 'text',
-  Audio = 'audio',
-  File = 'file'
-}
+export const MessageFormat = {
+  Text: 'text',
+  Audio: 'audio',
+  File: 'file'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type MessageFormat = typeof MessageFormat[keyof typeof MessageFormat];
 
 interface MessageBase {
   id: number;
@@ -64,32 +70,34 @@ interface MessageBase {
   relatedMessage?: number;
   unread: boolean;
   partnerRead: Date | null;
+  isEditable: boolean;
+  isDeletable: boolean;
 }
 
 interface TextMessageBase extends MessageBase {
-  format: MessageFormat.Text;
+  format: typeof MessageFormat.Text;
   text: string;
 }
 
 interface SystemMessage extends TextMessageBase {
-  type: MessageType.System;
+  type: typeof MessageType.System;
   eventType: string;
 }
 
 interface TextMessage extends TextMessageBase {
-  type: MessageType.User | MessageType.Admin;
+  type: typeof MessageType['User' | 'Admin'];
 }
 
 interface AudioMessage extends MessageBase {
-  type: MessageType.User | MessageType.Admin;
-  format: MessageFormat.Audio;
+  type: typeof MessageType['User' | 'Admin'];
+  format: typeof MessageFormat.Audio;
   audioId: number;
   mediaType: string;
 }
 
 interface FileMessage extends MessageBase {
-  type: MessageType.User | MessageType.Admin;
-  format: MessageFormat.File;
+  type: typeof MessageType['User' | 'Admin'];
+  format: typeof MessageFormat.File;
   caption: string;
   fileId: number;
   fileName: string;
@@ -247,7 +255,9 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
           messageRec.type === MessageAPI.MessageType.Attachment ? MessageFormat.File :
           MessageFormat.Text,
         unread: !!messageRec.unread,
-        partnerRead: partnerRead && !Number.isNaN(partnerRead) ? new Date(partnerRead) : null
+        partnerRead: partnerRead && !Number.isNaN(partnerRead) ? new Date(partnerRead) : null,
+        isEditable: !!messageRec.editable,
+        isDeletable: !!messageRec.deletable
       } as Message;
       if (ret.type === MessageType.System) ret.eventType = String(messageRec.event_type ?? '');
       if (ret.format === MessageFormat.Text) ret.text = String(messageRec.text ?? '');
@@ -433,4 +443,72 @@ export function useSendMessage() {
   });
 
   return objectMapper(mutation, { mutate: null, mutateAsync: null, sendMessage: 'mutateAsync' });
+}
+
+type EditMessageParams = {
+  messageId: number,
+  text: string
+};
+
+export function useUpdateMessage() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async ({ messageId, text }: EditMessageParams, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!messageId) throw new Error('Message ID not specified.');
+
+      const message = await client.ensureQueryData({
+        queryKey: ['user', user.id, 'message', messageId],
+        queryFn: getMessageById,
+        staleTime: Infinity  // Изменённые сообщения перезагружаются в getChatMessageIds
+      });
+      if (
+        !message ||
+        message.type !== MessageType.User ||
+        (message.format !== MessageFormat.Text && message.format !== MessageFormat.File) ||
+        !message.isEditable
+      ) {
+        throw new Error('Not ediable message.');
+      }
+      await MessageAPI.editMessage(messageId, text);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'message', messageId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', message.chatId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, updateMessage: 'mutateAsync' });
+}
+
+export function useDeleteMessage() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async (messageId: number, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!messageId) throw new Error('Message ID not specified.');
+
+      const message = await client.ensureQueryData({
+        queryKey: ['user', user.id, 'message', messageId],
+        queryFn: getMessageById,
+        staleTime: Infinity  // Изменённые сообщения перезагружаются в getChatMessageIds
+      });
+      if (
+        !message ||
+        message.type !== MessageType.User ||
+        !message.isDeletable
+      ) {
+        throw new Error('Not deletable message.');
+      }
+      await MessageAPI.deleteMessage(messageId);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat', message.chatId ] });
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', message.chatId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, deleteMessage: 'mutateAsync' });
 }

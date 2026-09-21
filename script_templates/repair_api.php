@@ -2015,6 +2015,7 @@ $out = call_user_func(function() {
 
     // Получить сообщения по списку id
     case 'getMessages':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
       $data['rtype'] = $chat_recipient_type;
       $data['regular'] = $message_regular;
       $data['system'] = $message_system;
@@ -2038,8 +2039,18 @@ $out = call_user_func(function() {
                 '`m`.`create_user` AS `author`,' .
                 '`m`.`id_message_type` AS `type`,' .
                 '`m`.`id_message_upper` AS `related`,' .
-                'IF((`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) AND `r1`.`id_message` IS NULL,1,0) AS `unread`,' .
-                '`r2`.`read` AS `partner_read_time` ' .
+                '(`m`.`sender_owner`<>:u_id OR `m`.`sender_owner_type`<>1) AND `r1`.`id_message` IS NULL AS `unread`,' .
+                '`r2`.`read` AS `partner_read_time`,' .
+                '`m`.`id_message_type` IN(:regular,:file) ' .
+                  'AND `m`.`sender_owner`=:u_id ' .
+                  'AND `m`.`sender_owner_type`=1 ' .
+                  'AND `m`.`create_datetime`>NOW()-INTERVAL 25 HOUR ' .
+                'AS `editable`,' .
+                '`m`.`id_message_type` IN(:regular,:audio,:file) ' .
+                  'AND `m`.`sender_owner`=:u_id ' .
+                  'AND `m`.`sender_owner_type`=1 ' .
+                  'AND `m`.`create_datetime`>NOW()-INTERVAL 25 HOUR ' .
+                'AS `deletable` ' .
               'FROM `message` `m` ' .
               'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`recipient_owner`,\':\',1) ' .
               'LEFT JOIN `dropbox_link` `d` ON `id_dropbox_link`=' .
@@ -2061,7 +2072,7 @@ $out = call_user_func(function() {
                 'AND `m`.`active_status`>0 ' .
                 'AND `m`.`recipient_owner_type`=:rtype ' .
                 'AND `m`.`id_message_type` IN(:allTypes)';
-      $numeric_fields = ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'file_size', 'related', 'deleted', 'unread'];
+      $numeric_fields = ['id', 'from', 'editor', 'author', 'type', 'audio_id', 'file_id', 'file_size', 'related', 'unread', 'editable', 'deletable'];
       $result = $query($sql, $data, [ 'numeric_fields' => $numeric_fields ]);
       $ret = [];
       foreach ($result as $message) {
@@ -2352,6 +2363,114 @@ $out = call_user_func(function() {
       $query_commit();
 
       return $ret;
+
+    // Редактировать сообщение
+    case 'editMessage':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      // очистка исходных данных
+      $message_id = isset($data['id']) ? trim(strval($data['id'])) : '';
+      if ($message_id <= 0) $die(400, 'Message ID not set');
+      $text = isset($data['text']) ? trim(strval($data['text'])) : '';
+      $valid_types = [ $message_regular, $message_file ];
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT `m`.`create_datetime`>NOW()-INTERVAL 25 HOUR AS `editable`,`m`.`id_message_type` ' .
+        'FROM `message` `m`' .
+        'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`m`.`recipient_owner`,\':\',1) ' .
+        'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
+        'JOIN `users` `u2` ON `u2`.`id_user`=SUBSTRING_INDEX(`m`.`recipient_owner`,\':\',-1) ' .
+        'WHERE `m`.`id_message`=:message ' .
+          'AND `m`.`active_status`>0 ' .
+          'AND `m`.`sender_owner_type`=1 ' .
+          'AND `m`.`recipient_owner_type`=:rtype ' .
+          'AND `m`.`id_message_type` IN(:mtypes) ' .
+          'AND JSON_VALID(`u1`.`json`) ' .
+          'AND JSON_VALID(`u2`.`json`) ' .
+          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND ' . ($context['u_role'] === 2 ? '`m`.`sender_owner`=`u2`.`id_user` ' : '`m`.`sender_owner`=`u1`.`id_user` ') .
+          'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:user ' : '`u1`.`id_user`=:user ') .
+        'FOR SHARE OF `o`,`u1`,`u2` FOR UPDATE OF `m`',
+        [ 'message' => $message_id, 'user' => $context['u_id'], 'mtypes' => $valid_types, 'rtype' => $chat_recipient_type ],
+        [ 'numeric_fields' => ['editable', 'id_message_type'] ]
+      );
+      if (!$result) $die(400, 'Invalid message ID');
+      if (!$result['editable']) $die(400, 'Message not editable');
+      $type = $result['id_message_type'];
+      if ($type === $message_regular && !$text) $die(400, 'Text not set');
+
+      $result = $query(
+        'UPDATE `message` SET ' .
+          '`value`=' . ($type === $message_regular ? ':text' : 'JSON_SET(`value`,\'$.caption\',:text)') . ',' .
+          '`last_edit_datetime`=NOW(0),' .
+          '`last_edit_user`=:user ' .
+        'WHERE `id_message`=:message',
+        [ 'message' => $message_id, 'user' => $context['u_id'], 'text' => $text ]
+      );
+      if (!isset($result['rows'])) $die(500, 'Database error.');
+      $query_commit();
+
+      return $result;
+
+    // Удалить сообщение
+    case 'deleteMessage':
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized');
+      // очистка исходных данных
+      $message_id = isset($data['id']) ? trim(strval($data['id'])) : '';
+      if ($message_id <= 0) $die(400, 'Message ID not set');
+      $valid_types = [ $message_regular, $message_audio, $message_file ];
+
+      $query_transaction();
+      $result = $query_one(
+        'SELECT ' .
+          '`m`.`create_datetime`>NOW()-INTERVAL 25 HOUR AS `deletable`,' .
+          'CASE WHEN `m`.`id_message_type`=:audio THEN `value`->>\'$.audio\' ' .
+            'WHEN `m`.`id_message_type`=:file THEN `value`->>\'$.file\' ' .
+            'ELSE NULL END AS `file_id` ' .
+        'FROM `message` `m`' .
+        'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`m`.`recipient_owner`,\':\',1) ' .
+        'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
+        'JOIN `users` `u2` ON `u2`.`id_user`=SUBSTRING_INDEX(`m`.`recipient_owner`,\':\',-1) ' .
+        'WHERE `m`.`id_message`=:message ' .
+          'AND `m`.`active_status`>0 ' .
+          'AND `m`.`sender_owner_type`=1 ' .
+          'AND `m`.`recipient_owner_type`=:rtype ' .
+          'AND `m`.`id_message_type` IN(:mtypes) ' .
+          'AND JSON_VALID(`u1`.`json`) ' .
+          'AND JSON_VALID(`u2`.`json`) ' .
+          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AND ' . ($context['u_role'] === 2 ? '`m`.`sender_owner`=`u2`.`id_user` ' : '`m`.`sender_owner`=`u1`.`id_user` ') .
+          'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:user ' : '`u1`.`id_user`=:user ') .
+        'FOR SHARE OF `o`,`u1`,`u2` FOR UPDATE OF `m`',
+        [ 'message' => $message_id, 'user' => $context['u_id'], 'audio' => $message_audio, 'file' => $message_file, 'mtypes' => $valid_types, 'rtype' => $chat_recipient_type ],
+        [ 'numeric_fields' => ['deletable', 'file_id'] ]
+      );
+      if (!$result) $die(400, 'Invalid message ID');
+      if (!$result['deletable']) $die(400, 'Message not deletable');
+      if ($result['file_id']) {
+        $file_id = $result['file_id'];
+        // Не удаляем файлы из Dropbox - это сделает сборщик мусора
+        $result = $query(
+          'UPDATE `dropbox_link` `l` ' .
+          'JOIN `users_dropbox_link` `u` ON `u`.`id_dropbox_link`=`l`.`id_dropbox_link` ' .
+          'SET `l`.`json`=JSON_REMOVE(`l`.`json`,\'$.messageId\'),`private`=1 ' .
+          'WHERE `l`.`id_dropbox_link`=:file AND `l`.`deleted`=0 AND `l`.`json`->>\'$.messageId\'=:message ' .
+            'AND `u`.`id_user`=:user AND `u`.`owner`=1 ',
+          [ 'file' => $file_id,'user' => $context['u_id'], 'message' => $message_id ]
+        );
+        if (empty($result['rows'])) $die(500, 'Database error.');
+      }
+
+      $result = $query(
+        'UPDATE `message` SET `last_edit_datetime`=NOW(0),`last_edit_user`=:user,`active_status`=0 WHERE `id_message`=:message',
+        [ 'message' => $message_id, 'user' => $context['u_id'] ]
+      );
+      if (empty($result['rows'])) $die(500, 'Database error.');
+      $query_commit();
+
+      return $result;
 
     // Открыть/закрыть чат
     case 'chatOpenClose':
