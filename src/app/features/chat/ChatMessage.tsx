@@ -12,14 +12,22 @@ import { isImage } from 'app/shared/lib/utilities';
 import styles from './Chat.module.css';
 import downloadIcon from 'app/img/download.svg';
 
-const downloadFile = async (fileId: number, fileName: string) => {
+const downloadFile = async (file: number | File, fileName: string) => {
   try {
-    const result = await getFileById(fileId);
-    if (!result) return;
-    const objectUrl = window.URL.createObjectURL(result.blob);
+    let objectUrl = '';
+    if ('number' === typeof file) {
+      const result = await getFileById(file);
+      if (!result) return;
+      objectUrl = window.URL.createObjectURL(result.blob);
+      fileName ||= result.filename;
+    }
+    else {
+      objectUrl = window.URL.createObjectURL(file);
+      fileName ||= file.name;
+    }
     const link = document.createElement('a');
     link.href = objectUrl;
-    link.download = fileName || result.filename;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -75,10 +83,12 @@ export const ChatMessage: FC<ChatMessageProps> = ({
         hour: '2-digit',
         minute: '2-digit',
       })
-    : message.created.toLocaleTimeString([], {
+    : message.delivered
+    ? message.delivered.toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
-      });
+      })
+    : '';
 
   const messageContainerStyle = isOwnMessage ? styles.align_right : isSystemMessage ? styles.align_center : styles.align_left;
   const messageBubbleStyle = isOwnMessage ? styles.own_message : isAdministratorMessage ? styles.admin_message : styles.partner_message;
@@ -128,11 +138,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 simpleMarkdown(relatedMessage.caption || text('Attachment'), true)
               }</button>}
             {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
-            {isInlineFile && <div className={styles.message_media}><AnyMedia src={message.fileId} /><span>{simpleMarkdown(message.caption)}</span></div>}
+            {isInlineFile && <div className={styles.message_media}><AnyMedia src={message.file} /><span>{simpleMarkdown(message.caption)}</span></div>}
             {isAttachment &&
               <div className={styles.message_attachment}>
                 <div className={styles.download_properties}>
-                  <div className={styles.download_icon} title={text('Download file')} onClick={() => downloadFile(message.fileId, message.fileName)}>
+                  <div className={styles.download_icon} title={text('Download file')} onClick={() => downloadFile(message.file, message.fileName)}>
                     <img src={downloadIcon} alt={text('Download file')} />
                   </div>
                   <div>
@@ -143,13 +153,23 @@ export const ChatMessage: FC<ChatMessageProps> = ({
                 <div className={styles.download_caption}>{simpleMarkdown(message.caption)}</div>
               </div>
             }
-            {isAudioMessage && <AnyMedia className={styles.message_audio} src={message.audioId} mediaType="audio" />}
-            {isOwnMessage &&
-              <span className={styles.read_status}
-                title={message.partnerRead ? `${text('Прочитано')} ${formatDateTime(message.partnerRead)}` : ''}
-              >
-                {message.partnerRead ? '✓✓' : '✓'}
-              </span>}
+            {isAudioMessage && <AnyMedia className={styles.message_audio} src={message.audio} mediaType="audio" />}
+            {isOwnMessage && (
+              message.isError ?
+                <span className={styles.read_status}
+                  title={text('Send message failed.') + (message.error ? ` ${text(message.error)}` : '')}
+                >
+                  <img width="24" height="24" src="/img/error.png" alt={text('Error')} />
+                </span>
+              :
+              message.delivered ?
+                <span className={styles.read_status}
+                  title={message.partnerRead ? `${text('Прочитано')} ${formatDateTime(message.partnerRead)}` : ''}
+                >
+                  {message.partnerRead ? '✓✓' : '✓'}
+                </span>
+              : ''
+            )}
           </div>
         </div>
       }

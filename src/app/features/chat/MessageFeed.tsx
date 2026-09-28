@@ -304,7 +304,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
           const user = userId ? usersMap.get(userId) : null;
           const userName = user?.fullname || user?.name;
           const avatar = user?.avatar;
-          const date = formatRelativeDate(message.created, locale);
+          const date = formatRelativeDate(message.delivered || new Date(), locale);
           const isDateChanged = date !== lastDate;
           lastDate = date;
           return (

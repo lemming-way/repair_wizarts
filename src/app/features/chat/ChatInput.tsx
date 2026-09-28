@@ -21,17 +21,17 @@ interface ChatInputProps {
     message: string,
     files: File[],
     replyToMessage?: number,
-  ) => Promise<void>;
+  ) => void;
   onSendAudio: (
     orderId: number,
     contractorId: number,
     audio: File,
     replyToMessage?: number,
-  ) => Promise<void>;
+  ) => void;
   onUpdateMessage: (
     messageId: number,
     message: string,
-  ) => Promise<void>;
+  ) => void;
   isBusy: boolean;
   replyTo?: number;
   editMessage?: number;
@@ -388,7 +388,7 @@ export const ChatInput: FC<ChatInputProps> = ({
           onChange={handleMessageChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          disabled={isBlocked}          
+          disabled={isBlocked}
         />
 
         {/* Action buttons */}

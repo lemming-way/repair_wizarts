@@ -63,13 +63,15 @@ interface MessageBase {
   from?: number;
   modified?: Date;
   editorId?: number;
-  created: Date;
+  delivered?: Date;
   authorId?: number;
   type: MessageType;
   format: MessageFormat;
   relatedMessage?: number;
   unread: boolean;
   partnerRead: Date | null;
+  isError: boolean;
+  error?: string;
   isEditable: boolean;
   isDeletable: boolean;
 }
@@ -91,7 +93,7 @@ interface TextMessage extends TextMessageBase {
 interface AudioMessage extends MessageBase {
   type: typeof MessageType['User' | 'Admin'];
   format: typeof MessageFormat.Audio;
-  audioId: number;
+  audio: number | Blob;
   mediaType: string;
 }
 
@@ -99,7 +101,7 @@ interface FileMessage extends MessageBase {
   type: typeof MessageType['User' | 'Admin'];
   format: typeof MessageFormat.File;
   caption: string;
-  fileId: number;
+  file: number | File;
   fileName: string;
   fileSize: number;
   mediaType: string;
@@ -245,7 +247,7 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
       const ret = {
         id: Number.isInteger(messageRec.id) && messageRec.id > 0 ? messageRec.id : 0,
         chatId: String(messageRec.chat_id ?? ''),
-        created: new Date(Date.parse(messageRec.created) || 0),
+        delivered: new Date(Date.parse(messageRec.created) || 0),
         type:
           messageRec.type === MessageAPI.MessageType.System ? MessageType.System :
           !!messageRec.from ? MessageType.User :
@@ -256,18 +258,19 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
           MessageFormat.Text,
         unread: !!messageRec.unread,
         partnerRead: partnerRead && !Number.isNaN(partnerRead) ? new Date(partnerRead) : null,
+        isError: false,
         isEditable: !!messageRec.editable,
         isDeletable: !!messageRec.deletable
       } as Message;
       if (ret.type === MessageType.System) ret.eventType = String(messageRec.event_type ?? '');
       if (ret.format === MessageFormat.Text) ret.text = String(messageRec.text ?? '');
       if (ret.format === MessageFormat.Audio) {
-        ret.audioId = Number(messageRec.audio_id ?? 0);
+        ret.audio = Number(messageRec.audio_id ?? 0);
         ret.mediaType = String(messageRec.file_type ?? '');
       }
       if (ret.format === MessageFormat.File) {
         ret.caption = String(messageRec.caption ?? '');
-        ret.fileId = Number(messageRec.file_id ?? 0);
+        ret.file = Number(messageRec.file_id ?? 0);
         ret.fileName = String(messageRec.file_name ?? '');
         ret.fileSize = Number(messageRec.file_size ?? 0);
         ret.mediaType = String(messageRec.file_type ?? '');
@@ -385,6 +388,41 @@ export type SendMessageParams = {
   replyToMessage?: number;
 };
 
+let messageCounter = 0;
+function createOptimisticMessage(userId: number, messageData: SendMessageParams) {
+  const message = {
+    // Для новых сообщений используем отрицательные ID. Они никогда не пересекутся с ID реальных сообщений с сервера.
+    id: --messageCounter,
+    chatId: `${messageData.orderId}:${messageData.contractorId}`,
+    from: userId,
+    authorId: userId,
+    type: MessageType.User,
+    format: messageData.format,
+    unread: false,
+    partnerRead: null,
+    isError: false,
+    isEditable: false,
+    isDeletable: false
+  } as Partial<Message>;
+  if (messageData.replyToMessage) message.relatedMessage = messageData.replyToMessage;
+  switch (messageData.format) {
+    case MessageFormat.Text:
+      (message as TextMessage).text = messageData.text!;
+      break;
+    case MessageFormat.Audio:
+      (message as AudioMessage).audio = messageData.audio!;
+      (message as AudioMessage).mediaType = messageData.audio!.type;
+      break;
+    case MessageFormat.File:
+      (message as FileMessage).caption = messageData.text || '';
+      (message as FileMessage).file = messageData.file!;
+      (message as FileMessage).fileName = messageData.file!.name;
+      (message as FileMessage).fileSize = messageData.file!.size;
+      (message as FileMessage).mediaType = messageData.file!.type;
+  }
+  return message as Message;
+}
+
 async function sendMessage(message: SendMessageParams): Promise<number | null> {
   if (!message.orderId || !message.contractorId) throw new Error('Order or contractor not specified.');
   const chatId = `${message.orderId}:${message.contractorId}`;
@@ -433,10 +471,40 @@ export function useSendMessage() {
       if (!data.orderId) throw new Error('Order ID not specified.');
       if (!data.contractorId) throw new Error('Contractor ID not specified.');
 
-      await sendMessage(data);
       const chatId = `${data.orderId}:${data.contractorId}`;
-      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat', chatId ] });
-      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
+      const optimisticMessage = createOptimisticMessage(user.id, data);
+      client.setQueryDefaults(['user', user.id, 'message', optimisticMessage.id], {
+        staleTime: Infinity,
+        gcTime: Infinity,
+        refetchOnMount: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      });
+      client.setQueryData<number[]>([ 'user', user.id, 'chat', chatId ], (previous) => [
+        ...(previous || []),
+        optimisticMessage.id
+      ]);
+
+      try {
+        const id = await sendMessage(data);
+        if (!id) throw new Error();
+
+        client.removeQueries({ queryKey: ['user', user.id, 'message', optimisticMessage.id], exact: true });
+        client.setQueryData<number[]>([ 'user', user.id, 'chat', chatId ], (previous) =>
+          previous?.map(item => item === optimisticMessage.id ? id : item)
+        );
+        optimisticMessage.id = id;
+        client.setQueryData<Message>(['user', user.id, 'message', id], optimisticMessage);
+        client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat', chatId ] });
+        client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
+      }
+      catch(e) {
+        optimisticMessage.isError = true;
+        const { message } = e as { message: unknown };
+        optimisticMessage.error = message && 'string' === typeof message ? message : 'Unknown error.';
+        client.setQueryData<Message>(['user', user.id, 'message', optimisticMessage.id], optimisticMessage);
+        throw e;
+      }
 
       return;
     }

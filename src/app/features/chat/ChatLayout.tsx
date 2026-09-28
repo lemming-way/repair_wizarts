@@ -185,64 +185,55 @@ export const ChatLayout: FC = () => {
   }, [navigate, setChatOpen]);
 
   // Мутации для действий с сообщениями
-  const handleSendMessage = useCallback(async (
+  const handleSendMessage = useCallback((
     orderId: number,
     contractorId: number,
     message: string,
     files: File[],
     replyToMessage?: number,
   ) => {
-    try {
-      if (message || replyToMessage) {
-        const file = files.shift();
-        const format = file ? MessageFormat.File : MessageFormat.Text;
-        await sendMessage({ orderId, contractorId, text: message, format, file, replyToMessage });
-      }
-      for (const file of files) {
-        await sendMessage({ orderId, contractorId, file, format: MessageFormat.File });
-      }
-      setReplyTo(undefined);
+    if (message || replyToMessage) {
+      const file = files.shift();
+      const format = file ? MessageFormat.File : MessageFormat.Text;
+      sendMessage({ orderId, contractorId, text: message, format, file, replyToMessage })
+      .catch(() => {});
     }
-    catch (err: any) {
-      console.error('Send message failed:', err);
+    for (const file of files) {
+      sendMessage({ orderId, contractorId, file, format: MessageFormat.File })
+      .catch(() => {});
     }
+    setReplyTo(undefined);
   }, [sendMessage]);
 
-  const handleUpdateMessage = useCallback(async (
+  const handleUpdateMessage = useCallback((
     messageId: number,
     message: string,
   ) => {
-    try {
-      if (messageId) {
-        await updateMessage({ messageId, text: message });
-        setEditMessageID(undefined);
-      }
-    }
-    catch (err: any) {
-      console.error('Update message failed:', err);
+    if (messageId) {
+      updateMessage({ messageId, text: message })
+      .catch((err: any) => {
+        console.error('Update message failed:', err);
+      });
+      setEditMessageID(undefined);
     }
   }, [updateMessage]);
 
-  const handleSendAudio = useCallback(async (
+  const handleSendAudio = useCallback((
     orderId: number,
     contractorId: number,
     audio: File,
     replyToMessage?: number,
   ) => {
-    try {
-      if (audio) {
-        await sendMessage({
-          orderId,
-          contractorId,
-          format: MessageFormat.Audio,
-          audio,
-          replyToMessage
-        });
-        setReplyTo(undefined);
-      }
-    }
-    catch (err: any) {
-      console.error('Send message failed:', err);
+    if (audio) {
+      sendMessage({
+        orderId,
+        contractorId,
+        format: MessageFormat.Audio,
+        audio,
+        replyToMessage
+      })
+      .catch(() => {});
+      setReplyTo(undefined);
     }
   }, [sendMessage]);
 
