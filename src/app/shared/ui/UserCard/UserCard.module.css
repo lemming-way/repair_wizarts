@@ -1,0 +1,94 @@
+.row_link {
+  outline: none;
+  border: none;
+  color: #59A4E9;
+  font-size: 14px;
+  background-color: unset;
+}
+
+.avatar_wrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.avatar_img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  padding: 3px;
+  border: 1px solid #c5c5c5;
+  border-radius: 50%;
+}
+
+.avatar_dotted {
+  width: 24%;
+  height: 24%;
+  position: absolute;
+  bottom: 4.5%;
+  right: 4.5%;
+  border-radius: 50%;
+  background-color: white;
+  padding: 4%;
+}
+
+.avatar_dotted_inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: #21E34C;
+}
+
+.info {
+  box-sizing: border-box;
+  border-radius: 10px;
+  background-color: white;
+  width: max-content;
+  position: relative;
+  font-size: 16px;
+}
+
+.info__row1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.info__about {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info__about  p {
+  font-size: 18px;
+  margin: 0;
+}
+
+.info__row_links {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.info a {
+  color: #59A4E9;
+  font-size: 14px;
+}
+
+.info > p {
+  margin-bottom: 5px;
+}
+
+.info__text_about_light {
+  color: #9F9F9F;
+  margin-right: 10px;
+}
+
+.info .avatar_wrap {
+  width: 110px;
+  height: 110px;
+}

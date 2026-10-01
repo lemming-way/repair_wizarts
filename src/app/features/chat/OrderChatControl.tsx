@@ -1,10 +1,12 @@
 import type { FC } from 'react';
-import React from 'react';
+import { useState } from 'react';
 import Dropdown from 'react-multilevel-dropdown';
 
 import { useLanguage } from 'app/state/language';
 import { Order, OrderStatus, orderStatusString } from 'app/state/order';
 import { UserProfile, UserRole } from 'app/state/user';
+import { Modal } from 'app/shared/ui';
+import { OrderCard } from 'app/shared/ui/OrderCard';
 
 import styles from './OrderChatControl.module.css';
 import chatStyles from './Chat.module.css';
@@ -44,6 +46,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   onShowDisputeModal,
 }) => {
   const text = useLanguage();
+  const [visibleOrderCard, setVisibleOrderCard] = useState(false);
 
   const isClient = currentUser.role === UserRole.Client;
   const isContractor = currentUser.role === UserRole.Contractor;
@@ -214,12 +217,15 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
 
   return (
     <div className={styles.order_control_block}>
+      <Modal open={!!order && visibleOrderCard} onClose={()=>setVisibleOrderCard(false)} closeButton={true} size="xs" className={styles.info_modals}>
+        <OrderCard order={order} />
+      </Modal>
       <div className={styles.order_info}>
-        <p className={styles.order_title}>
-          {text('Order')} №{order.id}: {orderDescription}
+        <p className={styles.order_title} onClick={() => setVisibleOrderCard(true)}>
+          {text('Order No.')} {order.id}: {orderDescription}
         </p>
         <p className={styles.order_status_text}>
-          <span>{text('Status')}: {text(orderStatusString[effectiveOrderStatus])}</span>
+          <span>{text('Status')}: {text(orderStatusString[effectiveOrderStatus] || 'Unknown status')}</span>
         </p>
         {order.agreedPrice && (
           <p className={styles.order_price}>

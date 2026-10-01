@@ -1,0 +1,26 @@
+.info {
+  box-sizing: border-box;
+  border-radius: 10px;
+  background-color: white;
+  width: max-content;
+  position: relative;
+  font-size: 16px;
+}
+
+.info__header {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.info__srvlist {
+  display: flex;
+}
+
+.info p {
+  margin-bottom: 5px;
+}
+
+.info__text_about_light {
+  color: #9F9F9F;
+  margin-right: 10px;
+}

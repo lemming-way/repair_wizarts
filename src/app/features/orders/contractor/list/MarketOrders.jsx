@@ -283,7 +283,7 @@ function MarketOrders() {
                         </p>
                         <p className={style.status}>
                           <img src="/img/icon-confirm.png" alt="" />
-                          {orderStatusString[order.status] || text('No status')}
+                          {text(orderStatusString[order.status] || 'Unknown status')}
                         </p>
                       </div>
                     </div>

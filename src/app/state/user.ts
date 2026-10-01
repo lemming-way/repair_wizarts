@@ -98,6 +98,7 @@ interface UserBaseData {
 }
 
 interface ClientUserProfile extends UserBaseData {
+  role: UserRole.Client;
 }
 
 export type ServiceDetails = {
@@ -116,6 +117,7 @@ export type ServiceDetails = {
 export type ServicesMap = Record<number, ServiceDetails[]>;
 
 interface ContractorUserProfile extends UserBaseData {
+  role: UserRole.Contractor;
   /** Описание пользователя. */
   description: string;
   /** Местоположение (город) пользователя. */
@@ -173,7 +175,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
   };
 
   if (baseProfile.role === UserRole.Client) {
-    return baseProfile;
+    return baseProfile as ClientUserProfile;
   }
 
   const contractorServices = {} as ServicesMap;

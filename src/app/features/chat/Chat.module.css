@@ -464,6 +464,10 @@
   flex-shrink: 0;
 }
 
+.info_modals {
+  min-width: max-content;
+}
+
 .line_ilya {
   height: 1px;
   background-color: #E9EAF1;

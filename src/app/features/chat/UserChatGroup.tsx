@@ -5,7 +5,8 @@ import { useProducts } from 'app/state/site-data';
 import { Order, OrderStatus, orderStatusString } from 'app/state/order';
 import { UserProfile, UserRole } from 'app/state/user';
 import type { ChatData } from 'app/state/chat';
-import OnlineDotted from 'app/components/onlineDotted/OnlineDotted';
+import { Modal } from 'app/shared/ui';
+import { UserAvatar, UserCard } from 'app/shared/ui/UserCard';
 
 import styles from './Chat.module.css';
 
@@ -50,6 +51,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
   const text = useLanguage();
   const { products } = useProducts();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [visibleUserCard, setVisibleUserCard] = useState(false);
 
   const displayName = partner?.fullname || partner?.name || text('Unknown user');
   const avatarSrc = partner?.avatar || '/img/user_avatar.png';
@@ -107,17 +109,14 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
 
   return (
     <div className={styles.big_messages}>
+      <Modal open={!!partner && visibleUserCard} onClose={()=>setVisibleUserCard(false)} closeButton={true} size="xs" className={styles.info_modals}>
+        <UserCard user={partner} />
+      </Modal>
       <div
         className={`${styles.chat_group_header} ${isExpanded ? styles.expanded : ''}`}
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div
-          className={styles.avatar_wrap}
-          // onClick={() => showUserInfoCard(partner)}  // TODO: Implement user info card
-        >
-          <img src={avatarSrc} alt={displayName} className={styles.avatar} />
-          <OnlineDotted isVisible={partner?.isOnline} className={styles.online_indicator_dot} />
-        </div>
+        <UserAvatar user={partner} className={styles.avatar_wrap} onClick={() => setVisibleUserCard(true)} />
         <div className={styles.user_name}>{displayName}</div>
         <span className={styles.group_time}>{getLastUpdateString(groupLastUpdate)}</span>
         {/* todo: Добавить время, когда был на сайте */}
@@ -152,7 +151,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
                   title={text(orderStatusString[displayStatus])}
                   // onClick={() => showOrderInfoCard(order)}  // TODO: Implement order info card
                 >
-                  {text(orderStatusString[displayStatus])}
+                  {text(orderStatusString[displayStatus] || 'Unknown status')}
                 </div>
                 {chat.unreadCount > 0 && (
                     <span className={styles.chat_item_unread_badge}>{chat.unreadCount}</span>

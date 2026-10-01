@@ -287,7 +287,7 @@ function Order() {
 
             <div className={styles.order_row}>
               <div className={styles.order_button}>
-                {orderStatusString[currentOrder.status] || text('Unknown status')}
+                {text(orderStatusString[currentOrder.status] || 'Unknown status')}
               </div>
               <div className={styles.buttons_icon}>
                 {canEditOrder && (
@@ -313,7 +313,7 @@ function Order() {
 
               const contractorProfile = contractorsProfiles.find(p => p.id === offer.contractorId);
               if (!contractorProfile) return null; // Skip if profile not found
-              
+
               const contractorProducts = Object.keys(contractorProfile.services);
 
               const businessModelText = contractorProfile.businessModel === BusinessModel.ServiceCenter

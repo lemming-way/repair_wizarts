@@ -9,6 +9,10 @@
     gap: 15px; /* Отступы между элементами */
 }
 
+.info_modals {
+  min-width: max-content;
+}
+
 .order_info {
     flex-grow: 1; /* Позволяет блоку информации занимать доступное пространство */
     min-width: 0;
@@ -19,6 +23,7 @@
     font-weight: 600;
     margin-bottom: 5px;
     color: #333;
+    cursor: pointer;
 }
 
 .order_status_text,
