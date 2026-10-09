@@ -4,20 +4,20 @@ import { post } from './request';
 export const enum OrderStatus {
   New = 1,
   Assigned,
-  Cancelled,
+  Canceled,
   Completed,
-  Inactive,
+  Dispute,
   Offering
 };
 
 /** Статус исполнителя на бэкенде */
 export const enum ContractorStatus {
   Offering = 1,
-  Cancelled,
+  Canceled,
   Assigned,
   Waiting,
   Driving,
-  Completed
+  Finished
 };
 
 /** Структура данных заказа от бэкенда */
@@ -48,6 +48,8 @@ export type OrderRecord = {
   contractor_rating: number | null;
   /** Дата и время создания заказа */
   created_at: string;
+  /** Дата и время изменения статуса или данных заказа */
+  edited_at: string;
   /** Дата и время одобрения мастера */
   appointed_at: string | null;
   /** Дата и время начала работы */
@@ -60,6 +62,8 @@ export type OrderRecord = {
   cancel_reason: string | null;
   /** Дата и время завершения заказа */
   completed_at: string | null;
+  /** Дата и время открытия спора */
+  dispute_at: string | null;
   /** Предложенная цена */
   desired_price: number;
   /** Цена мастера */
@@ -70,6 +74,8 @@ export type OrderRecord = {
   contractor_offers?: ContractorRecord[] | null;
   /** Предложение мастера, возвращается для пользователя-мастера */
   contractor_offer?: ContractorRecord | null;
+  /** 1 Если текущий пользователь отменил своё предложение по заказу */
+  contractor_canceled?: 0 | 1;
   /** Количество мастеров, связанных с заказом, возвращается для пользователя-мастера */
   offers_count?: number;
   /** Идентификатор способа оплаты */
@@ -84,6 +90,8 @@ export type OrderRecord = {
   description: string | null;
   /** Прикреплённые изображения */
   images: number[] | null;
+  /** ID пользователя, запросившего отмену заказа */
+  cancel_requested_by: number | null;
 };
 
 type OrderService = {
@@ -178,8 +186,6 @@ export async function getContractorsByProduct({ productId, cityId, minRating, is
   else return [];
 };
 
-// createOrder
-
 /**
  * Получить список ID заказов клиента или мастера с фильтрацией
  * @param filter - маска фильтра из набора `OrdersFilter`
@@ -257,8 +263,8 @@ export function updateOrder({ attachments, ...data }: OrderUpdateParams): Promis
 
 /**
  * Отменить заказ (для клиента).
- * Работа над заказом не должна быть начата.
- * Заказ отменяется полностью.
+ * Работа над заказом не должна быть начата. Также применяется для заказов в работе, если мастер запросил отмену заказа.
+ * Если заказ с биржи и отмена запрошена мастером, заказ возвращается на биржу. Иначе заказ отменяется полностью.
  * @param orderId - ID заказа
  * @param reason - Причина отмены
  * @returns Промис, который разрешается после успешной отмены
@@ -278,7 +284,7 @@ export async function cancelOrderByClient(orderId: number, reason: string): Prom
 
 /**
  * Отменить заказ (для мастера).
- * Работа над заказом не должна быть начата.
+ * Работа над заказом не должна быть начата. Также применяется для заказов в работе, если клиент запросил отмену заказа.
  * Для заказов с биржи отзывается предложение мастера и заказ возвращается на биржу. Прямой заказ отменяется полностью.
  * @param orderId - ID заказа
  * @param reason - Причина отмены
@@ -297,6 +303,42 @@ export async function cancelOrderByContractor(orderId: number, reason: string): 
   return post<void>('script/template/repair_api', payload);
 }
 
+/**
+ * Запросить отмену заказа.
+ * Применяется для заказов, работа над которыми уже начата. Партнёр должен подтвердить отмену заказа.
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function requestCancelOrder(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'requestCancelOrder',
+      id: orderId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Отозвать запрос отмены заказа.
+ * Применяется для заказов, работа над которыми уже начата.
+ * Применяется пользователем, который ранее запросил отмену заказа.
+ * @param orderId - ID заказа
+ * @returns Промис, который разрешается после успешного выполнения операции.
+ */
+export async function revokeOrderCancellation(orderId: number): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'revokeOrderCancellation',
+      id: orderId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
 
 /**
  * Принять прямой заказ от клиента (для мастера)
@@ -430,7 +472,6 @@ export async function finishOrderWork(orderId: number): Promise<void> {
   return post<void>('script/template/repair_api', payload);
 }
 
-
 /**
  * Полностью завершить заказ
  * @param orderId - ID заказа
@@ -442,6 +483,25 @@ export async function completeOrder(orderId: number): Promise<void> {
     s_t_data: {
       action: 'completeOrder',
       id: orderId
+    }
+  };
+
+  return post<void>('script/template/repair_api', payload);
+}
+
+/**
+ * Открыть спор по заказу
+ * @param orderId - ID заказа
+ * @param claim - Содержание спора
+ * @returns Промис, который разрешается после успешного выполнения действия
+ */
+export async function openOrderDispute(orderId: number, claim: string): Promise<void> {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'openOrderDispute',
+      id: orderId,
+      claim
     }
   };
 

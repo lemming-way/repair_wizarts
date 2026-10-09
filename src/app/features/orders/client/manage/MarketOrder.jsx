@@ -88,7 +88,7 @@ const MarketOrder = (props) => {
   };
 
   const handleCancelOrder = async (closeModal) => {
-    await cancelOrder({ orderId: id, reason: 'Client cancelled' }); // TODO: добавить ввод причины
+    await cancelOrder({ orderId: id, reason: 'Client canceled' }); // TODO: добавить ввод причины
     closeModal();
   };
 
@@ -96,7 +96,7 @@ const MarketOrder = (props) => {
     'dubl-btn': status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED,
     'dubl-but': status === OrderStatus.APPOINTED,
     'dubl-but-blue': status === OrderStatus.IN_PROGRESS,
-    'dubl-but-green': status === OrderStatus.COMPLETED,
+    'dubl-but-green': status === OrderStatus.FINISHED,
   });
 
   return (
@@ -109,7 +109,7 @@ const MarketOrder = (props) => {
           <div className={`applications_text-2 df align`}>
             <h4 className={style.card_modile__price}>{desiredPrice}₽</h4>
 
-            {status !== OrderStatus.CLOSED && status !== OrderStatus.CANCELLED ? (
+            {status !== OrderStatus.CLOSED && status !== OrderStatus.CANCELED ? (
               <Link
                 to={'/client/requests/my_order/' + id}
                 className={style.desktop__count}

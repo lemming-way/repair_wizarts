@@ -168,7 +168,8 @@ export const MessageType = {
   Regular: 1,
   System: 31,
   Audio: 32,
-  Attachment: 33
+  Attachment: 33,
+  Dispute: 34
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare

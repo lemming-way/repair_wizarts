@@ -41,9 +41,11 @@ export type Order = {
   contractorPrice?: number;
   createdAt: Date;
   updatedAt: Date;
+  statusUpdatedAt: Date;
   attachments: number[];
   contractorOffers: Offer[];
   contractorOffersCount: number;
+  wantCancel?: 'client' | 'contractor';
 };
 
 export const OrderType = {
@@ -81,17 +83,17 @@ export type Offer = {
 //~ }
 
 export const OrderStatus = {
-  DRAFT: 'draft',
+  DRAFT: 'draft',                         // В резерве
   PUBLISHED: 'published',
   REQUESTED: 'requested',
   APPOINTED: 'appointed',
   IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-  AWAITING_PAYMENT: 'awaiting_payment',
-  PAID: 'paid',
+  FINISHED: 'finished',
+  AWAITING_PAYMENT: 'awaiting_payment',   // В резерве
+  PAID: 'paid',                           // В резерве
   CLOSED: 'closed',
   DISPUTE: 'dispute',
-  CANCELLED: 'cancelled'
+  CANCELED: 'canceled'
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -102,9 +104,9 @@ export const orderStatusString = {
   [OrderStatus.REQUESTED]: 'Offered',
   [OrderStatus.APPOINTED]: 'Appointed',
   [OrderStatus.IN_PROGRESS]: 'In progress',
-  [OrderStatus.COMPLETED]: 'Completed',
-  [OrderStatus.CANCELLED]: 'Cancelled',
-  [OrderStatus.CLOSED]: 'Finished',
+  [OrderStatus.FINISHED]: 'Finished',
+  [OrderStatus.CANCELED]: 'Canceled',
+  [OrderStatus.CLOSED]: 'Completed',
   [OrderStatus.DISPUTE]: 'Dispute',
 };
 
@@ -173,12 +175,16 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
     const status =
       data.order_status === OrderAPI.OrderStatus.New ? OrderStatus.PUBLISHED :
       data.order_status === OrderAPI.OrderStatus.Offering ? OrderStatus.REQUESTED :
-      data.order_status === OrderAPI.OrderStatus.Cancelled ? OrderStatus.CANCELLED :
-      data.order_status === OrderAPI.OrderStatus.Completed ? OrderStatus.CLOSED :
+      data.order_status === OrderAPI.OrderStatus.Canceled ? OrderStatus.CANCELED :
+      data.order_status === OrderAPI.OrderStatus.Completed ? (
+        data.contractor_canceled ? OrderStatus.CANCELED : OrderStatus.CLOSED
+      ) :
+      data.order_status === OrderAPI.OrderStatus.Dispute ? OrderStatus.DISPUTE :
       data.order_status === OrderAPI.OrderStatus.Assigned ? (
+        data.contractor_canceled ? OrderStatus.CANCELED :
         data.contractor_status === OrderAPI.ContractorStatus.Waiting ? OrderStatus.IN_PROGRESS :
         data.contractor_status === OrderAPI.ContractorStatus.Driving ? OrderStatus.IN_PROGRESS :
-        data.contractor_status === OrderAPI.ContractorStatus.Completed ? OrderStatus.COMPLETED :
+        data.contractor_status === OrderAPI.ContractorStatus.Finished ? OrderStatus.FINISHED :
         OrderStatus.APPOINTED
       ) :
       null;
@@ -213,9 +219,10 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       return ret;
     }, [] as Offer[]);
 
-    const lastUpdate =
+    const lastStatusTime =
       data.canceled_at ??
       data.finished_at ??
+      data.dispute_at ??
       data.completed_at ??
       data.started_at ??
       data.appointed_at ??
@@ -233,7 +240,8 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       desiredPrice: Number(data.desired_price ?? 0),
       status,
       createdAt: new Date(Date.parse(data.created_at) || 0),
-      updatedAt: new Date(Date.parse(lastUpdate) || 0),
+      updatedAt: new Date(Date.parse(data.edited_at) || 0),
+      statusUpdatedAt: new Date(Date.parse(lastStatusTime) || 0),
       contractorOffers,
       contractorOffersCount: Number.isInteger(data.offers_count) ? Number(data.offers_count) : contractorOffers.length,
       attachments
@@ -267,6 +275,11 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
 
     if (order.status !== OrderStatus.PUBLISHED && order.status !== OrderStatus.REQUESTED && data.agreed_price !== null) {
       order.agreedPrice = Number(data.agreed_price ?? 0);
+    }
+
+    if ((order.status === OrderStatus.IN_PROGRESS || order.status === OrderStatus.FINISHED) && data.cancel_requested_by) {
+      if (data.cancel_requested_by === order.clientId) order.wantCancel = 'client';
+      else if (data.cancel_requested_by === order.contractorId) order.wantCancel = 'contractor';
     }
 
     ret.push(order);
@@ -569,30 +582,9 @@ export function useUpdateOrder() {
 }
 
 /**
- * Отменить заказ (клиентская сторона)
- * @param orderId - ID заказа
- * @param reason - Причина отмены
- * @returns Промис, который разрешается после успешной отмены
- */
-function cancelOrderByClient(orderId: number, reason: string): Promise<void> {
-  return OrderAPI.cancelOrderByClient(orderId, reason);
-}
-
-/**
- * Отменить заказ (сторона мастера)
- * @param orderId - ID заказа
- * @param reason - Причина отмены
- * @returns Промис, который разрешается после успешной отмены
- */
-function cancelOrderByContractor(orderId: number, reason: string): Promise<void> {
-  return OrderAPI.cancelOrderByContractor(orderId, reason);
-}
-
-/**
  * Возвращает мутацию для отмены заказа.
  * Хук может быть вызван без дополнительных условий, но отмена заказа доступна только авторизованному пользователю,
  * который является заказчиком или исполнителем данного заказа. Отмена возможна до начала выполнения заказа.
- * @todo: Добавить отмену после начала выполнения заказа с учётом согласования условий отмены.
  */
 export function useCancelOrder() {
   const { user } = useUser() as { user: UserProfile };
@@ -612,22 +604,29 @@ export function useCancelOrder() {
       if (!order) throw new Error('Order not found.');
 
       if (user.role === UserRole.Contractor) {
-        if (order.status !== OrderStatus.APPOINTED) throw new Error('Invalid order state.');
-        await cancelOrderByContractor(orderId, reason);
+        if (
+          order.contractorId !== user.id || (
+            order.status !== OrderStatus.APPOINTED &&
+            ((order.status !== OrderStatus.IN_PROGRESS && order.status !== OrderStatus.FINISHED) || order.wantCancel !== 'client')
+        )) throw new Error('Invalid order state.');
+        await OrderAPI.cancelOrderByContractor(orderId, reason);
       }
       else {
         if (
-          !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED ] as OrderStatus[])
-          .includes(order.status)
+          order.clientId !== user.id ||
+          !([ OrderStatus.DRAFT, OrderStatus.PUBLISHED, OrderStatus.REQUESTED, OrderStatus.APPOINTED, OrderStatus.IN_PROGRESS] as OrderStatus[])
+            .includes(order.status) ||
+          (order.status === OrderStatus.IN_PROGRESS && order.wantCancel !== 'contractor')
         ) {
           throw new Error('Invalid order state.');
         }
-        await cancelOrderByClient(orderId, reason);
+        await OrderAPI.cancelOrderByClient(orderId, reason);
       }
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков заказов
       // - заказ может быть либо в списке "new", либо в списке "active"
-      // - при отмене заказчиком перемещается в "завершённые"
+      // - при отмене заказчиком заказа с биржи по запросу мастера перемещается в "новые"
+      // - при отмене заказчиком в других случаях перемещается в "завершённые"
       // - при отмене мастером прямого заказа перемещается в "завершённые"
       // - при отмене мастером заказа с биржи перемещается в "новые"
       const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey, state: {data} }) => (
@@ -642,6 +641,7 @@ export function useCancelOrder() {
             stage === 'new' &&
             (
               (user.role === UserRole.Contractor && order.type === OrderType.Market) ||
+              (user.role === UserRole.Client && order.type === OrderType.Market && order.wantCancel === 'contractor') ||
               (user.role === UserRole.Client && Array.isArray(data) && data.includes(orderId))
             )
           ) ||
@@ -655,7 +655,7 @@ export function useCancelOrder() {
           (
             stage === 'finished' &&
             (
-              user.role === UserRole.Client ||
+              (user.role === UserRole.Client && (order.type !== OrderType.Market || order.wantCancel !== 'contractor')) ||
               (user.role === UserRole.Contractor && order.type === OrderType.Direct)
             )
           )
@@ -672,6 +672,85 @@ export function useCancelOrder() {
   return objectMapper(mutation, { mutate: null, mutateAsync: null, cancelOrder: 'mutateAsync' });
 }
 
+/**
+ * Возвращает мутацию для запроса отмены заказа.
+ * Хук может быть вызван без дополнительных условий, но запрос отмены заказа доступен только авторизованному пользователю,
+ * который является заказчиком или исполнителем данного заказа. Запрос применяется для заказов, находящихся в работе.
+ */
+export function useRequestCancelOrder() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async (orderId: number, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!orderId) throw new Error('Order ID not specified.');
+
+      const order = await client.fetchQuery({
+        queryKey: [ 'user', user.id, 'order', orderId ],
+        queryFn: getOrderById,
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
+      });
+
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!order) throw new Error('Order not found.');
+
+      if (
+        order.wantCancel ||
+        (user.role === UserRole.Client && order.clientId !== user.id) ||
+        (user.role === UserRole.Contractor && order.contractorId !== user.id) ||
+        (order.status !== OrderStatus.IN_PROGRESS && (
+          order.status !== OrderStatus.FINISHED || user.role !== UserRole.Client
+        ))
+      ) throw new Error('Invalid order state.');
+      await OrderAPI.requestCancelOrder(orderId);
+
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, requestCancelOrder: 'mutateAsync' });
+}
+
+/**
+ * Возвращает мутацию для отзыва запроса отмены заказа.
+ * Хук может быть вызван без дополнительных условий, но запрос отмены заказа доступен только авторизованному пользователю,
+ * который является заказчиком или исполнителем данного заказа. Запрос применяется для заказов, находящихся в работе,
+ * пользователем, который ранее сделал запрос отмены заказа.
+ */
+export function useRevokeOrderCancellation() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async (orderId: number, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!orderId) throw new Error('Order ID not specified.');
+
+      const order = await client.fetchQuery({
+        queryKey: [ 'user', user.id, 'order', orderId ],
+        queryFn: getOrderById,
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
+      });
+
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (!order) throw new Error('Order not found.');
+
+      if (
+        (user.role !== UserRole.Client || user.id !== order.clientId || order.wantCancel !== 'client') &&
+        (user.role !== UserRole.Contractor || user.id !== order.contractorId || order.wantCancel !== 'contractor')
+      ) throw new Error('Invalid order state.');
+      await OrderAPI.revokeOrderCancellation(orderId);
+
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, revokeOrderCancellation: 'mutateAsync' });
+}
+
 // ==================== 4. Работа с предложениями (откликами мастеров) ====================
 
 export type CreateOfferData = {
@@ -682,24 +761,6 @@ export type CreateOfferData = {
     value: number;
     unit: TimeUnit;
   }
-}
-
-/**
- * Отправить предложение по заказу (для мастера)
- * @param orderId - ID заказа
- * @param price - Стоимость работ
- * @param comment - Комментарий
- * @param readyIn - Срок начала работ
- * @returns Промис, который разрешается после размещения предложения
- */
-async function createOffer({ orderId, price, comment, readyIn }: CreateOfferData): Promise<void> {
-  const data = {
-    price,
-    comment,
-    readyInTime: readyIn.value,
-    readyInUnit: readyIn.unit,
-  };
-  return OrderAPI.createOffer(orderId, data);
 }
 
 /**
@@ -727,7 +788,7 @@ export function useCreateOffer() {
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('Offer already exists.');
 
-      await createOffer({ orderId, price, comment, readyIn });
+      await OrderAPI.createOffer(orderId, { price, comment, readyInTime: readyIn.value, readyInUnit: readyIn.unit });
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
@@ -800,16 +861,6 @@ export function useUpdateOffer() {
 }
 
 /**
- * Принять предложение мастера (для клиента)
- * @param orderId - ID заказа
- * @param contractorId - ID мастера
- * @returns Промис, который разрешается после успешного назначения исполнителя
- */
-function acceptOffer(orderId: number, contractorId: number): Promise<void> {
-  return OrderAPI.acceptOffer(orderId, contractorId);
-}
-
-/**
  * Возвращает мутацию назначения исполнителя по заказу.
  * Хук может быть вызван без дополнительных условий, но назначения исполнителя доступно только клиенту,
  * создавшему заказ.
@@ -834,7 +885,7 @@ export function useAcceptOffer() {
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
       if (!order.contractorOffers.some(offer => offer.contractorId === contractorId)) throw new Error('No offer from the contractor.');
 
-      await acceptOffer(orderId, contractorId);
+      await OrderAPI.acceptOffer(orderId, contractorId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков новых и активных заказов
       // - заказ перемещается из "новых" в "активные"
@@ -882,7 +933,7 @@ export function useRevokeOffer() {
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (!order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('No offer from the contractor.');
 
-      await cancelOrderByContractor(orderId, reason);
+      await OrderAPI.cancelOrderByContractor(orderId, reason);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
@@ -934,15 +985,6 @@ export function useContractorFinishedOrders(includeMarket: boolean, includeDirec
 }
 
 /**
- * Подтвердить готовность принять заказ (после выбора клиентом)
- * @param orderId - ID заказа
- * @returns Промис, который разрешается после успешного завершения операции
- */
-async function acceptInvoice(orderId: number): Promise<void> {
-  return OrderAPI.acceptInvoice(orderId);
-}
-
-/**
  * Возвращает мутацию принятия заказа мастером
  * Хук может быть вызван без дополнительных условий, но принятие заказа доступно только мастеру,
  * для которого есть предложение о выполнении заказа.
@@ -965,7 +1007,7 @@ export function useAcceptInvoice() {
       if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
 
-      await acceptInvoice(orderId);
+      await OrderAPI.acceptInvoice(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков новых и активных заказов
       // - заказ перемещается из "новых" в "активные"
@@ -1013,7 +1055,7 @@ export function useRejectInvoice() {
       if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
 
-      await cancelOrderByContractor(orderId, reason);
+      await OrderAPI.cancelOrderByContractor(orderId, reason);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков новых и завершённых/отменённых заказов
       // - заказ перемещается из "новых" в "завершённые"
@@ -1035,15 +1077,6 @@ export function useRejectInvoice() {
   });
 
   return objectMapper(mutation, { mutate: null, mutateAsync: null, rejectInvoice: 'mutateAsync' });
-}
-
-/**
- * Начать работу над заказом
- * @param orderId - ID заказа
- * @returns Промис, который разрешается после успешного завершения операции
- */
-function startOrderWork(orderId: number): Promise<void> {
-  return OrderAPI.startOrderWork(orderId);
 }
 
 /**
@@ -1069,7 +1102,7 @@ export function useStartOrderWork() {
       if (order.status !== OrderStatus.APPOINTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
 
-      await startOrderWork(orderId);
+      await OrderAPI.startOrderWork(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
@@ -1077,15 +1110,6 @@ export function useStartOrderWork() {
   });
 
   return objectMapper(mutation, { mutate: null, mutateAsync: null, startOrderWork: 'mutateAsync' });
-}
-
-/**
- * Отметить заказ как выполненный (для мастера)
- * @param orderId - ID заказа
- * @returns Промис, который разрешается после успешного завершения операции
- */
-function finishOrderWork(orderId: number): Promise<void> {
-  return OrderAPI.finishOrderWork(orderId);
 }
 
 /**
@@ -1111,7 +1135,7 @@ export function useFinishOrderWork() {
       if (order.status !== OrderStatus.IN_PROGRESS) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
 
-      await finishOrderWork(orderId);
+      await OrderAPI.finishOrderWork(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
       return;
@@ -1122,15 +1146,6 @@ export function useFinishOrderWork() {
 }
 
 // ==================== 6. Подтверждение и завершение (клиент) ====================
-
-/**
- * Подтвердить выполнение заказа (для клиента)
- * @param orderId - ID заказа
- * @returns Промис, который разрешается после успешного завершения операции
- */
-function confirmOrderCompletion(orderId: number): Promise<void> {
-  return OrderAPI.completeOrder(orderId);
-}
 
 /**
  * Возвращает мутацию для подтверждения выполнения заказа
@@ -1152,10 +1167,10 @@ export function useConfirmOrderCompletion() {
       });
 
       if (!order) throw new Error('Order not found.');
-      if (order.status !== OrderStatus.COMPLETED) throw new Error('Invalid order state.');
+      if (order.status !== OrderStatus.FINISHED) throw new Error('Invalid order state.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
 
-      await confirmOrderCompletion(orderId);
+      await OrderAPI.completeOrder(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
       // Инвалидация списков активных и завершённых заказов
       // - заказ перемещается из "активных" в "завершённые"
@@ -1179,20 +1194,38 @@ export function useConfirmOrderCompletion() {
   return objectMapper(mutation, { mutate: null, mutateAsync: null, confirmOrderCompletion: 'mutateAsync' });
 }
 
-//~ /**
- //~ * Открыть спор по заказу
- //~ * @param orderId - ID заказа
- //~ * @param disputeData - Данные спора
- //~ * @returns Результат открытия спора
- //~ */
-//~ declare function openOrderDispute(
-  //~ orderId: number,
-  //~ disputeData: {
-    //~ reason: string;
-    //~ description: string;
-    //~ attachments?: File[];
-  //~ }
-//~ ): Promise<{ success: boolean; disputeId: number }>;
+/**
+ * Возвращает мутацию для открытия спора по заказу
+ * Хук может быть вызван без дополнительных условий, но открытие спора доступно только клиенту или мастеру,
+ * связанным с заказом.
+ */
+export function useOpenOrderDispute() {
+  const { user } = useUser() as { user: UserProfile };
+  const mutation = useMutation({
+    mutationFn: async ({ orderId, claim }: { orderId: number; claim: string }, { client }) => {
+      if (!user.id) throw new Error('User must be authorized.');
+      if (!orderId) throw new Error('Order ID not specified.');
+
+      const order = await client.fetchQuery({
+        queryKey: [ 'user', user.id, 'order', orderId ],
+        queryFn: getOrderById,
+        staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
+      });
+
+      if (!order) throw new Error('Order not found.');
+      if (order.status !== OrderStatus.IN_PROGRESS && order.status !== OrderStatus.FINISHED) throw new Error('Invalid order state.');
+      if (user.role === UserRole.Client && order.clientId !== user.id) throw new Error('User is not the customer.');
+      if (user.role === UserRole.Contractor && order.contractorId !== user.id) throw new Error('User is not the contractor.');
+
+      await OrderAPI.openOrderDispute(orderId, claim);
+      client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
+
+      return;
+    }
+  });
+
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, openOrderDispute: 'mutateAsync' });
+}
 
 // ==================== 7. Вспомогательные и системные ====================
 
@@ -1209,7 +1242,7 @@ export function useConfirmOrderCompletion() {
   //~ total: number;
   //~ active: number;
   //~ completed: number;
-  //~ cancelled: number;
+  //~ canceled: number;
   //~ totalRevenue?: number;
   //~ averageRating?: number;
 //~ }>;

@@ -106,19 +106,16 @@ export const ChatList: FC<ChatListProps> = ({
       const filteredChats = groupChats.filter(chat => {
         const order = ordersMap.get(chat.orderId);
         const status = order?.status;
-        const matchesStatus = statusFilter === 'completed'
-          ? status === OrderStatus.COMPLETED || status === OrderStatus.CLOSED
-          : statusFilter === 'cancelled'
-            ? status === OrderStatus.CANCELLED
-            : status !== OrderStatus.COMPLETED
-              && status !== OrderStatus.CLOSED
-              && status !== OrderStatus.CANCELLED;
+        const statusGroup =
+          status === OrderStatus.CLOSED ? 'completed' :
+          status === OrderStatus.CANCELED ? 'canceled' :
+          'active';
         const productName = products[order?.productId ?? 0]?.name?.toLowerCase() || '';
         const matchesSearch = !normalizedSearch
           || partnerName.includes(normalizedSearch)
           || productName.includes(normalizedSearch)
           || String(chat.orderId).includes(normalizedSearch);
-        return matchesStatus && matchesSearch;
+        return statusGroup === statusFilter && matchesSearch;
       });
       return [partnerId, filteredChats] as [number, ChatData[]];
     })
@@ -143,7 +140,7 @@ export const ChatList: FC<ChatListProps> = ({
           {[
             ['active', 'Активные'],
             ['completed', 'Выполненные'],
-            ['cancelled', 'Отменённые'],
+            ['canceled', 'Отменённые'],
           ].map(([value, label]) => (
             <button
               key={value}

@@ -163,7 +163,7 @@ const OrderDetailsBlock: FC<OrderDetailsBlockProps> = ({
     }
 
     // 3.2 Запрос отмены (клиент) - заглушка, т.к. флаги отмены не в новой структуре
-    if (order.status === OrderStatus.CANCELLED /* && order?.b_options?.cancel_requested_ts */) {
+    if (order.status === OrderStatus.CANCELED /* && order?.b_options?.cancel_requested_ts */) {
       items.push({
         kind: 'cancel_requested',
         ts: order.updatedAt.toISOString(), // Используем updatedAt как заглушку для времени запроса отмены

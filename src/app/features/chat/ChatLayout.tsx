@@ -7,12 +7,15 @@ import {
   OrderStatus,
   useOrdersByIds,
   useCancelOrder,
+  useRequestCancelOrder,
+  useRevokeOrderCancellation,
   useAcceptOffer,
   useAcceptInvoice,
   useRejectInvoice,
   useStartOrderWork,
   useFinishOrderWork,
   useConfirmOrderCompletion,
+  useOpenOrderDispute,
 } from 'app/state/order';
 import { useUser, UserRole } from 'app/state/user';
 import { MessageFormat, useChatsByIds, useSetChatRead, useSetChatOpen, useSendMessage, useUpdateMessage, useDeleteMessage } from 'app/state/chat';
@@ -20,7 +23,7 @@ import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
 import { ChatInput } from './ChatInput';
-import DisputeModalV2 from 'app/components/full-chat/fakeChat/DisputeModal_v2'; // Для визуальной ссылки, будет использоваться для действий по спору
+import { DisputeModal } from './DisputeModal';
 import styles from './Chat.module.css';
 
 export const ChatLayout: FC = () => {
@@ -78,26 +81,40 @@ export const ChatLayout: FC = () => {
 
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
+  const { requestCancelOrder } = useRequestCancelOrder();
+  const { revokeOrderCancellation } = useRevokeOrderCancellation();
   const { acceptOffer } = useAcceptOffer();
   const { acceptInvoice } = useAcceptInvoice();
   const { rejectInvoice } = useRejectInvoice();
   const { startOrderWork } = useStartOrderWork();
   const { finishOrderWork } = useFinishOrderWork();
   const { confirmOrderCompletion } = useConfirmOrderCompletion();
+  const { openOrderDispute } = useOpenOrderDispute();
 
   // Колбэки для OrderChatControl
   const handleCancelOrder = useCallback(async (order: Order, reason: string) => {
     try {
-      if (order.status === OrderStatus.APPOINTED) {
-        await cancelOrder({ orderId: order.id, reason });
-      }
-      else {
-        alert('(Заглушка) Запрос на отмену заказа отправлен');
-      }
+      await cancelOrder({ orderId: order.id, reason });
     } catch (error: any) {
       alert(`Failed to cancel order: ${error.message}`);
     }
-  }, [cancelOrder, text]);
+  }, [cancelOrder]);
+
+  const handleRequestCancelOrder = useCallback(async (order: Order) => {
+    try {
+      await requestCancelOrder(order.id);
+    } catch (error: any) {
+      alert(`Failed to request order cancellation: ${error.message}`);
+    }
+  }, [requestCancelOrder]);
+
+  const handleRevokeCancelOrder = useCallback(async (order: Order) => {
+    try {
+      await revokeOrderCancellation(order.id);
+    } catch (error: any) {
+      alert(`Failed to revoke order cancellation: ${error.message}`);
+    }
+  }, [revokeOrderCancellation]);
 
   const handleAcceptOffer = useCallback(async (orderId: number, contractorId: number) => {
     try {
@@ -153,6 +170,17 @@ export const ChatLayout: FC = () => {
       alert(`Failed to verify completion: ${error.message}`);
     }
   }, [confirmOrderCompletion, text]);
+
+  const handleDisputeOpen = useCallback(async (claim: string) => {
+    if (disputeOrderId && claim) {
+      try {
+        await openOrderDispute({ orderId: disputeOrderId, claim });
+        setIsVisibleDisputeModal(false);
+      } catch (error: any) {
+        alert(`Failed to open dispute: ${error.message}`);
+      }
+    }
+  }, [openOrderDispute, disputeOrderId, text]);
 
   const handleShowDisputeModal = useCallback((orderId: number) => {
     setDisputeOrderId(orderId);
@@ -284,10 +312,10 @@ export const ChatLayout: FC = () => {
   return (
     <section className={user.role === UserRole.Contractor ? `${styles.container} ${styles.contractor}` : styles.container}>
       {isVisibleDisputeModal && disputeOrderId && (
-        <DisputeModalV2
+        <DisputeModal
           id={disputeOrderId}
+          onDisputeOpen={handleDisputeOpen}
           setVisibleDispute={setIsVisibleDisputeModal}
-          setVisibleDisputeFinal={() => {}} // Заглушка, если потребуется финальное модальное окно спора
         />
       )}
 
@@ -338,6 +366,8 @@ export const ChatLayout: FC = () => {
                 onSetChatRead={handleReadChat}
                 onCloseChat={handleCloseChat}
                 onCancelOrder={handleCancelOrder}
+                onRequestCancelOrder={handleRequestCancelOrder}
+                onRevokeCancelOrder={handleRevokeCancelOrder}
                 onAcceptOffer={handleAcceptOffer}
                 onAcceptInvoice={handleAcceptInvoice}
                 onRejectInvoice={handleRejectInvoice}

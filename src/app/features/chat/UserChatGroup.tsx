@@ -29,9 +29,9 @@ const getOrderStatusColorClass = (status: OrderStatus) => {
     case OrderStatus.REQUESTED: return styles.order_status_requested;
     case OrderStatus.APPOINTED: return styles.order_status_appointed;
     case OrderStatus.IN_PROGRESS: return styles.order_status_in_progress;
-    case OrderStatus.COMPLETED: return styles.order_status_completed;
+    case OrderStatus.FINISHED: return styles.order_status_finished;
     case OrderStatus.CLOSED: return styles.order_status_closed;
-    case OrderStatus.CANCELLED: return styles.order_status_cancelled;
+    case OrderStatus.CANCELED: return styles.order_status_canceled;
     case OrderStatus.DISPUTE: return styles.order_status_dispute;
     default: return '';
   }
@@ -135,7 +135,7 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
             const order = orders.get(chat.orderId);
             const displayStatus =
               !order || (order.status !== OrderStatus.PUBLISHED && chat.contractorId !== order.contractorId)
-              ? OrderStatus.CANCELLED
+              ? OrderStatus.CANCELED
               : order.status;
 
             return (

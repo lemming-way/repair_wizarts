@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import { useState } from 'react';
+import { useNavigate } from "react-router-dom"
 import Dropdown from 'react-multilevel-dropdown';
 
 import { useLanguage } from 'app/state/language';
@@ -18,8 +19,10 @@ interface OrderChatControlProps {
   currentUser: UserProfile;
   onSetChatRead: (orderId: number, contractorId: number) => Promise<void>;
   onCloseChat: (orderId: number, contractorId: number) => Promise<void>;
-  // Колбэки для мутаций (или заглушек действий)
+  // Колбэки для мутаций
   onCancelOrder: (order: Order, reason: string) => Promise<void>;
+  onRequestCancelOrder: (order: Order) => Promise<void>;
+  onRevokeCancelOrder: (order: Order) => Promise<void>;
   onAcceptOffer: (orderId: number, contractorId: number) => Promise<void>;
   onAcceptInvoice: (orderId: number) => Promise<void>;
   onRejectInvoice: (orderId: number, reason: string) => Promise<void>;
@@ -37,6 +40,8 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   onSetChatRead,
   onCloseChat,
   onCancelOrder,
+  onRequestCancelOrder,
+  onRevokeCancelOrder,
   onAcceptOffer,
   onAcceptInvoice,
   onRejectInvoice,
@@ -45,6 +50,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   onVerifyCompletion,
   onShowDisputeModal,
 }) => {
+  const navigate = useNavigate();
   const text = useLanguage();
   const [visibleOrderCard, setVisibleOrderCard] = useState(false);
 
@@ -53,44 +59,56 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   const effectiveOrderStatus =
     order.status === OrderStatus.PUBLISHED || chatContractorId === order.contractorId
     ? order.status
-    : OrderStatus.CANCELLED;
+    : OrderStatus.CANCELED;
 
   const orderDescription = order.description.length > 100
     ? order.description.slice(0, 100) + '...'
     : order.description;
 
-  const handleCancelClick = async () => {
+  const handleCreateOffer = () => {
+    navigate(`/contractor/requests/offer/${order.id}`);
+  }
+
+  const handleCancelClick = () => {
     const reason = prompt(text('Please enter the reason for cancellation:'));
     if (reason) {
-      await onCancelOrder(order, reason);
+      onCancelOrder(order, reason);
     }
   };
 
-  const handleAcceptOffer = async() => {
-    await onAcceptOffer(order.id, chatContractorId);
+  const handleRequestCancel = () => {
+    onRequestCancelOrder(order);
   };
 
-  const handleAcceptInvoice = async() => {
-    await onAcceptInvoice(order.id);
+  const handleRevokeCancel = () => {
+    onRevokeCancelOrder(order);
   };
 
-  const handleRejectInvoice = async() => {
-    await onRejectInvoice(order.id, '');  // todo: Добавить ввод причины отказа
+  const handleAcceptOffer = () => {
+    onAcceptOffer(order.id, chatContractorId);
   };
 
-  const handleStartWorkClick = async () => {
-    await onStartWork(order.id);
+  const handleAcceptInvoice = () => {
+    onAcceptInvoice(order.id);
   };
 
-  const handleCompleteWorkClick = async () => {
-    await onCompleteWork(order.id);
+  const handleRejectInvoice = () => {
+    onRejectInvoice(order.id, '');  // todo: Добавить ввод причины отказа
   };
 
-  const handleVerifyCompletionClick = async () => {
-    await onVerifyCompletion(order.id);
+  const handleStartWorkClick = () => {
+    onStartWork(order.id);
   };
 
-  const handleOpenDisputeClick = async () => {
+  const handleCompleteWorkClick = () => {
+    onCompleteWork(order.id);
+  };
+
+  const handleVerifyCompletionClick = () => {
+    onVerifyCompletion(order.id);
+  };
+
+  const handleOpenDisputeClick = () => {
     onShowDisputeModal(order.id);
   };
 
@@ -100,14 +118,35 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
       case OrderStatus.PUBLISHED:
         if (isClient) {
           return (
-            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptOffer}>
-              {text('Select contractor')}
+            <>
+              {order.contractorOffers.some(offer => offer.contractorId === chatContractorId) &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptOffer}>
+                  {text('Select contractor')}
+                </button>
+              }
+              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+                {text('Cancel Order')}
+              </button>
+            </>
+          );
+        }
+        else if (isContractor && !order.contractorOffers.some(offer => offer.contractorId === currentUser.id)) {
+          return (
+            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCreateOffer}>
+              {text('Offer a service')}
             </button>
           );
         }
         break;
       case OrderStatus.REQUESTED:
-        if (isContractor) {
+        if (isClient) {
+          return (
+            <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+              {text('Cancel Order')}
+            </button>
+          );
+        }
+        else if (isContractor) {
           return (
             <>
               <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptInvoice}>
@@ -144,9 +183,21 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         if (isClient) {
           return (
             <>
-              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
-                {text('Request Order Cancellation')}
-              </button>
+              {!order.wantCancel &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRequestCancel}>
+                  {text('Request Order Cancellation')}
+                </button>
+              }
+              {order.wantCancel === 'client' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRevokeCancel}>
+                  {text('Revoke Order Cancellation Request')}
+                </button>
+              }
+              {order.wantCancel === 'contractor' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+                  {text('Confirm Order Cancellation')}
+                </button>
+              }
               <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
                 {text('Open Dispute')}
               </button>
@@ -155,12 +206,26 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         } else if (isContractor) {
           return (
             <>
-              <button className={chatStyles.orderButton} onClick={handleCompleteWorkClick}>
-                {text('Complete Work')}
-              </button>
-              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
-                {text('Request Order Cancellation')}
-              </button>
+              {!order.wantCancel &&
+                <>
+                  <button className={chatStyles.orderButton} onClick={handleCompleteWorkClick}>
+                    {text('Complete Work')}
+                  </button>
+                  <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRequestCancel}>
+                    {text('Request Order Cancellation')}
+                  </button>
+                </>
+              }
+              {order.wantCancel === 'contractor' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRevokeCancel}>
+                  {text('Revoke Order Cancellation Request')}
+                </button>
+              }
+              {order.wantCancel === 'client' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+                  {text('Confirm Order Cancellation')}
+                </button>
+              }
               <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
                 {text('Open Dispute')}
               </button>
@@ -168,16 +233,30 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
           );
         }
         break;
-      case OrderStatus.COMPLETED:
+      case OrderStatus.FINISHED:
         if (isClient) {
           return (
             <>
-              <button className={chatStyles.orderButton} onClick={handleVerifyCompletionClick}>
-                {text('Confirm Work Completion')}
-              </button>
-              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
-                {text('Request Order Cancellation')}
-              </button>
+              {!order.wantCancel &&
+                <>
+                  <button className={chatStyles.orderButton} onClick={handleVerifyCompletionClick}>
+                    {text('Confirm Work Completion')}
+                  </button>
+                  <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRequestCancel}>
+                    {text('Request Order Cancellation')}
+                  </button>
+                </>
+              }
+              {order.wantCancel === 'client' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleRevokeCancel}>
+                  {text('Revoke Order Cancellation Request')}
+                </button>
+              }
+              {order.wantCancel === 'contractor' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+                  {text('Confirm Order Cancellation')}
+                </button>
+              }
               <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
                 {text('Open Dispute')}
               </button>
@@ -186,9 +265,11 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         } else if (isContractor) {
           return (
             <>
-              <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
-                {text('Request Order Cancellation')}
-              </button>
+              {order.wantCancel === 'client' &&
+                <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCancelClick}>
+                  {text('Confirm Order Cancellation')}
+                </button>
+              }
               <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
                 {text('Open Dispute')}
               </button>
@@ -197,14 +278,15 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         }
         break;
       case OrderStatus.CLOSED:
-      case OrderStatus.CANCELLED:
-        return null; // Нет кнопок для завершённых или отменённых заказов
+      case OrderStatus.CANCELED:
       case OrderStatus.DISPUTE:
-        return (
-          <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
-            {text('View Dispute')}
-          </button>
-        );
+        return null; // Нет кнопок для завершённых или отменённых заказов
+      //~ case OrderStatus.DISPUTE:
+        //~ return (
+          //~ <button className={`${chatStyles.orderButton} ${styles.disputeButton}`} onClick={handleOpenDisputeClick}>
+            //~ {text('View Dispute')}
+          //~ </button>
+        //~ );
       case OrderStatus.AWAITING_PAYMENT:
       case OrderStatus.PAID:
         // Эти статусы обычно управляются другими частями UI (предложениями и т.д.)

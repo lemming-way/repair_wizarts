@@ -39,7 +39,8 @@ export type ChatData = {
 export const MessageType = {
   User: 'user',
   System: 'system',
-  Admin: 'administrator'
+  Admin: 'administrator',
+  Dispute: 'dispute'
 } as const;
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
@@ -87,7 +88,7 @@ interface SystemMessage extends TextMessageBase {
 }
 
 interface TextMessage extends TextMessageBase {
-  type: typeof MessageType['User' | 'Admin'];
+  type: typeof MessageType['User' | 'Dispute' | 'Admin'];
 }
 
 interface AudioMessage extends MessageBase {
@@ -250,6 +251,7 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
         delivered: new Date(Date.parse(messageRec.created) || 0),
         type:
           messageRec.type === MessageAPI.MessageType.System ? MessageType.System :
+          messageRec.type === MessageAPI.MessageType.Dispute ? MessageType.Dispute :
           !!messageRec.from ? MessageType.User :
           MessageType.Admin,
         format:

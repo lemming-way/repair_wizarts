@@ -75,7 +75,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   const messagesMap = new Map(messages.map(message => [message.id, message]));
 
   const allUserIds = messages.reduce((ids, message) => {
-    if (message.type === MessageType.User && message.from && message.from !== currentUserId) {
+    if ((message.type === MessageType.User || message.type === MessageType.Dispute) && message.from && message.from !== currentUserId) {
       ids.add(message.from);
     }
     else if (message.type === MessageType.Admin && message.authorId) {
@@ -298,7 +298,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
         )}
         {messages.map((message) => {
           const userId =
-            message.type === MessageType.User
+            message.type === MessageType.User || message.type === MessageType.Dispute
             ? message.from
             : message.authorId;
           const user = userId ? usersMap.get(userId) : null;
