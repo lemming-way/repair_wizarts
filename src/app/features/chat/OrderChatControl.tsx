@@ -17,18 +17,22 @@ interface OrderChatControlProps {
   chatContractorId: number;
   isChatUnread: boolean;
   currentUser: UserProfile;
-  onSetChatRead: (orderId: number, contractorId: number) => Promise<void>;
-  onCloseChat: (orderId: number, contractorId: number) => Promise<void>;
+  chatPartner?: UserProfile;
+  isBlacklisted?: boolean;
+  onSetChatRead: (orderId: number, contractorId: number) => void;
+  onCloseChat: (orderId: number, contractorId: number) => void;
+  onBlockUser: (userId: number) => void;
+  onBlackList: () => void;
   // Колбэки для мутаций
-  onCancelOrder: (order: Order, reason: string) => Promise<void>;
-  onRequestCancelOrder: (order: Order) => Promise<void>;
-  onRevokeCancelOrder: (order: Order) => Promise<void>;
-  onAcceptOffer: (orderId: number, contractorId: number) => Promise<void>;
-  onAcceptInvoice: (orderId: number) => Promise<void>;
-  onRejectInvoice: (orderId: number, reason: string) => Promise<void>;
-  onStartWork: (orderId: number) => Promise<void>;
-  onCompleteWork: (orderId: number) => Promise<void>;
-  onVerifyCompletion: (orderId: number) => Promise<void>;
+  onCancelOrder: (order: Order, reason: string) => void;
+  onRequestCancelOrder: (order: Order) => void;
+  onRevokeCancelOrder: (order: Order) => void;
+  onAcceptOffer: (orderId: number, contractorId: number) => void;
+  onAcceptInvoice: (orderId: number) => void;
+  onRejectInvoice: (orderId: number, reason: string) => void;
+  onStartWork: (orderId: number) => void;
+  onCompleteWork: (orderId: number) => void;
+  onVerifyCompletion: (orderId: number) => void;
   onShowDisputeModal: (orderId: number) => void;
 }
 
@@ -37,8 +41,12 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   chatContractorId,
   isChatUnread,
   currentUser,
+  chatPartner,
+  isBlacklisted,
   onSetChatRead,
   onCloseChat,
+  onBlockUser,
+  onBlackList,
   onCancelOrder,
   onRequestCancelOrder,
   onRevokeCancelOrder,
@@ -119,7 +127,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
         if (isClient) {
           return (
             <>
-              {order.contractorOffers.some(offer => offer.contractorId === chatContractorId) &&
+              {!isBlacklisted && order.contractorOffers.some(offer => offer.contractorId === chatContractorId) &&
                 <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptOffer}>
                   {text('Select contractor')}
                 </button>
@@ -130,7 +138,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
             </>
           );
         }
-        else if (isContractor && !order.contractorOffers.some(offer => offer.contractorId === currentUser.id)) {
+        else if (isContractor && !isBlacklisted && !order.contractorOffers.some(offer => offer.contractorId === currentUser.id)) {
           return (
             <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleCreateOffer}>
               {text('Offer a service')}
@@ -146,7 +154,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
             </button>
           );
         }
-        else if (isContractor) {
+        else if (isContractor && !isBlacklisted) {
           return (
             <>
               <button className={`${chatStyles.orderButton} ${styles.cancelButton}`} onClick={handleAcceptInvoice}>
@@ -347,6 +355,25 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
           <img src="/img/icons/trash.png" alt="" />
           {text('Close chat')}
         </Dropdown.Item>
+      }
+      {currentUser.blackList && chatPartner?.id && !currentUser.blackList.includes(chatPartner.id) &&
+        <Dropdown.Item
+          className={styles.item}
+          onClick={() => onBlockUser(chatPartner.id)}
+        >
+          <img src="/img/icons/block.png" alt="" />
+          {text('Block user')}
+        </Dropdown.Item>
+      }
+      {currentUser.blackList &&
+        <Dropdown.Item
+          className={styles.item}
+          onClick={() => onBlackList()}
+        >
+          <img src="/img/icons/ban.png" alt="" />
+          {text('Blacklist')}
+        </Dropdown.Item>
+
       }
       </Dropdown>
     </div>

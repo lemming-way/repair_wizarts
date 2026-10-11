@@ -32,7 +32,12 @@ function ServiceMainContent({
   const [search, setSearch] = useState('');
 
   const isContractorSelected = !!selectedContractor.id;
-  const isOrderButtonActive = isContractorSelected && selectedServices.length > 0;
+  const isContractorBlacklisted =
+    isContractorSelected && (
+      user.blackList?.includes(selectedContractor.id) ||
+      selectedContractor.blackList?.includes(user.id)
+    );
+  const isOrderButtonActive = isContractorSelected && !isContractorBlacklisted && selectedServices.length > 0;
 
   return (
     <div>
@@ -55,7 +60,7 @@ function ServiceMainContent({
             />
           </div>
 
-          {/* блок с iphone 
+          {/* блок с iphone
           <div className={`main__info__image ${style.iphone_mobile}`}>
             <img
               className={style.iphone_mobile__img}
@@ -77,8 +82,18 @@ function ServiceMainContent({
             </div>
           )}
 
+          {/* Отображается, если клиент или мастре в чёрном списке */}
+          {!isContractorBlacklisted && (
+            <div className="order__no-cards">
+              <img src="/img/many_people.png" alt="" />
+              <p>
+                {text('User blacklisted the contractor or contractor blacklisted the user.')}
+              </p>
+            </div>
+          )}
+
           {/* список услуг - Отображается только если выбран мастер и есть цены */}
-          {isContractorSelected && Object.keys(prices).length > 0 && (
+          {isContractorSelected && !isContractorBlacklisted && Object.keys(prices).length > 0 && (
             <div className={`order__cards__to__scrolls ${style.orders_list}`}>
               {Object.entries(prices).filter(([serviceName, obj]) =>
                 obj.name.toLowerCase().includes(search.toLowerCase())
@@ -174,7 +189,7 @@ function ServiceMainContent({
       </section>
 
       {/* цены - Отображается только если выбран мастер и есть цены */}
-      {isContractorSelected && Object.keys(prices).length > 0 && (
+      {isContractorSelected && !isContractorBlacklisted && Object.keys(prices).length > 0 && (
         <section className="detail__price">
           <div className="container detail-price-container">
             <Swiper

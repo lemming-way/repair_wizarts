@@ -4,7 +4,7 @@ import { useLanguage } from 'app/state/language';
 
 interface AudioRecorderProps {
   className?: string;
-  disabled: boolean;
+  disabled?: boolean;
   MicrophoneIcon: ComponentType;
   onStartRecording: () => void;
   onFinishRecording: () => void;

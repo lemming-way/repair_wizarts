@@ -35,7 +35,8 @@ function Order() {
 
   // Fetch contractor profiles for offers
   const contractorIds = currentOrder?.contractorOffers.map(offer => offer.contractorId) || [];
-  const { users: contractorsProfiles, isLoading: isContractorsLoading } = useUsersByIds(contractorIds);
+  const { users: contractors, isLoading: isContractorsLoading } = useUsersByIds(contractorIds);
+  const contractorsMap = new Map(contractors.map(c => [c.id, c]));
 
   // Mutations
   const { cancelOrder } = useCancelOrder();
@@ -66,6 +67,15 @@ function Order() {
   };
 
   const handleAcceptOffer = async (contractorId, price) => {
+    const contractor = contractorsMap.get(contractorId);
+    if (!contractor) {
+      console.error('Contractor not found'); // todo: сделать нормальное сообщение об ошибке
+      return;
+    }
+    if (user.blackList?.includes(contractor.id) || contractor.blackList?.includes(user.id)) {
+      console.error('Failed to accept offer: Blacklisted'); // todo: сделать нормальное сообщение об ошибке
+      return;
+    }
     try {
       await acceptOffer({ orderId, contractorId });
       setAcceptedContractorId(contractorId);
@@ -311,12 +321,13 @@ function Order() {
             {currentOrder.contractorOffers.map((offer) => {
               if (isContractorsLoading) return <div key={offer.contractorId}>{text('Loading...')}</div>;
 
-              const contractorProfile = contractorsProfiles.find(p => p.id === offer.contractorId);
-              if (!contractorProfile) return null; // Skip if profile not found
+              const contractor = contractorsMap.get(offer.contractorId);
+              if (!contractor) return null; // Skip if profile not found
+              if (user.blackList?.includes(contractor.id) || contractor.blackList?.includes(user.id)) return null;  // Skip blacklisted
 
-              const contractorProducts = Object.keys(contractorProfile.services);
+              const contractorProducts = Object.keys(contractor.services);
 
-              const businessModelText = contractorProfile.businessModel === BusinessModel.ServiceCenter
+              const businessModelText = contractor.businessModel === BusinessModel.ServiceCenter
                 ? text('Service center')
                 : text('Independent technician');
 
@@ -328,14 +339,14 @@ function Order() {
                     <div className={styles.about_row}>
                       <div className={styles.left_row}>
                         <img
-                          src={contractorProfile.avatar || '/img/user_avatar.png'}
+                          src={contractor.avatar || '/img/user_avatar.png'}
                           width="80px"
                           height="80px"
                           className={styles.avatarImage}
-                          alt={contractorProfile.fullname}
+                          alt={contractor.fullname}
                         />
                         <div className={styles.block_info}>
-                          <p>{contractorProfile.fullname}</p>
+                          <p>{contractor.fullname}</p>
                           <p>{businessModelText}</p>
                           <p className={styles.star_block}>
                             <img src="/img/img-star.png" alt="" />
@@ -351,7 +362,7 @@ function Order() {
                       <div>
                         <p className={styles.about__description}>
                           <span>{text('Address')}:</span>
-                          {contractorProfile.address || text('not specified')}
+                          {contractor.address || text('not specified')}
                         </p>
                         {/* Город исполнителя не выводим, потому что должен совпадать с городом заказа */}
                       </div>
@@ -363,7 +374,7 @@ function Order() {
                         <p className={styles.about__description}>
                           <span>{text('Status')}:</span>
                           <span className={styles.accent_color}>
-                            {contractorProfile.isOnline ? text('Online') : text('Offline')}
+                            {contractor.isOnline ? text('Online') : text('Offline')}
                           </span>
                         </p>
                         <p className={styles.about__description}>
@@ -406,16 +417,16 @@ function Order() {
                         <tr>
                           <td className={styles.light_text}>{text('Experience')}:</td>
                           <td>
-                            {contractorProfile.experience
-                              ? `${contractorProfile.experience} ${text('Years unit')}`
+                            {contractor.experience
+                              ? `${contractor.experience} ${text('Years unit')}`
                               : text('not specified')}
                           </td>
                         </tr>
-                        {contractorProfile.businessModel === BusinessModel.ServiceCenter && (
+                        {contractor.businessModel === BusinessModel.ServiceCenter && (
                           <tr>
                             <td className={styles.light_text}>{text('Organization name')}:</td>
                             <td>
-                              {contractorProfile.organizationName || text('not specified')}
+                              {contractor.organizationName || text('not specified')}
                             </td>
                           </tr>
                         )}
@@ -432,7 +443,7 @@ function Order() {
                   </div>
 
                   <div className={styles.text_block}>
-                    <p>{contractorProfile.description || text('not specified')}</p>
+                    <p>{contractor.description || text('not specified')}</p>
                   </div>
 
                   <section className={styles.order_block}>

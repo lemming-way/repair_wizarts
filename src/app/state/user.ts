@@ -235,7 +235,7 @@ export function useUser() {
     staleTime: CONFIG.API?.userDataStaleTime ?? Infinity
   });
 
-  return objectMapper(queryResult, { data: null, user(target) { return (target.data as UserProfile) || EMPTY_OBJECT } });
+  return objectMapper(queryResult, { data: null, user(target) { return (target.data as UserProfile) || (EMPTY_OBJECT as Partial<UserProfile>) } });
 }
 
 const [ fetchUserById, useUsersByIds ] = createBatchLoader({
@@ -262,16 +262,18 @@ const [ fetchUserById, useUsersByIds ] = createBatchLoader({
  * Получить данные пользователя по ID.
  * Только для внутреннего использования в API. Для UI рекомендуется использовать хук `useUsersByIds`.
  * @internal
- * @param userId ID пользователя.
+ * @param queryClient Объект QueryClient.
+ * @param authId ID авторизованного пользователя.
+ * @param userId ID пользователя, данные которого запрашиваются.
  * @returns Промис, разрешающийся с данными запрошенного пользователя.
  */
 export async function getUserById(queryClient: QueryClient, authId: number, userId: number) {
-  if (!authId || !userId || authId !== authorizedUserId()) return {};
+  if (!authId || !userId || authId !== authorizedUserId()) return {} as Partial<UserProfile>;
   return (await queryClient.ensureQueryData({
     queryKey: ['user', authId, 'user', userId],
     queryFn: fetchUserById,
     staleTime: CONFIG.API?.userDataStaleTime ?? 900000,
-  })) ?? {};
+  })) ?? ({} as Partial<UserProfile>);
 }
 
 /**
@@ -560,7 +562,6 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
 
   // todo: Может быть, добавить полную проверку для phone, email, language, currency, locality
   const updatedFiles = [] as number[];
-  const deletedFiles = [] as number[];
   const apiUserData = {} as UserAPI.UserUpdateData;
 
   if (payload.name !== undefined) {
@@ -595,9 +596,6 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
     //~ const description = payload.description.trim();  // Сработает только для неподтверждённого мастера
     //~ apiUserData.u_description = description;
   //~ }
-  if (payload.blackList !== undefined) {
-    apiUserData.u_details = { ...apiUserData.u_details, blackList: payload.blackList };
-  }
   if (payload.address !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, address: payload.address };
   }
@@ -619,63 +617,84 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
   if (payload.organizationName !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
   }
-  if (payload.photos !== undefined) {
-    const filePhotos = payload.photos.filter(file => file instanceof File);
-    const idPhotos = payload.photos.filter(file => 'number' === typeof file);
-
+  if (payload.photos !== undefined || payload.blackList !== undefined) {
     const oldData = await UserAPI.getAuthUser();
     if (Number(oldData.u_id) !== userId || userId !== authorizedUserId()) throw new Error('User has changed.');
 
-    let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
-    if (Array.isArray(oldData.u_details?.photos)) {
-      const oldIds = (oldData.u_details.photos ?? [])
-        .map(Number)
-        .filter(id => Number.isInteger(id) && id > 0 && !idPhotos.includes(id));
-      oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
-      if (userId !== authorizedUserId()) throw new Error('User has changed.');
-    }
-    // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
-    //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
-    const newPhotos = idPhotos;
-    if (filePhotos.length) {
-      const photos = await Promise.all(
-        filePhotos
-          .filter(file => isImage(file.type))
-          .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
-      );
-      if (userId !== authorizedUserId()) throw new Error('User has changed.');
-
-      const uploads = photos.map(image => {
-        const fileIndex = oldFilesInfo.findIndex(file => file?.json?.name === image.name);
-        if (fileIndex >= 0) {
-          const oldId = Number(oldFilesInfo[fileIndex]!.dl_id || 0);
-          oldFilesInfo[fileIndex] = null;
-          updatedFiles.push(oldId);
-          return FileAPI.updateFile(oldId, image.data);
+    if (payload.blackList !== undefined) {
+      const oldBl = new Set(Array.isArray(oldData.u_details?.blackList) ? oldData.u_details?.blackList : []);
+      const newBl = new Set(payload.blackList);
+      let equal = oldBl.size === newBl.size;
+      if (equal) {
+        for (const item of oldBl) {
+          if (!newBl.has(item)) {
+            equal = false;
+            break;
+          }
         }
-        return FileAPI.uploadFile(image.name, image.data, 0);
-      });
-      const deletedIds = oldFilesInfo.filter(Boolean).map(file => Number(file!.dl_id));
-      if (deletedIds.length) deletedFiles.push(...deletedIds);
-      const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
-      if (deletes.length) {
-        await Promise.all(deletes);
+      }
+      if (!equal) {
+        apiUserData.u_details = { ...apiUserData.u_details, blackList: [...newBl] };
+      }
+    }
+
+    if (payload.photos !== undefined) {
+      const filePhotos = payload.photos.filter(file => file instanceof File);
+      const idPhotos = payload.photos.filter(file => 'number' === typeof file);
+
+      let oldFilesInfo = [] as (FileAPI.DropboxFileInfo | null)[];
+      if (Array.isArray(oldData.u_details?.photos)) {
+        const oldIds = (oldData.u_details.photos ?? [])
+          .map(Number)
+          .filter(id => Number.isInteger(id) && id > 0 && !idPhotos.includes(id));
+        oldFilesInfo = await FileAPI.getFilesInfo(oldIds);
         if (userId !== authorizedUserId()) throw new Error('User has changed.');
       }
-      const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
-      if (userId !== authorizedUserId()) throw new Error('User has changed.');
-      newPhotos.push(...uploaded);
-      apiUserData.u_details = { ...apiUserData.u_details, photos: newPhotos };
+      // todo: Здесь возможна рассинхронизация загруженных файлов и данных заказа.
+      //       Нужно предусмотреть очистку или сделать транзакцию на бэкенде.
+      const newPhotos = idPhotos;
+      if (filePhotos.length) {
+        const photos = await Promise.all(
+          filePhotos
+            .filter(file => isImage(file.type))
+            .map(async file => ({ name: file.name, data: await fileToBase64(file) }))
+        );
+        if (userId !== authorizedUserId()) throw new Error('User has changed.');
+
+        const uploads = photos.map(image => {
+          const fileIndex = oldFilesInfo.findIndex(file => file?.json?.name === image.name);
+          if (fileIndex >= 0) {
+            const oldId = Number(oldFilesInfo[fileIndex]!.dl_id || 0);
+            oldFilesInfo[fileIndex] = null;
+            updatedFiles.push(oldId);
+            return FileAPI.updateFile(oldId, image.data);
+          }
+          return FileAPI.uploadFile(image.name, image.data, 0);
+        });
+        const deletedIds = oldFilesInfo.filter(Boolean).map(file => Number(file!.dl_id));
+        const deletes = deletedIds.map(id => FileAPI.deleteFile(id));
+        if (deletes.length) {
+          await Promise.all(deletes);
+          if (userId !== authorizedUserId()) throw new Error('User has changed.');
+        }
+        const uploaded = (await Promise.all(uploads)).filter(Boolean) as number[];
+        if (userId !== authorizedUserId()) throw new Error('User has changed.');
+        newPhotos.push(...uploaded);
+        apiUserData.u_details = { ...apiUserData.u_details, photos: newPhotos };
+      }
     }
   }
 
   await UserAPI.updateUser(apiUserData, UserRole.Client);
   queryClient.invalidateQueries({ queryKey: ['user', 'authorized'] });
-  for (const id of deletedFiles) {
-    queryClient.removeQueries({ queryKey: [ 'files', id ] });
-  }
   for (const id of updatedFiles) {
     queryClient.invalidateQueries({ queryKey: [ 'files', id ] });
+  }
+
+  // При изменении чёрного списка нужно обновить списки мастеров и данные всех заказов
+  if (apiUserData.u_details?.blackList) {
+    queryClient.invalidateQueries({ queryKey: [ 'contractors' ] });
+    queryClient.invalidateQueries({ queryKey: [ 'user', userId, 'order' ] });
   }
 }
 
@@ -688,7 +707,7 @@ export function useUpdateUser() {
     mutationFn: (payload: UserUpdatePayload, { client }) => updateUser(client, user.id, payload),
   });
 
-  return objectMapper(mutation, { mutate: null, mutateAsync: null, save: 'mutateAsync' });
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, saveUser: 'mutateAsync' });
 }
 
 /**
@@ -715,7 +734,7 @@ export function useUpdateUserAvatar() {
     mutationFn: (photoFile: File, { client }) => updateUserAvatar(client, user.id, photoFile),
   });
 
-  return objectMapper(mutation, { mutate: null, mutateAsync: null, save: 'mutateAsync' });
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, saveUserAvatar: 'mutateAsync' });
 }
 
 /**
@@ -771,7 +790,7 @@ export function useUpdateUserPassword() {
       updateUserPassword(user.id, oldPassword, newPassword),
   });
 
-  return objectMapper(mutation, { mutate: null, mutateAsync: null, update: 'mutateAsync' });
+  return objectMapper(mutation, { mutate: null, mutateAsync: null, updateUserPassword: 'mutateAsync' });
 }
 
 /**

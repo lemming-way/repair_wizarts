@@ -11,9 +11,9 @@ function UserProfile() {
   const text = useLanguage();
   const queryClient = useQueryClient();
   const { user, isSuccess: isUserLoaded } = useUser();
-  const { save: saveUserProfile, isPending: isSavingUserProfile } = useUpdateUser();
-  const { save: saveUserAvatar, isPending: isSavingUserAvatar } = useUpdateUserAvatar();
-  const { update: updatePassword, isPending: isUpdatingPassword } = useUpdateUserPassword();
+  const { saveUser, isPending: isSavingUserProfile } = useUpdateUser();
+  const { saveUserAvatar, isPending: isSavingUserAvatar } = useUpdateUserAvatar();
+  const { updateUserPassword, isPending: isUpdatingPassword } = useUpdateUserPassword();
 
   const [succeeded, setSucceeded] = useState('');
   const [error, setError] = useState('');
@@ -75,7 +75,7 @@ function UserProfile() {
     setError('');
 
     try {
-      await saveUserProfile(mainForm, { client: queryClient });
+      await saveUser(mainForm, { client: queryClient });
       setSucceeded('profile');
     } catch (err) {
       setError(err.message || text('An error occurred while saving profile data'));
@@ -93,7 +93,7 @@ function UserProfile() {
     }
 
     try {
-      await updatePassword(
+      await updateUserPassword(
         { oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword },
         { client: queryClient }
       );

@@ -27,7 +27,7 @@ function ContractorSettings() {
   const { categories, subcategories, products } = useProducts();
   const { cities } = useCities();
   const { user } = useUser();
-  const { save : saveUpdates } = useUpdateUser();
+  const { saveUser } = useUpdateUser();
   const { setContractorActive } = useSetContractorActive();
 
   const [suceeded, setSuceeded] = useState(false);
@@ -190,7 +190,7 @@ function ContractorSettings() {
     };
 
     try {
-      await saveUpdates(payload);
+      await saveUser(payload);
       if (isActive !== user.active) {
         await setContractorActive(isActive);
       }

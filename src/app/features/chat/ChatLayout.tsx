@@ -17,13 +17,15 @@ import {
   useConfirmOrderCompletion,
   useOpenOrderDispute,
 } from 'app/state/order';
-import { useUser, UserRole } from 'app/state/user';
+import { UserRole, useUser, useUsersByIds, useUpdateUser } from 'app/state/user';
 import { MessageFormat, useChatsByIds, useSetChatRead, useSetChatOpen, useSendMessage, useUpdateMessage, useDeleteMessage } from 'app/state/chat';
 import { ChatList } from './ChatList';
 import { OrderChatControl } from './OrderChatControl';
 import { MessageFeed } from './MessageFeed';
 import { ChatInput } from './ChatInput';
 import { DisputeModal } from './DisputeModal';
+import { BlockUserModal } from './BlockUserModal';
+import { BlackListModal } from './BlackListModal';
 import styles from './Chat.module.css';
 
 export const ChatLayout: FC = () => {
@@ -40,21 +42,26 @@ export const ChatLayout: FC = () => {
   })(useParams<{ orderId: string, contractorId: string }>());
 
   // Получаем детали текущего заказа
-  const { orders, isLoading: isLoadingOrder } = useOrdersByIds(
+  const { orders: [currentOrder], isLoading: isLoadingOrder } = useOrdersByIds(
     orderId && contractorId ? [orderId] : []
   );
-  const currentOrder = orders[0];
 
   const isChatOpen = !!orderId && !!contractorId && !!currentOrder;
   const [isChatListVisible, setIsChatListVisible] = useState(!isChatOpen); // Скрыть список по умолчанию, если чат открыт
 
+  const chatPartnerId = user.role === UserRole.Client ? contractorId : currentOrder?.clientId;
+  const { users: [chatPartner] } = useUsersByIds(chatPartnerId ? [chatPartnerId] : []);
+  const isBlacklisted = user.blackList?.includes(chatPartner?.id ?? 0) || chatPartner?.blackList?.includes(user.id);
+
   const chatList = isChatOpen ? [ `${orderId}:${contractorId}`] : [];
-  const { chats } = useChatsByIds(chatList);
-  const currentChat = chats[0];
+  const { chats: [currentChat] } = useChatsByIds(chatList);
 
   // Состояния для модальных окон
   const [isVisibleDisputeModal, setIsVisibleDisputeModal] = useState(false);
   const [disputeOrderId, setDisputeOrderId] = useState<number | null>(null);
+  const [isBlockUserVisible, setIsBlockUserVisible] = useState(false);
+  const [blockUserId, setBlockUserId] = useState<number | null>(null);
+  const [isBlackListVisible, setIsBlackListVisible] = useState(false);
 
   // Мутации для действий с чатом
   const { setChatRead } = useSetChatRead();
@@ -79,6 +86,8 @@ export const ChatLayout: FC = () => {
     };
   }, []);
 
+  const { saveUser } = useUpdateUser();
+
   // Мутации для действий с заказом
   const { cancelOrder } = useCancelOrder();
   const { requestCancelOrder } = useRequestCancelOrder();
@@ -91,7 +100,44 @@ export const ChatLayout: FC = () => {
   const { confirmOrderCompletion } = useConfirmOrderCompletion();
   const { openOrderDispute } = useOpenOrderDispute();
 
+  // Колбэки для чёрного списка
+  const handleBlockUser = async () => {
+    if (!user.blackList || !blockUserId || user.blackList.includes(blockUserId)) return true;
+    try {
+      const newBl = [...user.blackList, blockUserId];
+      await saveUser({ blackList: newBl });
+      setBlockUserId(null);
+      return true;
+    }
+    catch (e) {
+      console.log('Не удалось сохранить чёрный список');
+    }
+    return false;
+  };
+
+  const handleUnblockUser = async (id: number) => {
+    if (!user.blackList || !id || !user.blackList.includes(id)) return true;
+    try {
+      const newBl = user.blackList.filter(uid => uid !== id);
+      await saveUser({ blackList: newBl });
+      return true;
+    }
+    catch (e) {
+      console.log('Не удалось сохранить чёрный список');
+    }
+    return false;
+  };
+
   // Колбэки для OrderChatControl
+  const handleBlockUserClick = (userId: number) => {
+    setBlockUserId(userId);
+    setIsBlockUserVisible(true);
+  }
+
+  const handleBlackListOpen = () => {
+    setIsBlackListVisible(true);
+  }
+
   const handleCancelOrder = useCallback(async (order: Order, reason: string) => {
     try {
       await cancelOrder({ orderId: order.id, reason });
@@ -265,8 +311,12 @@ export const ChatLayout: FC = () => {
     }
   }, [sendMessage]);
 
+  const handleReplyTo = (id: number) => {
+    if (!isBlacklisted) setReplyTo(id);
+  };
+
   const handleEditMessage = (id: number) => {
-    setEditMessageID(id);
+    if (!isBlacklisted) setEditMessageID(id);
   };
 
   const cancelEditMessage = () => {
@@ -274,6 +324,7 @@ export const ChatLayout: FC = () => {
   };
 
   const handleDeleteMessage = async (id: number) => {
+    if (isBlacklisted) return;
     // todo: сделать здесь нормальный UI
     if (!window.confirm(text('Delete message for everyone?'))) return;
     try {
@@ -311,6 +362,22 @@ export const ChatLayout: FC = () => {
 
   return (
     <section className={user.role === UserRole.Contractor ? `${styles.container} ${styles.contractor}` : styles.container}>
+      {blockUserId && isBlockUserVisible &&
+        <BlockUserModal
+          currentUser={user}
+          targetUserId={blockUserId}
+          setModalVisible={setIsBlockUserVisible}
+          onUserBlocked={handleBlockUser}
+        />
+      }
+      {isBlackListVisible &&
+        <BlackListModal
+          currentUser={user}
+          onUnblock={handleUnblockUser}
+          setModalVisible={setIsBlackListVisible}
+        />
+      }
+
       {isVisibleDisputeModal && disputeOrderId && (
         <DisputeModal
           id={disputeOrderId}
@@ -363,8 +430,12 @@ export const ChatLayout: FC = () => {
                 chatContractorId={contractorId}
                 isChatUnread={currentChat?.unreadCount > 0}
                 currentUser={user}
+                chatPartner={chatPartner}
+                isBlacklisted={isBlacklisted}
                 onSetChatRead={handleReadChat}
                 onCloseChat={handleCloseChat}
+                onBlockUser={handleBlockUserClick}
+                onBlackList={handleBlackListOpen}
                 onCancelOrder={handleCancelOrder}
                 onRequestCancelOrder={handleRequestCancelOrder}
                 onRevokeCancelOrder={handleRevokeCancelOrder}
@@ -379,7 +450,8 @@ export const ChatLayout: FC = () => {
               <MessageFeed
                 currentUserId={user.id}
                 chat={currentChat}
-                onReply={setReplyTo}
+                isBlacklisted={isBlacklisted}
+                onReply={handleReplyTo}
                 onEdit={handleEditMessage}
                 onDelete={handleDeleteMessage}
               />
@@ -388,6 +460,7 @@ export const ChatLayout: FC = () => {
                 clientId={currentOrder.clientId}
                 contractorId={contractorId}
                 currentUser={user}
+                isBlacklisted={isBlacklisted}
                 onSendMessage={handleSendMessage}
                 onSendAudio={handleSendAudio}
                 onUpdateMessage={handleUpdateMessage}

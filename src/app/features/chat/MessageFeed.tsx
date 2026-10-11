@@ -12,6 +12,7 @@ import styles from './Chat.module.css';
 interface MessageFeedProps {
   currentUserId: number;
   chat?: ChatData;
+  isBlacklisted?: boolean;
   onReply: (message: number) => void;
   onEdit: (message: number) => void;
   onDelete: (message: number) => void;
@@ -23,6 +24,7 @@ const SCROLL_THRESHOLD = 200; // Порог для активации подгр
 export const MessageFeed: FC<MessageFeedProps> = ({
   currentUserId,
   chat,
+  isBlacklisted,
   onReply,
   onEdit,
   onDelete,
@@ -318,6 +320,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
               <ChatMessage
                 message={message}
                 currentUserId={currentUserId}
+                isBlacklisted={isBlacklisted}
                 authorName={userName}
                 authorAvatar={avatar}
                 relatedMessage={message.relatedMessage ? messagesMap.get(message.relatedMessage) : undefined}

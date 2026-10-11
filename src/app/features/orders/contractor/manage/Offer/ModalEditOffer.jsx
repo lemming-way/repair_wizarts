@@ -55,7 +55,7 @@ export default function ModalEditOffer({ orderId, offer, onSuccess, onCancel }) 
         setError(text('Only contractors can make offers.'));
         return;
       }
-
+      
       const parsedPrice = Number(price);
       if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
         setError(text('Please enter a valid price.'));
@@ -86,16 +86,13 @@ export default function ModalEditOffer({ orderId, offer, onSuccess, onCancel }) 
 
       if (isEditing) {
         await updateOffer({ offerId: offer.id, ...payload });
-        console.log('Успешно обновлено предложение!');
       }
       else {
         await createOffer(payload);
-        console.log('Успешно отправлено предложение!');
       }
 
       onSuccess?.();
     } catch (err) {
-      console.error('Ошибка при отправке/обновлении:', err);
       setError(text(err.message || (isEditing ? 'Failed to update offer. Please try again.' : 'Error sending offer')));
     }
   };

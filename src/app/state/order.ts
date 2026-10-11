@@ -20,7 +20,7 @@ import { objectMapper } from 'app/shared/lib/objectMapper';
 import * as OrderAPI from './api/order';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
-import type { ServicesMap, UserProfile } from './user';
+import type { UserProfile } from './user';
 import { UserRole, TimeUnit, useUser, useUsersByIds, getUserById } from './user';
 
 // ==================== Типы данных ====================
@@ -446,8 +446,10 @@ export function useCreateOrder() {
       if (!orderData.contractorId && !(orderData.price! >= 0)) throw new Error('Invalid price.');
 
       if (orderData.contractorId) {
-        const contractorUser = (await getUserById(client, user.id, orderData.contractorId)) as { services?: ServicesMap };
-        if (!contractorUser.services?.[orderData.productId]) throw new Error('Bad contractor');
+        const contractorUser = await getUserById(client, user.id, orderData.contractorId);
+        if (user.blackList?.includes(orderData.contractorId)) throw new Error('Contractor is blacklisted.');
+        if (contractorUser.blackList?.includes(user.id)) throw new Error('User is blacklisted.');
+        if (contractorUser.role !== UserRole.Contractor || !contractorUser.services?.[orderData.productId]) throw new Error('Bad contractor');
         const contractorServices = contractorUser.services[orderData.productId];
         let validServices = 0;
         let totalPrice = 0;
@@ -788,6 +790,11 @@ export function useCreateOffer() {
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('Offer already exists.');
 
+      if (user.blackList?.includes(order.clientId)) throw new Error('Client is blacklisted.');
+      const clientUser = await getUserById(client, user.id, order.clientId);
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (clientUser.blackList?.includes(user.id)) throw new Error('User is blacklisted.');
+
       await OrderAPI.createOffer(orderId, { price, comment, readyInTime: readyIn.value, readyInUnit: readyIn.unit });
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
 
@@ -874,12 +881,18 @@ export function useAcceptOffer() {
       if (!orderId) throw new Error('Order ID not specified.');
       if (!contractorId) throw new Error('Contractor ID not specified.');
 
+      if (user.blackList?.includes(contractorId)) throw new Error('Contractor is blacklisted.');
+      const contractor = await getUserById(client, user.id, contractorId);
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (contractor.blackList?.includes(user.id)) throw new Error('User is blacklisted.');
+
       const order = await client.fetchQuery({
         queryKey: [ 'user', user.id, 'order', orderId ],
         queryFn: getOrderById,
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order || order.clientId !== user.id) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
@@ -929,6 +942,7 @@ export function useRevokeOffer() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.PUBLISHED) throw new Error('Invalid order state.');
       if (!order.contractorOffers.some(offer => offer.contractorId === user.id)) throw new Error('No offer from the contractor.');
@@ -1003,9 +1017,15 @@ export function useAcceptInvoice() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
+
+      if (user.blackList?.includes(order.clientId)) throw new Error('Client is blacklisted.');
+      const clientUser = await getUserById(client, user.id, order.clientId);
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (clientUser.blackList?.includes(user.id)) throw new Error('User is blacklisted.');
 
       await OrderAPI.acceptInvoice(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
@@ -1051,6 +1071,7 @@ export function useRejectInvoice() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.REQUESTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('No invoice for the contractor.');
@@ -1098,6 +1119,7 @@ export function useStartOrderWork() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.APPOINTED) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
@@ -1131,6 +1153,7 @@ export function useFinishOrderWork() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.IN_PROGRESS) throw new Error('Invalid order state.');
       if (order.contractorId !== user.id) throw new Error('User is not the contractor.');
@@ -1166,6 +1189,7 @@ export function useConfirmOrderCompletion() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.FINISHED) throw new Error('Invalid order state.');
       if (order.clientId !== user.id) throw new Error('User is not the customer.');
@@ -1212,6 +1236,7 @@ export function useOpenOrderDispute() {
         staleTime: CONFIG.API?.ordersDataRefetchTime ?? 120000
       });
 
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
       if (!order) throw new Error('Order not found.');
       if (order.status !== OrderStatus.IN_PROGRESS && order.status !== OrderStatus.FINISHED) throw new Error('Invalid order state.');
       if (user.role === UserRole.Client && order.clientId !== user.id) throw new Error('User is not the customer.');

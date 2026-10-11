@@ -42,6 +42,7 @@ const downloadFile = async (file: number | File, fileName: string) => {
 interface ChatMessageProps {
   message: Message;
   currentUserId: number;
+  isBlacklisted?: boolean;
   authorName?: string;
   authorAvatar?: string;
   relatedMessage?: Message;
@@ -54,6 +55,7 @@ interface ChatMessageProps {
 export const ChatMessage: FC<ChatMessageProps> = ({
   message,
   currentUserId,
+  isBlacklisted,
   authorAvatar,
   authorName,
   relatedMessage,
@@ -113,9 +115,9 @@ export const ChatMessage: FC<ChatMessageProps> = ({
           )}
           <div className={styles.message_bubble_content}>
             <div className={styles.message_actions}>
-              <button type="button" onClick={onReply}>{text('Reply')}</button>
-              {isOwnMessage && message.isEditable && <button type="button" onClick={onEdit}>{text('Edit')}</button>}
-              {isOwnMessage && message.isDeletable && <button type="button" onClick={onDelete}>{text('Delete')}</button>}
+              {!isBlacklisted && <button type="button" onClick={onReply}>{text('Reply')}</button>}
+              {isOwnMessage && !isBlacklisted && message.isEditable && <button type="button" onClick={onEdit}>{text('Edit')}</button>}
+              {isOwnMessage && !isBlacklisted && message.isDeletable && <button type="button" onClick={onDelete}>{text('Delete')}</button>}
             </div>
             {!isOwnMessage && (
               <div className={styles.message_author_info}>

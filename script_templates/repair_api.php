@@ -254,15 +254,39 @@ $out = call_user_func(function() {
 
     // Получение списка мастеров по городу и услуге
     case 'getContractorsByProduct':
-      $sql = 'SELECT `id_user` FROM `users` WHERE `id_role`=2 AND `id_city`=:cityId AND `active`>0 AND ' .
-                'JSON_LENGTH(JSON_EXTRACT(`json`,CONCAT(\'$.services."\',:productId,\'"\')))>0 AND ' .
-                '(:isOnline=0 OR `json`->\'$.isOnline\'=TRUE)';
-      return $query($sql, $data, [ 'numeric_fields' => [ 'id_user' ] ]);
+      if ($context['u_role'] === 2) $die(403, 'Wrong user role.');
+      // очистка исходных данных
+      $city = isset($data['cityId']) ? intval($data['cityId']) : 0;
+      if ($city <= 0) $die(400, 'Variable \'cityId\' not set.');
+      $product = isset($data['productId']) ? intval($data['productId']) : 0;
+      if ($product <= 0) $die(400, 'Variable \'productId\' not set.');
+      $is_online = !empty($data['isOnline']);
+
+      $results = $query(
+        'SELECT `c`.`id_user` ' .
+        'FROM `users` `c` ' .
+        ($context['u_id'] ? 'JOIN `users` `u` ON `u`.`id_user`=:user AND `u`.`deleted`=0 ' : '') .
+        'WHERE `c`.`id_role`=2 AND `c`.`deleted`=0 AND `c`.`id_city`=:city AND `c`.`active`>0 '.
+          'AND IF(JSON_VALID(`c`.`json`),' .
+            'JSON_LENGTH(JSON_EXTRACT(`c`.`json`,CONCAT(\'$.services."\',:product,\'"\')))>0 ' .
+            'AND (:isOnline=0 OR `c`.`json`->\'$.isOnline\'=TRUE),' .
+          '0)' .
+          ($context['u_id'] ? ' ' .
+            'AND IF(JSON_VALID(`u`.`json`) AND JSON_VALID(`c`.`json`),' .
+              'JSON_CONTAINS(`u`.`json`,CAST(`c`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+              'AND JSON_CONTAINS(`c`.`json`,CAST(`u`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE,' .
+            '0)'
+            : ''
+          ),
+        [ 'user' => $context['u_id'], 'city' => $city, 'product' => $product, 'isOnline' => $is_online ],
+        [ 'numeric_fields' => [ 'id_user' ] ]
+      );
+      return $results;
 
       // Установить статус верификации водителя без участия администратора
     case 'markUserAsVerified':
-      $sql = 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:u_id';
-      return $query($sql, $data);
+      $sql = 'UPDATE `users` SET `id_verification_status`=2 WHERE `id_user`=:user';
+      return $query($sql, [ 'user' => $context['u_id'] ]);
 
     // ================================================
     //                  Поездки/заказы
@@ -270,51 +294,89 @@ $out = call_user_func(function() {
 
     // Получить список заказов по заданным параметрам
     case 'getOrderIds':
-      $sql = 'SELECT `o`.`id_order` ' .
-              ($context['u_role'] === 2 ?
-                'FROM (' .
-                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
-                  'FROM `order_driver` `d` ' .
-                  'JOIN `order` `o` ON `o`.`id_order`=`d`.`id_order` ' .
-                  'WHERE `d`.`not_deleted`=1 AND `d`.`id_user`=:u_id AND `d`.`id_order_driver_status` IN(3,4,5,6) ' .
-                  'UNION ' .
-                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
-                  'FROM `order_driver_select` `ds` ' .
-                  'JOIN `order` `o` ON `o`.`id_order`=`ds`.`id_order` ' .
-                  'WHERE `ds`.`id_user`=:u_id AND `o`.`only_offer`>0 ' .
-                  'UNION ' .
-                  'SELECT `o`.`id_order`,`o`.`only_offer`,`o`.`id_order_status`,`o`.`create_datetime` ' .
-                  'FROM `users` `u` ' .
-                  'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
-                  'WHERE `u`.`id_user`=:u_id '.
-                    'AND `o`.`id_order_status`=1 ' .
-                    'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
-                    'AND JSON_CONTAINS_PATH(' .
-                      'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
-                      '\'one\','.
-                      'CONCAT(' .
-                        '\'$.services."\',' .
-                        'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
-                        '\'"\'' .
-                      ')' .
-                    ')' .
-                ') `o` '
-              :
-                'FROM `order` `o` '
-              ) .
-              'WHERE ' .
-                '(' .
-                  '((:flags & 1) AND `o`.`only_offer`=0) ' .
-                  'OR ((:flags & 2) AND `o`.`only_offer`>0)' .
-                ')' .
+      if ($context['u_id'] <= 0) $die(403, 'Unauthorized.');
+      $flags = isset($data['flags']) ? intval($data['flags']) : 0;
+      if ($flags < 0 || ($flags & 3) === 0 || ($flags & 28) === 0) $die(400, 'Invalid flags.');
+      $ostates = [];
+      if ($flags & 4) {
+        $ostates[] = 1;
+        $ostates[] = 6;
+      }
+      if ($flags & 8) {
+        $ostates[] = 2;
+        $ostates[] = 5;
+      }
+      if ($flags & 16) {
+        $ostates[] = 3;
+        $ostates[] = 4;
+      }
+
+      $results = $query(
+        'SELECT `o`.`id_order` ' .
+        ($context['u_role'] === 2 ?   // Для мастера
+          'FROM (' .
+              // Заказы, принятые в работу
+              'SELECT `o`.`id_order`,`o`.`create_datetime` ' .
+              'FROM `order_driver` `d` ' .
+              'JOIN `order` `o` ON `o`.`id_order`=`d`.`id_order` ' .
+              'WHERE `d`.`not_deleted`=1 AND `d`.`id_user`=:user ' .
                 'AND (' .
-                  '((:flags & 4) AND (`o`.`id_order_status`=1 OR `o`.`id_order_status`=6)) ' .
-                  'OR ((:flags & 8) AND `o`.`id_order_status`=2 OR `o`.`id_order_status`=5) ' .
-                  'OR ((:flags & 16) AND (`o`.`id_order_status`=3 OR `o`.`id_order_status`=4))' .
-                ')' .
-                ($context['u_role'] === 2 ? '' : 'AND `o`.`client`=:u_id ') .
-              'ORDER BY `o`.`create_datetime` DESC';
-      return $query($sql, $data, [ 'numeric_fields' => [ 'id_order' ] ]);
+                  '(`d`.`id_order_driver_status` IN(3,4,5,6) AND `o`.`id_order_status` IN(:ostates))' .
+                  (($flags & 16) ? ' OR `d`.`id_order_driver_status`=2' : '') .   // Отменённые для данного мастера
+                ') ' .
+                'AND `o`.`only_offer`' . (
+                  ($flags & 3) === 1 ? '=0' :(
+                  ($flags & 3) === 2 ? '>0' :
+                  '>=0'
+                )) .
+            (($flags & 6) === 6 ?   // Здесь только прямые заказы мастеру, которые ещё не взяты в работу
+              ' UNION ' .
+                'SELECT `o`.`id_order`,`o`.`create_datetime` ' .
+                'FROM `order_driver_select` `ds` ' .
+                'JOIN `order` `o` ON `o`.`id_order`=`ds`.`id_order` ' .
+                'WHERE `ds`.`id_user`=:user AND `o`.`only_offer`>0 ' .
+                  'AND `o`.`id_order_status`=6'
+              : ''
+            ) .
+            (($flags & 5) === 5 ?   // Здесь только новые заказы с биржи
+              ' UNION ' .
+                'SELECT `o`.`id_order`,`o`.`create_datetime` ' .
+                'FROM `users` `u` ' .
+                'JOIN `order` `o` ON `o`.`city_from`=`u`.`id_city` ' .
+                'JOIN `users` `c` ON `c`.`id_user`=`o`.`client` AND `c`.`deleted`=0 ' .
+                'WHERE `u`.`id_user`=:user ' .
+                  'AND `u`.`deleted`=0 '.
+                  'AND `o`.`id_order_status`=1 ' .
+                  'AND `o`.`only_offer`=0 ' .
+                  'AND IF(JSON_VALID(`o`.`options`),' .
+                    '`o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
+                    'AND IF(JSON_VALID(`u`.`json`),' .
+                      'JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
+                      'AND IF(JSON_VALID(`c`.`json`),' .
+                        'JSON_CONTAINS(`u`.`json`,CAST(`c`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                        'AND JSON_CONTAINS(`c`.`json`,CAST(`u`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE,' .
+                      '0),' .
+                    '0),' .
+                  '0)'
+              : ''
+            ) .
+          ') `o` '
+        :
+          'FROM `order` `o` ' .    // Для клиента
+          'WHERE `o`.`client`=:user ' .
+            'AND `o`.`id_order_status` IN(:ostates)' .
+            'AND `o`.`only_offer`' . (
+              ($flags & 3) === 1 ? '=0 ' :(
+              ($flags & 3) === 2 ? '>0 ' :
+              '>=0 '
+            ))
+        ) .
+        'ORDER BY `o`.`create_datetime` DESC',
+        [ 'user' => $context['u_id'], 'ostates' => $ostates ],
+        [ 'numeric_fields' => [ 'id_order' ] ]
+      );
+
+      return $results;
 
     // Получить данные заказов по их ID
     case 'getOrdersByIds':
@@ -352,7 +414,7 @@ $out = call_user_func(function() {
                     '\'ready_in\',`d`.`options`->\'$.readyIn\'' .
                   '),NULL) AS `contractor_offer`,' .
                   'IFNULL(`dc`.`count`,0) AS `offers_count`,' .
-                  '`d`.`id_order_driver_status`=2 AS `contractor_canceled` '
+                  '`d`.`id_order_driver_status`=2 AS `contractor_canceled`,'
                 :
                   '`d`.`drivers` AS `contractor_offers`,'
                 ) .
@@ -365,22 +427,21 @@ $out = call_user_func(function() {
                 '`o`.`options`->>\'$.cancelRequestedBy\' AS `cancel_requested_by` ' .
               'FROM `order` `o` ' .
               ($context['u_role'] === 2 ?
-                'LEFT JOIN `order_driver_select` `ds` ' .
-                  'ON `o`.`only_offer`>0 AND `ds`.`id_order`=`o`.`id_order` AND `ds`.`id_user`=:u_id '
-              :
-                'LEFT JOIN LATERAL (' .
-                  'SELECT `ds`.`id_user`,0 AS `cancel` ' .
-                  'FROM `order_driver_select` `ds` ' .
-                  'WHERE `ds`.`id_order`=`o`.`id_order` AND `ds`.`cancel`=0 ' .
-                  'ORDER BY `ds`.`create_datetime` DESC ' .
-                  'LIMIT 1' .
-                ') `ds` ON `o`.`only_offer`>0 '
+                'JOIN LATERAL (SELECT * FROM `users` WHERE `id_user`=`o`.`client` AND `deleted`=0 AND JSON_VALID(`json`)) `uc` '
+                :
+                ''
               ) .
+              'JOIN (SELECT * FROM `users` WHERE `id_user`=:u_id AND `deleted`=0 AND JSON_VALID(`json`)) `u` ' .
               ($context['u_role'] === 2 ?
                 'JOIN LATERAL (' .
                   'SELECT COUNT(1) AS `count` ' .
                   'FROM `order_driver` `d` ' .
-                  'WHERE `d`.`id_order`=`o`.`id_order` AND `d`.`id_order_driver_status` IN(1,3,4,5,6) AND `d`.`not_deleted`=1' .
+                  'JOIN `users` `du` ON `du`.`id_user`=`d`.`id_user` AND `du`.`deleted`=0 ' .
+                  'WHERE `d`.`id_order`=`o`.`id_order` AND `d`.`id_order_driver_status` IN(1,3,4,5,6) AND `d`.`not_deleted`=1 ' .
+                    'AND JSON_CONTAINS(`uc`.`json`,CAST(`d`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                    'AND IF(JSON_VALID(`du`.`json`),' .
+                      'JSON_CONTAINS(`du`.`json`,CAST(`o`.`client` AS JSON),\'$.blackList\') IS NOT TRUE,' .
+                    '0)' .
                 ') `dc` ' .
                 'LEFT JOIN `order_driver` `d` ' .
                   'ON `d`.`id_order`=`o`.`id_order` ' .
@@ -400,31 +461,43 @@ $out = call_user_func(function() {
                       ')' .
                     ') AS `drivers` ' .
                   'FROM `order_driver` `d` ' .
+                  'JOIN `users` `du` ON `du`.`id_user`=`d`.`id_user` AND `du`.`deleted`=0 ' .
                   'WHERE `d`.`id_order`=`o`.`id_order` AND `d`.`id_order_driver_status` IN(1,3,4,5,6) AND `d`.`not_deleted`=1 ' .
+                    'AND JSON_CONTAINS(`u`.`json`,CAST(`d`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                    'AND IF(JSON_VALID(`du`.`json`),' .
+                      'JSON_CONTAINS(`du`.`json`,CAST(:u_id AS JSON),\'$.blackList\') IS NOT TRUE,' .
+                    '0)' .
                 ') `d` ON TRUE '
+              ) .
+              ($context['u_role'] === 2 ?
+                'LEFT JOIN `order_driver_select` `ds` ' .
+                  'ON `o`.`only_offer`>0 AND `ds`.`id_order`=`o`.`id_order` AND `ds`.`id_user`=:u_id '
+              :
+                'LEFT JOIN LATERAL (' .
+                  'SELECT `ds`.`id_user`,0 AS `cancel` ' .
+                  'FROM `order_driver_select` `ds` ' .
+                  'WHERE `ds`.`id_order`=`o`.`id_order` AND `ds`.`cancel`=0 ' .
+                  'ORDER BY `ds`.`create_datetime` DESC ' .
+                  'LIMIT 1' .
+                ') `ds` ON `o`.`only_offer`>0 '
               ) .
               'LEFT JOIN `order_driver` `c` ' .
                 'ON `o`.`id_order_status` IN(2,3,4,5) ' .
                 'AND `c`.`id_order`=`o`.`id_order` ' .
                 'AND `c`.`not_deleted`=1 ' .
                 'AND `c`.`id_order_driver_status` IN(3,4,5,6) ' .
-              ($context['u_role'] === 2 ? 'LEFT JOIN `users` `u` ON `u`.`id_user`=:u_id ' : '') .
               'WHERE `o`.`id_order` IN(:order_ids) ' .
                 ($context['u_role'] === 2 ?
                   'AND (' .
                     '(' .
                       '`o`.`id_order_status`=1 ' .
                       'AND `u`.`id_city`=`o`.`city_from` ' .
-                      'AND JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')) REGEXP \'^[0-9]+$\' ' .
-                      'AND JSON_CONTAINS_PATH(' .
-                        'IF(JSON_VALID(`u`.`json`),`u`.`json`,NULL),' .
-                        '\'one\','.
-                        'CONCAT(' .
-                          '\'$.services."\',' .
-                          'JSON_UNQUOTE(JSON_EXTRACT(IF(JSON_VALID(`o`.`options`),`o`.`options`,NULL),\'$.product\')),' .
-                          '\'"\'' .
-                        ')' .
-                      ')' .
+                      'AND IF (JSON_VALID(`o`.`options`),' .
+                        '`o`.`options`->>\'$.product\' REGEXP \'^[0-9]+$\' ' .
+                        'AND JSON_CONTAINS_PATH(`u`.`json`,\'one\',CONCAT(\'$.services."\',`o`.`options`->>\'$.product\',\'"\')) ' .
+                        'AND JSON_CONTAINS(`u`.`json`,CAST(`uc`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+                        'AND JSON_CONTAINS(`uc`.`json`,CAST(`u`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE,' .
+                      '0)' .
                     ')' .
                     'OR `ds`.`id_order` IS NOT NULL ' .
                     'OR `d`.`id_order` IS NOT NULL' .
@@ -443,7 +516,6 @@ $out = call_user_func(function() {
       return $query($sql, $data, $options);
 
     // Создать новый заказ
-    // todo: для прямых заказов фильтровать пустые услуги
     case 'createOrder':
       if ($context['u_id'] <= 0) $die(403, 'Unauthorized.');
       if ($context['u_role'] !== 1) $die(403, 'Wrong user role.');
@@ -452,39 +524,45 @@ $out = call_user_func(function() {
       if (isset($data['contractorId'])) {
         $var_names[] = 'services';
       }
-      else {
-        $var_names[] = 'price';
-      }
       foreach ($var_names as $name) {
         if (!isset($data[$name])) $die(400, "Variable '$name' not set.");
       }
       $city_id = intval($data['cityId']);
       $address = trim(strval($data['address']));
       $product_id = intval($data['productId']);
+      $description = trim(strval($data['description']));
       $price = round(floatval($data['price']), 2);
       if (isset($data['contractorId'])) {
         $is_direct = true;
         $contractor_id = intval($data['contractorId']);
         if ($contractor_id <= 0) $die(400, 'Bad contractor ID.');
-        if (!is_array($data['services'])) $die(400, 'Bad services data.');
+        if (empty($data['services']) || !is_array($data['services'])) $die(400, 'Bad services data.');
         $result = $query_one(
-          'SELECT `json`->>\'$.services\' `services` FROM `users` WHERE `id_user`=:user AND `id_city`=:city AND `deleted`=0',
-          [ 'user' => $contractor_id, 'city' => $city_id ],
-          [ 'json_fields' => ['services'] ]
+          'SELECT `co`.`json`->>\'$.services\' `services`,' .
+            'JSON_CONTAINS(`co`.`json`,CAST(`cl`.`id_user` AS JSON),\'$.blackList\') `bl_client`,' .
+            'JSON_CONTAINS(`cl`.`json`,CAST(`co`.`id_user` AS JSON),\'$.blackList\') `bl_contractor` ' .
+          'FROM `users` `cl` JOIN `users` `co` ' .
+          'WHERE `cl`.`id_user`=:user AND `cl`.`deleted`=0 AND JSON_VALID(`cl`.`json`) '.
+            'AND `co`.`id_user`=:contractor AND `co`.`deleted`=0 AND JSON_VALID(`co`.`json`) ' .
+            'AND `co`.`id_city`=:city ',
+          [ 'user' => $context['u_id'], 'contractor' => $contractor_id, 'city' => $city_id ],
+          [ 'json_fields' => ['services'], 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
         );
-        if ($result === null) $die(400, 'Contractor not found.');
-        if (!$result || !is_array($result)) $die(400, 'Bad contractor.');
-        $products = $result;
+        if ($result === null) $die(400, 'User not found.');
+        if ($result['bl_client']) $die(400, 'User is blacklisted.');
+        if ($result['bl_contractor']) $die(400, 'Contractor is blacklisted.');
+        $products = $result['services'];
+        if (!$products || !is_array($products)) $die(400, 'Bad contractor.');
         if (!isset($products[$product_id])) $die(400, 'Contractor does not provide this service.');
         $contractor_services = $products[$product_id];
         $service_names = [];
         $actual_price = 0;
         foreach ($data['services'] as $service) {
           $srv_name = trim(strval($service));
-          if (!$srv_name) $die(400, 'Bad services data.');
+          if (!$srv_name || !empty($service_names[$srv_name])) $die(400, 'Bad services data.');
           foreach ($contractor_services as $service_data) {
             if (!empty($service_data['service']) && $service_data['service'] === $srv_name) {
-              $service_names[] = $srv_name;
+              $service_names[$srv_name] = true;
               $srv_price = isset($service_data['price']) ? floatval($service_data['price']) : 0;
               $actual_price = round($actual_price + $srv_price, 2);
               continue 2;
@@ -498,7 +576,6 @@ $out = call_user_func(function() {
         $is_direct = false;
       }
       if (!$address || $product_id <= 0 || $price <= 0) $die(400, 'Wrong data.');
-      $description = trim(strval($data['description']));
       $order_data = [
         'client' => $context['u_id'],
         'city' => $city_id,
@@ -565,20 +642,28 @@ $out = call_user_func(function() {
       if ($is_direct) {
         // Повторная проверка после начала транзакции - теоретически что-нибудь могло измениться
         $result = $query_one(
-          'SELECT `name`,`family`,`middle`,`json`->>\'$.services\' `services` FROM `users` ' .
-          'WHERE `id_user`=:user AND `id_city`=:city AND `deleted`=0 FOR SHARE',
-          [ 'user' => $contractor_id, 'city' => $city_id ],
-          [ 'json_fields' => ['services'] ]
+          'SELECT `co`.`name`,`co`.`family`,`co`.`middle`,`co`.`json`->>\'$.services\' `services`,' .
+            'JSON_CONTAINS(`co`.`json`,CAST(`cl`.`id_user` AS JSON),\'$.blackList\') `bl_client`,' .
+            'JSON_CONTAINS(`cl`.`json`,CAST(`co`.`id_user` AS JSON),\'$.blackList\') `bl_contractor` ' .
+          'FROM `users` `cl` JOIN `users` `co` ' .
+          'WHERE `cl`.`id_user`=:user AND `cl`.`deleted`=0 AND JSON_VALID(`cl`.`json`) ' .
+            'AND `co`.`id_user`=:contractor AND `co`.`deleted`=0 AND JSON_VALID(`co`.`json`) ' .
+            'AND `co`.`id_city`=:city ' .
+          'FOR SHARE',
+          [ 'user' => $context['u_id'], 'contractor' => $contractor_id, 'city' => $city_id ],
+          [ 'json_fields' => ['services'], 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
         );
-        if ($result === null) $die(400, 'Contractor not found.');
-        if (!$result || !is_array($result)) $die(400, 'Bad contractor.');
+        if ($result === null) $die(400, 'User not found.');
+        if ($result['bl_client']) $die(400, 'User is blacklisted.');
+        if ($result['bl_contractor']) $die(400, 'Contractor is blacklisted.');
+        $products = $result['services'];
+        if (!$products || !is_array($products)) $die(400, 'Bad contractor.');
         $username_contractor = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
-        $products = $result;
         if (!isset($products[$product_id])) $die(400, 'Contractor does not provide this service.');
         $contractor_services = $products[$product_id];
         $services = [];
         $actual_price = 0;
-        foreach ($service_names as $srv_name) {
+        foreach (array_keys($service_names) as $srv_name) {
           foreach ($contractor_services as $service_data) {
             if (!empty($service_data['service']) && $service_data['service'] === $srv_name) {
               $srv_price = isset($service_data['price']) ? floatval($service_data['price']) : 0;
@@ -1380,21 +1465,25 @@ $out = call_user_func(function() {
 
       $query_transaction();
       $result = $query_one(
-        'SELECT `name`,`family`,`middle` FROM `users` WHERE `id_user`=:user AND `deleted`=0 FOR SHARE',
-        [ 'user' => $context['u_id'] ]
-      );
-      if ($result === null) $die(400, 'User not found.');
-      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
-
-      $result = $query_one(
-        'SELECT ROUND(`o`.`sum`,2) `sum` FROM `order` `o` JOIN `order_driver_select` `s` ON `s`.`id_order`=`o`.`id_order` ' .
+        'SELECT `co`.`id_user` `contractor`,`cl`.`id_user` `client`,' .
+          '`co`.`name`,`co`.`family`,`co`.`middle`,ROUND(`o`.`sum`,2) `sum`,' .
+          'IF(`co`.`id_user` AND `cl`.`id_user`,JSON_CONTAINS(`co`.`json`,CAST(`cl`.`id_user` AS JSON),\'$.blackList\'),0) `bl_client`,' .
+          'IF(`co`.`id_user` AND `cl`.`id_user`,JSON_CONTAINS(`cl`.`json`,CAST(`co`.`id_user` AS JSON),\'$.blackList\'),0) `bl_contractor` ' .
+        'FROM `order` `o` ' .
+        'JOIN `order_driver_select` `s` ON `s`.`id_order`=`o`.`id_order` ' .
+        'LEFT JOIN `users` `co` ON `co`.`id_user`=:contractor AND `co`.`deleted`=0  AND JSON_VALID(`co`.`json`) ' .
+        'LEFT JOIN `users` `cl` ON `cl`.`id_user`=`o`.`client` AND `cl`.`deleted`=0  AND JSON_VALID(`cl`.`json`) ' .
         'WHERE `o`.`id_order`=:order AND `only_offer`>0 AND `id_order_status`=6 AND `s`.`id_user`=:contractor AND `cancel`=0 ' .
-        'FOR UPDATE OF `o` FOR SHARE OF `s`',
+        'FOR UPDATE OF `o` FOR SHARE OF `s`,`co`,`cl`',
         [ 'order' => $order_id, 'contractor' => $context['u_id'] ],
-        [ 'numeric_fields' => ['sum'] ]
+        [ 'numeric_fields' => ['contractor', 'client', 'sum', 'bl_client', 'bl_contractor'] ]
       );
       if ($result === null) $die(400, 'Order not found.');
-      $price = $result;
+      if (!$result['contractor'] || !$result['client']) $die(400, 'User not found.');
+      if ($result['bl_client']) $die(400, 'Client is blacklisted.');
+      if ($result['bl_contractor']) $die(400, 'User is blacklisted.');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
+      $price = $result['sum'];
 
       // Получим ID машины или создадим новую
       // Примечание: НЕ использовать в этом запросе FOR SHARE/FOR UPDATE. Мы уже взяли блокировку GET_LOCK
@@ -1512,14 +1601,24 @@ $out = call_user_func(function() {
       $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
 
       $result = $query_one(
-        'SELECT `id_order_driver_status`,`not_deleted` FROM `order` `o` ' .
+        'SELECT `co`.`id_user` `contractor`,`cl`.`id_user` `client`,' .
+          '`co`.`name`,`co`.`family`,`co`.`middle`,`id_order_driver_status`,`not_deleted`,' .
+          'IF(`co`.`id_user` AND `cl`.`id_user`,JSON_CONTAINS(`co`.`json`,CAST(`cl`.`id_user` AS JSON),\'$.blackList\'),0) `bl_client`,' .
+          'IF(`co`.`id_user` AND `cl`.`id_user`,JSON_CONTAINS(`cl`.`json`,CAST(`co`.`id_user` AS JSON),\'$.blackList\'),0) `bl_contractor` ' .
+        'FROM `order` `o` ' .
         'LEFT JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` AND `d`.`id_user`=:contractor ' .
+        'LEFT JOIN `users` `co` ON `co`.`id_user`=:contractor AND `co`.`deleted`=0 AND JSON_VALID(`co`.`json`) ' .
+        'LEFT JOIN `users` `cl` ON `cl`.`id_user`=`o`.`client` AND `cl`.`deleted`=0 AND JSON_VALID(`cl`.`json`) ' .
         'WHERE `o`.`id_order`=:order AND `only_offer`=0 AND `id_order_status`=1 ' .
-        'FOR UPDATE',
+        'FOR UPDATE OF `o`,`d` FOR SHARE OF `co`,`cl`',
         [ 'order' => $order_id, 'contractor' => $context['u_id'] ],
-        [ 'numeric_fields' => ['id_order_driver_status', 'not_deleted'] ]
+        [ 'numeric_fields' => ['contractor', 'client', 'id_order_driver_status', 'not_deleted', 'bl_client', 'bl_contractor'] ]
       );
       if ($result === null) $die(400, 'Order not found.');
+      if (!$result['contractor'] || !$result['client']) $die(400, 'User not found.');
+      if ($result['bl_client']) $die(400, 'Client is blacklisted.');
+      if ($result['bl_contractor']) $die(400, 'User is blacklisted.');
+      $username = join(' ', array_filter(array_map('trim', [ $result['name'], $result['middle'], $result['family'] ]), 'strlen'));
 
       if ($result['id_order_driver_status'] === null) {
         // Ещё нет предложения от этого мастера
@@ -1726,19 +1825,23 @@ $out = call_user_func(function() {
       if ($contractor_id <= 0) $die(400, "Variable 'contractor' not set.");
 
       $query_transaction();
-      $result = $query(
-        'SELECT `id_user`,`name`,`family`,`middle` FROM `users` WHERE `id_user` IN(:client,:contractor) AND `deleted`=0 FOR SHARE',
+      $result = $query_one(
+        'SELECT `cl`.`name` `cl_name`,`cl`.`family` `cl_fam`,`cl`.`middle` `cl_mid`,' .
+          '`co`.`name` `co_name`,`co`.`family` `co_fam`,`co`.`middle` `co_mid`,' .
+          'JSON_CONTAINS(`co`.`json`,CAST(`cl`.`id_user` AS JSON),\'$.blackList\') `bl_client`,' .
+          'JSON_CONTAINS(`cl`.`json`,CAST(`co`.`id_user` AS JSON),\'$.blackList\') `bl_contractor` ' .
+        'FROM `users` `co` ' .
+        'JOIN `users` `cl` ON `cl`.`id_user`=:client AND `cl`.`deleted`=0 AND JSON_VALID(`cl`.`json`) ' .
+        'WHERE `co`.`id_user`=:contractor AND `co`.`deleted`=0 AND JSON_VALID(`co`.`json`) ' .
+        'FOR SHARE',
         [ 'client' => $context['u_id'], 'contractor' => $contractor_id ],
-        [ 'numeric_fields' => ['id_user'] ]
+        [ 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
       );
       if (!$result) $die(400, 'User not found.');
-      foreach ($result as $user) {
-        $namestr = join(' ', array_filter(array_map('trim', [ $user['name'], $user['middle'], $user['family'] ]), 'strlen'));
-        if ($user['id_user'] === $context['u_id']) $username = $namestr;
-        else $username_contractor = $namestr;
-      }
-      if (!isset($username)) $die(400, 'User not found.');
-      if (!isset($username_contractor)) $die(400, 'User not found.');
+      if ($result['bl_client']) $die(400, 'User is blacklisted.');
+      if ($result['bl_contractor']) $die(400, 'Contractor is blacklisted.');
+      $username = join(' ', array_filter(array_map('trim', [ $result['cl_name'], $result['cl_mid'], $result['cl_fam'] ]), 'strlen'));
+      $username_contractor = join(' ', array_filter(array_map('trim', [ $result['co_name'], $result['co_mid'], $result['co_fam'] ]), 'strlen'));
 
       $ret = $query(
         'UPDATE `order` `o` JOIN `order_driver` `d` ON `d`.`id_order`=`o`.`id_order` ' .
@@ -2176,7 +2279,7 @@ $out = call_user_func(function() {
     // Пометить сообщения прочитанными
     case 'markMessagesAsRead':
       $data['rtype'] = $chat_recipient_type;
-      $data['types'] = [ $message_regular, $message_system, $message_audio, $message_file ];
+      $data['types'] = [ $message_regular, $message_system, $message_audio, $message_file, $message_dispute ];
       $sql = 'INSERT IGNORE INTO `messages_read` ' .
                 'SELECT `m`.`id_message`,' .
                   ':u_id AS `id_user`,' .
@@ -2303,8 +2406,8 @@ $out = call_user_func(function() {
             ')' .
           ') ' .
           ($context['u_role'] === 1 ? 'AND `u1`.`id_user`=:user' : ''),
-          [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
-          [ 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
+        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
+        [ 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
       );
       if (!$result) $die(400, 'Invalid chat ID.');
       if ($context['u_role'] === 1 && $result['bl_client']) $die(400, 'User is blacklisted.');
@@ -2361,7 +2464,9 @@ $out = call_user_func(function() {
       // Теперь открываем транзакцию
       $query_transaction();
       $result = $query_one(
-        'SELECT 1 ' .
+        'SELECT ' .
+          'JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') AS `bl_client`,' .
+          'JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') AS `bl_contractor` ' .
         'FROM `order` `o` ' .
         'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
         'JOIN `users` `u2` ' .
@@ -2369,8 +2474,6 @@ $out = call_user_func(function() {
           'AND `u2`.`id_user`=:contractor ' .
           'AND JSON_VALID(`u1`.`json`) ' .
           'AND JSON_VALID(`u2`.`json`) ' .
-          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
           'AND (' .
             'EXISTS(' .
               'SELECT 1 FROM `order_driver` `d` ' .
@@ -2386,9 +2489,14 @@ $out = call_user_func(function() {
           ') ' .
           ($context['u_role'] === 1 ? 'AND `u1`.`id_user`=:user ' : '') .
         'FOR SHARE',
-        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ]
+        [ 'user' => $context['u_id'], 'order' => $order_id, 'contractor' => $contractor_id ],
+        [ 'numeric_fields' => ['bl_client', 'bl_contractor'] ]
       );
       if (!$result) $die(400, 'Invalid chat ID.');
+      if ($context['u_role'] === 1 && $result['bl_client']) $die(400, 'User is blacklisted.');
+      if ($context['u_role'] === 2 && $result['bl_contractor']) $die(400, 'User is blacklisted.');
+      if ($context['u_role'] === 1 && $result['bl_contractor']) $die(400, 'Partner is blacklisted.');
+      if ($context['u_role'] === 2 && $result['bl_client']) $die(400, 'Partner is blacklisted.');
       if ($reply_to) {
         $result = $query(
           'SELECT 1 FROM `message` ' .
@@ -2467,7 +2575,11 @@ $out = call_user_func(function() {
 
       $query_transaction();
       $result = $query_one(
-        'SELECT `m`.`create_datetime`>NOW()-INTERVAL 25 HOUR AS `editable`,`m`.`id_message_type` ' .
+        'SELECT ' .
+            '`m`.`create_datetime`>NOW()-INTERVAL 25 HOUR ' .
+            'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+            'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AS `editable`,`m`.`id_message_type` ' .
         'FROM `message` `m`' .
         'JOIN `order` `o` ON `o`.`id_order`=SUBSTRING_INDEX(`m`.`recipient_owner`,\':\',1) ' .
         'JOIN `users` `u1` ON `u1`.`id_user`=`o`.`client` ' .
@@ -2479,8 +2591,6 @@ $out = call_user_func(function() {
           'AND `m`.`id_message_type` IN(:mtypes) ' .
           'AND JSON_VALID(`u1`.`json`) ' .
           'AND JSON_VALID(`u2`.`json`) ' .
-          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
           'AND ' . ($context['u_role'] === 2 ? '`m`.`sender_owner`=`u2`.`id_user` ' : '`m`.`sender_owner`=`u1`.`id_user` ') .
           'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:user ' : '`u1`.`id_user`=:user ') .
         'FOR SHARE OF `o`,`u1`,`u2` FOR UPDATE OF `m`',
@@ -2516,7 +2626,10 @@ $out = call_user_func(function() {
       $query_transaction();
       $result = $query_one(
         'SELECT ' .
-          '`m`.`create_datetime`>NOW()-INTERVAL 25 HOUR AS `deletable`,' .
+            '`m`.`create_datetime`>NOW()-INTERVAL 25 HOUR ' .
+            'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+            'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
+          'AS `deletable`,' .
           'CASE WHEN `m`.`id_message_type`=:audio THEN `value`->>\'$.audio\' ' .
             'WHEN `m`.`id_message_type`=:file THEN `value`->>\'$.file\' ' .
             'ELSE NULL END AS `file_id` ' .
@@ -2531,8 +2644,6 @@ $out = call_user_func(function() {
           'AND `m`.`id_message_type` IN(:mtypes) ' .
           'AND JSON_VALID(`u1`.`json`) ' .
           'AND JSON_VALID(`u2`.`json`) ' .
-          'AND JSON_CONTAINS(`u1`.`json`,CAST(`u2`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
-          'AND JSON_CONTAINS(`u2`.`json`,CAST(`u1`.`id_user` AS JSON),\'$.blackList\') IS NOT TRUE ' .
           'AND ' . ($context['u_role'] === 2 ? '`m`.`sender_owner`=`u2`.`id_user` ' : '`m`.`sender_owner`=`u1`.`id_user` ') .
           'AND ' . ($context['u_role'] === 2 ? '`u2`.`id_user`=:user ' : '`u1`.`id_user`=:user ') .
         'FOR SHARE OF `o`,`u1`,`u2` FOR UPDATE OF `m`',

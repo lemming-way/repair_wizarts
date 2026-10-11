@@ -5,7 +5,7 @@ import { useLanguage } from '../../../state/language';
 export default function BlockUser({ setModalVisible, targetUserId = null, onUserBlocked = null }) {
   const text = useLanguage();
   const { user, isLoading } = useUser();
-  const { save: saveUserUpdates, isPending: isUpdatingUser } = useUpdateUser();
+  const { saveUser, isPending: isUpdatingUser } = useUpdateUser();
 
   let handleBlock = null;
   if (!isLoading) {
@@ -24,7 +24,7 @@ export default function BlockUser({ setModalVisible, targetUserId = null, onUser
 
     handleBlock = async () => {
       const newBlackList = [...currentBlackList, targetUserId];
-      await saveUserUpdates({ blackList: newBlackList }, {
+      await saveUser({ blackList: newBlackList }, {
         onSuccess: () => {
           onUserBlocked?.(); // Call optional callback
           setModalVisible(false);

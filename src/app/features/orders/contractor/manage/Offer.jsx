@@ -11,7 +11,7 @@ import OrderRow from './Offer/OrderRow';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
 import { useOrdersByIds } from 'app/state/order';
-import { useUsersByIds } from 'app/state/user';
+import { useUser, useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
 import 'app/scss/orders.css';
 import 'app/scss/swiper.css';
@@ -22,6 +22,7 @@ function Offer() {
   const { id } = useParams();
   const orderId = Number(id);
 
+  const { user } = useUser();
   const { orders: [ order ], isLoading: isLoadingOrder, isError: isErrorOrder } = useOrdersByIds(orderId ? [orderId] : []);
 
   // Получаем данные клиента, если order существует
@@ -29,14 +30,14 @@ function Offer() {
 
   const { products } = useProducts();
 
-  const handleResponseChanged = () => {
-    // Пока здесь не требуется дополнительных действий
-  };
-
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [modalImage, setModalImage] = useState(null);
   const [visibleEditOffer, setVisibleEditOffer] = useState(false);
   const [visibleModalGo, setVisibleModalGo] = useState(false);
+
+  const handleResponseChanged = () => {
+    // Пока здесь не требуется дополнительных действий
+  };
 
   const openImageModal = imageSrc => {
     setModalImage(imageSrc);
@@ -58,8 +59,13 @@ function Offer() {
     return <div>{text('Loading order details...')}</div>;
   }
 
-  if (isErrorOrder || isErrorClient || !order) {
+  if (isErrorOrder || isErrorClient || !order || !client) {
     return <div>{text('Error loading order or order not found.')}</div>;
+  }
+
+  const isBlacklisted = user.blackList?.includes(order.clientId) || client.blackList?.includes(user.id);
+  if (isBlacklisted) {
+    return <div>{text('User blacklisted the client or client blacklisted the user.')}</div>;
   }
 
   const {

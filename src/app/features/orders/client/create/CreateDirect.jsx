@@ -85,6 +85,11 @@ function CreateDirect() {
       return;
     }
 
+    if (user.blackList?.includes(selectedContractor.id) || selectedContractor.blackList?.includes(user.id)) {
+      setFormError(text('User blacklisted the contractor or contractor blacklisted the user.'));
+      return;
+    }
+
     // Фильтруем игнорируемые услуги и формируем список для отправки
     const servicesToOrder = selectedContractorServices
       .filter(serviceName => !ignoreContractorServices.includes(serviceName))

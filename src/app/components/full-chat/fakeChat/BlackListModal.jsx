@@ -8,14 +8,14 @@ export default function BlackListModal({ setModalVisible }) {
   const blackListIds = user.blackList || [];
 
   const { users, isLoading: isUsersLoading } = useUsersByIds(blackListIds);
-  const { save, isPending: isUpdatingUser } = useUpdateUser();
+  const { saveUser, isPending: isUpdatingUser } = useUpdateUser();
 
   const handleUnblock = async (id) => {
     if (!user.id) {
       return;
     }
     const newList = blackListIds.filter((lId) => lId !== id);
-    save({ blackList: newList });
+    saveUser({ blackList: newList });
   };
 
   return (

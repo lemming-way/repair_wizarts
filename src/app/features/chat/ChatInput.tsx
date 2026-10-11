@@ -15,6 +15,7 @@ interface ChatInputProps {
   clientId: number;
   contractorId: number;
   currentUser: UserProfile;
+  isBlacklisted?: boolean;
   onSendMessage: (
     orderId: number,
     contractorId: number,
@@ -74,6 +75,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   clientId,
   contractorId,
   currentUser,
+  isBlacklisted,
   onSendMessage,
   onSendAudio,
   onUpdateMessage,
@@ -94,19 +96,10 @@ export const ChatInput: FC<ChatInputProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const objectURLRef = useRef<string>('');
 
-  const partnerId = currentUser.role === UserRole.Contractor ? contractorId : clientId;
-  const { users } = useUsersByIds(partnerId ? [partnerId] : []);
-  const chatPartner = users[0];
-
   const { messages } = useMessagesByIds(replyTo ? [replyTo] : []);
   const replyToMessage = messages[0];
   const { messages: editMessages } = useMessagesByIds(editMessage ? [editMessage] : []);
   const originalMessage = editMessages[0];
-
-  // Проверяем, заблокировал ли текущий пользователь собеседника или наоборот.
-  const currentUserBlockedPartner = currentUser.blackList?.includes(chatPartner?.id);
-  const partnerBlockedCurrentUser = chatPartner?.blackList?.includes(currentUser.id);
-  const isBlocked = currentUserBlockedPartner || partnerBlockedCurrentUser;
 
   // Adjust textarea height dynamically
   const updateMessage = (message: string) => {
@@ -236,15 +229,15 @@ export const ChatInput: FC<ChatInputProps> = ({
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isBlocked) {
+    if (!isBlacklisted) {
       e.dataTransfer.dropEffect = 'copy';
     }
-  }, [isBlocked]);
+  }, [isBlacklisted]);
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isBlocked) return;
+    if (isBlacklisted) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const newFiles = Array.from(e.dataTransfer.files);
@@ -259,7 +252,7 @@ export const ChatInput: FC<ChatInputProps> = ({
         alert(text(`Only up to ${MAX_FILE_COUNT} files can be attached.`));
       }
     }
-  }, [isBlocked, previewFiles, text]);
+  }, [isBlacklisted, previewFiles, text]);
 
   // todo: проверить эту логику. Лучше использовать CSS здесь
   const footerRef = useRef<HTMLDivElement>(null);
@@ -388,7 +381,7 @@ export const ChatInput: FC<ChatInputProps> = ({
           onChange={handleMessageChange}
           onKeyDown={handleKeyDown}
           rows={1}
-          disabled={isBlocked}
+          disabled={isBlacklisted}
         />
 
         {/* Action buttons */}
@@ -398,13 +391,13 @@ export const ChatInput: FC<ChatInputProps> = ({
             className={styles.action_button}
             onClick={() => setIsAttachmentMenuVisible((prev) => !prev)}
             title={text('Attach file')}
-            disabled={!!editMessage || isBlocked || previewFiles.length >= MAX_FILE_COUNT}
+            disabled={!!editMessage || isBlacklisted || previewFiles.length >= MAX_FILE_COUNT}
           >
             <AttachIcon />
           </button>
           <AudioRecorder
             className={styles.action_button}
-            disabled={!!editMessage || isBlocked}
+            disabled={!!editMessage || isBlacklisted}
             MicrophoneIcon={MicrophoneIcon}
             onStartRecording={() => setIsRecording(true)}
             onFinishRecording={() => setIsRecording(false)}
@@ -421,7 +414,7 @@ export const ChatInput: FC<ChatInputProps> = ({
               className={styles.action_button}
               onClick={() => setIsEmojiPickerVisible(!isEmojiPickerVisible)}
               title={text(isEmojiPickerVisible ? 'Close emoji picker' : 'Open emoji picker')}
-              disabled={isBlocked}
+              disabled={isBlacklisted}
             >
               <EmojiIcon />
             </button>
@@ -431,13 +424,13 @@ export const ChatInput: FC<ChatInputProps> = ({
             className={`${styles.action_button} ${styles.send_button}`}
             onClick={handleSendMessage}
             title={text('Send message')}
-            disabled={isBusy || isBlocked || isRecording || (!message.trim() && previewFiles.length === 0 && !audioFile)}
+            disabled={isBusy || isBlacklisted || isRecording || (!message.trim() && previewFiles.length === 0 && !audioFile)}
           >
             <SendIcon />
           </button>
         </div>
       </div>
-       {isBlocked && (
+       {isBlacklisted && (
         <div className={styles.blocked_message_overlay}>
           <img src="/img/icons/chat_block.png" alt="" />
           <p>{text('You cannot contact this user because you have blocked them or they have blocked you.')}</p>

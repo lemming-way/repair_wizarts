@@ -32,12 +32,22 @@ function DirectOrders() {
   }, [text]);
 
   const handleAcceptOrder = async (orderId) => {
+    const order = orders.find(o => o.id === orderId);
+    const client = clientsMap.get(order?.clientId);
+    if (!user.id || !order || !client) {
+      console.error('Data not loaded');
+      return;
+    }
+
+    if (user.blackList?.includes(order.clientId) || client.blackList?.includes(user.id)) {
+      console.error('Error accepting order: Blacklisted');
+      // todo: Отобразить ошибку пользователю
+      return;
+    }
+
     try {
       await acceptInvoice(orderId);
-      const order = orders.find(o => o.id === orderId);
-      if (order && user.id) {
-        navigate(`/order/${order.id}/chat/${user.id}`);
-      }
+      navigate(`/order/${order.id}/chat/${user.id}`);
     } catch (error) {
       console.error('Error accepting order:', error);
       // todo: Отобразить ошибку пользователю
@@ -75,6 +85,7 @@ function DirectOrders() {
           const client = clientsMap.get(order.clientId);
           const productName = products[order.productId]?.name || text('Unknown service');
           const createdAt = new Date(order.createdAt).toLocaleDateString();
+          const isBlacklisted = user.blackList?.includes(order.clientId) || client?.blackList?.includes(user.id);
 
           return (
             <details className={style.details} key={order.id}>
@@ -126,28 +137,30 @@ function DirectOrders() {
                     ))}
                   </Swiper>
                 </div>
-                <div className={style.buttons_row}>
-                  <div className={style.buttons}>
-                    <button
-                      className={style.button}
-                      onClick={() => handleAcceptOrder(order.id)}
-                    >
-                      {text('Agree')}
-                    </button>
-                    <button
-                      className={style.button_back}
-                      onClick={() => handleDeclineOrder(order.id)}
-                    >
-                      {text('Decline')}
-                    </button>
-                    <button
-                      className={style.button_back}
-                      onClick={() => navigate(`/order/${order.id}/chat/${user.id}`)}
-                    >
-                      {text('Go to chat')}
-                    </button>
+                {!isBlacklisted &&
+                  <div className={style.buttons_row}>
+                    <div className={style.buttons}>
+                      <button
+                        className={style.button}
+                        onClick={() => handleAcceptOrder(order.id)}
+                      >
+                        {text('Agree')}
+                      </button>
+                      <button
+                        className={style.button_back}
+                        onClick={() => handleDeclineOrder(order.id)}
+                      >
+                        {text('Decline')}
+                      </button>
+                      <button
+                        className={style.button_back}
+                        onClick={() => navigate(`/order/${order.id}/chat/${user.id}`)}
+                      >
+                        {text('Go to chat')}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                }
               </div>
             </details>
           );
