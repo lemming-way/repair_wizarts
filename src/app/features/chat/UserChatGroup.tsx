@@ -1,4 +1,4 @@
-import React, { FC, useState, useMemo } from 'react';
+import { useState } from 'react';
 
 import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';
@@ -37,7 +37,7 @@ const getOrderStatusColorClass = (status: OrderStatus) => {
   }
 };
 
-export const UserChatGroup: FC<UserChatGroupProps> = ({
+export function UserChatGroup({
   partnerId,
   partner,
   chats,
@@ -47,14 +47,13 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
   activeChatOrder,
   activeChatContractor,
   onChatSelected,
-}) => {
+}: UserChatGroupProps) {
   const text = useLanguage();
   const { products } = useProducts();
   const [isExpanded, setIsExpanded] = useState(false);
   const [visibleUserCard, setVisibleUserCard] = useState(false);
 
   const displayName = partner?.fullname || partner?.name || text('Unknown user');
-  const avatarSrc = partner?.avatar || '/img/user_avatar.png';
 
   const totalUnreadCount = chats.reduce((sum, chat) => sum + chat.unreadCount, 0);
   const groupLastUpdate = chats.reduce<Date | undefined>((latest, chat) =>
@@ -63,24 +62,6 @@ export const UserChatGroup: FC<UserChatGroupProps> = ({
 
   const handleChatClick = (orderId: number, contractorId: number) => {
     onChatSelected(orderId, contractorId);
-  };
-
-  const getTimeSinceLastOnline = (lastOnline: Date) => {
-    if (!lastOnline || !Number.isFinite(lastOnline.getTime()) || lastOnline.getTime() === 0) return text('never');
-
-    const diffInMinutes = Math.floor(
-      (Date.now() - lastOnline.getTime()) / (1000 * 60),
-    );
-
-    if (diffInMinutes < 1) return text('just now');
-    if (diffInMinutes < 60)
-      return `${diffInMinutes} ${text('minute(s)')}`;
-
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours} ${text('hour(s)')}`;
-
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays} ${text('day(s)')}`;
   };
 
   const getLastUpdateString = (lastUpdate?: Date) => {

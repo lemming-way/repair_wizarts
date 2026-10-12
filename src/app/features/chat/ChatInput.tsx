@@ -1,7 +1,6 @@
-import type { FC } from 'react';
 import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useLanguage } from 'app/state/language';
-import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
+import { UserProfile } from 'app/state/user';
 import { MessageFormat, useMessagesByIds } from 'app/state/chat';
 import { AnyMedia, getKeyFor, Emoji } from 'app/shared/ui';
 import { simpleMarkdown } from 'app/shared/lib/markdown';
@@ -70,7 +69,7 @@ const SendIcon = () => (
   </svg>
 );
 
-export const ChatInput: FC<ChatInputProps> = ({
+export function ChatInput({
   orderId,
   clientId,
   contractorId,
@@ -84,7 +83,7 @@ export const ChatInput: FC<ChatInputProps> = ({
   editMessage,
   onCancelEdit,
   onCancelReply,
-}) => {
+}: ChatInputProps) {
   const text = useLanguage();
   const [message, setMessage] = useState('');
   const [previewFiles, setPreviewFiles] = useState<File[]>([]);

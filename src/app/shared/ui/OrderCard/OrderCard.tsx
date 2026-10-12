@@ -2,7 +2,7 @@ import { useLanguage } from 'app/state/language';
 import { useCities } from 'app/state/site-data';
 import { formatDate } from 'app/shared/lib/formatDate';
 import { useProducts } from 'app/state/site-data';
-import { Order, OrderType, OrderStatus, orderStatusString } from 'app/state/order';
+import { Order, OrderType, orderStatusString } from 'app/state/order';
 
 import styles from './OrderCard.module.css';
 

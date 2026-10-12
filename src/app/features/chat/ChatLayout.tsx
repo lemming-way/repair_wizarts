@@ -1,10 +1,9 @@
-import React, { FC, useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { useLanguage } from 'app/state/language';
 import {
   Order,
-  OrderStatus,
   useOrdersByIds,
   useCancelOrder,
   useRequestCancelOrder,
@@ -28,7 +27,7 @@ import { BlockUserModal } from './BlockUserModal';
 import { BlackListModal } from './BlackListModal';
 import styles from './Chat.module.css';
 
-export const ChatLayout: FC = () => {
+export function ChatLayout() {
   const navigate = useNavigate();
   const text = useLanguage();
   const { user } = useUser();
@@ -199,7 +198,7 @@ export const ChatLayout: FC = () => {
     } catch (error: any) {
       alert(`Failed to start work: ${error.message}`);
     }
-  }, [startOrderWork, text]);
+  }, [startOrderWork]);
 
   const handleCompleteWork = useCallback(async (orderId: number) => {
     try {
@@ -207,7 +206,7 @@ export const ChatLayout: FC = () => {
     } catch (error: any) {
       alert(`Failed to complete work: ${error.message}`);
     }
-  }, [finishOrderWork, text]);
+  }, [finishOrderWork]);
 
   const handleVerifyCompletion = useCallback(async (orderId: number) => {
     try {
@@ -215,7 +214,7 @@ export const ChatLayout: FC = () => {
     } catch (error: any) {
       alert(`Failed to verify completion: ${error.message}`);
     }
-  }, [confirmOrderCompletion, text]);
+  }, [confirmOrderCompletion]);
 
   const handleDisputeOpen = useCallback(async (claim: string) => {
     if (disputeOrderId && claim) {
@@ -226,7 +225,7 @@ export const ChatLayout: FC = () => {
         alert(`Failed to open dispute: ${error.message}`);
       }
     }
-  }, [openOrderDispute, disputeOrderId, text]);
+  }, [openOrderDispute, disputeOrderId]);
 
   const handleShowDisputeModal = useCallback((orderId: number) => {
     setDisputeOrderId(orderId);
@@ -464,7 +463,7 @@ export const ChatLayout: FC = () => {
                 onSendMessage={handleSendMessage}
                 onSendAudio={handleSendAudio}
                 onUpdateMessage={handleUpdateMessage}
-                isBusy={isSendingMessage}
+                isBusy={isSendingMessage || isUpdatingMessage || isDeletingMessage}
                 replyTo={replyTo}
                 editMessage={editMessageID}
                 onCancelEdit={cancelEditMessage}

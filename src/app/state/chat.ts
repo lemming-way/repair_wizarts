@@ -12,12 +12,10 @@ import { QueryClient, useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
 import { objectMapper } from 'app/shared/lib/objectMapper';
-import { fileToBase64, isImage } from 'app/shared/lib/utilities';
-import * as FileAPI from './api/dropbox';
 import * as MessageAPI from './api/message';
 import { authorizedUserId } from './auth';
 import { createBatchLoader } from './batch-query';
-import { UserRole, useUser } from './user';
+import { useUser } from './user';
 import type { UserProfile } from './user';
 
 const EMPTY_ARRAY = Object.freeze([]);
@@ -240,7 +238,7 @@ export function useChat(orderId: number, contractorId: number) {
 }
 
 const [ getMessageById, useMessagesByIds ] = createBatchLoader({
-  fetchFn: async (ids: number[]) => {
+  fetchFn: async (ids: number[], userId, queryClient) => {
     const data = await MessageAPI.getMessagesByIds(ids);
 
     const messages = (data ?? []).map(messageRec => {
@@ -285,6 +283,18 @@ const [ getMessageById, useMessagesByIds ] = createBatchLoader({
       if (Number.isInteger(messageRec.editor) && messageRec.editor! > 0) ret.editorId = messageRec.editor!;
       if (Number.isInteger(messageRec.author) && messageRec.author! > 0) ret.authorId = messageRec.author!;
       if (Number.isInteger(messageRec.related) && messageRec.related! > 0) ret.relatedMessage = messageRec.related!;
+
+      // При поступлении *новых* системных сообщений обновить данные заказа
+      const messageKey = ['user', userId, 'message', ret.id];
+      if (ret.type === MessageType.System && ret.id && !queryClient.getQueryData(messageKey)) {
+        const [orderIdStr] = ret.chatId.split(':');
+        const queryKey = ['user', userId, 'order', Number(orderIdStr)];
+        const { dataUpdatedAt } = queryClient.getQueryState(queryKey) ?? {};
+        if (dataUpdatedAt && dataUpdatedAt < +ret.delivered! + 10000) {   // запас 10 секунд на загрузку
+          queryClient.invalidateQueries({ queryKey });
+        }
+      }
+
       return ret;
     });
 
@@ -365,13 +375,16 @@ export function useSetChatRead() {
         queryFn: getChatById,
         staleTime: CONFIG.API?.chatsDataRefetchTime ?? 300000
       });
-      const result = await MessageAPI.markAllAsRead(chatId);
-      if (Array.isArray(result)) {
-        for (const id of result) {
-          client.invalidateQueries({ queryKey: [ 'user', user.id, 'message', id ] });
+      if (user.id !== authorizedUserId()) throw new Error('User has changed.');
+      if (chat?.unreadCount) {
+        const result = await MessageAPI.markAllAsRead(chatId);
+        if (Array.isArray(result)) {
+          for (const id of result) {
+            client.invalidateQueries({ queryKey: [ 'user', user.id, 'message', id ] });
+          }
         }
+        client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
       }
-      client.invalidateQueries({ queryKey: [ 'user', user.id, 'chat-data', chatId ] });
 
       return;
     }

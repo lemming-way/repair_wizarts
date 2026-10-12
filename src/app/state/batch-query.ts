@@ -4,10 +4,12 @@
  */
 
 import { useRef, useCallback } from 'react';
-import { useQueries, UseQueryResult } from '@tanstack/react-query';
+import { useQueries, UseQueryResult, QueryClient, QueryFunction, QueryFunctionContext } from '@tanstack/react-query';
 
 import { authorizedUserId } from './auth';
 import { useUser, UserProfile } from './user';
+
+type QueryKeyType = readonly (string | number)[];
 
 type BatchItem<T, ID> = {
   userId: number;
@@ -17,9 +19,9 @@ type BatchItem<T, ID> = {
 }
 
 type BatchConfig<T, ID, K> = {
-  fetchFn: (ids: ID[]) => Promise<(T | null)[]>;
+  fetchFn: (ids: ID[], userId: number, queryClient: QueryClient) => Promise<(T | null)[]>;
   createQueryKey: (userId: number, itemId: ID) => (string | number)[];
-  extractKeys: (queryKey: (string | number)[]) => [ number, ID ];
+  extractKeys: (queryKey: QueryKeyType) => [ number, ID ];
   staleTime?: number;
   dataKey: K;
 };
@@ -33,7 +35,7 @@ type CombinedResult = {
 };
 
 type CreateBatchLoaderResult<T, ID, K extends string> = [
-  (params: { queryKey: (string | number)[] }) => Promise<T | null>,
+  QueryFunction<T | null, QueryKeyType>,
   (ids: ID[]) => CombinedResult & {[P in K]: T[]}
 ];
 
@@ -66,7 +68,7 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
    * @returns Промис, который разрешается с объектом типа T или null
    * @throws {Error} Если произошла ошибка при запросе к API или объект не найден.
    */
-  const getItemById = ({ queryKey }: { queryKey: (string | number)[] }): Promise<T | null> => {
+  const getItemById = ({ queryKey, client }: QueryFunctionContext<QueryKeyType>): Promise<T | null> => {
     const [ userId, itemId ] = extractKeys(queryKey);
     if (!userId || !itemId) return Promise.resolve(null);
 
@@ -84,7 +86,7 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
 
       try {
         const authUserId = authorizedUserId();
-        const data = authUserId ? (await fetchFn(itemIds)) : null;
+        const data = authUserId ? (await fetchFn(itemIds, authUserId, client)) : null;
 
         const itemsMap = new Map<ID, T>(data?.filter(Boolean).map(item => [item!.id, item!]) ?? []);
         resolvers.forEach(resolver => {

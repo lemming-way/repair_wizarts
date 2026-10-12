@@ -463,12 +463,14 @@ function Order() {
                     <div className={styles.line}></div>
                   </section>
                   <div className={styles.buttons}>
-                    <button
-                      className={styles.button}
-                      onClick={() => handleAcceptOffer(offer.contractorId, offer.price)}
-                    >
-                      {text('Select contractor')}
-                    </button>
+                    {currentOrder.status === OrderStatus.PUBLISHED &&
+                      <button
+                        className={styles.button}
+                        onClick={() => handleAcceptOffer(offer.contractorId, offer.price)}
+                      >
+                        {text('Select contractor')}
+                      </button>
+                    }
                     <Link to={`/order/${orderId}/chat/${offer.contractorId}`}>
                       <button className={styles.button}>{text('Chat with master')}</button>
                     </Link>

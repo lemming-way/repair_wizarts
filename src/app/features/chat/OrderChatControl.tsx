@@ -1,4 +1,3 @@
-import type { FC } from 'react';
 import { useState } from 'react';
 import { useNavigate } from "react-router-dom"
 import Dropdown from 'react-multilevel-dropdown';
@@ -36,7 +35,7 @@ interface OrderChatControlProps {
   onShowDisputeModal: (orderId: number) => void;
 }
 
-export const OrderChatControl: FC<OrderChatControlProps> = ({
+export function OrderChatControl({
   order,
   chatContractorId,
   isChatUnread,
@@ -57,7 +56,7 @@ export const OrderChatControl: FC<OrderChatControlProps> = ({
   onCompleteWork,
   onVerifyCompletion,
   onShowDisputeModal,
-}) => {
+}: OrderChatControlProps) {
   const navigate = useNavigate();
   const text = useLanguage();
   const [visibleOrderCard, setVisibleOrderCard] = useState(false);

@@ -1,9 +1,7 @@
-import type { FC } from 'react';
 import React from 'react';
 import { simpleMarkdown } from 'app/shared/lib/markdown';
 import { formatDateTime } from 'app/shared/lib/formatDate';
 import { useLanguage } from 'app/state/language';
-import { UserProfile, useUsersByIds } from 'app/state/user';
 import { MessageType, MessageFormat, Message } from 'app/state/chat';
 import { getFileById } from 'app/state/uploaded';
 import { AnyMedia } from 'app/shared/ui';
@@ -52,7 +50,7 @@ interface ChatMessageProps {
   onDelete: () => void;
 }
 
-export const ChatMessage: FC<ChatMessageProps> = ({
+export function ChatMessage({
   message,
   currentUserId,
   isBlacklisted,
@@ -63,13 +61,11 @@ export const ChatMessage: FC<ChatMessageProps> = ({
   onReply,
   onEdit,
   onDelete
-}) => {
+}: ChatMessageProps) {
   const text = useLanguage();
 
   const isOwnMessage = ((message.type === MessageType.User || message.type === MessageType.Dispute) && message.from === currentUserId);
-
   const isSystemMessage = message.type === MessageType.System;
-  const isPartnerMessage = (message.type === MessageType.User || message.type === MessageType.Dispute) && !isOwnMessage;
   const isAdministratorMessage = message.type === MessageType.Admin;
   const isTextMessage = message.format === MessageFormat.Text;
   const isAudioMessage = message.format === MessageFormat.Audio;

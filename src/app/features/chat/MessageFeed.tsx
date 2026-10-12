@@ -1,9 +1,8 @@
-import type { FC } from 'react';
-import React, { useRef, useEffect, useLayoutEffect, useCallback, useState, useMemo } from 'react';
+import { Fragment, UIEvent, useRef, useLayoutEffect, useState } from 'react';
 
 import { useLanguage, useCurrentLocale } from 'app/state/language';
-import { UserProfile, UserRole, useUsersByIds } from 'app/state/user';
-import { ChatData, Message, MessageType, MessageFormat, useChat, useMessagesByIds, useSetMessagesRead } from 'app/state/chat';
+import { useUsersByIds } from 'app/state/user';
+import { ChatData, MessageType, useChat, useMessagesByIds, useSetMessagesRead } from 'app/state/chat';
 import { formatRelativeDate } from 'app/shared/lib/formatDate';
 import { ChatMessage } from './ChatMessage';
 
@@ -21,14 +20,14 @@ interface MessageFeedProps {
 const BATCH_SIZE = 25; // Количество сообщений до и после текущего для окна
 const SCROLL_THRESHOLD = 200; // Порог для активации подгрузки сообщений (px от края)
 
-export const MessageFeed: FC<MessageFeedProps> = ({
+export function MessageFeed({
   currentUserId,
   chat,
   isBlacklisted,
   onReply,
   onEdit,
   onDelete,
-}) => {
+}: MessageFeedProps) {
   const locale = useCurrentLocale();
   const text = useLanguage();
   const messageFeedRef = useRef<HTMLDivElement>(null);
@@ -71,9 +70,6 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   // Определяем ID сообщений для текущего окна
   const windowedMessageIds = messageIds.slice(firstRenderedIndex, firstRenderedIndex + windowSize);
   const { messages, isLoading: isMessagesLoading } = useMessagesByIds(windowedMessageIds);
-  // Заготовки
-  const editMessage = () => {};
-  const deleteMessage = () => {};
   const messagesMap = new Map(messages.map(message => [message.id, message]));
 
   const allUserIds = messages.reduce((ids, message) => {
@@ -239,7 +235,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
   }, [instance, messages, isMessagesLoading]);
 
   // --- Обработчик скролла для подгрузки сообщений ---
-  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     handleScrollPosition();
 
     if (!messages.length || instance.isLoadingWindow) {
@@ -310,7 +306,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
           const isDateChanged = date !== lastDate;
           lastDate = date;
           return (
-            <React.Fragment key={message.id}>
+            <Fragment key={message.id}>
               {isDateChanged &&
                 <div className={styles.date_header}>{date}</div>
               }
@@ -329,7 +325,7 @@ export const MessageFeed: FC<MessageFeedProps> = ({
                 onEdit={() => onEdit(message.id)}
                 onDelete={() => onDelete(message.id)}
               />
-            </React.Fragment>
+            </Fragment>
           );
         })}
         {firstRenderedIndex + windowSize < messageIds.length - 1 && isMessagesLoading && (

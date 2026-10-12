@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { useLanguage } from 'app/state/language';
 import { useActiveChats, ChatData } from 'app/state/chat';
@@ -18,14 +18,14 @@ interface ChatListProps {
   setChatOpen: (orderId: number, contractorId: number) => void;
 }
 
-export const ChatList: FC<ChatListProps> = ({
+export function ChatList({
   currentUser: user,
   isChatOpen,
   currentOrderId: orderId,
   currentContractorId: contractorId,
   onChatSelected,
   setChatOpen
-}) => {
+}: ChatListProps) {
   const text = useLanguage();
   const { products } = useProducts();
   const [search, setSearch] = useState('');

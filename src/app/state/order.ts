@@ -13,7 +13,7 @@
  * **Функции, не влияющие на глобальное состояние:**
  * useContractors, useClientOrders, useFinishedOrders, useOrdersByIds, useContractorOrders, useAvailableOrders
  */
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { QueryKey, QueryFunctionContext, useQuery, useMutation } from '@tanstack/react-query';
 
 import CONFIG from 'config';
 import { objectMapper } from 'app/shared/lib/objectMapper';
@@ -293,17 +293,28 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
 // Группы заказов для выборки
 type OrderStage = 'new' | 'active' | 'finished';
 
-/**
- * Получить список заказов с фильтрацией по статусу
- * @param userRole Роль пользователя для запроса
- * @param types Виды заказов
- * @param stages Состояния заказов
- * @returns Список заказов
- */
-function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[]) {
-  const { user } = useUser() as { user: UserProfile };
+function getOrderStage(order: Order): OrderStage {
+  return (
+      order.status === OrderStatus.PUBLISHED ||
+      order.status === OrderStatus.REQUESTED ?
+    'new' :
+      order.status === OrderStatus.CLOSED ||
+      order.status === OrderStatus.CANCELED ?
+    'finished' :
+    'active'
+  );
+}
 
+/**
+ * QueryFunction для получения списка заказов с фильтрацией по статусу
+ * @returns Промис, разрешающийся списком заказов
+ */
+async function getOrderIds({ queryKey, client }: QueryFunctionContext) {
+  const userId = queryKey[1] as number;
+  const types = queryKey[3] as OrderType[];
+  const stages = queryKey[4] as OrderStage[];
   let filter = 0;
+
   for (const type of types) {
     if (type === OrderType.Market) filter |= OrderAPI.OrdersFilter.market;
     else if (type === OrderType.Direct) filter |= OrderAPI.OrdersFilter.direct;
@@ -315,30 +326,74 @@ function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[])
     else if (stage === 'finished') filter |= OrderAPI.OrdersFilter.finished;
   }
 
+  const ids = await OrderAPI.getOrderIds(filter);
+  if (ids.length) {
+    for (const id of ids) {
+      const queryKey = ['user', userId, 'order', id];
+      const order = client.getQueryData<Order>(queryKey);
+      if (order && types.includes(order.type)) {
+        const orderStage = getOrderStage(order);
+        if (!stages.includes(orderStage)) {
+          client.invalidateQueries({ queryKey });
+        }
+      }
+    }
+  }
+
+  return ids;
+}
+
+/**
+ * Получить список заказов с фильтрацией по статусу
+ * @param userRole Роль пользователя для запроса
+ * @param types Виды заказов
+ * @param stages Состояния заказов
+ * @returns Список заказов
+ */
+function useOrders(userRole: UserRole, types: OrderType[], stages: OrderStage[]) {
+  const { user } = useUser() as { user: UserProfile };
+
   const idsResult = useQuery({
-    queryKey: [ 'user', user.id, 'orders', types, stages ],
-    queryFn: () => OrderAPI.getOrderIds(filter),
+    queryKey: [ 'user', user.id, 'orders', [...types], [...stages] ],
+    queryFn: getOrderIds,
     staleTime: CONFIG.API?.ordersListRefetchTime ?? 120000,
     refetchInterval: CONFIG.API?.ordersListRefetchTime ?? 120000,
     enabled: !!user.id && user.role === userRole &&  // Доступно только пользователю с заданной ролью
              user.id === authorizedUserId() &&   // Авторизованный пользователь не изменился
-             !!(filter & 3) && !!(filter & 28)   // Хотя бы один фильтр каждого типа
+             !!types.length && !!stages.length   // Хотя бы один фильтр каждого типа
   });
 
   const ordersResult = useOrdersByIds(idsResult.data || []);
 
   if (!idsResult.isSuccess) return objectMapper(idsResult, { data: null, orders() { return EMPTY_ARRAY; } });
-
-  // todo: Нужно обновить данные заказов, если статус заказа на сервере изменился, а в кэше - нет
-  // todo: Подумать, как это сделать
-
   return ordersResult;
 }
 
 const [ getOrderById, useOrdersByIds ] = createBatchLoader({
-  fetchFn: async (ids: number[]) => {
+  fetchFn: async (ids: number[], userId, queryClient) => {
     const data = await OrderAPI.getOrdersByIds(ids);
-    return data ? parseOrders(data) : [];
+    const orders = data ? parseOrders(data) : [];
+
+    if (orders.length) {
+      const cached = queryClient.getQueriesData<number[]>({ queryKey: ['user', userId, 'orders'] });
+      if (cached.length) {
+        const cachedSets = cached.map(([key, ids]) => [key, new Set(ids || [])] as const);
+        const toInvalidate = new Set<QueryKey>();
+        for (const order of orders) {
+          const orderStage = getOrderStage(order);
+          for (const [key, ids] of cachedSets) {
+            if (Array.isArray(key[4]) && key[4].includes(orderStage) ? !ids.has(order.id) : ids.has(order.id)) {
+              toInvalidate.add(key);
+            }
+          }
+        }
+        for (const queryKey of toInvalidate) {
+          queryClient.invalidateQueries({ queryKey });
+        }
+      }
+    }
+
+    return orders;
   },
   createQueryKey: (userId, orderId) => [ 'user', userId, 'order', orderId ],
   extractKeys: (queryKey) => [ Number(queryKey[1]), Number(queryKey[3]) ],
@@ -625,47 +680,6 @@ export function useCancelOrder() {
         await OrderAPI.cancelOrderByClient(orderId, reason);
       }
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
-      // Инвалидация списков заказов
-      // - заказ может быть либо в списке "new", либо в списке "active"
-      // - при отмене заказчиком заказа с биржи по запросу мастера перемещается в "новые"
-      // - при отмене заказчиком в других случаях перемещается в "завершённые"
-      // - при отмене мастером прямого заказа перемещается в "завершённые"
-      // - при отмене мастером заказа с биржи перемещается в "новые"
-      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey, state: {data} }) => (
-        queryKey[0] === 'user' &&
-        queryKey[1] === user.id &&
-        queryKey[2] === 'orders' &&
-        Array.isArray(queryKey[3]) &&
-        Array.isArray(queryKey[4]) &&
-        queryKey[3].includes(order.type) &&
-        queryKey[4].some(stage =>
-          (
-            stage === 'new' &&
-            (
-              (user.role === UserRole.Contractor && order.type === OrderType.Market) ||
-              (user.role === UserRole.Client && order.type === OrderType.Market && order.wantCancel === 'contractor') ||
-              (user.role === UserRole.Client && Array.isArray(data) && data.includes(orderId))
-            )
-          ) ||
-          (
-            stage === 'active' &&
-            (
-              user.role === UserRole.Contractor ||
-              (Array.isArray(data) && data.includes(orderId))
-            )
-          ) ||
-          (
-            stage === 'finished' &&
-            (
-              (user.role === UserRole.Client && (order.type !== OrderType.Market || order.wantCancel !== 'contractor')) ||
-              (user.role === UserRole.Contractor && order.type === OrderType.Direct)
-            )
-          )
-        )
-      )});
-      for (const { queryKey } of filteredQueries) {
-          client.invalidateQueries({ queryKey });
-      }
 
       return;
     }
@@ -900,20 +914,6 @@ export function useAcceptOffer() {
 
       await OrderAPI.acceptOffer(orderId, contractorId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
-      // Инвалидация списков новых и активных заказов
-      // - заказ перемещается из "новых" в "активные"
-      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'user' &&
-        queryKey[1] === user.id &&
-        queryKey[2] === 'orders' &&
-        Array.isArray(queryKey[3]) &&
-        Array.isArray(queryKey[4]) &&
-        queryKey[3].includes(OrderType.Market) &&
-        queryKey[4].some(stage => stage === 'new' || stage === 'active')
-      )});
-      for (const { queryKey } of filteredQueries) {
-          client.invalidateQueries({ queryKey });
-      }
 
       return;
     }
@@ -1029,20 +1029,6 @@ export function useAcceptInvoice() {
 
       await OrderAPI.acceptInvoice(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
-      // Инвалидация списков новых и активных заказов
-      // - заказ перемещается из "новых" в "активные"
-      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'user' &&
-        queryKey[1] === user.id &&
-        queryKey[2] === 'orders' &&
-        Array.isArray(queryKey[3]) &&
-        Array.isArray(queryKey[4]) &&
-        queryKey[3].includes(OrderType.Direct) &&
-        queryKey[4].some(stage => stage === 'new' || stage === 'active')
-      )});
-      for (const { queryKey } of filteredQueries) {
-          client.invalidateQueries({ queryKey });
-      }
 
       return;
     }
@@ -1078,20 +1064,6 @@ export function useRejectInvoice() {
 
       await OrderAPI.cancelOrderByContractor(orderId, reason);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
-      // Инвалидация списков новых и завершённых/отменённых заказов
-      // - заказ перемещается из "новых" в "завершённые"
-      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'user' &&
-        queryKey[1] === user.id &&
-        queryKey[2] === 'orders' &&
-        Array.isArray(queryKey[3]) &&
-        Array.isArray(queryKey[4]) &&
-        queryKey[3].includes(OrderType.Direct) &&
-        queryKey[4].some(stage => stage === 'new' || stage === 'finished')
-      )});
-      for (const { queryKey } of filteredQueries) {
-          client.invalidateQueries({ queryKey });
-      }
 
       return;
     }
@@ -1196,20 +1168,6 @@ export function useConfirmOrderCompletion() {
 
       await OrderAPI.completeOrder(orderId);
       client.invalidateQueries({ queryKey: [ 'user', user.id, 'order', orderId ] });
-      // Инвалидация списков активных и завершённых заказов
-      // - заказ перемещается из "активных" в "завершённые"
-      const filteredQueries = client.getQueryCache().findAll({ predicate: ({ queryKey }) => (
-        queryKey[0] === 'user' &&
-        queryKey[1] === user.id &&
-        queryKey[2] === 'orders' &&
-        Array.isArray(queryKey[3]) &&
-        Array.isArray(queryKey[4]) &&
-        queryKey[3].includes(order.type) &&
-        queryKey[4].some(stage => stage === 'active' || stage === 'finished')
-      )});
-      for (const { queryKey } of filteredQueries) {
-          client.invalidateQueries({ queryKey });
-      }
 
       return;
     }
