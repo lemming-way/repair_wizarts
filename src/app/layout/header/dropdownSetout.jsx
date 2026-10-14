@@ -1,7 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import 'app/scss/setout.css';
+import 'app/styles/legacy/setout.css';
 import { useLanguage } from 'app/state/language';
 import { useUser, logout, UserRole } from 'app/state/user';
 
@@ -46,13 +46,14 @@ function DropdownService() {
             </Link>
           </div>
           <div className="recent ">
-            <span
+            <button
+              type="button"
               className="repair__phonffe dropdown_menu_toolbar_fix"
               onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>
-            </span>
+            </button>
           </div>
         </div>
       ) : (
@@ -82,13 +83,14 @@ function DropdownService() {
             </Link>
           </div>
           <div className="recent ">
-            <span
+            <button
+              type="button"
               className="repair__phonffe dropdown_menu_toolbar_fix"
               onClick={handleLogout}
             >
               <img src="/img/logout.png" alt={text("Logout")} />
               <h4>{text("Logout")}</h4>
-            </span>
+            </button>
           </div>
         </div>
       )}

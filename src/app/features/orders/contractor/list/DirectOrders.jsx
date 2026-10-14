@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { useLanguage } from 'app/state/language';
 import { useAcceptInvoice, useRejectInvoice, useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
-import 'app/scss/applications.css';
+import 'app/styles/legacy/applications.css';
 import style from './DirectOrders/DirectOrders.module.css';
 
 function DirectOrders() {
@@ -26,6 +26,7 @@ function DirectOrders() {
 
   const { acceptInvoice } = useAcceptInvoice();
   const { rejectInvoice } = useRejectInvoice();
+  const [activeTab, setActiveTab] = useState('mine');
 
   useEffect(() => {
     document.title = text('Applications');
@@ -68,10 +69,27 @@ function DirectOrders() {
   }
 
   return (
-    <>
+    <section className={style.page}>
       <div className="mini-text">
         <h1>{text('Applications')}</h1>
       </div>
+      <nav className={style.status_tabs} aria-label="Фильтр заявок">
+        {[
+          ['mine', 'Мои заявки'],
+          ['completed', 'Выполнено'],
+          ['canceled', 'Отменено'],
+          ['all', 'Все'],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`${style.status_tab} ${activeTab === value ? style.status_tab_active : ''}`}
+            onClick={() => setActiveTab(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
       {orders.length === 0 && (
         <div className={style.empty_orders}>
           <img src="/img/robot.png" alt="" />
@@ -166,7 +184,7 @@ function DirectOrders() {
           );
         })}
       </div>
-    </>
+    </section>
   );
 }
 

@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import { AnyImage, getKeyFor } from 'app/shared/ui';
 import ModalConfirmContractor from './Order/ModalConfirmContractor';
@@ -49,13 +51,14 @@ function Order() {
 
   // For image modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [currentImageModalSrc, setCurrentImageModalSrc] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Payment related state (stubs as per request)
   const [visibleBlockPayment, setVisibleBlockPayment] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(0); // 0 for site, 1 for cash
 
   const [acceptedContractorId, setAcceptedContractorId] = useState(false);
+  const [expandedServices, setExpandedServices] = useState({});
   // Functions for modals
   const handleCancelOrder = async () => {
     try {
@@ -90,14 +93,14 @@ function Order() {
     }
   };
 
-  const openImageModal = (imageSrc) => {
-    setCurrentImageModalSrc(imageSrc);
+  const openImageModal = (imageIndex) => {
+    setCurrentImageIndex(imageIndex);
     setIsImageModalOpen(true);
   };
 
   const closeImageModal = () => {
     setIsImageModalOpen(false);
-    setCurrentImageModalSrc('');
+    setCurrentImageIndex(0);
   };
 
   // Conditional rendering for action buttons
@@ -183,7 +186,7 @@ function Order() {
                 </div>
                 <p className={commonStyle.mini_text}>
                   {text('Pay the performer directly')} <br />
-                  {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
+                  {text('No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.')}
                 </p>
               </div>
             </div>
@@ -283,13 +286,17 @@ function Order() {
               >
                 {currentOrder.attachments.map((src, index) => (
                   <SwiperSlide key={getKeyFor(src)}>
-                    <div className={styles.miniSlider}>
+                    <button
+                      type="button"
+                      className={styles.miniSlider}
+                      onClick={() => openImageModal(index)}
+                      aria-label={`${text('Open image')} ${index + 1}`}
+                    >
                       <AnyImage
-                        onClick={() => openImageModal(src)}
                         src={src}
                         alt={`${text('Order image')} ${index + 1}`}
                       />
-                    </div>
+                    </button>
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -326,6 +333,13 @@ function Order() {
               if (user.blackList?.includes(contractor.id) || contractor.blackList?.includes(user.id)) return null;  // Skip blacklisted
 
               const contractorProducts = Object.keys(contractor.services);
+              const contractorServiceNames = contractorProducts
+                .map(productId => products[productId]?.name)
+                .filter(Boolean);
+              const servicesAreExpanded = !!expandedServices[offer.contractorId];
+              const visibleServices = servicesAreExpanded
+                ? contractorServiceNames
+                : contractorServiceNames.slice(0, 3);
 
               const businessModelText = contractor.businessModel === BusinessModel.ServiceCenter
                 ? text('Service center')
@@ -412,7 +426,7 @@ function Order() {
                   </div>
 
                   <div className={styles.about_block2}>
-                    <table>
+                    <table className={styles.profileTable}>
                       <tbody>
                         <tr>
                           <td className={styles.light_text}>{text('Experience')}:</td>
@@ -432,10 +446,29 @@ function Order() {
                         )}
                         <tr>
                           <td className={styles.light_text}>{text('Services')}:</td>
-                          <td>
-                            {contractorProducts.length > 0
-                              ? contractorProducts.map(productId => products[productId]?.name).filter(Boolean).join(', ')
-                              : text('not specified')}
+                          <td className={styles.servicesCell}>
+                            {contractorServiceNames.length > 0 ? (
+                              <div className={styles.servicesDropdown}>
+                                <div className={styles.servicesList}>
+                                  {visibleServices.map(serviceName => (
+                                    <span key={serviceName}>{serviceName}</span>
+                                  ))}
+                                </div>
+                                {contractorServiceNames.length > 3 && (
+                                  <button
+                                    type="button"
+                                    className={styles.servicesToggle}
+                                    onClick={() => setExpandedServices(current => ({
+                                      ...current,
+                                      [offer.contractorId]: !current[offer.contractorId],
+                                    }))}
+                                  >
+                                    {servicesAreExpanded ? 'Скрыть' : `Показать все (${contractorServiceNames.length})`}
+                                    <span className={servicesAreExpanded ? styles.arrowUp : ''}>⌄</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : text('not specified')}
                           </td>
                         </tr>
                       </tbody>
@@ -494,7 +527,7 @@ function Order() {
             </button>
 
             <Swiper
-              initialSlide={currentOrder.attachments.indexOf(currentImageModalSrc)}
+              initialSlide={currentImageIndex}
               navigation={true}
               modules={[Navigation]}
               className={styles.modalSwiper}

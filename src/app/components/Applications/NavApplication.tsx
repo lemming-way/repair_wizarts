@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import '../../scss/applications.css'
+import '../../styles/legacy/applications.css'
 import { Link, useLocation } from "react-router-dom"
 
 import { useLanguage } from '../../state/language'

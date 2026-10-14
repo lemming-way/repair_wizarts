@@ -6,7 +6,8 @@ import styles from './MobileMenu.module.scss';
 import ListItem from '../ListItem';
 import { useLanguage } from 'app/state/language';
 import { useUser, UserRole } from 'app/state/user';
-import logo from 'app/img/header/new-logotype.svg';
+import { useCities } from 'app/state/site-data';
+import { setGlobal, useGlobalState } from 'app/state/global';
 
 
 const MobileMenu = ({ setMenuActive }) => {
@@ -16,16 +17,28 @@ const MobileMenu = ({ setMenuActive }) => {
   const { user } = useUser();
   const isClient = user.role === UserRole.Client;
   const isContractor = user.role === UserRole.Contractor;
-  const menu = [
-    [text('Moscow'), text('and Moscow region')],
-    [text('Saint Petersburg'), text('and Leningrad region')],
-  ];
+  const { cities } = useCities();
+  const currentCity = useGlobalState('currentCity');
   const [search, setSearch] = useState('');
+  const cityList = Object.entries(cities)
+    .map(([id, city]) => ({ id, ...city }))
+    .filter(city => !search || city.name.toLowerCase().includes(search.toLowerCase()));
+
+  const setCity = (cityId) => {
+    if (!cityId || !cities[cityId] || cityId === String(currentCity)) return;
+    setGlobal('currentCity', cityId);
+    if (Number.isFinite(cities[cityId].latitude) && Number.isFinite(cities[cityId].longitude)) {
+      setGlobal('map:location', {
+        latitude: cities[cityId].latitude,
+        longitude: cities[cityId].longitude,
+      });
+    }
+  };
 
   return (
     <div className={styles.mobileMenu}>
       <Link to="/" className={styles.logo_sidebar}>
-        <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
+        <img className={styles.toolbar_logo_img} src="/img/image.png" alt="Elitegig" />
       </Link>
 
       <ul className={styles.mobileMenu_lists}>
@@ -38,7 +51,7 @@ const MobileMenu = ({ setMenuActive }) => {
             openItem={openServices}
             onClick={() => setOpenServices(!openServices)}
           />
-          {openServices && <ServiceDropDownMobile />}
+          {openServices && <ServiceDropDownMobile onNavigate={() => setMenuActive(false)} />}
           <ListItem
             link="#"
             name={text('City')}
@@ -59,16 +72,15 @@ const MobileMenu = ({ setMenuActive }) => {
                 placeholder={text('select region or city')}
               />
 
-              {menu.map((menu, index) => (
+              {cityList.map(city => (
                 <div
-                  key={index}
-                  className={styles.sity}
+                  key={city.id}
+                  className={`${styles.sity} ${String(currentCity) === city.id ? styles.sity_selected : ''}`}
                   style={{ fontSize: '15px' }}
+                  onClick={() => setCity(city.id)}
+                  aria-selected={String(currentCity) === city.id}
                 >
-                  {menu[0]}
-                  <span style={{ marginLeft: 'auto' }} className={styles.small}>
-                    {menu[1]}
-                  </span>
+                  {city.name}
                 </div>
               ))}
             </div>

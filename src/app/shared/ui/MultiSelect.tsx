@@ -148,6 +148,7 @@ export const MultiSelect = (props: any) => {
       };
     },
     menu: (def: any) => ({ ...def, zIndex: 9999 }),
+    menuPortal: (def: any) => ({ ...def, zIndex: 9999 }),
   };
 
   if (props.isSelectAll && props.options.length !== 0) {

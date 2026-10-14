@@ -10,8 +10,21 @@
       display: flex;
       justify-content: space-between;
 
+      &_link {
+        flex: 1;
+        padding: 0;
+        border: 0;
+        color: inherit;
+        background: transparent;
+        font: inherit;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
       &_arrow {
         cursor: pointer;
+        flex-shrink: 0;
       }
 
       &_dropdown {

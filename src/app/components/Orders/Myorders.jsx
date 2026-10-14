@@ -1,8 +1,8 @@
 import { getRequestById } from '../../services/request.service'
 
-import '../../scss/orders.css'
-import '../../scss/OfferAService.css'
-import '../../scss/swiper.css'
+import '../../styles/legacy/orders.css'
+import '../../styles/legacy/OfferAService.css'
+import '../../styles/legacy/swiper.css'
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";

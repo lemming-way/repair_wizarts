@@ -100,13 +100,15 @@ export default function ModalEditOffer({ orderId, offer, onSuccess, onCancel }) 
   return (
     <>
       <div className={style.wrap}>
-        <div className={style.block}>
-          <div
+        <div className={`${style.block} ${style.modal_edit_offer__block}`}>
+          <button
+            type="button"
             className={style.close}
             onClick={() => onCancel?.()}
+            aria-label={text('Close')}
           >
             <img src="/img/close.svg" alt="" />
-          </div>
+          </button>
 
           <h1 className={style.modal_heading_centered}>
             {text(isEditing ? 'Editing offer' : 'Offer a service')}
@@ -127,7 +129,6 @@ export default function ModalEditOffer({ orderId, offer, onSuccess, onCancel }) 
             </div> */}
 
               <textarea
-                style={{ marginBottom: '30px' }}
                 className={style.modal_edit_offer__comment_input}
                 rows={4}
                 placeholder={text("Write how you will fix the client's device..")}

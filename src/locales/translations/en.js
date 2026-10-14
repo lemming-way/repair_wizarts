@@ -84,6 +84,7 @@ const lang = {
   "Chat": "Chat",
   "My applications": "My applications",
   "My reviews": "My reviews",
+  "Finance": "Finance",
   "Order exchange": "Order exchange",
   "Rating and comments": "Rating and comments",
   "Please top up your balance by 500 rubles": "Please top up your balance by 500 rubles",
@@ -278,7 +279,7 @@ const lang = {
   "Learn more": "Learn more",
   "Main focus": "Main focus",
   "Menu": "Menu",
-  "No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.": "No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.",
+  "No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.": "No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.",
   "Official prices": "Official prices",
   "Offline": "Offline",
   "On the platform since": "On the platform since",
@@ -518,7 +519,11 @@ const lang = {
   "Withdraw funds": "Withdraw funds",
   "YY:": "YY:",
   "CVC:": "CVC:",
-  "Your review has been sent for moderation": "Your review has been sent for moderation"
+  "Your review has been sent for moderation": "Your review has been sent for moderation",
+  "Registration selection": "Registration selection",
+  "User registration": "Client registration",
+  "Registration type for users (clients only)": "For clients who want to order services",
+  "Service and contractor registration": "Contractor registration"
 };
 
 export default lang;

@@ -83,12 +83,13 @@ function PaymentBlock({
             </div>
             <p className={style.mini_text}>
               {text('Pay the performer directly')} <br />
-              {text('No guarantees or compensation from RepairWizarts: you negotiate conditions and payment method directly with the performer.')}
+              {text('No guarantees or compensation from Elitegig: you negotiate conditions and payment method directly with the performer.')}
             </p>
           </div>
         </div>
 
-        <div
+        <button
+          type="button"
           className={style.button_go}
           onClick={() => {
             setVisibleBlockPayment(false);
@@ -96,7 +97,7 @@ function PaymentBlock({
           }}
         >
           {text('Continue')}
-        </div>
+        </button>
       </div>
     </div>
   );

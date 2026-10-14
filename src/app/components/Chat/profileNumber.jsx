@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import '../../scss/profileNumber.css';
-import '../../scss/swiper.css';
+import '../../styles/legacy/profileNumber.css';
+import '../../styles/legacy/swiper.css';
 
 import ModalAddCommentMini from './ModalAddCommentMini';
 import ModalDelete from './ModalDelete';
@@ -76,101 +76,82 @@ function App() {
         />
       )}
 
-      <div className="mini-text">
-        <h1>Номер профиля</h1>
-      </div>
+      <section className={style.page}>
+        <h1 className={style.title}>Мои отзывы</h1>
 
-      <div className="content-box">
-        <div className={style.stars_row}>
-          <h3 className="inter">{averageRating}</h3>
+        <div className={style.ratingCard}>
+          <div className={style.ratingTop}>
+            <strong>{averageRating}</strong>
+            <div className={style.stars_row}>
           {Array.from({ length: 5 }, (_, i) => (
             <img
               key={i}
               src="/img/img-star.png"
-              alt="Star"
-              style={{
-                opacity: i < Math.round(averageRating) ? 1 : 0.3,
-              }}
+                  alt=""
+                  className={i < Math.round(averageRating) ? '' : style.starMuted}
             />
           ))}
-        </div>
-
-        <div className="h4">
-          <h4 className="inter">На основании {totalCount} оценок</h4>
-        </div>
-
-        <div className="main-line">
-          {[5, 4, 3, 2, 1].map((star) => (
-            <div className="line-content df" key={star}>
-              <div className="img-line">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <img
-                    key={i}
-                    src={
-                      i < star
-                        ? '/img/img-small-star.png'
-                        : '/img/img-small-star-white.png'
-                    }
-                    alt="Star"
-                  />
-                ))}
-              </div>
-              <div className="big-line">
-                {(star === 5 || star === 1) && (
-                  <div
-                    className={star === 5 ? 'small-line' : 'small-line-2'}
-                  ></div>
-                )}
-              </div>
-              <div>
-                <p className="inter">{ratingCounts[star - 1]}</p>
-              </div>
             </div>
-          ))}
+            <span>На основании {totalCount} оценок</span>
+          </div>
+
+          <div className={style.ratingLines}>
+            {[5, 4, 3, 2, 1].map((star) => (
+              <div className={style.ratingRow} key={star}>
+                <span className={style.ratingLabel}>{star} ★</span>
+                <div className={style.ratingTrack}>
+                  <span
+                    className={style.ratingFill}
+                    style={{
+                      width: totalCount
+                        ? `${(ratingCounts[star - 1] / totalCount) * 100}%`
+                        : '0%',
+                    }}
+                  />
+                </div>
+                <span className={style.ratingCount}>{ratingCounts[star - 1]}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {feedback.map((item, index) => (
-          <div className="portifoly-photo" key={index}>
-            <div className="portifoly-img df">
+        <div className={style.reviewsList}>
+          {feedback.map((item) => (
+            <article className={style.reviewCard} key={item.booking_id}>
+              <div className={style.reviewHeader}>
               <img
-                style={{ width: 50, height: 50, borderRadius: 30 }}
+                  className={style.avatar}
                 src={item?.author?.u_photo || '/img/img-camera.png'}
                 alt="avatar"
               />
-              <div>
-                <h2 className="inter">{item?.author?.u_name}</h2>
-                <p className="inter">
-                  {new Date(item?.created_at).toLocaleDateString()}
-                </p>
+                <div className={style.reviewMeta}>
+                  <h2>{item?.author?.u_name}</h2>
+                  <time>{new Date(item?.created_at).toLocaleDateString('ru-RU')}</time>
+                </div>
+                <div className={style.reviewRating} aria-label={`Оценка: ${item.rating} из 5`}>
+                  {[...Array(5)].map((_, i) => (
+                    <img
+                      key={i}
+                      src={i < item.rating ? '/img/img-small-star.png' : '/img/img-small-star-white.png'}
+                      alt=""
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-
-            <div className={style.stars_row}>
-              {[...Array(5)].map((_, i) => (
-                <img
-                  key={i}
-                  src={
-                    i < item.rating
-                      ? '/img/img-small-star.png'
-                      : '/img/img-small-star-white.png'
-                  }
-                  alt="Star"
-                />
-              ))}
-              <p>{item.text || 'Без комментария'}</p>
-            </div>
 
             <div className={style.comment_body}>
-              <div className="content-portifoly">
-                <h3 className="inter">Комментарий</h3>
-                <p className="inter">
-                  {item.comment || 'Комментарий не указан'}
-                </p>
+                <div>
+                  <h3>{item.text || 'Отзыв о выполненной работе'}</h3>
+                  <p>{item.comment || 'Комментарий не указан'}</p>
               </div>
-              <ProfileSlider images={item.photos || []} />
+                {item.photos?.length > 0 && (
+                  <div className={style.photos}>
+                    <ProfileSlider images={item.photos} />
+                  </div>
+                )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div className={style.reviewActions}>
               <button
                 className={style.button}
                 onClick={() => setVisibleModalAddComment(true)}
@@ -178,9 +159,10 @@ function App() {
                 Оставить ответ
               </button>
             </div>
-          </div>
-        ))}
-      </div>
+            </article>
+          ))}
+        </div>
+      </section>
     </>
   );
 }

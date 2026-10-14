@@ -242,13 +242,20 @@
 }
 
 .table_wrap {
-    width: 98vw;
-    overflow-x: scroll; 
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
     padding-bottom: 15px;
 }
 
 .table {
-    margin-top: 20px;
+    margin: 20px 0 0;
+    width: max-content;
+}
+
+.table th,
+.table td {
+    text-align: left;
 }
 
 .table th {

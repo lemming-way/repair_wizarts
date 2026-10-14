@@ -15,7 +15,7 @@ import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-import '../../../scss/chat.css';
+import '../../../styles/legacy/chat.css';
 import AddFeedbackModal from './AddFeedbackModal';
 import AddOrderModal from './AddOrderModal';
 import BlackListModal from './BlackListModal';

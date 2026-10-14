@@ -13,8 +13,8 @@ import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';
 import { useUsersByIds } from 'app/state/user';
 import { useAvailableOrders, orderStatusString } from 'app/state/order';
-import 'app/scss/orders.css';
-import 'app/scss/swiper.css';
+import 'app/styles/legacy/orders.css';
+import 'app/styles/legacy/swiper.css';
 import style from './MarketOrders/MarketOrders.module.css';
 
 function MarketOrders() {
@@ -113,7 +113,7 @@ function MarketOrders() {
   }, [categoryFilter, offersCountFilter, budgetFilter, customPriceRange]);
 
   return (
-    <>
+    <div className={style.page}>
       {isVisibleEmailSettings && (
         <EmailSettings setVisibvleEmailSettings={setVisibvleEmailSettings} />
       )}
@@ -170,7 +170,6 @@ function MarketOrders() {
               {text('New on the exchange')}
               <span>{filteredOrders.length} {text('projects')}</span>
             </h1>
-            <div style={{ flex: 1 }}></div>
             <div className={style.flex_row_select}>
               <p className={style.heading__p}>{text('Show')}</p>
               <Dropdown>
@@ -218,7 +217,6 @@ function MarketOrders() {
                   className={`fsdfsaooo mobile-big_nav-text_1 ${style.heading_table_row}`}
                 >
                   <p className="inter">{text('Project')}</p>
-                  <div className={style.empty}></div>
                   <p className="inter">{text('Buyer')}</p>
                   <p className="inter">{text('Price')}</p>
                 </div>
@@ -234,7 +232,7 @@ function MarketOrders() {
                     className={`${style.row_order} ${style.first_row}`}
                   >
                     <div className={style.block_title}>
-                      <Link to={`/contractor/requests/offer/${order.id}`}>
+                      <Link className={style.titleLink} to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
                           {products?.[order.productId]?.name || text('Untitled')}
                         </h3>
@@ -282,7 +280,7 @@ function MarketOrders() {
                             : text('Price not specified')}
                         </p>
                         <p className={style.status}>
-                          <img src="/img/icon-confirm.png" alt="" />
+                          <span className={style.statusIcon}>✓</span>
                           {text(orderStatusString[order.status] || 'Unknown status')}
                         </p>
                       </div>
@@ -314,7 +312,7 @@ function MarketOrders() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

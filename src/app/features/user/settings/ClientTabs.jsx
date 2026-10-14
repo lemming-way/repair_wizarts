@@ -2,16 +2,16 @@ import { Link } from "react-router-dom"
 
 import style from "./ClientTabs.module.css"
 
-export default function ClientTabs({numberElementMenu, offsetMenu}) {
+export default function ClientTabs() {
 
    
     return (
         <>               
             <div className={style.navigator_block} >
-                <Link style={{translate: `${-170*offsetMenu}px`,padding: "20px 30px 17px 30px"}} className={`${style.link}  ${window.location.pathname === "/client/settings" ? "active2" : null}`} to="/client/settings">Профиль</Link>
-                <Link style={{translate: `${-170*offsetMenu}px`,padding: "20px 30px 17px 30px"}} className={`${style.link}  ${window.location.pathname === "/client/settings/wallet" ? "active2" : null}`} to='/client/settings/wallet'>Кошелёк</Link>
-                <Link style={{translate: `${-170*offsetMenu}px`,padding: "20px 30px 17px 30px"}} className={`${style.link}  ${window.location.pathname === "/client/settings/finance" ? "active2" : null}`} to='/client/settings/finance'>Финансы</Link>
-                <Link style={{translate: `${-170*offsetMenu}px`,padding: "20px 30px 17px 30px"}} className={`${style.link}  ${window.location.pathname === "/client/settings/balance" ? "active2" : null}`} to='/client/settings/balance'>Баланс</Link>
+                <Link className={`${style.link}  ${window.location.pathname === "/client/settings" ? "active2" : null}`} to="/client/settings">Профиль</Link>
+                <Link className={`${style.link}  ${window.location.pathname === "/client/settings/wallet" ? "active2" : null}`} to='/client/settings/wallet'>Кошелёк</Link>
+                <Link className={`${style.link}  ${window.location.pathname === "/client/settings/finance" ? "active2" : null}`} to='/client/settings/finance'>Финансы</Link>
+                <Link className={`${style.link}  ${window.location.pathname === "/client/settings/balance" ? "active2" : null}`} to='/client/settings/balance'>Баланс</Link>
             </div>
 
             {/* <Swiper

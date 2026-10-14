@@ -5,13 +5,26 @@
   align-content: center;
   align-items: center;
   position: relative;
+  z-index: 1005;
+  background: #131313;
 
   // Explicit header background to avoid dependency on page background
   &-header {
+    position: relative;
+    z-index: 10000;
+    overflow: visible;
     background-color: #131313;
     color: white;
     width: 100%;
+    border-bottom: 1px solid #fff;
+
+    @include mixins.xl {
+      position: sticky;
+      top: 0;
+    }
   }
+
+  overflow: visible;
 
   &_logo {
     padding: 10px 0;
@@ -19,6 +32,8 @@
     &_img {
       width: 196px;
       height: 49px;
+      object-fit: contain;
+      mix-blend-mode: screen;
 
       @include mixins.sm {
         width: 170px;
@@ -77,7 +92,7 @@
     height: 25px;
     top: 20px;
     left: 15px;
-    z-index: 888;
+    z-index: 1006;
 
     @include mixins.xl {
       display: block;
@@ -111,7 +126,7 @@
       background-color: unset !important;
     }
 
-    z-index: 888;
+    z-index: 1006;
 
   
 
@@ -151,6 +166,241 @@
         }
       }
     }
+
+    &_profile_menu {
+      position: absolute;
+      top: 58px;
+      right: 10px;
+      z-index: 1002;
+      display: flex;
+      flex-direction: column;
+      min-width: 220px;
+      padding: 8px 16px;
+      border: 1px solid #303030;
+      border-radius: 8px;
+      background: #131313;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, .25);
+      max-height: calc(100vh - 68px);
+      overflow-y: auto;
+
+      @include mixins.xl {
+        position: fixed;
+        z-index: 1004;
+      }
+
+      a {
+        padding: 13px 0;
+        border-bottom: 1px solid #515151;
+        color: #fff;
+        text-decoration: none;
+
+        &:last-child {
+          border-bottom: 0;
+        }
+      }
+
+      img {
+        width: 22px;
+        height: 22px;
+        object-fit: contain;
+        flex: 0 0 22px;
+      }
+
+      a,
+      &_logout {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      a b {
+        display: none;
+      }
+
+      @include mixins.xl {
+        width: min(308px, 82vw);
+        padding: 88px 0 18px;
+        background: #131313;
+
+        a {
+          position: relative;
+          padding: 14px 60px;
+          border: 0;
+          font-size: 16px;
+
+          b {
+            position: absolute;
+            top: 3px;
+            left: 75px;
+            display: grid;
+            width: 21px;
+            height: 21px;
+            place-items: center;
+            border-radius: 50%;
+            background: #e1563e;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 400;
+          }
+        }
+
+        a img {
+          width: 22px;
+          height: 22px;
+          flex-basis: 22px;
+          object-fit: contain;
+        }
+      }
+    }
+
+    &_top_backdrop {
+      display: none;
+
+      @include mixins.xl {
+        position: fixed;
+        top: 0;
+        right: auto;
+        left: 0;
+        width: min(320px, 85vw);
+        z-index: 1003;
+        display: block;
+        background: #131313;
+        pointer-events: none;
+        transition: height 0.12s linear;
+      }
+
+      &_right {
+        @include mixins.xl {
+          right: 0;
+          left: auto;
+          width: min(320px, 85vw);
+        }
+      }
+    }
+
+    &_profile_header {
+      display: none;
+
+      @include mixins.xl {
+        display: flex;
+        min-height: 172px;
+        margin-bottom: 16px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+
+        img {
+          width: 92px;
+          height: 92px;
+          padding: 3px;
+          border: 1px solid #fff;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        strong {
+          font-size: 16px;
+        }
+
+        span {
+          color: #c8c8c8;
+          font-size: 25px;
+          letter-spacing: 2px;
+        }
+      }
+    }
+
+    &_profile_rating {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      em {
+        color: #fff;
+        font-size: 16px;
+        font-style: normal;
+      }
+
+      span {
+        color: #c8c8c8;
+        font-size: 25px;
+        letter-spacing: 2px;
+      }
+    }
+
+    &_profile_link_active {
+      color: #fff !important;
+      background: #343434;
+      font-weight: 600;
+    }
+
+    &_menu,
+    &_profile_menu {
+      visibility: hidden;
+
+      @include mixins.xl {
+        position: fixed;
+        top: var(--drawer-top, 65px);
+        right: auto;
+        left: 0;
+        bottom: 0;
+        width: min(320px, 85vw);
+        height: auto;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        box-sizing: border-box;
+        padding-top: 18px;
+        transition: top 0.12s linear, transform 0.6s ease,
+          visibility 0s linear 0.6s;
+        overflow-y: auto;
+        transform: translateX(-100%);
+        z-index: 1004;
+      }
+    }
+
+    &_menu {
+      @include mixins.xl {
+        right: 0;
+        left: auto;
+        transform: translateX(100%);
+      }
+    }
+
+    &_menu_active {
+      visibility: visible;
+
+      @include mixins.xl {
+        transform: translateX(0);
+        transition-delay: 0s;
+      }
+    }
+
+    &_logout {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: auto;
+      padding: 16px 0;
+      border: 0;
+      border-top: 1px solid #515151;
+      color: #fff;
+      background: transparent;
+      text-align: left;
+      cursor: pointer;
+
+      img {
+        width: 24px;
+        height: 24px;
+      }
+
+      @include mixins.xl {
+        padding: 18px 60px;
+        font-size: 16px;
+      }
+    }
   }
 
   &_mobile {
@@ -162,19 +412,33 @@
 
     &_menu {
       display: block;
-      position: absolute;
+      position: fixed;
       top: 65px;
+      bottom: 0;
       left: -120%;
       background-color: black;
       color: white;
-      height: 100vh;
+      height: auto;
+      min-height: 0;
       width: 400px;
-      transition: all 1s ease;
+      overflow-y: auto;
+      transition: top 0.12s linear, left 0.6s ease;
       z-index: 887;
 
       &_active {
         left: 0;
       }
+    }
+
+    &_top_backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 886;
+      width: min(400px, 100vw);
+      background: #000;
+      pointer-events: none;
+      transition: height 0.12s linear;
     }
   }
 }

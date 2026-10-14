@@ -49,6 +49,24 @@ export enum BusinessModel {
 }
 
 /**
+ * Место выполнения работы
+ */
+export const WorkLocation = {
+  Client: 'client',
+  Shop: 'shop',
+  Remote: 'remote'
+} as const;
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type WorkLocation = typeof WorkLocation[keyof typeof WorkLocation];
+
+export const WorkLocationNames = {
+  [WorkLocation.Client]: 'At the client',
+  [WorkLocation.Shop]: 'In the workshop',
+  [WorkLocation.Remote]: 'Remote'
+}
+
+/**
  * Единицы времени.
  */
 export const TimeUnit = {
@@ -138,6 +156,8 @@ interface ContractorUserProfile extends UserBaseData {
   businessModel: BusinessModel;
   /** Название организации */
   organizationName: string;
+  /** Доступные места выполнения работы */
+  workLocations: WorkLocation[];
   /** Фотографии мастера */
   photos?: Array<File | number>;
   /** Активный - пользователь готов принимать заказы */
@@ -199,7 +219,10 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     organizationName: u_details?.businessModel === BusinessModel.ServiceCenter && 'string' === typeof u_details?.organizationName ? u_details.organizationName : '',
     photos: Array.isArray(u_details?.photos) ? u_details.photos.map(Number).filter(id => Number.isInteger(id) && id > 0) : [],
     active: Number(data.u_active) === 1,
-    registrationDate: new Date(Date.parse(String(u_details?.registrationDate)) || 0)
+    registrationDate: new Date(Date.parse(String(u_details?.registrationDate)) || 0),
+    workLocations: Array.isArray(u_details?.workLocations)
+      ? [...new Set(u_details.workLocations.filter(mode => Object.values(WorkLocation).includes(mode)))]
+      : []
   };
 }
 
@@ -548,6 +571,7 @@ export type UserUpdatePayload = {
   businessModel?: BusinessModel;
   organizationName?: string;
   photos?: Array<File | number>;
+  workLocations?: WorkLocation[];
 }
 
 /**
@@ -616,6 +640,9 @@ export async function updateUser(queryClient: QueryClient, userId: number | unde
   }
   if (payload.organizationName !== undefined) {
     apiUserData.u_details = { ...apiUserData.u_details, organizationName: payload.organizationName };
+  }
+  if (payload.workLocations !== undefined) {
+    apiUserData.u_details = { ...apiUserData.u_details, workLocations: payload.workLocations };
   }
   if (payload.photos !== undefined || payload.blackList !== undefined) {
     const oldData = await UserAPI.getAuthUser();

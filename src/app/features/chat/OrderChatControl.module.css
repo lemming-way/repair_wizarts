@@ -1,4 +1,5 @@
 .order_control_block {
+    position: relative;
     background-color: #ffffff;
     padding: 16px 22px 16px 64px;
     border-bottom: 1px solid #e9eaf1;
@@ -9,8 +10,13 @@
     gap: 15px; /* Отступы между элементами */
 }
 
+
 .info_modals {
   min-width: max-content;
+}
+
+.dropdown_wrap {
+    position: relative;
 }
 
 .order_info {
@@ -160,6 +166,72 @@
     }
     .close_chat_button {
         width: 100%;
+    }
+
+    .dropdown_wrap {
+        position: absolute;
+        top: 16px;
+        right: 58px;
+    }
+
+    .dropdown_wrap .dropdown_button {
+        position: static;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+    }
+
+    .dropdown_wrap .dropdown_menu {
+        top: 100%;
+        right: 0;
+        left: auto;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+    .order_control_block {
+        align-items: flex-start;
+        padding: 14px 18px;
+    }
+
+    .action_buttons {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .dropdown_wrap {
+        position: absolute;
+        top: 14px;
+        right: 18px;
+    }
+
+    .dropdown_wrap .dropdown_button {
+        position: static;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+    }
+
+    .dropdown_wrap .dropdown_menu {
+        top: 100%;
+        right: 0;
+        left: auto;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 800px) {
+    .order_control_block {
+        position: relative;
+        padding-right: 52px;
+    }
+
+    .dropdown_button {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
     }
 }
 

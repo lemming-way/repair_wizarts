@@ -265,6 +265,7 @@ export function ChatLayout() {
     files: File[],
     replyToMessage?: number,
   ) => {
+    if (!message && !files.length) return;
     if (message || replyToMessage) {
       const file = files.shift();
       const format = file ? MessageFormat.File : MessageFormat.Text;

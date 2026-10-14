@@ -13,8 +13,8 @@ import { useLanguage } from 'app/state/language';
 import { useOrdersByIds } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import { useProducts } from 'app/state/site-data';
-import 'app/scss/orders.css';
-import 'app/scss/swiper.css';
+import 'app/styles/legacy/orders.css';
+import 'app/styles/legacy/swiper.css';
 import style from './Offer/OrderRow.module.css';
 
 function Offer() {
@@ -71,7 +71,7 @@ function Offer() {
   const {
     description,
     desiredPrice,
-    attachments,
+    attachments = [],
     // createdAt, // todo: createdAt может быть использовано для расчета timeLeft, если есть соответствующая логика
   } = order;
 
@@ -89,17 +89,16 @@ function Offer() {
 
   return (
     <>
-      <div className={style.order_row}>
-        <div className={style.title_row}>
-          <h1>{text('Offer a service')}</h1>
-
-          <button
-            className={style.button_back_v2}
-            onClick={() => navigator('/contractor/requests')}
-          >
-            {text('Back')}
-          </button>
-        </div>
+      <div className={style.pageHeader}>
+        <button
+          type="button"
+          className={style.button_back_v2}
+          onClick={() => navigator('/contractor/requests')}
+        >
+          <span aria-hidden="true">←</span>
+          {text('Back')}
+        </button>
+        <h1>{text('Offer a service')}</h1>
       </div>
 
       {hasOffer ? (
@@ -151,10 +150,11 @@ function Offer() {
               {attachments.length > 0 ? (
                 attachments.map((fileId, index) => (
                   <SwiperSlide key={getKeyFor(fileId)} className={style.swiperSlide}>
-                    <div
-                      onClick={() => openImageModal(fileId)}
-                      style={{ cursor: 'pointer', width: '100%', height: '100%' }}
-                    >
+                  <button
+                    type="button"
+                    className={style.imageButton}
+                    onClick={() => openImageModal(fileId)}
+                  >
                       <AnyImage
                         src={fileId}
                         alt={`${text('Attachment')} ${index + 1}`}
@@ -165,7 +165,7 @@ function Offer() {
                           borderRadius: 8,
                         }}
                       />
-                    </div>
+                    </button>
                   </SwiperSlide>
                 ))
               ) : (
@@ -192,7 +192,7 @@ function Offer() {
       {isImageOpen && modalImage !== null && (
         <div className={style.modal} onClick={closeImageModal}>
           <div className={style.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button className={style.closeBtn} onClick={closeImageModal}>
+            <button type="button" className={style.closeBtn} onClick={closeImageModal} aria-label={text('Close')}>
               &times;
             </button>
             <Swiper

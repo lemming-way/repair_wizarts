@@ -1,4 +1,4 @@
-import '../../scss/style.css'
+import '../../styles/legacy/style.css'
 import { useLanguage } from '../../state/language'
 
 

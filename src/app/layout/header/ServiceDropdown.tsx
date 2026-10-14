@@ -100,8 +100,7 @@
 // };
 
 // export default ServiceDropdown;
-import { useState } from 'react';
-import Dropdown from 'react-multilevel-dropdown';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import styles from './ServiceDropdown.module.scss';
@@ -113,68 +112,92 @@ const ServiceDropdown = () => {
   const text = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const { categories, subcategories } = useProducts();
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelClose = () => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (closeTimeout.current) clearTimeout(closeTimeout.current);
+    };
+  }, []);
 
   return (
-    <Dropdown
-      title={
-        <>
+    <div
+      className={styles.serviceDropdown_wrapper}
+      ref={dropdownRef}
+      onMouseEnter={() => {
+        cancelClose();
+        setIsOpen(true);
+      }}
+      onMouseLeave={() => {
+        closeTimeout.current = setTimeout(() => setIsOpen(false), 300);
+      }}
+    >
+      <button
+        className={styles.serviceDropdown_button}
+        onClick={() => setIsOpen(open => !open)}
+      >
           <span>{text('Services')}</span>
           <img
             src={arrowDown}
             alt=""
             style={{
               transform: isOpen ? 'rotate(-90deg)' : 'rotate(0deg)',
-              transition: 'transform 1s ease',
+              transition: 'transform 0.3s ease',
               marginLeft: '5px',
             }}
           />
-        </>
-      }
-      isActive={isOpen}
-      menuClassName={styles.serviceDropdown}
-      wrapperClassName={styles.serviceDropdown_wrapper}
-      buttonClassName={styles.serviceDropdown_button}
-      onClick={() => setIsOpen(!isOpen)}
-      position="left"
-      openOnHover={true}
-    >
-      {/* 1 lvl */}
-      {Object.entries(categories).map(([categoryId, category]) => (
-        <div key={categoryId} className={styles.serviceDropdown_lvl1}>
-          <Dropdown.Item className={styles.serviceDropdown_item_lvl1}>
+      </button>
+
+      {isOpen && (
+        <div className={styles.serviceDropdown}>
+          {Object.entries(categories).map(([categoryId, category]) => (
+            <div key={categoryId} className={styles.serviceDropdown_lvl1}>
+              <div className={styles.serviceDropdown_item_lvl1}>
             <span className={styles.serviceDropdown_lvl1__span}>
               <p>{category.name}</p>
             </span>
 
-            {/* 2 lvl */}
-            <Dropdown.Submenu
-              position="right-top"
-              className={styles.Submenu_submenu}
-            >
+                <div className={styles.Submenu_submenu}>
               {category.subcategories.map(
                 subcategoryId => {
                   const subcategory = subcategories[subcategoryId];
                   if (!subcategory) return null; // Ensure subcategory exists
 
                   return (
-                    <Dropdown.Item
+                    <div
                       className={styles.serviceDropdown_item}
                       key={subcategoryId}
                     >
                       <Link
                         to={`/categories/${subcategoryId}`}
+                        onClick={() => setIsOpen(false)}
                       >
                         <span>{subcategory.name}</span>
                       </Link>
-                    </Dropdown.Item>
+                    </div>
                   );
                 },
               )}
-            </Dropdown.Submenu>
-          </Dropdown.Item>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </Dropdown>
+      )}
+    </div>
   );
 };
 

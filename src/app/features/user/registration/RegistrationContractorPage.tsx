@@ -20,6 +20,16 @@ const experienceOptions = [
   { value: 6, label: 'More than 5 years' },
 ];
 
+const fourthLevelOptions: MultiSelectOption[] = [
+  { value: 'mock-1', label: 'Настройка оборудования' },
+  { value: 'mock-2', label: 'Диагностика' },
+  { value: 'mock-3', label: 'Установка программ' },
+  { value: 'mock-4', label: 'Удалённая помощь' },
+  { value: 'mock-5', label: 'Обслуживание систем' },
+  { value: 'mock-6', label: 'Консультация специалиста' },
+  { value: 'mock-7', label: 'Срочный выезд' },
+];
+
 const RegistrationContractorPage = () => {
   const text = useLanguage();
   const { categories, subcategories, products } = useProducts();
@@ -54,6 +64,7 @@ const RegistrationContractorPage = () => {
   const [categoryOptionSelected, setCategoryOptionSelected] = useState<MultiSelectOption[]>([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState<MultiSelectOption[]>([]);
   const [productOptionSelected, setProductOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [fourthLevelOptionSelected, setFourthLevelOptionSelected] = useState<MultiSelectOption[]>([]);
 
   useEffect(() => {
     document.title = text('Contractor Registration');
@@ -303,6 +314,7 @@ const RegistrationContractorPage = () => {
               setCategoryOptionSelected(selected || []);
               setSubcategoryOptionSelected([]); // Reset sub-categories
               setProductOptionSelected([]); // Reset models
+              setFourthLevelOptionSelected([]);
             }}
             value={categoryOptionSelected}
             isMulti={true}
@@ -316,6 +328,7 @@ const RegistrationContractorPage = () => {
               onChange={(selected: MultiSelectOption[] | null) => {
                 setSubcategoryOptionSelected(selected || []);
                 setProductOptionSelected([]); // Reset models on sub-category change
+                setFourthLevelOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               isSelectAll={true}
@@ -332,9 +345,10 @@ const RegistrationContractorPage = () => {
               key="model_phone_id"
               placeholder={text('Service name')}
               options={productOptions}
-              onChange={(selected: MultiSelectOption[] | null) =>
-                setProductOptionSelected(selected || [])
-              }
+              onChange={(selected: MultiSelectOption[] | null) => {
+                setProductOptionSelected(selected || []);
+                setFourthLevelOptionSelected([]);
+              }}
               value={productOptionSelected}
               isSelectAll={true}
               isMulti={true}
@@ -342,6 +356,20 @@ const RegistrationContractorPage = () => {
               isDisabled={
                 !subcategoryOptionSelected || subcategoryOptionSelected.length === 0
               }
+            />
+          )}
+          {productOptionSelected.length > 0 && (
+            <MultiSelect
+              key="fourth_level_id"
+              placeholder="Категории 4-го уровня"
+              options={fourthLevelOptions}
+              onChange={(selected: MultiSelectOption[] | null) =>
+                setFourthLevelOptionSelected(selected || [])
+              }
+              value={fourthLevelOptionSelected}
+              isSelectAll={true}
+              isMulti={true}
+              menuPlacement="bottom"
             />
           )}
 

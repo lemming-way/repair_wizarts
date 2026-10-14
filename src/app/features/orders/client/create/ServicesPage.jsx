@@ -1,10 +1,20 @@
 import { useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
-import 'app/scss/remont.css';
+import 'app/styles/legacy/remont.css';
 import style from './ServicesPage/ServicesPage.module.css';
 import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';
+
+const mockFourthLevelCategories = [
+  'Настройка оборудования',
+  'Диагностика',
+  'Установка программ',
+  'Удалённая помощь',
+  'Обслуживание систем',
+  'Консультация специалиста',
+  'Срочный выезд',
+];
 
 function ServicesPage() {
   const text = useLanguage();
@@ -23,6 +33,14 @@ function ServicesPage() {
     name: products[id].name
   }) );
   const currentProducts = search ? subcategoryProducts.filter( item => item.name === search ) : subcategoryProducts;
+  const categoryListItems = [
+    ...currentProducts.map(product => ({ ...product, isMock: false })),
+    ...mockFourthLevelCategories.map((name, index) => ({
+      id: `mock-${index}`,
+      name,
+      isMock: true,
+    })),
+  ];
 
   useEffect(() => {
     document.title = text('iPhone repair');  // todo: Изменить текст
@@ -36,23 +54,39 @@ function ServicesPage() {
       <p>{text('Select an iPhone model to find out the cost of repair.')  /* todo: Изменить текст */}</p>
       <Link
         to={'/client/requests/create/data'}
-        className="header__button"
+        className={`header__button ${style.orderButton}`}
         style={{ padding: '15px 40px' }}
       >
         {text('Order on exchange')}
       </Link>
+      {categoryListItems.length > 0 && (
+        <nav className={style.categoryList} aria-label={selectedSubcategory?.name}>
+          {categoryListItems.map(product => (
+            <Link
+              key={product.id}
+              to={product.isMock && currentProducts[0]
+                ? `/services/${currentProducts[0].id}`
+                : `/services/${product.id}`}
+              className={style.categoryListItem}
+            >
+              {product.name}
+            </Link>
+          ))}
+        </nav>
+      )}
 
-      <div className="remont__card__list" style={{ marginTop: 100 }}>
+      <div className={`remont__card__list ${style.cardList}`} style={{ marginTop: 100 }}>
         {currentProducts.length === 0
           ? text('Nothing found')
           : currentProducts.map(product => (
-              <div className="remont__card" key={product.id}>
+              <div className={`remont__card ${style.card}`} key={product.id}>
                 <Link
                   to={`/services/${product.id}`}
                   style={{ textDecoration: 'none' }}
                 >
-                  <div className="remont__card__image">
+                  <div className={`remont__card__image ${style.cardImage}`}>
                     <img
+                      className={style.productImage}
                       src={'/img/contractor-profile_img/phon.png'}
                       alt=""
                       style={{

@@ -2,10 +2,11 @@
     &__profile {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 14px;
+        overflow: visible;
 
         @media (max-width: 1200px) {
-            margin-right: 20px;
+            margin-right: 30px;
         }
 
         @media (max-width: 500px) {
@@ -13,35 +14,82 @@
         }
     }
 
+    &__account {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        overflow: visible;
+    }
+
     &__icons {
-        --size: 30px;
+        --size: 38px;
         width: var(--size);
         height: var(--size);
 
         border-radius: 50%;
-        border: 2px solid white;
+        border: 1px solid #fff;
 
         display: flex;
         justify-content: center;
         align-items: center;
+        position: relative;
+        flex: 0 0 var(--size);
+        transition: border-color .2s ease, background-color .2s ease;
 
         img {
-            width: 60%;
+            width: 17px;
+            height: 17px;
+            object-fit: contain;
+        }
+
+        &:hover {
+            background: rgba(255, 255, 255, .1);
+            border-color: #d9573b;
         }
     }
 
+    &__avatar {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        border: 2px solid #fff;
+        border-radius: 50%;
+    }
+
     &__button {
-        border: none;
-        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 18px;
+        color: #fff;
+        background-color: #d9573b;
+        border: 1px solid #e77a64;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        transition: background-color .2s ease, border-color .2s ease;
 
         &:hover {
-            background-color: #d9ad3b;
+            color: #fff;
+            background-color: #bd432a;
+            border-color: #bd432a;
+        }
+
+        &:focus-visible {
+            outline: 2px solid #fff;
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 1200px) {
+            margin-left: auto;
         }
 
         @media (max-width: 520px) {
-            padding: 5px 10px;
-            font-size: 12px;
-            margin: 0;
+            display: none;
         }
     }
 
@@ -51,6 +99,139 @@
         display: none;
         }
     }
+}
+
+.header__account .contractor__moneys__full {
+    display: block;
+    position: static;
+    padding: 0;
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 9px 18px;
+        color: #fff;
+        background: #d9573b;
+        border: 1px solid #e77a64;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.2;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: background-color .2s ease, border-color .2s ease;
+
+        &:hover {
+            color: #fff;
+            background: #bd432a;
+            border-color: #bd432a;
+        }
+    }
+}
+
+.header-finance {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    padding: 6px 12px 6px 9px;
+    border: 1px solid #d9573b;
+    border-radius: 9px;
+    color: #fff;
+    background: #d9573b;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color .2s ease, border-color .2s ease;
+
+    &:hover {
+        color: #fff;
+        background: #bd432a;
+        border-color: #bd432a;
+    }
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 29px;
+        height: 29px;
+        flex: 0 0 29px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, .16);
+
+        svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 1.7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        line-height: 1.05;
+
+        strong {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        small {
+            margin-top: 3px;
+            color: rgba(255, 255, 255, .82);
+            font-size: 10px;
+        }
+    }
+}
+
+@media (max-width: 520px) {
+    .header-finance {
+        padding-right: 8px;
+
+        &__content small {
+            display: none;
+        }
+
+        &__content strong {
+            font-size: 12px;
+        }
+    }
+}
+
+.header__icons .chat-message-counter {
+    position: absolute;
+    top: 0;
+    right: -5px;
+    left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    color: #fff;
+    background: #d9573b;
+    border: 2px solid #131313;
+    border-radius: 50%;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 17px;
+    text-align: center;
+    transform: translateY(-35%);
+}
+
+.yosetout {
+    position: relative;
+    z-index: 1001;
+    cursor: pointer;
+    overflow: visible !important;
 }
 
 .contractor__moneys {

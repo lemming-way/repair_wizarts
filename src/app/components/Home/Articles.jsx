@@ -10,13 +10,14 @@ import likeImage from "../../img/like.png"
 import viewImage from "../../img/view.png"
 
 
-import '../../scss/swiper.css'
+import '../../styles/legacy/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 // todo: Добавить реальный вызов API для получения статей
 // import { getArticles } from '../../services/article.service';
 import { formatDate } from "app/shared/lib/formatDate";
 import { useLanguage } from "../../state/language";
+import styles from '../../styles/home/HomeSections.module.scss';
 
 // Фиктивные данные для статей
 const mockArticlesData = Array.from({ length: 8 }).map((_, i) => ({
@@ -47,16 +48,16 @@ function Articles(){
         path ? SERVER_PATH + path : defaultImage
 
     return (
-        <section className="blog">
+        <section className={`blog ${styles.section}`}>
             <div className="container ircontainer">
-                <h1>{text('Articles')}</h1>
+                <h1 className={styles.title}>{text('Articles')}</h1>
                 <div className="blog__card__list">
                     <Swiper
                         slidesPerView={4}
                         spaceBetween={30}
                         navigation={true}
                         modules={[Navigation]}
-                        className="mySwiper"
+                        className={`mySwiper ${styles.slider} ${styles.articleSlider}`}
                         breakpoints={{
                             0: {
                                 slidesPerView: 2
@@ -74,7 +75,7 @@ function Articles(){
                     >
                         {articles.data.map((v) => (
                             <SwiperSlide className="swiper-slier" key={v.id}>
-                                <Link to={"/articles/" + v.id}>
+                                <Link className={styles.articleLink} to={"/articles/" + v.id}>
                                     <div className="blog__card">
                                         <img
                                             className="blog-card__picture"
@@ -109,6 +110,9 @@ function Articles(){
                             </SwiperSlide>
                         ))}
                     </Swiper>
+                </div>
+                <div className={styles.footer}>
+                    <Link className={styles.allButton} to="/articles">Все статьи</Link>
                 </div>
             </div>
         </section>

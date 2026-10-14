@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import MobileMenu from './header/MobileMenu';
 import DropdownSetout from './header/dropdownSetout';
@@ -9,9 +11,8 @@ import ToolbarButtons from './header/ToolbarButtons';
 import styles from './header/Toolbar.module.scss';
 import ListItem from './ListItem';
 import './header/header.scss';
-import logo from '../img/header/new-logotype.svg';
 import { useLanguage } from '../state/language';
-import { useUser, UserRole } from '../state/user';
+import { logout, useUser, UserRole } from '../state/user';
 
 // Исправила и буду исправлять порядок импортов во всем проекте . Лучше импортировать в следующем порядке:
 // 1: импорты React
@@ -21,13 +22,32 @@ import { useUser, UserRole } from '../state/user';
 
 const Toolbar = () => {
   const [visibleSetout, setVisibleSetout] = useState(false);
+  const toolbarHeaderRef = useRef(null);
+  const [drawerTop, setDrawerTop] = useState(65);
+  const profileMenuRef = useRef(null);
+  const [profileMenuPosition, setProfileMenuPosition] = useState({ top: 70, right: 15 });
   const [menuActive, setMenuActive] = useState(false);
   const text = useLanguage();
   const { user } = useUser();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const isContractor = user.role === UserRole.Contractor;
+  const financeLink = isContractor ? '/contractor/wallet' : '/client/settings/wallet';
+  const balanceValue = Number(
+    user.details?.balance ?? user.balance ?? user.contractor?.[0]?.balance ?? 0
+  );
+  const formattedBalance = Number.isFinite(balanceValue)
+    ? new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(balanceValue)
+    : '0';
 
   const [isOpen, setIsOpen] = useState(false);
+  const handleLogout = async () => {
+    setIsOpen(false);
+    await logout(queryClient);
+    navigate('/');
+  };
   const toggleMenu = () => {
     console.log('click');
     console.log(isOpen);
@@ -49,11 +69,27 @@ const Toolbar = () => {
     document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, []);
+
+  useEffect(() => {
+    const updateDrawerTop = () => {
+      const headerBottom = toolbarHeaderRef.current?.getBoundingClientRect().bottom ?? 0;
+      setDrawerTop(Math.max(0, headerBottom));
+    };
+
+    updateDrawerTop();
+    window.addEventListener('scroll', updateDrawerTop, { passive: true });
+    window.addEventListener('resize', updateDrawerTop);
+    return () => {
+      window.removeEventListener('scroll', updateDrawerTop);
+      window.removeEventListener('resize', updateDrawerTop);
+    };
+  }, []);
+
   return (
-    <header className={styles['toolbar-header']}>
+    <header ref={toolbarHeaderRef} className={styles['toolbar-header']}>
       <div className={`${styles.toolbar} appContainer`}>
         <Link to="/" className={styles.toolbar_logo}>
-          <img className={styles.toolbar_logo_img} src={logo} alt="Logo" />
+          <img className={styles.toolbar_logo_img} src="/img/image.png" alt="Elitegig" />
         </Link>
         <ul className={styles.toolbar_lists}>
           {!isContractor && (
@@ -87,24 +123,22 @@ const Toolbar = () => {
           {/* <ListItem link="/orders" className={styles.toolbar_lists_item_link} name="Мои заказы"/> */}
         </ul>
         <div className="header__profile">
+          {!isContractor && (
+            <Link
+              to="/client/requests/create/data"
+              className="header__button"
+            >
+              {text('order_on_exchange')}
+            </Link>
+          )}
           {!!user.id ? (
-            <div className="header__profile">
-              {!isContractor && (
-                <Link
-                  to={'/client/requests/create/data'}
-                  className="header__button"
-                >
-                    {text('order_on_exchange')}
-                </Link>
-              )}
-
+            <div className="header__account">
               <a className="header__icons" href="tel:+79697148750">
                 <img src="/img/icons/phone.svg" alt="" />
               </a>
                 <Link
                   to="/chats"
                   className="header__icons"
-                  style={{ display: 'flex', position: 'relative' }}
                   onClick={() => {
                     setVisibleSetout(false);
                   }}
@@ -114,25 +148,24 @@ const Toolbar = () => {
                 <div className="chat-message-counter">1</div>
               </Link>
               <div
+                ref={profileMenuRef}
                 className={visibleSetout ? 'yosetout yosetout--open' : 'yosetout'}
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!visibleSetout && profileMenuRef.current) {
+                    const rect = profileMenuRef.current.getBoundingClientRect();
+                    setProfileMenuPosition({
+                      top: rect.bottom + 8,
+                      right: window.innerWidth - rect.right,
+                    });
+                  }
                   setVisibleSetout(!visibleSetout);
                 }}
               >
                 <img
                   src={user.avatar || '/img/user_avatar.png'}
-                  width="40px"
-                  height="40px"
+                  className="header__avatar"
                   alt=""
-                  style={{
-                    borderRadius: '20px',
-                    objectFit: 'cover',
-                    border: '2px solid white',
-                    scale: '1.2',
-                    marginLeft: '5px',
-                    marginRight: '5px',
-                  }}
                 />
                 <div className="dropdownuser_arrow-wrap">
                   <img
@@ -141,24 +174,25 @@ const Toolbar = () => {
                     alt=""
                   />
                 </div>
-
-                <div className="bldropdown">
-                  {visibleSetout ? <DropdownSetout /> : null}
-                </div>
                 {/* </Link> */}
               </div>
-              <>
-                {/* <p className="contractor__moneys">
-                  <>
-                    {ui.isContractor ? (
-                      <>parseFloat(user.contractor[0].balance).toFixed(2)₽</>
-                    ) : null}
-                  </>
-                </p> */}
-                <div className="contractor__moneys__full">
-                  <Link to="/contractor/wallet">{text('replenish_balance')}</Link>
-                </div>
-              </>
+              <Link
+                to={financeLink}
+                className="header-finance"
+                title={text('replenish_balance')}
+              >
+                <span className="header-finance__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M4 7.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h12" />
+                    <path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z" />
+                    <circle cx="16.5" cy="13.5" r=".7" fill="currentColor" stroke="none" />
+                  </svg>
+                </span>
+                <span className="header-finance__content">
+                  <strong>{formattedBalance} ₽</strong>
+                  <small>{text('Finance')}</small>
+                </span>
+              </Link>
             </div>
           ) : (
             // Вынесла в отдельный компонент кнопки, чтобы сократить код
@@ -177,8 +211,9 @@ const Toolbar = () => {
       {/*Вынесла в отдельный компонент кнопки, чтобы сократить код*/}
       {/* мобильное меню в левом бургере */}
       <div className={styles.toolbar_mobile}>
-        <div
-          className={
+          <div
+            style={{ top: `${drawerTop}px` }}
+            className={
             menuActive
               ? `${styles.toolbar_mobile_menu} ${styles.toolbar_mobile_menu_active}`
               : `${styles.toolbar_mobile_menu}`
@@ -187,30 +222,102 @@ const Toolbar = () => {
           <MobileMenu setMenuActive={setMenuActive} />
         </div>
       </div>
+      {menuActive && (
+        <div
+          className={styles.toolbar_mobile_top_backdrop}
+          style={{ height: `${drawerTop}px` }}
+          aria-hidden="true"
+        />
+      )}
 
       {/* правое бургер в мобильной */}
       {/* временно добавил display none, пока нет авторизации */}
-      <div
-        className={[
-          styles.toolbar_burger2,
-          !!user.id
-            ? styles.toolbar_burger2_visibility_none
-            : styles.toolbar_burger2_visibility_block,
-        ].join(' ')}
-        onClick={toggleMenu}
-      >
-        <div className={styles.toolbar_burger2_icon}></div>
-      </div>
-      {isOpen && (
-        <div className={styles.toolbar_burger2_menu}>
-          <Link onClick={() => setIsOpen(false)} to="/login">
-          {text('login')}
-          </Link>
-          <Link onClick={() => setIsOpen(false)} to="/register">
-          {text('register')}
-          </Link>
+      {(isContractor || !user.id) && (
+        <div
+          className={[
+            styles.toolbar_burger2,
+            styles.toolbar_burger2_visibility_block,
+          ].join(' ')}
+          onClick={toggleMenu}
+        >
+          <div className={styles.toolbar_burger2_icon}></div>
         </div>
       )}
+      {(isContractor || !user.id) && isOpen && (
+        <div
+          className={`${styles.toolbar_burger2_top_backdrop} ${
+            !user.id ? styles.toolbar_burger2_top_backdrop_right : ''
+          }`}
+          style={{ height: `${drawerTop}px` }}
+          aria-hidden="true"
+        />
+      )}
+      {(isContractor || !user.id) && <div
+        style={{ '--drawer-top': `${drawerTop}px` }}
+        className={`${
+          !!user.id
+            ? styles.toolbar_burger2_profile_menu
+            : styles.toolbar_burger2_menu
+        } ${isOpen ? styles.toolbar_burger2_menu_active : ''}`}
+      >
+        {!!user.id ? (
+          <>
+            <div className={styles.toolbar_burger2_profile_header}>
+              <img src={user.avatar || '/img/user_avatar.png'} alt="" />
+              <strong>{[user.name, user.lastname].filter(Boolean).join(' ')}</strong>
+              {isContractor && (
+                <div className={styles.toolbar_burger2_profile_rating}>
+                  <em>{user.contractor?.[0]?.rating ?? '0.0'}</em>
+                  <span>★★★★★</span>
+                  <em>({user.contractor?.[0]?.number_of_feedbacks ?? 0})</em>
+                </div>
+              )}
+            </div>
+            <Link className={location.pathname.startsWith(financeLink) ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={financeLink}>
+              <img src="/img/img-exit.png" alt="" />
+              <span>{text('Wallet')}</span>
+            </Link>
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/settings' : '/client/settings') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/settings' : '/client/settings'}>
+              <img src="/img/img-contact.png" alt="" />
+              <span>{text('Settings')}</span>
+            </Link>
+            <Link className={location.pathname.startsWith('/chats') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to="/chats">
+              <img src="/img/img-massage.png" alt="" />
+              <span>{text('Chat')}</span>
+              <b>1</b>
+            </Link>
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/orders' : '/client/requests') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/orders' : '/client/requests'}>
+              <img src="/img/img-list.png" alt="" />
+              <span>{isContractor ? 'Мои заявки' : text('My orders')}</span>
+              <b>1</b>
+            </Link>
+            {isContractor && (
+              <Link className={location.pathname.startsWith('/contractor/feedback') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to="/contractor/feedback">
+                <img src="/img/img-white-star.png" alt="" />
+                <span>Мои отзывы</span>
+                <b>1</b>
+              </Link>
+            )}
+            <Link className={location.pathname.startsWith(isContractor ? '/contractor/requests' : '/client/requests/my_orders') ? styles.toolbar_burger2_profile_link_active : ''} onClick={() => setIsOpen(false)} to={isContractor ? '/contractor/requests' : '/client/requests/my_orders'}>
+              <img src="/img/img-list-2.png" alt="" />
+              <span>{isContractor ? text('Order exchange') : text('All orders')}</span>
+            </Link>
+            <button
+              type="button"
+              className={styles.toolbar_burger2_logout}
+              onClick={handleLogout}
+            >
+              <img src="/img/img-exit-2.png" alt="" />
+              <span>{text('Logout')}</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <Link onClick={() => setIsOpen(false)} to="/login">{text('login')}</Link>
+            <Link onClick={() => setIsOpen(false)} to="/register">{text('register')}</Link>
+          </>
+        )}
+      </div>}
 
       {/* modile левое меню */}
       {/* <div className={styles.toolbar_mobile2}>
@@ -222,6 +329,17 @@ const Toolbar = () => {
             <MobileMenu/>
           </div>
       </div> */}
+      {visibleSetout &&
+        createPortal(
+          <div
+            className="bldropdown profile-dropdown-portal yosetout"
+            style={profileMenuPosition}
+            onClick={() => setVisibleSetout(false)}
+          >
+            <DropdownSetout />
+          </div>,
+          document.body
+        )}
     </header>
   );
 };

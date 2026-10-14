@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react';
+
 import WhyChooseUsBlockCard from "./components/WhyChooseUsBlockCard/WhyChooseUsBlockCard";
 import styles from './WhyChooseUsBlock.module.scss';
 import { useLanguage } from 'app/state/language';
@@ -22,8 +24,11 @@ const WhyChooseUsBlock = () => {
   // }, []);
 
   return (
-    <div className={`${styles.whyChooseUsBlock} ${styles.appContainer}`}>
-      <h2 className={styles.whyChooseUsBlock_title}> {text("Why RepairWizards and not other contractor sites?")}
+    <div
+      className={`${styles.whyChooseUsBlock} ${styles.appContainer}`}
+      style={{ '--mobile-phone-image': 'url("/img/mobile-phone.png")' } as CSSProperties}
+    >
+      <h2 className={styles.whyChooseUsBlock_title}> {text("Why Elitegig and not other contractor sites?")}
       </h2>
         <div className={styles.whyChooseUsBlock_cards}>
           {/*Вынесла в отдельный компонент что бы сократить код и переиспользовать карточки в свайпере мобильной версии*/}

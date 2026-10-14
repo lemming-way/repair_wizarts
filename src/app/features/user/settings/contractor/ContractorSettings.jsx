@@ -2,17 +2,24 @@ import { useEffect, useState } from 'react';
 
 import { MultiSelect, ImageSwiper } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
-import { useUser, useUpdateUser, useSetContractorActive, BusinessModel } from 'app/state/user';
+import { useUser, useUpdateUser, useSetContractorActive, BusinessModel, WorkLocationNames } from 'app/state/user';
 import { useProducts, useCities } from 'app/state/site-data';
-import 'app/scss/profile.css';
+import 'app/styles/legacy/profile.css';
 import style from './ContractorSettings.module.css';
 
-const experienceOptions = [
-  { value: 1, label: '1 year' },
-  { value: 2, label: '2 years' },
-  { value: 3, label: '3 years' },
-  { value: 5, label: '5 years' },
-  { value: 6, label: 'More than 5 years' },
+const experienceOptions = Array.from({ length: 15 }, (_, index) => ({
+  value: index + 1,
+  label: `${index + 1} ${index === 0 ? 'year' : 'years'}`,
+}));
+
+const fourthLevelOptions = [
+  { value: 'mock-1', label: 'Настройка оборудования' },
+  { value: 'mock-2', label: 'Диагностика' },
+  { value: 'mock-3', label: 'Установка программ' },
+  { value: 'mock-4', label: 'Удалённая помощь' },
+  { value: 'mock-5', label: 'Обслуживание систем' },
+  { value: 'mock-6', label: 'Консультация специалиста' },
+  { value: 'mock-7', label: 'Срочный выезд' },
 ];
 
 function ContractorSettings() {
@@ -21,6 +28,7 @@ function ContractorSettings() {
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
   const [productOptionSelected, setProductOptionSelected] = useState([]);
+  const [fourthLevelOptionSelected, setFourthLevelOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
   const [photos, setPhotos] = useState([]);
 
@@ -41,6 +49,7 @@ function ContractorSettings() {
   });
   const [businessModel, setBusiness] = useState(BusinessModel.IndependentTechnician);
   const [isActive, setIsActive] = useState(true);
+  const [workLocations, setWorkLocations] = useState([]);
 
   const getFormAttrs = (field) => {
     const value = field.split('.').reduce((obj, key) => obj?.[key], form);
@@ -127,6 +136,7 @@ function ContractorSettings() {
     setBusiness(user.businessModel);
     setIsActive(user.active);
     setPhotos(user.photos || []);
+    setWorkLocations(user.workLocations || []);
   }, [user, categories, subcategories, products]);
 
   useEffect(() => {
@@ -186,7 +196,8 @@ function ContractorSettings() {
       locality: Number(form.city) || 0,
       businessModel,
       services: newServicesMap,
-      photos
+      photos,
+      workLocations
     };
 
     try {
@@ -249,6 +260,7 @@ function ContractorSettings() {
                 setCategoryOptionSelected(selected);
                 setSubcategoryOptionSelected([]);
                 setProductOptionSelected([]);
+                setFourthLevelOptionSelected([]);
               }}
               value={categoryOptionSelected}
               menuPlacement="bottom"
@@ -262,6 +274,7 @@ function ContractorSettings() {
               onChange={(selected) => {
                 setSubcategoryOptionSelected(selected);
                 setProductOptionSelected([]);
+                setFourthLevelOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               menuPlacement="bottom"
@@ -273,12 +286,24 @@ function ContractorSettings() {
               isMulti={true}
               placeholder={text('Services')}
               options={productOptions}
-              onChange={(selected) =>
-                setProductOptionSelected(selected)
-              }
+              onChange={(selected) => {
+                setProductOptionSelected(selected);
+                setFourthLevelOptionSelected([]);
+              }}
               value={productOptionSelected}
               menuPlacement="bottom"
               isDisabled={!subcategoryOptionSelected.length}
+            />
+            <MultiSelect
+              key="fourth_level"
+              isSelectAll={true}
+              isMulti={true}
+              placeholder="Категории 4-го уровня"
+              options={fourthLevelOptions}
+              onChange={setFourthLevelOptionSelected}
+              value={fourthLevelOptionSelected}
+              menuPlacement="bottom"
+              isDisabled={!productOptionSelected.length}
             />
           </div>
 
@@ -325,6 +350,8 @@ function ContractorSettings() {
               value={experience}
               isSelectAll={false}
               menuPlacement="bottom"
+              menuPosition="fixed"
+              menuPortalTarget={document.body}
             />
           </div>
 
@@ -352,6 +379,24 @@ function ContractorSettings() {
               <label htmlFor="is-active">
                 <p>{text('Receive orders')}</p>
               </label>
+            </div>
+
+            <h4 className={style.workLocationsTitle}>{text('Where do you work')}:</h4>
+            <div className={style.workLocations}>
+              {Object.entries(WorkLocationNames).map((mode, label) => (
+                <label key={mode} className={style.workLocationOption}>
+                  <input
+                    type="checkbox"
+                    checked={workLocations.includes(mode)}
+                    onChange={(e) => setWorkLocations((current) =>
+                      e.target.checked
+                        ? [...current, mode]
+                        : current.filter((item) => item !== mode)
+                    )}
+                  />
+                  <span>{text(label)}</span>
+                </label>
+              ))}
             </div>
 
             <h4>{text('Business model')}:</h4>

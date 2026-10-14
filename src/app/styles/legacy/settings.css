@@ -117,27 +117,27 @@
 } */
 @font-face {
     font-family: 'SF UI Display';
-    src: url('../font/sf-ui-display-medium-58646be638f96.woff');
+    src: url('../../font/sf-ui-display-medium-58646be638f96.woff');
 }
 @font-face {
     font-family: 'ABeeZee';
-    src: url('../font/ABeeZee-Italic.ttf');
+    src: url('../../font/ABeeZee-Italic.ttf');
 }
 @font-face {
     font-family: 'Roboto';
-    src: url('../font/Roboto-Regular.ttf');
+    src: url('../../font/Roboto-Regular.ttf');
 }
 @font-face {
     font-family: 'Actor';
-    src: url('../font/Actor-Regular.ttf');
+    src: url('../../font/Actor-Regular.ttf');
 }
 @font-face {
     font-family: 'Inter';
-    src: url('../font/Inter.ttf');
+    src: url('../../font/Inter.ttf');
 }
 @font-face {
     font-family: 'Abel';
-    src: url('../font/Abel-Regular.ttf');
+    src: url('../../font/Abel-Regular.ttf');
 }
 .sf {
     font-family: 'SF UI Display';

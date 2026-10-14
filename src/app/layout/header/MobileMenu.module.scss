@@ -101,6 +101,21 @@
     &:hover {
       background-color: #d1d1d1;
     }
+
+    &_selected {
+      color: #fff;
+      background-color: #d9573b;
+
+      &::after {
+        content: '✓';
+        margin-left: auto;
+        font-weight: 700;
+      }
+
+      &:hover {
+        background-color: #d9573b;
+      }
+    }
   }
 }
 
@@ -119,4 +134,12 @@
   @media (max-width: 720px) {
     display: block;
   }
+}
+
+.toolbar_logo_img {
+  display: block;
+  width: 150px;
+  height: 48px;
+  object-fit: contain;
+  object-position: left center;
 }

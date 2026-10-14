@@ -250,10 +250,10 @@ export function AudioRecorder({
       disabled={disabled || !CAN_RECORD_AUDIO}
       title={
         !CAN_RECORD_AUDIO
-          ? text('Микрофон недоступен')
+          ? text('Microphone is unavailable')
           : isRecording
-            ? text('Нажмите, чтобы остановить запись')
-            : text('Записать голосовое сообщение')
+            ? text('Click to stop recording')
+            : text('Record voice message')
       }
     >
       <MicrophoneIcon />

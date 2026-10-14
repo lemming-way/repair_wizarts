@@ -12,7 +12,7 @@ import InfoBlock from "./InfoBlock";
 import SERVER_PATH from "../../../config/SERVER_PATH";
 import HeroSection from "../../features/HomePage/HeroSection/HeroSection";
 import { useService } from "../../hooks/useService";
-import { getContractorRepairs } from "../../services/service.service";
+import { getContractorRepairs } from "../../services/user.service";
 import { getContractorByUsername } from "../../services/user.service";
 import ContractorsMap from '../../shared/maps/yandex/ContractorsMap'
 import { useLanguage } from "../../state/language";

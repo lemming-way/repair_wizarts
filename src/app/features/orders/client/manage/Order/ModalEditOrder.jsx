@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from 'swiper';
 import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/navigation';
 
 import style from '../../../OrderModals.module.css';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
@@ -86,34 +88,6 @@ export default function ModalEditOrder({
           <div
             className={`${style.modal_edit_order__swiper_row} ${style.modal_edit_order__flex_wrap_row}`}
           >
-            <Swiper
-              slidesPerView={4}
-              spaceBetween={30}
-              navigation={true}
-              modules={[Navigation]}
-              className="mySwiper"
-              breakpoints={{
-                0: {
-                  slidesPerView: 1,
-                },
-                800: {
-                  slidesPerView: 1,
-                },
-                1124: {
-                  slidesPerView: 1,
-                },
-              }}
-            >
-              {attachments.map(image => (
-                <SwiperSlide key={getKeyFor(image)} className={style.modal_edit_order__slide_with_delete}>
-                  <AnyImage src={image} alt="" />
-                  <button className={style.modal_edit_order__delete_image_btn} onClick={() => removeImage(image)}>
-                    &times;
-                  </button>
-                </SwiperSlide>
-              ))}
-            </Swiper>
-
             <div
               className={`${style.modal_edit_order__photo_upload} ${style.modal_edit_order__photo_upload_block}`}
             >
@@ -121,7 +95,7 @@ export default function ModalEditOrder({
                 <label htmlFor="upimg">
                   <img
                     src="/img/accommodation_img/photo.png"
-                    alt="no absent"
+                    alt="Добавить фото"
                   />
                 </label>
                 <input
@@ -134,6 +108,23 @@ export default function ModalEditOrder({
                 />
               </div>
             </div>
+
+            <Swiper
+              slidesPerView="auto"
+              spaceBetween={10}
+              navigation={true}
+              modules={[Navigation]}
+              className={style.modal_edit_order__swiper}
+            >
+              {attachments.map(image => (
+                <SwiperSlide key={getKeyFor(image)} className={style.modal_edit_order__slide_with_delete}>
+                  <AnyImage src={image} alt="" />
+                  <button className={style.modal_edit_order__delete_image_btn} onClick={() => removeImage(image)}>
+                    &times;
+                  </button>
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
 
           <form
@@ -161,7 +152,7 @@ export default function ModalEditOrder({
               />
             </p>
             <input
-              type="number"
+              type="text"
               className={style.modal_edit_order__input_small_width_margin_bottom}
               placeholder={text('Address')}
               value={address}

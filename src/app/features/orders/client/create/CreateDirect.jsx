@@ -3,8 +3,8 @@ import { useParams } from 'react-router-dom';
 //~ import { Navigation } from 'swiper';
 //~ import { Swiper, SwiperSlide } from 'swiper/react';
 
-import 'app/scss/detail.scss';
-import 'app/scss/media.css';
+import 'app/styles/legacy/detail.scss';
+import 'app/styles/legacy/media.css';
 
 //~ import style from './CreateDirect/CreateDirect.module.scss';
 import { useLanguage } from 'app/state/language';
@@ -69,7 +69,7 @@ function CreateDirect() {
   };
 
   const handleShowBigModal = () => {
-    setShowSmallModal(false);
+    setShowSmallModal(true);
     setShowBigModal(true);
   };
 
@@ -236,18 +236,18 @@ function CreateDirect() {
       address={address}
       setAddress={setAddress}
       onSubmit={onSubmit}
-    />
-
-    {/* Условный рендеринг модальных окон */}
-    <ContractorInfoModals
-      selectedContractor={selectedContractor}
-      categories={categories}
-      subcategories={subcategories}
-      products={products}
-      showSmallModal={showSmallModal}
-      showBigModal={showBigModal}
-      handleCloseModals={handleCloseModals}
-      handleShowBigModal={handleShowBigModal}
+      contractorInfo={
+        <ContractorInfoModals
+          selectedContractor={selectedContractor}
+          categories={categories}
+          subcategories={subcategories}
+          products={products}
+          showSmallModal={showSmallModal}
+          showBigModal={showBigModal}
+          handleCloseModals={handleCloseModals}
+          handleShowBigModal={handleShowBigModal}
+        />
+      }
     />
 
     {/* Модальное окно с слайдером (удалено, так как test_price не используется для изображений)

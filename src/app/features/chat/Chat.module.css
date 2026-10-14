@@ -646,6 +646,10 @@
   object-fit: contain;
 }
 
+.message_media_clickable img {
+  cursor: zoom-in;
+}
+
 .download_properties {
   display: flex;
   gap: 16px;
@@ -665,7 +669,37 @@
   cursor: pointer;
 }
 
+.image_preview_overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.88);
+}
 
+.image_preview_media {
+  display: block;
+  max-width: min(1200px, 94vw);
+  max-height: 90vh;
+  border-radius: 14px;
+  object-fit: contain;
+}
+
+.image_preview_close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 1;
+  border: 0;
+  color: #fff;
+  background: transparent;
+  font-size: 42px;
+  line-height: 1;
+  cursor: pointer;
+}
 
 .reply_preview {
   display: flex;

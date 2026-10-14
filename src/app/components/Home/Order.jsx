@@ -4,10 +4,11 @@ import { Link } from "react-router-dom"
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation } from "swiper";
 
-import '../../scss/swiper.css'
+import '../../styles/legacy/swiper.css'
 import "swiper/css";
 import "swiper/css/navigation";
 import { Rating } from "react-simple-star-rating";
+import styles from '../../styles/home/HomeSections.module.scss';
 
 //~ import { getReviews } from "../../services/reviews.service";
 
@@ -27,13 +28,25 @@ function Order() {
             sender: "Яков Петрович",
             rating: 4,
             message: "Зашёл проверить — всё грузится. Думаю, ну где подвох? А подвоха нет. Даже странно. Работает как часы. Вернусь, когда бэкенд допилят — тогда и поворчу, если что. Но пока — твёрдая пятёрка."
+        },
+        {
+            id: 8765,
+            sender: "Елена Смирнова",
+            rating: 5,
+            message: "Быстро нашла подходящего исполнителя. Всё сделали аккуратно, в согласованный срок и без дополнительных расходов."
+        },
+        {
+            id: 8766,
+            sender: "Алексей Волков",
+            rating: 5,
+            message: "Удобная площадка и понятное оформление заказа. Исполнитель быстро ответил и качественно выполнил работу."
         }
     ]};
 
     return (
-        <section className="order">
+        <section className={`order ${styles.section} ${styles.reviewsSection}`}>
             <div className="container ircontainer">
-                <h1>Отзывы</h1>
+                <h1 className={styles.title}>Отзывы</h1>
                 <div className="order__card__list">
                     {reviews.error ? (
                         <div style={{ textAlign: "center", width: "100%" }}>
@@ -41,11 +54,11 @@ function Order() {
                         </div>
                     ) : (
                         <Swiper
-                            slidesPerView={4}
+                            slidesPerView={3}
                             spaceBetween={30}
                             navigation={true}
                             modules={[Navigation]}
-                            className="mySwiper"
+                            className={`mySwiper ${styles.slider} ${styles.reviewSlider}`}
                             breakpoints={{
                                 0: {
                                     slidesPerView: 1
@@ -56,18 +69,15 @@ function Order() {
                                 1099: {
                                     slidesPerView: 3
                                 },
-                                1585: {
-                                    slidesPerView: 4
-                                },
                             }}
                         >
                             {reviews.data.map((v) => (
-                                <SwiperSlide className="swiper-slier order__card" key={v.id}>
-                                    <div className="order__card">
+                                <SwiperSlide className="swiper-slier" key={v.id}>
+                                    <div className={`order__card ${styles.reviewCard}`}>
                                         <div className="order__card__content">
-                                            <img style={{width: '103px'}} src="/img/user_avatar.png" alt="" />
+                                            <img className={styles.avatar} src="/img/user_avatar.png" alt="" />
                                             <div className="order__card__title">
-                                                <h3>{v.sender}</h3>
+                                                <h3 className={styles.reviewName}>{v.sender}</h3>
                                                 <div className="mark__stars">
                                                     <Rating
                                                         initialValue={v.rating}
@@ -77,14 +87,16 @@ function Order() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <p>{v.message}</p>
+                                        <p className={styles.reviewText}>{v.message}</p>
                                     </div>
                                 </SwiperSlide>
                             ))}
                         </Swiper>
                     )}
                 </div>
-                <Link to="/reviews">Все отзывы</Link>
+                <div className={styles.footer}>
+                    <Link className={styles.allButton} to="/reviews">Все отзывы</Link>
+                </div>
             </div>
         </section>
     )

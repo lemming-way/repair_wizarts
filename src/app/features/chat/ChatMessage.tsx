@@ -1,4 +1,6 @@
-import React from 'react';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+
 import { simpleMarkdown } from 'app/shared/lib/markdown';
 import { formatDateTime } from 'app/shared/lib/formatDate';
 import { useLanguage } from 'app/state/language';
@@ -63,6 +65,7 @@ export function ChatMessage({
   onDelete
 }: ChatMessageProps) {
   const text = useLanguage();
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
 
   const isOwnMessage = ((message.type === MessageType.User || message.type === MessageType.Dispute) && message.from === currentUserId);
   const isSystemMessage = message.type === MessageType.System;
@@ -70,7 +73,8 @@ export function ChatMessage({
   const isTextMessage = message.format === MessageFormat.Text;
   const isAudioMessage = message.format === MessageFormat.Audio;
   const isFile = message.format === MessageFormat.File;
-  const isInlineFile = isFile && (isImage(message.mediaType) || message.mediaType.startsWith('video/') || message.mediaType.startsWith('audio/'));
+  const isImageFile = isFile && isImage(message.mediaType);
+  const isInlineFile = isFile && (isImageFile || message.mediaType.startsWith('video/') || message.mediaType.startsWith('audio/'));
   const isAttachment = isFile && !isInlineFile;
 
   const avatarSrc = authorAvatar || '/img/user_avatar.png';
@@ -91,7 +95,7 @@ export function ChatMessage({
   const messageContainerStyle = isOwnMessage ? styles.align_right : isSystemMessage ? styles.align_center : styles.align_left;
   const messageBubbleStyle = isOwnMessage ? styles.own_message : isAdministratorMessage ? styles.admin_message : styles.partner_message;
 
-  return (
+  return <>
     <div
       className={`${styles.chat_message_container} ${messageContainerStyle}`}
       data-message={message.id}
@@ -136,7 +140,12 @@ export function ChatMessage({
                 simpleMarkdown(relatedMessage.caption || text('Attachment'), true)
               }</button>}
             {isTextMessage && <div className={styles.message_text}>{simpleMarkdown(message.text)}</div>}
-            {isInlineFile && <div className={styles.message_media}><AnyMedia src={message.file} /><span>{simpleMarkdown(message.caption)}</span></div>}
+            {isInlineFile &&
+              <div className={`${styles.message_media} ${isImageFile ? styles.message_media_clickable : ''}`}>
+                <AnyMedia src={message.file} onClick={isImageFile ? () => setIsImagePreviewOpen(true) : undefined} />
+                <span>{simpleMarkdown(message.caption)}</span>
+              </div>
+            }
             {isAttachment &&
               <div className={styles.message_attachment}>
                 <div className={styles.download_properties}>
@@ -172,5 +181,17 @@ export function ChatMessage({
         </div>
       }
     </div>
-  );
+    {isImagePreviewOpen && isImageFile && message.file && createPortal(
+      <div className={styles.image_preview_overlay} onClick={() => setIsImagePreviewOpen(false)}>
+        <button type="button" className={styles.image_preview_close} onClick={() => setIsImagePreviewOpen(false)} aria-label="Закрыть">×</button>
+        <AnyMedia
+          src={message.file}
+          mediaType="image"
+          className={styles.image_preview_media}
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>,
+      document.body
+    )}
+  </>;
 };

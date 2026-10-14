@@ -4,7 +4,7 @@ import 'swiper/css/navigation';
 import { useNavigate } from 'react-router-dom';
 import { Outlet } from 'react-router-dom';
 
-import 'app/scss/settings-all.css';
+import 'app/styles/legacy/settings-all.css';
 import style from './Contractor.module.css';
 import ContractorTabs from './ContractorTabs';
 // import { useNavigate } from "react-router-dom";

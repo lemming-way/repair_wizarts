@@ -66,3 +66,27 @@
 .photo_upload_img {
     flex: none;
 }
+
+.workLocationsTitle {
+    margin-top: 22px;
+}
+
+.workLocations {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.workLocationOption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.workLocationOption input {
+    width: 18px;
+    height: 18px;
+    accent-color: #d9573b;
+}

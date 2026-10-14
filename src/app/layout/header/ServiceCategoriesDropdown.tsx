@@ -1,7 +1,8 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import styles from './ServiceCategoriesDropdown.module.scss';
-const ServiceCategoriesDropdown = ({ subcategories }) => {
+const ServiceCategoriesDropdown = ({ subcategories, onNavigate }) => {
 
   return (
     <div className={styles.serviceCategoriesDropdown}>
@@ -11,7 +12,9 @@ const ServiceCategoriesDropdown = ({ subcategories }) => {
             className={styles.serviceCategoriesDropdown_list_item}
             key={item.id}
           >
-            {item.name}
+            <Link to={`/categories/${item.id}`} onClick={onNavigate}>
+              {item.name}
+            </Link>
           </li>
         ))}
       </ul>

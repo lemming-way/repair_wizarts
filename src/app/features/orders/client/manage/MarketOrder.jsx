@@ -2,8 +2,6 @@ import cn from 'classnames';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Popup from 'reactjs-popup';
-import { Navigation } from 'swiper';
-import { Swiper, SwiperSlide } from 'swiper/react';
 
 import { formatDate } from 'app/shared/lib/formatDate';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
@@ -100,13 +98,22 @@ const MarketOrder = (props) => {
   });
 
   return (
-    <div className={`archive-hee ${style.card_modile}`}>
-      <div className={`nav_applications-3 df align`}>
+    <div className={`archive-hee ${style.card_modile} ${style.orderCard}`}>
+      <div className={`nav_applications-3 ${style.orderGrid}`}>
         <div className={`nav_applications-text ${style.card_modile__heading}`}>
-          <h2>{title}</h2>
+          <h2 title={title}>{title}</h2>
+          <div className={style.info_block}>
+            <div className="inf_text-1">
+              <p>{text('Published')} {formatDate(createdAt)}</p>
+            </div>
+            <div className={style.view_row}>
+              <img src="/img/icons/eye.png" alt="" />
+              {text('viewed 20')} {/* TODO: добавить реальное количество просмотров */}
+            </div>
+          </div>
         </div>
-        <div className="nav_applications-2 df ">
-          <div className={`applications_text-2 df align`}>
+        <div className={`nav_applications-2 ${style.orderDetails}`}>
+          <div className={`applications_text-2 ${style.orderColumns}`}>
             <h4 className={style.card_modile__price}>{desiredPrice}₽</h4>
 
             {status !== OrderStatus.CLOSED && status !== OrderStatus.CANCELED ? (
@@ -140,81 +147,46 @@ const MarketOrder = (props) => {
               <div className="nav_applications-img">
                 {isEditable && (
                   <Popup
-                    trigger={<img src="/img/added_img/pencil.svg" alt={text('Edit order')} />}
+                    trigger={<img className={style.actionIcon} src="/img/added_img/pencil.svg" alt={text('Edit order')} />}
                     modal
                     nested
                   >
                     {(close) => (
                       <div
-                        className="modal-content order_edit-modal modal-content__edit"
-                        style={{ backgroundColor: 'white', maxWidth: '95%' }}
+                        className={`modal-content order_edit-modal modal-content__edit ${style.editModal}`}
                       >
-                        <span onClick={close}>
+                        <button type="button" className={style.closeButton} onClick={close}>
                           <img
-                            className="close"
                             src="/img/img-delete.png"
-                            alt=""
+                            alt={text('Close')}
                           />
-                        </span>
+                        </button>
 
                         <div className={style.top_block}>
-                          <h1 style={{ textAlign: 'center' }}>
+                          <h1 className={style.modalTitle}>
                             {text('Editing the project')}
                           </h1>
-                          <div
-                            className="modal-content__row_swiper"
-                            style={{ flexWrap: 'wrap' }}
-                          >
-                            <Swiper
-                              slidesPerView={4}
-                              spaceBetween={30}
-                              navigation={true}
-                              modules={[Navigation]}
-                              className="mySwiper"
-                              breakpoints={{
-                                0: {
-                                  slidesPerView: 1,
-                                },
-                                800: {
-                                  slidesPerView: 1,
-                                },
-                                1124: {
-                                  slidesPerView: 1,
-                                },
-                              }}
-                            >
+                          <div className={style.photoGrid}>
                               {photos.map((photo, index) => (
-                                <SwiperSlide key={getKeyFor(photo)} className="">
-                                  <div style={{ position: 'relative' }}>
-                                    <AnyImage src={photo} alt="" style={{ width: '100%' }} />
+                                <div key={getKeyFor(photo)} className={style.photoItem}>
+                                    <AnyImage src={photo} alt="" />
                                     <button
                                       type="button"
-                                      style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        right: 0,
-                                        background: 'rgba(255,255,255,0.7)',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                      }}
+                                      className={style.removePhoto}
                                       onClick={() => handleRemovePhoto(index)}
                                     >
                                       ✕
                                     </button>
-                                  </div>
-                                </SwiperSlide>
+                                </div>
                               ))}
-                            </Swiper>
 
-                            <div
-                              className={`photo_upload ${style.photo_upload_block}`}
-                            >
-                              <div className="photo_upload-img ">
+                            <div className={style.photo_upload_block}>
                                 <label htmlFor="upimg">
                                   <img
                                     src="/img/accommodation_img/photo.png"
-                                    alt="img absent"
+                                    alt={text('Add photo')}
                                   />
+                                  <span>{text('Add photo')}</span>
                                 </label>
                                 <input
                                   type="file"
@@ -224,19 +196,18 @@ const MarketOrder = (props) => {
                                   id="upimg"
                                   style={{ display: 'none' }}
                                 />
-                              </div>
                             </div>
                           </div>
                         </div>
 
                         <form
                           onSubmit={(e) => { onSubmit(e); close(); }}
-                          style={{ display: 'flex', flexDirection: 'column' }}
+                          className={style.editForm}
                         >
-                          <p className="form__light-text">
+                          <p className={`form__light-text ${style.fieldLabel}`}>
                             {text('Address')}
                             <img
-                              className="modal_edit__icon"
+                              className={`modal_edit__icon ${style.fieldIcon}`}
                               src="/img/pencil_modal.svg"
                               alt=""
                             />
@@ -249,41 +220,39 @@ const MarketOrder = (props) => {
                             onChange={(e) => setNewAddress(e.target.value)}
                           />
 
-                          <p className="form__light-text">
+                          <p className={`form__light-text ${style.fieldLabel}`}>
                             {text('Order description')}
                             <img
-                              className="modal_edit__icon"
+                              className={`modal_edit__icon ${style.fieldIcon}`}
                               src="/img/pencil_modal.svg"
                               alt=""
                             />
                           </p>
                           <textarea
-                            className="descdetail"
                             placeholder={text('Order description')}
-                            style={{ resize: 'none' }}
+                            className={style.descriptionInput}
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                           ></textarea>
 
-                          <p className="form__light-text">
+                          <p className={`form__light-text ${style.fieldLabel}`}>
                             {text('Budget')}
                             <img
-                              className="modal_edit__icon"
+                              className={`modal_edit__icon ${style.fieldIcon}`}
                               src="/img/price_icon.png"
                               alt=""
                             />
                           </p>
                           <input
                             type="text"
-                            style={{ width: '200px', marginBottom: '20px' }}
+                            className={style.priceInput}
                             placeholder={text('Price')}
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
                           />
 
                           <button
-                            style={{ width: '200px', margin: 'auto' }}
-                            className="done button__edit"
+                            className={style.saveButton}
                             type="submit"
                           >
                             {text('Save')}
@@ -295,76 +264,52 @@ const MarketOrder = (props) => {
                 )}
                 {isCancellable && (
                   <Popup
-                    trigger={<img src="/img/added_img/fluent.svg" alt={text('Cancel order')} />}
+                    trigger={<img className={style.actionIcon} src="/img/added_img/fluent.svg" alt={text('Cancel order')} />}
                     modal
                     nested
                   >
                     {(close) => (
                       <div
-                        className="modal-content"
-                        style={{
-                          textAlign: 'center',
-                          backgroundColor: 'white',
-                          maxWidth: '95%',
-                        }}
+                        className={style.deleteModal}
                       >
-                        <span onClick={close}>
+                        <button type="button" className={style.closeButton} onClick={close}>
                           <img
-                            className="close"
                             src="/img/img-delete.png"
-                            alt=""
+                            alt={text('Close')}
                           />
-                        </span>
-                        <h1>{text('Confirm deletion')}</h1>
-                        <p style={{ width: '80%', margin: 'auto' }}>
+                        </button>
+                        <h1 className={style.deleteModalTitle}>{text('Confirm deletion')}</h1>
+                        <p className={style.deleteModalText}>
                           {text('Do you confirm the stop of the project? Sellers will not be able to add their offers to it anymore.')}
                         </p>
-                        <div className="df" style={{ justifyContent: 'center' }}>
-                          <div className={style.form__row}>
+                        <div className={style.deleteModalActions}>
                             <button
-                              className="btn_6PopUpBack"
+                              className={style.cancelDeleteButton}
                               type="button"
-                              style={{
-                                margin: 0,
-                                backgroundColor: 'unset',
-                                color: 'black',
-                                border: '1px solid black',
-                              }}
                               onClick={close}
                             >
                               {text('Cancel')}
                             </button>
                             <button
-                              className="btn_6PopUp"
+                              className={style.confirmDeleteButton}
                               type="button"
-                              style={{ margin: 0 }}
                               onClick={() => handleCancelOrder(close)}
                             >
                               {text('Delete')}
                             </button>
-                          </div>
                         </div>
                       </div>
                     )}
                   </Popup>
                 )}
                 {hasChat &&
-                  <Link to={`/order/${id}/chat/${contractorId}`}>
-                    <img src="/img/chat.png" alt={text('Chat with contractor')} />
+                  <Link className={style.actionLink} to={`/order/${id}/chat/${contractorId}`}>
+                    <img className={style.actionIcon} src="/img/chat.png" alt={text('Chat with contractor')} />
                   </Link>
                 }
               </div>
             </div>
           </div>
-        </div>
-      </div>
-      <div className={style.info_block}>
-        <div className="inf_text-1">
-          <p>{text('Published')} {formatDate(createdAt)}</p>
-        </div>
-        <div className={style.view_row}>
-          <img src="/img/icons/eye.png" alt="" />
-          {text('viewed 20')} {/* TODO: добавить реальное количество просмотров */}
         </div>
       </div>
     </div>

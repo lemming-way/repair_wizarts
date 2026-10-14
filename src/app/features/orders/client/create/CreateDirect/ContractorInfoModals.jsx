@@ -4,8 +4,18 @@ import { Rating } from 'react-simple-star-rating';
 
 import { ImageSwiper } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
-import { BusinessModel } from 'app/state/user'
+import { BusinessModel, WorkLocationNames } from 'app/state/user'
 import style from './CreateDirect.module.scss';
+
+const mockFourthLevelCategories = [
+  'Настройка оборудования',
+  'Диагностика',
+  'Установка программ',
+  'Удалённая помощь',
+  'Обслуживание систем',
+  'Консультация специалиста',
+  'Срочный выезд',
+];
 
 function ContractorInfoModals({
   selectedContractor,
@@ -28,19 +38,10 @@ function ContractorInfoModals({
   const contractorCategories = [...new Set(contractorSubcategories.map(s => categories[s.parent]).filter(Boolean))];
 
   return (
-    <div style={{ display: 'flex', position: 'absolute' }}>
-      <div
-        style={{
-          position: 'absolute',
-          zIndex: 1,
-          bottom: '0',
-          left: '370px',
-          display: 'flex',
-          gap: '10px',
-        }}
-      >
+    <div className={style.contractorCardsAnchor}>
+      <div className={style.contractorCards}>
         {showSmallModal && (
-          <div className="info_contractor">
+          <div className={`info_contractor ${style.contractorSmallCard}`}>
             <div
               className="info_contractor__close"
               onClick={handleCloseModals}
@@ -127,10 +128,18 @@ function ContractorInfoModals({
               </span>
               {2/* selectedContractor.repeatOrders  todo: Добавить реальную статистику */}
             </p>
+            {!!selectedContractor.workLocations?.length && (
+              <div className={style.workLocationsCard}>
+                <strong>{text('Where do you work')}</strong>
+                {selectedContractor.workLocations.map((mode) => (
+                  <span key={mode}>✓ {text(WorkLocationNames[mode])}</span>
+                ))}
+              </div>
+            )}
           </div>
         )}
         {showBigModal && (
-          <div className="info_contractor_big">
+          <div className={`info_contractor_big ${style.contractorBigCard}`}>
             <div>
               <div
                 className="info_contractor__close"
@@ -160,6 +169,12 @@ function ContractorInfoModals({
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
+                  Категории 4-го уровня
+                </span>
+                {mockFourthLevelCategories.join(', ')}
+              </p>
+              <p className="info_contractor_big__text-about">
+                <span className="info_contractor_big__text-about-light">
                   {text('Business model')}
                 </span>
                 {text(selectedContractor.businessModel)}
@@ -173,7 +188,7 @@ function ContractorInfoModals({
                 {selectedContractor.description || text('No description')}
               </p>
 
-              <div>
+              <div className={style.contractorPhotos}>
                 <ImageSwiper
                   className={style.swiper}
                   navigation={true}

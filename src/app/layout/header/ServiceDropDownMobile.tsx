@@ -5,7 +5,11 @@ import styles from './ServiceDropDownMobile.module.scss';
 import ServiceCategoriesDropdown from './ServiceCategoriesDropdown';
 import { useProducts } from 'app/state/site-data';
 
-const ServiceDropdownMobile = () => {
+type ServiceDropdownMobileProps = {
+  onNavigate?: () => void;
+};
+
+const ServiceDropdownMobile = ({ onNavigate }: ServiceDropdownMobileProps) => {
   
   const { categories, subcategories } = useProducts();
   const [openItem, setOpenItem] = useState<string | null>(null);
@@ -16,7 +20,13 @@ const ServiceDropdownMobile = () => {
         {Object.entries(categories).map(([id, category]) => (
           <li key={id}>
             <div className={styles.serviceDropdown_list_item}>
-              <span>{category.name}</span>
+              <button
+                type="button"
+                className={styles.serviceDropdown_list_item_link}
+                onClick={() => setOpenItem(openItem === id ? null : id)}
+              >
+                {category.name}
+              </button>
               <img
                 className={styles.serviceDropdown_list_item_arrow}
                 src={arrowRight}
@@ -32,7 +42,7 @@ const ServiceDropdownMobile = () => {
 
             {openItem === id && category.subcategories.length > 0 && (
               <div className={styles.serviceDropdown_list_item_dropdown}>
-                <ServiceCategoriesDropdown subcategories={category.subcategories.map(
+                <ServiceCategoriesDropdown onNavigate={onNavigate} subcategories={category.subcategories.map(
                   subId => ({
                     id: subId,
                     name: subcategories[subId].name,

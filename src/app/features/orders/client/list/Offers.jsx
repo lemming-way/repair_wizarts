@@ -1,12 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import 'app/scss/orders.css';
+import 'app/styles/legacy/orders.css';
 import style from './Offers/Offers.module.css';
 import { useProducts } from 'app/state/site-data';
-import { useClientOrders, orderStatusString } from 'app/state/order';
+import { useClientOrders, orderStatusString, OrderStatus } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import PaginationPages from 'app/components/Settings/PaginationPages';
+
+
+const getStatusClassName = (status) => {
+  switch (status) {
+    case OrderStatus.CLOSED:
+    case OrderStatus.PAID:
+      return style.status_ok;
+    case OrderStatus.APPOINTED:
+    case OrderStatus.IN_PROGRESS:
+    case OrderStatus.FINISHED:
+      return style.status_working;
+    case OrderStatus.CANCELED:
+    case OrderStatus.DISPUTE:
+      return style.status_cancel;
+    default:
+      return style.status_brand;
+  }
+};
 
 function Offers() {
   const { user } = useUser();
@@ -14,6 +32,8 @@ function Offers() {
   const { orders } = useClientOrders(true, false);
   const [contentCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [search, setSearch] = useState('');
 
   // Собираем все уникальные ID подрядчиков из предложений
   const allContractorIds = [...new Set(
@@ -36,16 +56,72 @@ function Offers() {
     });
   });
 
+  const statusGroups = {
+    working: [OrderStatus.REQUESTED, OrderStatus.APPOINTED, OrderStatus.IN_PROGRESS, OrderStatus.FINISHED, OrderStatus.AWAITING_PAYMENT, OrderStatus.PAID],
+    completed: [OrderStatus.CLOSED],
+    canceled: [OrderStatus.CANCELED, OrderStatus.DISPUTE],
+  };
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredItems = itemsToDisplay.filter(({ order, contractor }) => {
+    const matchesStatus = statusFilter === 'all' || statusGroups[statusFilter].includes(order.status);
+    // todo: доработать поиск здесь
+    const searchText = [
+      products[order.productId]?.name,
+      contractor?.fullname,
+      user.fullname,
+      order.description,
+      order.id,
+    ].filter(Boolean).join(' ').toLowerCase();
+    return matchesStatus && (!normalizedSearch || searchText.includes(normalizedSearch));
+  });
+  const tabItems = [
+    ['working', 'В работе'],
+    ['completed', 'Выполнено'],
+    ['canceled', 'Отменено'],
+    ['all', 'Все'],
+  ];
+
   return (
     <>
       <div className={style.block_main}>
         <div className={style.order_row}>
           <h1>Все заказы</h1>
-          {/* Удалена секция поиска по заголовку */}
+          <label className={style.search_wrap}>
+            <input
+              className={style.search_input}
+              type="search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Поиск по названию заказа, продавцу"
+            />
+            <img className={style.search_icon} src="/img/search.png" alt="" />
+          </label>
         </div>
 
         <div className={style.content_wrap}>
-          {/* Удалена навигация по статусам */}
+          <div className={style.status_tabs}>
+            {tabItems.map(([value, label]) => {
+              const count = value === 'all'
+                ? itemsToDisplay.length
+                : itemsToDisplay.filter(({ order }) => statusGroups[value].includes(order.status)).length;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  className={`${style.status_tab} ${statusFilter === value ? style.status_tab_active : ''}`}
+                  onClick={() => {
+                    setStatusFilter(value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {label}<span>{count}</span>
+                </button>
+              );
+            })}
+          </div>
           <div className={style.table_wrap}>
             <table className={style.table}>
               <thead>
@@ -58,48 +134,40 @@ function Offers() {
                 </tr>
               </thead>
               <tbody>
-                {itemsToDisplay
+                {filteredItems
                   .slice(
                     (currentPage - 1) * contentCount,
                     currentPage * contentCount,
                   )
                   .map((item) => {
-                    const currentStatusStyleClass = style.status_ok; // Здесь можно добавить другие цвета
+                    const currentStatusStyleClass = getStatusClassName(item.order.status);
 
                     return (
                       <tr key={`${item.order.id}-${item.offer.contractorId}`}>
                         <td>{products[item.order.productId]?.name ?? 'Неизвестная услуга'}</td>
                         <td>
-                          <img
-                            src={ item.contractor?.avatar || '/img/user_avatar.png' }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              cursor: 'pointer',
-                              width: 70,
-                              borderRadius: 20,
-                              height: 70,
-                            }}
-                          />
-                          <Link to={`/client/requests/my_order/${item.order.id}`}>
-                            {item.contractor?.fullname || 'Неизвестный мастер'}
-                          </Link>
+                          <div className={style.user_cell}>
+                            <img
+                              className={style.avatar}
+                              src={item.contractor?.avatar || '/img/user_avatar.png'}
+                              alt=""
+                            />
+                            <Link to={`/client/requests/my_order/${item.order.id}`}>
+                              {item.contractor?.fullname || 'Неизвестный мастер'}
+                            </Link>
+                          </div>
                         </td>
                         <td>
-                          <img
-                            src={ user.avatar || '/img/user_avatar.png' }
-                            alt=""
-                            style={{
-                              marginRight: '10px',
-                              width: '70px',
-                              borderRadius: '50%',
-                              height: '70px',
-                              objectFit: 'cover',
-                            }}
-                          />
-                          { user.fullname || 'Неизвестный заказчик' }
+                          <div className={style.user_cell}>
+                            <img
+                              className={style.avatar}
+                              src={user.avatar || '/img/user_avatar.png'}
+                              alt=""
+                            />
+                            <span>{user.fullname || 'Неизвестный заказчик'}</span>
+                          </div>
                         </td>
-                        <td>{item.offer.price}</td>
+                        <td className={style.price}>{item.offer.price} ₽</td>
                         <td>
                           <p className={currentStatusStyleClass}>
                             {orderStatusString[item.order.status]}
@@ -114,13 +182,13 @@ function Offers() {
 
           {/* для мобильной */}
           <div className={style.cards__wrap}>
-            {itemsToDisplay
+            {filteredItems
               .slice(
                 (currentPage - 1) * contentCount,
                 currentPage * contentCount,
               )
               .map((item) => {
-                const currentStatusStyleClass = style.status_ok; // Для статуса PUBLISHED всегда будет "Активно"
+                const currentStatusStyleClass = getStatusClassName(item.order.status);
                 return (
                   <div className={style.card_block} key={`${item.order.id}-${item.offer.contractorId}`}>
                     <Link to={`/client/requests/my_order/${item.order.id}`}>
@@ -167,12 +235,12 @@ function Offers() {
           <div className={style.pagination_wrap}>
             <PaginationPages
               contentCountInPage={contentCount}
-              contentLength={itemsToDisplay.length}
+              contentLength={filteredItems.length}
               currentPage={currentPage}
               onPageChange={(newPage) => setCurrentPage(newPage)}
             />
             <div className={style.select_pages_wrap}>
-              <p className={style.select_pages_wrap}>Показать:</p>
+              <p className={style.select_pages_label}>Показать:</p>
               <select
                 className={style.select_pages__select}
                 name=""

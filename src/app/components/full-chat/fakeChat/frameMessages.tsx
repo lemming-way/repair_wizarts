@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import '../../../scss/chat.css';
+import '../../../styles/legacy/chat.css';
 import { Link } from 'react-router-dom';
 
 import { Order, useClientOrders, useContractorOrders } from 'app/state/order';

@@ -3,7 +3,7 @@ import {
     useEffect
 } from 'react';
 
-import '../../scss/ChoiceOfReplenishmentMethod.css'
+import '../../styles/legacy/ChoiceOfReplenishmentMethod.css'
 import { useNavigate } from 'react-router-dom';
 
 import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
