@@ -12,7 +12,6 @@ import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
 import { useOrdersByIds } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
-import { useProducts } from 'app/state/site-data';
 import 'app/styles/legacy/orders.css';
 import 'app/styles/legacy/swiper.css';
 import style from './Offer/OrderRow.module.css';
@@ -27,8 +26,6 @@ function Offer() {
 
   // Получаем данные клиента, если order существует
   const { users: [ client ], isLoading: isLoadingClient, isError: isErrorClient } = useUsersByIds(order?.clientId ? [order.clientId] : []);
-
-  const { products } = useProducts();
 
   const [isImageOpen, setIsImageOpen] = useState(false);
   const [modalImage, setModalImage] = useState(null);
@@ -75,7 +72,7 @@ function Offer() {
     // createdAt, // todo: createdAt может быть использовано для расчета timeLeft, если есть соответствующая логика
   } = order;
 
-  const product = products?.[order.productId]?.name || text('Unknown service');
+  const product = order.productName || text('Unknown service');
   const clientName = client?.fullname || text('Unknown user');
   const clientProfileImage = client?.avatar || '/img/user_avatar.png';
 

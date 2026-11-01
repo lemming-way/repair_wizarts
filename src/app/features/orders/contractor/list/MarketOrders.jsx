@@ -19,7 +19,7 @@ import style from './MarketOrders/MarketOrders.module.css';
 
 function MarketOrders() {
   const text = useLanguage();
-  const { categories, subcategories, products } = useProducts();
+  const { categories, subcategories, specializations, products } = useProducts();
   const [isVisibleEmailSettings, setVisibvleEmailSettings] = useState(false);
   const [selectValue, setSelectValue] = useState('All offers');
   const [ordersPerPage, setOrdersPerPage] = useState(10);
@@ -65,7 +65,7 @@ function MarketOrders() {
     if (selectValue === 'Viewed' && isNew(order)) return false;
 
     // Фильтрация по категории
-    if (categoryFilter && subcategories?.[ products?.[order.productId]?.parent ]?.parent !== categoryFilter) {
+    if (categoryFilter && subcategories[ specializations[ products[order.productId]?.parent ]?.parent ]?.parent !== categoryFilter) {
       return false;
     }
 
@@ -234,11 +234,11 @@ function MarketOrders() {
                     <div className={style.block_title}>
                       <Link className={style.titleLink} to={`/contractor/requests/offer/${order.id}`}>
                         <h3 className={style.heading}>
-                          {products?.[order.productId]?.name || text('Untitled')}
+                          {order.productName || text('Untitled')}
                         </h3>
                       </Link>
                       <p className={style.text_navigation}>
-                        {categories?.[ subcategories?.[ products?.[order.productId]?.parent ]?.parent ]?.name ?? ''}
+                        {categories[ subcategories[ specializations[ products[order.productId]?.parent ]?.parent ]?.parent ]?.name ?? ''}
                       </p>
                       <div
                         className={style.row}

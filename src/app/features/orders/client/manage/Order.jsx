@@ -33,7 +33,7 @@ function Order() {
 
   // Fetch services data for order title
   const { products } = useProducts();
-  const productName = currentOrder?.productId ? products[currentOrder.productId]?.name : text('Unknown Service');
+  const productName = currentOrder?.productName || text('Unknown Service');
 
   // Fetch contractor profiles for offers
   const contractorIds = currentOrder?.contractorOffers.map(offer => offer.contractorId) || [];

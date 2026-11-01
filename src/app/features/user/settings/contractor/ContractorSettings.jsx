@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import { MultiSelect, ImageSwiper } from 'app/shared/ui/';
 import { useLanguage } from 'app/state/language';
@@ -12,27 +12,17 @@ const experienceOptions = Array.from({ length: 15 }, (_, index) => ({
   label: `${index + 1} ${index === 0 ? 'year' : 'years'}`,
 }));
 
-const fourthLevelOptions = [
-  { value: 'mock-1', label: 'Настройка оборудования' },
-  { value: 'mock-2', label: 'Диагностика' },
-  { value: 'mock-3', label: 'Установка программ' },
-  { value: 'mock-4', label: 'Удалённая помощь' },
-  { value: 'mock-5', label: 'Обслуживание систем' },
-  { value: 'mock-6', label: 'Консультация специалиста' },
-  { value: 'mock-7', label: 'Срочный выезд' },
-];
-
 function ContractorSettings() {
   const text = useLanguage();
 
   const [categoryOptionSelected, setCategoryOptionSelected] = useState([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState([]);
+  const [specializationOptionSelected, setSpecializationOptionSelected] = useState([]);
   const [productOptionSelected, setProductOptionSelected] = useState([]);
-  const [fourthLevelOptionSelected, setFourthLevelOptionSelected] = useState([]);
   const [experience, setExperience] = useState(null);
   const [photos, setPhotos] = useState([]);
 
-  const { categories, subcategories, products } = useProducts();
+  const { categories, subcategories, specializations, products, getActualSuccess } = useProducts();
   const { cities } = useCities();
   const { user } = useUser();
   const { saveUser } = useUpdateUser();
@@ -80,64 +70,89 @@ function ContractorSettings() {
     };
   };
 
+  const { current: instance } = useRef({
+    lastUser: null,
+    initialized: false
+  });
+
+  if (user.id && instance.lastUser !== user.id) {
+    instance.initialized = false;
+    instance.lastUser = user.id;
+  }
+
+  // Эффект выполняется на каждый рендер, выполнение действий регулируется условиями внутри
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!user.id) return;
+    if (user.id && !instance.initialized) {
+      const userServicesMap = user.services || {};
 
-    const userServicesMap = user.services || {};
+      const initialProductOptions = [];
+      const initialSpecializationOptions = [];
+      const initialSubcategoryOptions = [];
+      const initialCategoryOptions = [];
 
-    const initialProductOptions = [];
-    const initialSubcategoryOptions = [];
-    const initialCategoryOptions = [];
+      const categoryIds = {};
+      const subcategoryIds = {};
+      const specializationIds = {};
 
-    const categoryIds = {};
-    const subcategoryIds = {};
+      Object.keys(userServicesMap).forEach(productIdStr => {
+        const productId = Number(productIdStr);
+        if (products[productId]?.name) {
+          initialProductOptions.push({ label: products[productId].name, value: productId });
 
-    Object.keys(userServicesMap).forEach(productIdStr => {
-      const productId = Number(productIdStr);
-      if (products[productId]?.name) {
-        initialProductOptions.push({ label: products[productId].name, value: productId });
+          const specId = products[productId].parent;
+          if (specId && specializations[specId]?.name && !specializationIds[specId]) {
+            initialSpecializationOptions.push({ label: specializations[specId].name, value: specId });
+            specializationIds[specId] = true;
 
-        const subId = products[productId].parent;
-        if (subId && subcategories[subId] && !subcategoryIds[subId]) {
-          initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
-          subcategoryIds[subId] = true;
+            const subId = specializations[specId].parent;
+            if (subId && subcategories[subId] && !subcategoryIds[subId]) {
+              initialSubcategoryOptions.push({ label: subcategories[subId].name, value: subId });
+              subcategoryIds[subId] = true;
 
-          const secId = subcategories[subId].parent;
-          if (secId && categories[secId] && !categoryIds[secId]) {
-            initialCategoryOptions.push({ label: categories[secId].name, value: secId });
-            categoryIds[secId] = true;
+              const catId = subcategories[subId].parent;
+              if (catId && categories[catId] && !categoryIds[catId]) {
+                initialCategoryOptions.push({ label: categories[catId].name, value: catId });
+                categoryIds[catId] = true;
+              }
+            }
           }
         }
+      });
+
+      if (!Object.keys(userServicesMap).length || getActualSuccess()) {
+        setCategoryOptionSelected(initialCategoryOptions);
+        setSubcategoryOptionSelected(initialSubcategoryOptions);
+        setSpecializationOptionSelected(initialSpecializationOptions);
+        setProductOptionSelected(initialProductOptions);
+
+        setExperience(
+          user.experience
+            ? [
+                experienceOptions.find(
+                  (opt) => opt.value === user.experience,
+                ),
+              ]
+            : null,
+        );
+
+        setForm({
+          //~ description: user.description || '',
+          organizationName: user.organizationName,
+          address: user.address,
+          city: String(user.locality || ''),
+          experience: user.experience,
+        });
+
+        setBusiness(user.businessModel);
+        setIsActive(user.active);
+        setPhotos(user.photos || []);
+        setWorkLocations(user.workLocations || []);
+
+        instance.initialized = true;
       }
-    });
-
-    setCategoryOptionSelected(initialCategoryOptions);
-    setSubcategoryOptionSelected(initialSubcategoryOptions);
-    setProductOptionSelected(initialProductOptions);
-
-    setExperience(
-      user.experience
-        ? [
-            experienceOptions.find(
-              (opt) => opt.value === user.experience,
-            ),
-          ]
-        : null,
-    );
-
-    setForm({
-      //~ description: user.description || '',
-      organizationName: user.organizationName,
-      address: user.address,
-      city: String(user.locality || ''),
-      experience: user.experience,
-    });
-
-    setBusiness(user.businessModel);
-    setIsActive(user.active);
-    setPhotos(user.photos || []);
-    setWorkLocations(user.workLocations || []);
-  }, [user, categories, subcategories, products]);
+    }
+  });
 
   useEffect(() => {
     document.title = text('Settings');
@@ -229,14 +244,31 @@ function ContractorSettings() {
     }
   }
 
-  const productOptions = [];
+  const specializationOptions = [];
   for (const { value: id } of subcategoryOptionSelected) {
     const subcategory = subcategories[id];
     if (subcategory) {
-      productOptions.push(...subcategory.products.map(prodId => ({
-        label: products[prodId].name,
-        value: prodId
-      })));
+      specializationOptions.push(...subcategory.specializations
+        .filter(specId => specializations[specId]?.name)
+        .map(specId => ({
+          label: specializations[specId].name,
+          value: specId
+        }))
+      );
+    }
+  }
+
+  const productOptions = [];
+  for (const { value: id } of specializationOptionSelected) {
+    const specialization = specializations[id];
+    if (specialization?.products) {
+      productOptions.push(...specialization.products
+        .filter(prodId => products[prodId]?.name)
+        .map(prodId => ({
+          label: products[prodId].name,
+          value: prodId
+        }))
+      );
     }
   }
 
@@ -259,8 +291,8 @@ function ContractorSettings() {
               onChange={(selected) => {
                 setCategoryOptionSelected(selected);
                 setSubcategoryOptionSelected([]);
+                setSpecializationOptionSelected([]);
                 setProductOptionSelected([]);
-                setFourthLevelOptionSelected([]);
               }}
               value={categoryOptionSelected}
               menuPlacement="bottom"
@@ -273,12 +305,26 @@ function ContractorSettings() {
               options={subcategoryOptions}
               onChange={(selected) => {
                 setSubcategoryOptionSelected(selected);
+                setSpecializationOptionSelected([]);
                 setProductOptionSelected([]);
-                setFourthLevelOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               menuPlacement="bottom"
               isDisabled={!categoryOptionSelected.length}
+            />
+            <MultiSelect
+              key="specialization_id"
+              placeholder={text('Specializations')}
+              isMulti={true}
+              isSelectAll={true}
+              options={specializationOptions}
+              onChange={(selected) => {
+                setSpecializationOptionSelected(selected);
+                setProductOptionSelected([]);
+              }}
+              value={specializationOptionSelected}
+              menuPlacement="bottom"
+              isDisabled={!subcategoryOptionSelected.length}
             />
             <MultiSelect
               key="services"
@@ -288,22 +334,10 @@ function ContractorSettings() {
               options={productOptions}
               onChange={(selected) => {
                 setProductOptionSelected(selected);
-                setFourthLevelOptionSelected([]);
               }}
               value={productOptionSelected}
               menuPlacement="bottom"
-              isDisabled={!subcategoryOptionSelected.length}
-            />
-            <MultiSelect
-              key="fourth_level"
-              isSelectAll={true}
-              isMulti={true}
-              placeholder="Категории 4-го уровня"
-              options={fourthLevelOptions}
-              onChange={setFourthLevelOptionSelected}
-              value={fourthLevelOptionSelected}
-              menuPlacement="bottom"
-              isDisabled={!productOptionSelected.length}
+              isDisabled={!specializationOptionSelected.length}
             />
           </div>
 
@@ -383,7 +417,7 @@ function ContractorSettings() {
 
             <h4 className={style.workLocationsTitle}>{text('Where do you work')}:</h4>
             <div className={style.workLocations}>
-              {Object.entries(WorkLocationNames).map((mode, label) => (
+              {Object.entries(WorkLocationNames).map(([mode, label]) => (
                 <label key={mode} className={style.workLocationOption}>
                   <input
                     type="checkbox"

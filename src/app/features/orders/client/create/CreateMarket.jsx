@@ -8,16 +8,6 @@ import { useCreateOrder } from 'app/state/order';
 import 'app/styles/legacy/added.css';
 import style from './CreateMarket/CreateMarket.module.css';
 
-const fourthLevelOptions = [
-  'Настройка оборудования',
-  'Диагностика',
-  'Установка программ',
-  'Удалённая помощь',
-  'Обслуживание систем',
-  'Консультация специалиста',
-  'Срочный выезд',
-];
-
 function CreateMarket() {
   const text = useLanguage();
   const currentCity = useGlobalState('currentCity');
@@ -31,11 +21,11 @@ function CreateMarket() {
 
   const { createOrder } = useCreateOrder();
 
-  const { categories, subcategories, products } = useProducts();
+  const { categories, subcategories, specializations, products } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
+  const [selectedSpecialization, setSelectedSpecialization] = useState('');
   const [selectedProduct, setSelectedProduct] = useState('');
-  const [selectedFourthLevel, setSelectedFourthLevel] = useState('');
 
   const categoriesOptions = Object.entries(categories).map(([id, category]) => ({
       value: String(id),
@@ -49,11 +39,20 @@ function CreateMarket() {
         .map(subId => ({ value: String(subId), label: subcategories[subId].name }))
     : [];
 
-  const productsOptions =
-    selectedSubcategory && subcategories && products
+  const specializationsOptions =
+    selectedSubcategory && subcategories && specializations
     ? subcategories[selectedSubcategory]
+        .specializations
+        .map(specId => ({ value: String(specId), label: specializations[specId]?.name }))
+        .filter(opt => opt.value && opt.label)
+    : [];
+
+  const productsOptions =
+    selectedSpecialization && specializations && products
+    ? specializations[selectedSpecialization]
         .products
-        .map(productId => ({ value: String(productId), label: products[productId].name }))
+        .map(productId => ({ value: String(productId), label: products[productId]?.name }))
+        .filter(opt => opt.value && opt.label)
     : [];
 
   // загрузка фото
@@ -149,10 +148,10 @@ function CreateMarket() {
               <h2>Рубрика</h2>
               <p className={style.helper}>Выберите путь услуги. Четыре шага расположены в две строки.</p>
               <div className={style.categoryGrid}>
-                <label className={style.categoryStep}><b>1</b><select value={selectedCategory} onChange={(e) => { setSelectedCategory(Number(e.target.value)); setSelectedSubcategory(''); setSelectedProduct(''); setSelectedFourthLevel(''); }}><option value="" disabled>Категория</option>{categoriesOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-                <label className={style.categoryStep}><b>2</b><select value={selectedSubcategory} disabled={!selectedCategory} onChange={(e) => { setSelectedSubcategory(Number(e.target.value)); setSelectedProduct(''); setSelectedFourthLevel(''); }}><option value="" disabled>Направление</option>{subcategoriesOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-                <label className={style.categoryStep}><b>3</b><select required value={selectedProduct} onChange={(e) => { setSelectedProduct(Number(e.target.value)); setSelectedFourthLevel(''); }} disabled={!selectedSubcategory}><option value="" disabled>Вид услуги</option>{productsOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-                <label className={style.categoryStep}><b>4</b><select required value={selectedFourthLevel} onChange={(e) => setSelectedFourthLevel(e.target.value)} disabled={!selectedProduct}><option value="" disabled>Уточнение услуги</option>{fourthLevelOptions.map((item, index) => <option value={`mock-${index + 1}`} key={item}>{item}</option>)}</select></label>
+                <label className={style.categoryStep}><b>1</b><select value={selectedCategory} onChange={(e) => { setSelectedCategory(Number(e.target.value)); setSelectedSubcategory(''); setSelectedSpecialization(''); setSelectedProduct(''); }}><option value="" disabled>Категория</option>{categoriesOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+                <label className={style.categoryStep}><b>2</b><select value={selectedSubcategory} disabled={!selectedCategory} onChange={(e) => { setSelectedSubcategory(Number(e.target.value)); setSelectedSpecialization(''); setSelectedProduct(''); }}><option value="" disabled>Направление</option>{subcategoriesOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+                <label className={style.categoryStep}><b>3</b><select required value={selectedSpecialization} onChange={(e) => { setSelectedSpecialization(Number(e.target.value)); setSelectedProduct(''); }} disabled={!selectedSubcategory}><option value="" disabled>Специализация</option>{specializationsOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+                <label className={style.categoryStep}><b>4</b><select required value={selectedProduct} onChange={(e) => { setSelectedProduct(Number(e.target.value)); }} disabled={!selectedSpecialization}><option value="" disabled>Вид услуги</option>{productsOptions.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
               </div>
             </section>
 

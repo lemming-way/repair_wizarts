@@ -33,6 +33,7 @@ export type Order = {
   city: number;
   address: string;
   productId: number;
+  productName: string;
   services?: OrderServiceDetails[];
   status: OrderStatus;
   description: string;
@@ -235,7 +236,8 @@ function parseOrders(rawData: OrderAPI.OrderRecord[]): Order[] {
       clientId: Number(data.client),
       city: Number(data.city ?? 0),
       address: String(data.address ?? ''),
-      productId: Number(data.product ?? 0),
+      productId: Number(data.productId ?? 0),
+      productName: String(data.product ?? ''),
       description: String(data.description ?? ''),
       desiredPrice: Number(data.desired_price ?? 0),
       status,

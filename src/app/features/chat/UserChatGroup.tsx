@@ -1,7 +1,6 @@
 import { useState } from 'react';
 
 import { useLanguage } from 'app/state/language';
-import { useProducts } from 'app/state/site-data';
 import { Order, OrderStatus, orderStatusString } from 'app/state/order';
 import { UserProfile, UserRole } from 'app/state/user';
 import type { ChatData } from 'app/state/chat';
@@ -49,7 +48,6 @@ export function UserChatGroup({
   onChatSelected,
 }: UserChatGroupProps) {
   const text = useLanguage();
-  const { products } = useProducts();
   const [isExpanded, setIsExpanded] = useState(false);
   const [visibleUserCard, setVisibleUserCard] = useState(false);
 
@@ -126,7 +124,7 @@ export function UserChatGroup({
                 onClick={() => handleChatClick(chat.orderId, chat.contractorId)}
               >
                 <span className={styles.order_number}>№{chat.orderId}</span>
-                <span className={styles.product_name}>{products[order?.productId ?? '']?.name ?? text('Unknown service')}</span>
+                <span className={styles.product_name}>{order?.productName ?? text('Unknown service')}</span>
                 <div
                   className={`${styles.order_status} ${getOrderStatusColorClass(displayStatus)}`}
                   title={text(orderStatusString[displayStatus])}

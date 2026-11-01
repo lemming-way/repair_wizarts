@@ -22,7 +22,6 @@ const CONFIG = {
 
 	API: {
 		url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
-		categoriesUrl: 'https://profiback.itest24.com/api/full-data',
 		userDataStaleTime: 15 * 60000,
 		filesStaleTime: 30 * 60000,
 		ordersListRefetchTime: 2 * 60000,

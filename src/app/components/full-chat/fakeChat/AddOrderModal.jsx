@@ -4,7 +4,6 @@ import style from './AddOrderModal.module.css';
 import { useLanguage } from '../../../state/language';
 import { useUser, UserRole } from '../../../state/user';
 import { useCreateOrder } from '../../../state/order';
-import { useProducts } from '../../../state/site-data';
 import { AnyImage, getKeyFor } from '../../../shared/ui';
 
 export default function AddOrderModal({
@@ -15,7 +14,6 @@ export default function AddOrderModal({
   const text = useLanguage();
   const { user } = useUser();
   const { createOrder, isLoading } = useCreateOrder();
-  const { products } = useProducts();
 
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
@@ -32,7 +30,7 @@ export default function AddOrderModal({
   const cityId = currentOrder.city;
   const address = currentOrder.address;
   const contractorId = currentOrder.contractorId;
-  const productName = products[productId]?.name || text('Unknown Service');
+  const productName = currentOrder.productName || text('Unknown Service');
 
   const handleSubmit = async (e) => {
     e.preventDefault();

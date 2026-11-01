@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useLanguage } from 'app/state/language';
 import { useActiveChats, ChatData } from 'app/state/chat';
 import { useOrdersByIds, Order, OrderStatus } from 'app/state/order';
-import { useProducts } from 'app/state/site-data';
 import { useUsersByIds, UserProfile, UserRole } from 'app/state/user';
 import { UserChatGroup } from './UserChatGroup';
 
@@ -27,7 +26,6 @@ export function ChatList({
   setChatOpen
 }: ChatListProps) {
   const text = useLanguage();
-  const { products } = useProducts();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('active');
   const { chats, isLoading: isLoadingChats, isError: isErrorChats } = useActiveChats();
@@ -110,7 +108,7 @@ export function ChatList({
           status === OrderStatus.CLOSED ? 'completed' :
           status === OrderStatus.CANCELED ? 'canceled' :
           'active';
-        const productName = products[order?.productId ?? 0]?.name?.toLowerCase() || '';
+        const productName = order?.productName?.toLowerCase() || '';
         const matchesSearch = !normalizedSearch
           || partnerName.includes(normalizedSearch)
           || productName.includes(normalizedSearch)

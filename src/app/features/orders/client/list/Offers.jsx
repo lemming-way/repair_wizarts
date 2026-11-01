@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 
 import 'app/styles/legacy/orders.css';
 import style from './Offers/Offers.module.css';
-import { useProducts } from 'app/state/site-data';
 import { useClientOrders, orderStatusString, OrderStatus } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
 import PaginationPages from 'app/components/Settings/PaginationPages';
@@ -28,7 +27,6 @@ const getStatusClassName = (status) => {
 
 function Offers() {
   const { user } = useUser();
-  const { products } = useProducts();
   const { orders } = useClientOrders(true, false);
   const [contentCount, setContentCount] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,7 +64,7 @@ function Offers() {
     const matchesStatus = statusFilter === 'all' || statusGroups[statusFilter].includes(order.status);
     // todo: доработать поиск здесь
     const searchText = [
-      products[order.productId]?.name,
+      order.productName,
       contractor?.fullname,
       user.fullname,
       order.description,
@@ -144,7 +142,7 @@ function Offers() {
 
                     return (
                       <tr key={`${item.order.id}-${item.offer.contractorId}`}>
-                        <td>{products[item.order.productId]?.name ?? 'Неизвестная услуга'}</td>
+                        <td>{item.order.productName ?? 'Неизвестная услуга'}</td>
                         <td>
                           <div className={style.user_cell}>
                             <img
@@ -192,7 +190,7 @@ function Offers() {
                 return (
                   <div className={style.card_block} key={`${item.order.id}-${item.offer.contractorId}`}>
                     <Link to={`/client/requests/my_order/${item.order.id}`}>
-                      {products[item.order.productId]?.name ?? 'Неизвестная услуга'}
+                      {item.order.productName ?? 'Неизвестная услуга'}
                     </Link>
                     <p className={style.card__date}>
                       {new Intl.DateTimeFormat('ru-RU', {

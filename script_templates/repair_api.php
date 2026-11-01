@@ -32,13 +32,20 @@ $out = call_user_func(function() {
 
   // Обработка входных данных и данных авторизации
   $get_context = function() {
-    $current_user_id = defined('UID') ? intval($_SESSION[UID]) : 0;
+    if (!defined('UID')) throw new Exception('Cannot find user ID', 401);
+    if (isset($_SESSION[UID])) {
+      if (!is_numeric($_SESSION[UID])) throw new Exception('Cannot find user ID', 401);
+      $current_user_id = intval($_SESSION[UID]);
+      if ($current_user_id < 0 || $current_user_id != $_SESSION[UID]) throw new Exception('Cannot find user ID', 401);
+    }
+    else {
+      $current_user_id = 0;
+    }
     $current_user_role = isset($_SESSION['id_role']) ? intval($_SESSION['id_role']) : 0;
     $active_role = isset($this->id_role) ? intval($this->id_role) : $current_user_role;
     if ($current_user_role === 2 && $active_role === 1) $current_user_role = 1;
     //~ $current_user_status = $_SESSION['id_verification_status'];
 
-    if (!$current_user_id) throw new Exception('Cannot find user ID', 401);
     if (!isset( $_REQUEST['s_t_data'] )) throw new Exception('No data', 400);
 
     $data = json_decode($_REQUEST['s_t_data'], true);
@@ -248,6 +255,82 @@ $out = call_user_func(function() {
     ********************************************************************/
 
     switch($context['action']) {
+    // ===============================================
+    //                  Каталог услуг
+    // ===============================================
+
+    // Получение категорий и подкатегорий
+    case 'getCategories':
+      $results = $query(
+        'SELECT `id`,IF(`tip`=\'p-cat\',\'category\',\'subcategory\') AS `type`,`id_ref` AS `parent`,`pole`->>\'$.ru\' AS `name` ' .
+        'FROM `sprset` ' .
+        'WHERE `tip` IN(\'p-cat\',\'p-subcat\') ' .
+        'ORDER BY `name`',
+        [],
+        [ 'numeric_fields' => ['id','parent'] ]
+      );
+      return $results;
+
+    // Получение списка ID специализаций, продуктов/услуг по списку ID родителя
+    case 'getTaxaIdsByParents':
+      $parents = isset($data['ids']) && is_array($data['ids']) ?
+        array_filter(array_map('intval', $data['ids']), function($id) { return $id > 0; }) :
+        [];
+      if (!$parents) $die(400, "Parent IDs not set.");
+      $level = isset($data['level']) ? $data['level'] : '';
+      if ($level !== 'specializations' && $level !== 'products') $die(400, "Level not set.");
+      if ($level === 'specializations') {
+        $key_name = 'specializations';
+        $tip = 'p-spec';
+        $ref_tip = 'p-subcat';
+      }
+      else {
+        $key_name = 'products';
+        $tip = 'product';
+        $ref_tip = 'p-spec';
+      }
+      $results = $query(
+        'SELECT `id`,`id_ref` AS `parent` ' .
+        'FROM `sprset` ' .
+        'WHERE `tip`=:tip AND `ref_tip`=:refTip AND `id_ref` IN(:parents) ' .
+        'ORDER BY `pole`->>\'$.ru\'',
+        [ 'tip' => $tip, 'refTip' => $ref_tip, 'parents' => $parents ],
+        [ 'numeric_fields' => ['id', 'parent'] ]
+      );
+      $ret = [];
+      foreach ($results as $row) {
+        if (!isset($ret[$row['parent']])) $ret[$row['parent']] = [ 'id' => $row['parent'], $key_name => [] ];
+        $ret[$row['parent']][$key_name][] = $row['id'];
+      }
+      return array_values($ret);
+
+    // Получение наименований специализаций, продуктов/услуг
+    case 'getTaxaByIds':
+      $ids = isset($data['ids']) && is_array($data['ids']) ?
+        array_filter(array_map('intval', $data['ids']), function($id) { return $id > 0; }) :
+        [];
+      if (!$ids) $die(400, "IDs not set.");
+      $level = isset($data['level']) ? $data['level'] : '';
+      if ($level !== 'specializations' && $level !== 'products') $die(400, "Level not set.");
+      if ($level === 'specializations') {
+        $key_name = 'specializations';
+        $tip = 'p-spec';
+        $ref_tip = 'p-subcat';
+      }
+      else {
+        $key_name = 'products';
+        $tip = 'product';
+        $ref_tip = 'p-spec';
+      }
+      $results = $query(
+        'SELECT `id`,`id_ref` AS `parent`,`pole`->>\'$.ru\' AS `name` ' .
+        'FROM `sprset` ' .
+        'WHERE `tip`=:tip AND `id` IN(:ids)',
+        [ 'tip' => $tip, 'ids' => $ids ],
+        [ 'numeric_fields' => ['id', 'parent'] ]
+      );
+      return $results;
+
     // ==============================================
     //                  Пользователи
     // ==============================================
@@ -391,8 +474,8 @@ $out = call_user_func(function() {
                 '`o`.`id_order_status` AS `order_status`,' .
                 '`c`.`id_order_driver_status` AS `contractor_status`,' .
                 'IF(`o`.`only_offer`>0,1,0) AS `is_direct`,' .
-                '`o`.`rating` AS `client_rating`,' .
-                '`c`.`rating` AS `contractor_rating`,' .
+                '`o`.`rating` AS `client_opinion`,' .
+                '`c`.`rating` AS `contractor_opinion`,' .
                 'DATE_FORMAT(CONVERT_TZ(`o`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `edited_at`,' .
                 'DATE_FORMAT(CONVERT_TZ(`o`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
                 'DATE_FORMAT(CONVERT_TZ(NULLIF(`c`.`appoint_datetime`,0),@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `appointed_at`,' .
@@ -420,7 +503,8 @@ $out = call_user_func(function() {
                 ) .
                 '`o`.`id_payment_method` AS `payment_way`,' .
                 'IF(`ds`.`cancel`=0,`ds`.`id_user`,NULL) AS `invited_contractor`,' .
-                '`o`.`options`->>\'$.product\' AS `product`,' .
+                '`o`.`options`->>\'$.product\' AS `productId`,' .
+                '`p`.`pole`->>\'$.ru\' AS `product`,' .
                 '`o`.`options`->\'$.services\' AS `services`,' .
                 '`o`.`options`->>\'$.description\' AS `description`,' .
                 '`o`.`options`->\'$.images\' AS `images`,' .
@@ -486,6 +570,9 @@ $out = call_user_func(function() {
                 'AND `c`.`id_order`=`o`.`id_order` ' .
                 'AND `c`.`not_deleted`=1 ' .
                 'AND `c`.`id_order_driver_status` IN(3,4,5,6) ' .
+              'LEFT JOIN `sprset` `p` ' .
+                'ON `p`.`tip`=\'product\' ' .
+                'AND `p`.`id`=`o`.`options`->>\'$.product\' ' .
               'WHERE `o`.`id_order` IN(:order_ids) ' .
                 ($context['u_role'] === 2 ?
                   'AND (' .

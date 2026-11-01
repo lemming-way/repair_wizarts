@@ -43,9 +43,9 @@ export type OrderRecord = {
   /** Тип поездки market / direct */
   is_direct: 0 | 1;
   /** Оценка заказа клиентом */
-  client_rating: number | null;
+  client_opinion: number | null;
   /** Оценка заказа мастером */
-  contractor_rating: number | null;
+  contractor_opinion: number | null;
   /** Дата и время создания заказа */
   created_at: string;
   /** Дата и время изменения статуса или данных заказа */
@@ -82,8 +82,10 @@ export type OrderRecord = {
   payment_way: number;
   /** Мастер, которому предложен заказ - только для прямых заказов */
   invited_contractor: number | null;
-  /** Заказанная услуга по классификатору */
-  product: number | null;
+  /** ID заказанной услуги по классификатору */
+  productId: number | null;
+  /** Наименование заказанной услуги по классификатору */
+  product: string | null;
   /** Список заказанных услуг по прайсу мастера - только для прямых заказов */
   services: OrderService[] | null;
   /** Описание заказа */

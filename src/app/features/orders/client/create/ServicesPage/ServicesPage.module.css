@@ -20,6 +20,7 @@
     white-space: nowrap;
 }
 
+.categoryListItem.active,
 .categoryListItem:hover {
     color: #fff;
     background: #d9573b;

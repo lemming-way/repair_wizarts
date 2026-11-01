@@ -5,7 +5,6 @@ import Popup from 'reactjs-popup';
 
 import { formatDate } from 'app/shared/lib/formatDate';
 import { AnyImage, getKeyFor } from 'app/shared/ui';
-import { useProducts } from 'app/state/site-data';
 import { OrderStatus, orderStatusString, useUpdateOrder, useCancelOrder } from 'app/state/order';
 import { useLanguage } from 'app/state/language';
 import style from './MarketOrder/MarketOrder.module.css';
@@ -19,13 +18,12 @@ const MarketOrder = (props) => {
     description,
     contractorsCount,
     status,
-    productId,
+    productName,
     createdAt,
     attachments,
   } = props;
 
   const text = useLanguage();
-  const { products } = useProducts();
 
   const { updateOrder } = useUpdateOrder();
   const { cancelOrder } = useCancelOrder();
@@ -64,7 +62,7 @@ const MarketOrder = (props) => {
   const [newAddress, setNewAddress] = useState(address);
   const [message, setMessage] = useState(description);
 
-  const title = products?.[productId]?.name || '';
+  const title = productName || '';
   const isEditable = status === OrderStatus.PUBLISHED || status === OrderStatus.REQUESTED;
   const isCancellable =
     status === OrderStatus.DRAFT ||

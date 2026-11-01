@@ -3,17 +3,13 @@
  *
  * @summary
  * **Типы:**
- * CityData, LanguageData, SiteData, ServicesResponse
+ * CityData, LanguageData, SiteData, CategoryData
  *
  * **Получение данных:**
- * getSiteDataVersion, getSiteData, getServices
+ * getSiteDataVersion, getSiteData, getCategories, getTaxaIdsByParents, getTaxaByIds
  */
 
-import CONFIG from 'config';
-import { get, getRawJSON, FetchError } from './request';
-import { randomString } from 'app/shared/lib/utilities';
-
-const CATEGORIES_URL = CONFIG.API?.categoriesUrl || '';
+import { get, getRawJSON, postNoAuth } from './request';
 
 type SiteDataVersion = {
   'cache version'?: string;
@@ -63,71 +59,87 @@ export async function getSiteDataVersion() {
  * @returns Промис, который разрешается с объектом SiteData или undefined, если данные не найдены.
  */
 export async function getSiteData() {
-  const result = await get<SiteData>('data');
+  const payload = {
+    json_like: { cities: true, langs: true }
+  }
+  const result = await get<SiteData>('data', payload);
   return result;
 }
 
-export type ServicesResponse = Array<{
-  id?: string;
-  name?:  string;
-  subsections?: Array<{
-    id?:  string;
-    name?:  string;
-    services?: Array<{
-      id?: string;
-      name?:  string;
-    }>;
-  }>;
-}>;
+export type CategoryData = {
+  id?: number;
+  type?: 'category' | 'subcategory';
+  parent?: number;
+  name?: string;
+}
+
+type SpecializationsIds = {
+  id: number;
+  specializations: number[];
+};
+
+type ProductsIds = {
+  id: number;
+  products: number[];
+};
+
+type ChildrenIds<L extends 'specializations' | 'products'> = L extends 'specializations' ? SpecializationsIds : ProductsIds;
+
+type Taxon = {
+  id: number;
+  parent: number;
+  name: string;
+};
 
 /**
- * Получает классификатор услуг.
- * @returns Промис, который разрешается с объектом ServicesResponse или undefined, если данные не найдены.
+ * Получает список всех категорий и подкатегорий рубрикатора.
+ * @returns Промис, который разрешается списком CategoryData.
  */
-export async function getServices(): Promise<ServicesResponse> {
-  const isDebug = process.env.NODE_ENV !== 'production';
-  const correlationId = isDebug ? randomString(8) : undefined;
-
-  try {
-    const response = await fetch(CATEGORIES_URL, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${'123'}`,
-      },
-    });
-
-    if (response.ok) {
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        if (isDebug) {
-          const rawText = await response.text();
-          const errorMessage = `Invalid response content type: ${contentType}. Expected application/json. Raw response: ${rawText}`;
-          console.error('[services api] content type error', correlationId, errorMessage);
-        }
-        throw new FetchError('Invalid response content type.', response);
-      }
-
-      const responseData: ServicesResponse = await response.json();
-
-      if (isDebug) {
-        console.debug('[services api] response', correlationId, responseData);
-      }
-
-      return responseData;
-    } else {
-      const errorMessage = `${response.status}: ${response.statusText || 'HTTP Error'}`;
-
-      if (isDebug) {
-        console.error('[services api] http error', correlationId, errorMessage);
-      }
-
-      throw new FetchError(errorMessage, response);
+export async function getCategories() {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'getCategories'
     }
-  } catch (e) {
-    const error = e instanceof Error ? e : new Error(String(e));
-    if (isDebug && !(e instanceof FetchError)) {
-      console.error('[api] request failed', correlationId, error);
-    }
-    throw error;
   }
-};
+  const result = await postNoAuth<CategoryData[]>('script/template/repair_api', payload);
+  return result;
+}
+
+/**
+ * Получает список ID специализаций или продуктов (услуг) для заданных родителей.
+ * @param ids Список ID родителей.
+ * @param level Уровень дерева, записи которого мы запрашиваем - специализации или продукты.
+ * @returns Промис, который разрешается списком ID.
+ */
+export async function getTaxaIdsByParents<L extends 'specializations' | 'products'>(ids: number[], level: L) {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'getTaxaIdsByParents',
+      ids,
+      level
+    }
+  }
+  const result = await postNoAuth<ChildrenIds<L>[]>('script/template/repair_api', payload);
+  return result;
+}
+
+/**
+ * Получает наименования специализаций или продуктов (услуг) по их ID.
+ * @param ids Список ID специализаций или продуктов.
+ * @param level Уровень дерева, записи которого мы запрашиваем - специализации или продукты.
+ * @returns Промис, который разрешается списком Taxon.
+ */
+export async function getTaxaByIds(ids: number[], level: 'specializations' | 'products') {
+  const payload = {
+    is_var: 1,
+    s_t_data: {
+      action: 'getTaxaByIds',
+      ids,
+      level
+    }
+  }
+  const result = await postNoAuth<Taxon[]>('script/template/repair_api', payload);
+  return result;
+}

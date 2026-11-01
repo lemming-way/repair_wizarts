@@ -7,23 +7,24 @@ import { useRef, useCallback } from 'react';
 import { useQueries, UseQueryResult, QueryClient, QueryFunction, QueryFunctionContext } from '@tanstack/react-query';
 
 import { authorizedUserId } from './auth';
-import { useUser, UserProfile } from './user';
+import { useUser } from './user';
 
 type QueryKeyType = readonly (string | number)[];
 
-type BatchItem<T, ID> = {
-  userId: number;
+type BatchItem<T, UID, ID> = {
+  userId: UID;
   itemId: ID;
   resolve: (result: T | null) => void;
   reject: (error: unknown) => void;
 }
 
-type BatchConfig<T, ID, K> = {
-  fetchFn: (ids: ID[], userId: number, queryClient: QueryClient) => Promise<(T | null)[]>;
-  createQueryKey: (userId: number, itemId: ID) => (string | number)[];
-  extractKeys: (queryKey: QueryKeyType) => [ number, ID ];
+type BatchConfig<T, ID, K, UA extends boolean = false> = {
+  fetchFn: (ids: ID[], userId: UA extends false ? number : null, queryClient: QueryClient) => Promise<(T | null)[]>;
+  createQueryKey: (userId: UA extends false ? number : null, itemId: ID) => (string | number)[];
+  extractKeys: (queryKey: QueryKeyType) => [ UA extends false ? number : null, ID ];
   staleTime?: number;
   dataKey: K;
+  userAgnostic?: UA;
 };
 
 type CombinedResult = {
@@ -49,16 +50,18 @@ type CreateBatchLoaderResult<T, ID, K extends string> = [
  * @param dataKey имя свойства для хранения массива данных
  * @returns Массив, содержащий две функции.
  */
-export function createBatchLoader<T extends { id: number | string }, K extends string>({
+export function createBatchLoader<T extends { id: number | string }, K extends string, UA extends boolean = false>({
   fetchFn,
   createQueryKey,
   extractKeys,
   staleTime,
-  dataKey
-}: BatchConfig<T, T['id'], K>) : CreateBatchLoaderResult<T, T['id'], K> {
+  dataKey,
+  userAgnostic
+}: BatchConfig<T, T['id'], K, UA>) : CreateBatchLoaderResult<T, T['id'], K> {
+  type UID = UA extends false ? number : null;
   type ID = T['id'];
 
-  let items = [] as BatchItem<T, ID>[];
+  let items = [] as BatchItem<T, UID, ID>[];
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
@@ -70,7 +73,7 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
    */
   const getItemById = ({ queryKey, client }: QueryFunctionContext<QueryKeyType>): Promise<T | null> => {
     const [ userId, itemId ] = extractKeys(queryKey);
-    if (!userId || !itemId) return Promise.resolve(null);
+    if ((!userAgnostic && !userId) || !itemId) return Promise.resolve(null);
 
     if (timeout) clearTimeout(timeout);
     timeout = setTimeout(async () => {
@@ -85,13 +88,13 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
       }
 
       try {
-        const authUserId = authorizedUserId();
-        const data = authUserId ? (await fetchFn(itemIds, authUserId, client)) : null;
+        const authUserId = (userAgnostic ? null : authorizedUserId()) as UID;
+        const data = userAgnostic || authUserId ? (await fetchFn(itemIds, authUserId, client)) : null;
 
         const itemsMap = new Map<ID, T>(data?.filter(Boolean).map(item => [item!.id, item!]) ?? []);
         resolvers.forEach(resolver => {
           const item = itemsMap.get(resolver.itemId);
-          if (item && authUserId === resolver.userId) {
+          if (item && (userAgnostic || authUserId === resolver.userId)) {
             resolver.resolve(item);
           }
           else {
@@ -115,7 +118,12 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
    *          и массив с именем, переданным в dataKey, с данными успешно полученных объектов.
    */
   const useItemsByIds = (ids: ID[]) => {
-    const { user } = useUser() as { user: UserProfile };
+    let user;
+    // Здесь можно вызывать хук условно, потому что на самом деле userAgnostic будет инициализироваться один раз и больше не поменяется
+    if (userAgnostic) user = {};
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    else user = useUser().user;
+
     const { current: instance } = useRef({
       trackedProps: null as Set<string> | null,
       lastIds: [] as ID[],
@@ -176,10 +184,12 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
     }, [instance, instance.lastIds]);
 
     const queries = ids.map(itemId => ({
-      queryKey: createQueryKey(user.id, itemId),
+      queryKey: createQueryKey(userAgnostic ? null : user.id, itemId),
       queryFn: getItemById,
       staleTime,
-      enabled: !!itemId && !!user.id && user.id === authorizedUserId()  // Доступно только авторизованному пользователю
+      enabled: !!itemId && (
+                userAgnostic ||                                 // Если работает независимо от авторизации
+                (!!user.id && user.id === authorizedUserId()))  // Иначе доступно только авторизованному пользователю
     }));
 
     useQueries({
@@ -191,29 +201,25 @@ export function createBatchLoader<T extends { id: number | string }, K extends s
     // нашего хука useItemsByIds должен всегда отдавать действительные значения свойств.
     // Мы используем геттеры, чтобы не запрашивать данные у React Query раньше, чем это необходимо.
     if (instance.lastResults === instance.currentResults) return instance.currentValue;
-    if (
-      !instance.lastResults ||
-      instance.lastResults.length !== instance.currentResults.length ||
-      instance.lastResults.some((result, i) => result !== instance.currentResults![i])
-    ) {
-      const results = instance.currentResults;
-      const trackedProps = instance.trackedProps;
-      const cached = {};
-      const trackProp = <P>(prop: string, getter: () => P) => {
-        if (prop in cached) return cached[prop] as P;
-        trackedProps.add(prop);
-        cached[prop] = getter();
-        return cached[prop] as P;
-      };
-      instance.currentValue = {
-        get isLoading() { return trackProp('isLoading', () => results.some(result => result.isLoading)); },
-        get isFetching() { return trackProp('isFetching', () => results.some(result => result.isFetching)); },
-        get isError() { return trackProp('isError', () => results.some(result => result.isError)); },
-        get error() { return trackProp('error', () => { for (const result of results ) { const e = result.error; if (e) return e; } return null; }); },
-        get isSuccess() { return trackProp('isSuccess', () => results.every(result => result.isSuccess)); },
-        get [dataKey]() { return trackProp('data', () => results.filter(result => !!result.data).map(result => result.data) as T[]); }
-      } as CombinedResult & {[P in K]: T[]};
-    }
+
+    const results = instance.currentResults;
+    const trackedProps = instance.trackedProps;
+    const cached = {};
+    const trackProp = <P>(prop: string, getter: () => P) => {
+      if (prop in cached) return cached[prop] as P;
+      trackedProps.add(prop);
+      cached[prop] = getter();
+      return cached[prop] as P;
+    };
+    instance.currentValue = {
+      get isLoading() { return trackProp('isLoading', () => results.some(result => result.isLoading)); },
+      get isFetching() { return trackProp('isFetching', () => results.some(result => result.isFetching)); },
+      get isError() { return trackProp('isError', () => results.some(result => result.isError)); },
+      get error() { return trackProp('error', () => { for (const result of results ) { const e = result.error; if (e) return e; } return null; }); },
+      get isSuccess() { return trackProp('isSuccess', () => results.every(result => result.isSuccess)); },
+      get [dataKey]() { return trackProp('data', () => results.filter(result => !!result.data).map(result => result.data) as T[]); }
+    } as CombinedResult & {[P in K]: T[]};
+
     instance.lastResults = instance.currentResults;
     return instance.currentValue;
   };

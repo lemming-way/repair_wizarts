@@ -2,11 +2,9 @@ import { Link } from "react-router-dom"
 
 import { useAvailableOrders } from "app/state/order"
 import { useUsersByIds } from "app/state/user"
-import { useProducts } from "app/state/site-data"
 
 const PersonalRequests = () => {
     const { orders, isLoading: isLoadingOrders } = useAvailableOrders(false, true);
-    const { products, isLoading: isLoadingProducts } = useProducts();
 
     const clientIds = [ ...new Set(orders.map(order => order.clientId))];
     const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
@@ -26,7 +24,7 @@ const PersonalRequests = () => {
         }
     }
 
-    if (isLoadingOrders || isLoadingProducts || isLoadingClients) {
+    if (isLoadingOrders || isLoadingClients) {
         return <div>Загрузка...</div>;
     }
 
@@ -64,7 +62,7 @@ const PersonalRequests = () => {
                         </div>
                         {orders.map((order) => {
                             const client = clientsMap.get(order.clientId);
-                            const productName = products[order.productId]?.name || 'Неизвестная услуга';
+                            const productName = order.productName || 'Неизвестная услуга';
                             // Заглушка, так как number_of_submissions нет в UserProfile
                             const numberOfSubmissions = 0;
 

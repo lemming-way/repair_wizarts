@@ -73,7 +73,7 @@ function MarketOrders() {
             {(tabsFilter === '#archive' ? archiveOrders : activeOrders)
               .map((v) =>
                 <MarketOrder
-                  productId={v.productId}
+                  productName={v.productName}
                   contractorId={v.contractorId}
                   address={v.address}
                   desiredPrice={v.desiredPrice}

@@ -19,7 +19,7 @@ function Services() {
     const text = useLanguage();
     const queryClient = useQueryClient();
     const { user, isSuccess: isUserLoaded, isLoading: isUserLoading } = useUser();
-    const { save: saveUserProfile, isPending: isSavingUserProfile } = useUpdateUser();
+    const { saveUser: saveUserProfile, isPending: isSavingUserProfile } = useUpdateUser();
     const { products: allProducts } = useProducts();
 
     const [selectedProductId, setSelectedProductId] = useState(0);

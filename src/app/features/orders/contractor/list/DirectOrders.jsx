@@ -7,7 +7,6 @@ import { AnyImage, getKeyFor } from 'app/shared/ui';
 import { useLanguage } from 'app/state/language';
 import { useAcceptInvoice, useRejectInvoice, useAvailableOrders } from 'app/state/order';
 import { useUser, useUsersByIds } from 'app/state/user';
-import { useProducts } from 'app/state/site-data';
 import 'app/styles/legacy/applications.css';
 import style from './DirectOrders/DirectOrders.module.css';
 
@@ -21,8 +20,6 @@ function DirectOrders() {
   const clientIds = [...new Set(orders.map(order => order.clientId))];
   const { users: clients, isLoading: isLoadingClients } = useUsersByIds(clientIds);
   const clientsMap = new Map(clients.map(client => [client.id, client]));
-
-  const { products, isLoading: isLoadingProducts } = useProducts();
 
   const { acceptInvoice } = useAcceptInvoice();
   const { rejectInvoice } = useRejectInvoice();
@@ -64,7 +61,7 @@ function DirectOrders() {
     }
   };
 
-  if (isLoadingOrders || isLoadingClients || isLoadingProducts) {
+  if (isLoadingOrders || isLoadingClients) {
     return <div className="mini-text"><h1>{text('Loading applications...')}</h1></div>;
   }
 
@@ -101,7 +98,7 @@ function DirectOrders() {
       <div className={style.orders}>
         {orders.map((order) => {
           const client = clientsMap.get(order.clientId);
-          const productName = products[order.productId]?.name || text('Unknown service');
+          const productName = order.productName || text('Unknown service');
           const createdAt = new Date(order.createdAt).toLocaleDateString();
           const isBlacklisted = user.blackList?.includes(order.clientId) || client?.blackList?.includes(user.id);
 

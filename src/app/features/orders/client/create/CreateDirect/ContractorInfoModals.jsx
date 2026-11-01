@@ -7,20 +7,11 @@ import { useLanguage } from 'app/state/language';
 import { BusinessModel, WorkLocationNames } from 'app/state/user'
 import style from './CreateDirect.module.scss';
 
-const mockFourthLevelCategories = [
-  'Настройка оборудования',
-  'Диагностика',
-  'Установка программ',
-  'Удалённая помощь',
-  'Обслуживание систем',
-  'Консультация специалиста',
-  'Срочный выезд',
-];
-
 function ContractorInfoModals({
   selectedContractor,
   categories,
   subcategories,
+  specializations,
   products,
   showSmallModal,
   showBigModal,
@@ -33,8 +24,9 @@ function ContractorInfoModals({
     return null;
   }
 
-  const contractorProducts = Object.keys(selectedContractor.services || {}).map(id => products[id]).filter(Boolean);
-  const contractorSubcategories = [...new Set(contractorProducts.map(p => subcategories[p.parent]).filter(Boolean))];
+  const contractorProducts = Object.keys(selectedContractor.services || {}).map(id => products[id]).filter(p => p?.parent);
+  const contractorSpecializations = [...new Set(contractorProducts.map(p => specializations[p.parent]).filter(s => s?.parent))];
+  const contractorSubcategories = [...new Set(contractorSpecializations.map(p => subcategories[p.parent]).filter(s => s?.parent))];
   const contractorCategories = [...new Set(contractorSubcategories.map(s => categories[s.parent]).filter(Boolean))];
 
   return (
@@ -163,15 +155,15 @@ function ContractorInfoModals({
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
-                  {text('Offerings')}
+                  {text('Specializations')}
                 </span>
-                {contractorProducts.map(item => item.name).join(', ')}
+                {contractorSpecializations.map(item => item.name).join(', ')}
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">
-                  Категории 4-го уровня
+                  {text('Offerings')}
                 </span>
-                {mockFourthLevelCategories.join(', ')}
+                {contractorProducts.map(item => item.name).join(', ')}
               </p>
               <p className="info_contractor_big__text-about">
                 <span className="info_contractor_big__text-about-light">

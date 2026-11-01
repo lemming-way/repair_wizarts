@@ -1,20 +1,10 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 import 'app/styles/legacy/remont.css';
 import style from './ServicesPage/ServicesPage.module.css';
 import { useLanguage } from 'app/state/language';
 import { useProducts } from 'app/state/site-data';
-
-const mockFourthLevelCategories = [
-  'Настройка оборудования',
-  'Диагностика',
-  'Установка программ',
-  'Удалённая помощь',
-  'Обслуживание систем',
-  'Консультация специалиста',
-  'Срочный выезд',
-];
 
 function ServicesPage() {
   const text = useLanguage();
@@ -24,23 +14,27 @@ function ServicesPage() {
   const [ searchParams ] = useSearchParams();
   const search = searchParams.get('search');
 
-  const { subcategories, products } = useProducts();
+  const { subcategories, specializations, products } = useProducts();
+
+  const [selectedSpecializationId, setSelectedSpecializationId] = useState(null);
 
   const selectedSubcategory = subcategories[subcategoryId];
-  const productIds = selectedSubcategory?.products || [];
-  const subcategoryProducts = productIds.map( id => ({
-    id,
-    name: products[id].name
-  }) );
-  const currentProducts = search ? subcategoryProducts.filter( item => item.name === search ) : subcategoryProducts;
-  const categoryListItems = [
-    ...currentProducts.map(product => ({ ...product, isMock: false })),
-    ...mockFourthLevelCategories.map((name, index) => ({
-      id: `mock-${index}`,
-      name,
-      isMock: true,
-    })),
-  ];
+  const specializationIds = selectedSubcategory?.specializations || [];
+  const subcategorySpecializations = specializationIds
+    .filter(id => specializations[id]?.name)
+    .map(id => ({
+      id,
+      name: specializations[id].name
+    }));
+  const selectedSpecialization = selectedSpecializationId ? specializations[selectedSpecializationId] : null;
+  const productIds = selectedSpecialization?.products || [];
+  const specializationProducts = productIds
+    .filter(id => products[id]?.name)
+    .map(id => ({
+      id,
+      name: products[id].name
+    }));
+  const currentProducts = search ? specializationProducts.filter( item => item.name === search ) : specializationProducts;
 
   useEffect(() => {
     document.title = text('iPhone repair');  // todo: Изменить текст
@@ -59,18 +53,16 @@ function ServicesPage() {
       >
         {text('Order on exchange')}
       </Link>
-      {categoryListItems.length > 0 && (
+      {subcategorySpecializations.length > 0 && (
         <nav className={style.categoryList} aria-label={selectedSubcategory?.name}>
-          {categoryListItems.map(product => (
-            <Link
-              key={product.id}
-              to={product.isMock && currentProducts[0]
-                ? `/services/${currentProducts[0].id}`
-                : `/services/${product.id}`}
-              className={style.categoryListItem}
+          {subcategorySpecializations.map(specialization => (
+            <button
+              key={specialization.id}
+              className={`${style.categoryListItem} ${specialization.id===selectedSpecializationId?style.active:''}`}
+              onClick={() => setSelectedSpecializationId(specialization.id)}
             >
-              {product.name}
-            </Link>
+              {specialization.name}
+            </button>
           ))}
         </nav>
       )}

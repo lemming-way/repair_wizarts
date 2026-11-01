@@ -20,19 +20,9 @@ const experienceOptions = [
   { value: 6, label: 'More than 5 years' },
 ];
 
-const fourthLevelOptions: MultiSelectOption[] = [
-  { value: 'mock-1', label: 'Настройка оборудования' },
-  { value: 'mock-2', label: 'Диагностика' },
-  { value: 'mock-3', label: 'Установка программ' },
-  { value: 'mock-4', label: 'Удалённая помощь' },
-  { value: 'mock-5', label: 'Обслуживание систем' },
-  { value: 'mock-6', label: 'Консультация специалиста' },
-  { value: 'mock-7', label: 'Срочный выезд' },
-];
-
 const RegistrationContractorPage = () => {
   const text = useLanguage();
-  const { categories, subcategories, products } = useProducts();
+  const { categories, subcategories, specializations, products } = useProducts();
   const { cities } = useCities();
   const navigate = useNavigate();
   const { register, isPending } = useRegisterContractor();
@@ -63,8 +53,43 @@ const RegistrationContractorPage = () => {
 
   const [categoryOptionSelected, setCategoryOptionSelected] = useState<MultiSelectOption[]>([]);
   const [subcategoryOptionSelected, setSubcategoryOptionSelected] = useState<MultiSelectOption[]>([]);
+  const [specializationOptionSelected, setSpecializationOptionSelected] = useState<MultiSelectOption[]>([]);
   const [productOptionSelected, setProductOptionSelected] = useState<MultiSelectOption[]>([]);
-  const [fourthLevelOptionSelected, setFourthLevelOptionSelected] = useState<MultiSelectOption[]>([]);
+
+  const categoryOptions: MultiSelectOption[] = Object.entries(categories).map(([id, { name }]) => ({
+    label: name,
+    value: id
+  }));
+
+  const subcategoryOptions: MultiSelectOption[] = [];
+  for (const { value: id } of categoryOptionSelected) {
+    subcategoryOptions.push(...categories[id].subcategories.map(id => ({
+      label: subcategories[id].name,
+      value: id
+    })));
+  }
+
+  const specializationOptions: MultiSelectOption[] = [];
+  for (const { value: id } of subcategoryOptionSelected) {
+    specializationOptions.push(...subcategories[id].specializations
+      .filter(id => specializations[id]?.name)
+      .map(id => ({
+        label: specializations[id].name,
+        value: id
+      }))
+    );
+  }
+
+  const productOptions: MultiSelectOption[] = [];
+  for (const { value: id } of specializationOptionSelected) {
+    productOptions.push(...specializations[id].products
+      .filter(id => products[id]?.name)
+      .map(id => ({
+        label: products[id].name,
+        value: id
+      }))
+    );
+  }
 
   useEffect(() => {
     document.title = text('Contractor Registration');
@@ -119,27 +144,6 @@ const RegistrationContractorPage = () => {
       setError(err instanceof Error ? err.message : String(err));
     }
   };
-
-  const categoryOptions: MultiSelectOption[] = Object.entries(categories).map(([id, { name }]) => ({
-    label: name,
-    value: id
-  }));
-
-  const subcategoryOptions: MultiSelectOption[] = [];
-  for (const { value: id } of categoryOptionSelected) {
-    subcategoryOptions.push(...categories[id].subcategories.map(id => ({
-      label: subcategories[id].name,
-      value: id
-    })));
-  }
-
-  const productOptions: MultiSelectOption[] = [];
-  for (const { value: id } of subcategoryOptionSelected) {
-    productOptions.push(...subcategories[id].products.map(id => ({
-      label: products[id].name,
-      value: id
-    })));
-  }
 
   return (
       <div className={`${styles.registrationContractorPage}`}>
@@ -313,8 +317,8 @@ const RegistrationContractorPage = () => {
             onChange={(selected: MultiSelectOption[] | null) => {
               setCategoryOptionSelected(selected || []);
               setSubcategoryOptionSelected([]); // Reset sub-categories
-              setProductOptionSelected([]); // Reset models
-              setFourthLevelOptionSelected([]);
+              setSpecializationOptionSelected([]); // Reset specializations
+              setProductOptionSelected([]); // Reset products
             }}
             value={categoryOptionSelected}
             isMulti={true}
@@ -327,8 +331,8 @@ const RegistrationContractorPage = () => {
               options={subcategoryOptions}
               onChange={(selected: MultiSelectOption[] | null) => {
                 setSubcategoryOptionSelected(selected || []);
-                setProductOptionSelected([]); // Reset models on sub-category change
-                setFourthLevelOptionSelected([]);
+                setSpecializationOptionSelected([]);
+                setProductOptionSelected([]);
               }}
               value={subcategoryOptionSelected}
               isSelectAll={true}
@@ -342,14 +346,14 @@ const RegistrationContractorPage = () => {
           )}
           {subcategoryOptionSelected.length > 0 && (
             <MultiSelect
-              key="model_phone_id"
-              placeholder={text('Service name')}
-              options={productOptions}
+              key="specialization_id"
+              placeholder={text('Specialization')}
+              options={specializationOptions}
               onChange={(selected: MultiSelectOption[] | null) => {
-                setProductOptionSelected(selected || []);
-                setFourthLevelOptionSelected([]);
+                setSpecializationOptionSelected(selected || []);
+                setProductOptionSelected([]);
               }}
-              value={productOptionSelected}
+              value={specializationOptionSelected}
               isSelectAll={true}
               isMulti={true}
               menuPlacement={'bottom'}
@@ -358,18 +362,21 @@ const RegistrationContractorPage = () => {
               }
             />
           )}
-          {productOptionSelected.length > 0 && (
+          {specializationOptionSelected.length > 0 && (
             <MultiSelect
-              key="fourth_level_id"
-              placeholder="Категории 4-го уровня"
-              options={fourthLevelOptions}
+              key="offering_id"
+              placeholder="Service name"
+              options={productOptions}
               onChange={(selected: MultiSelectOption[] | null) =>
-                setFourthLevelOptionSelected(selected || [])
+                setProductOptionSelected(selected || [])
               }
-              value={fourthLevelOptionSelected}
+              value={productOptionSelected}
               isSelectAll={true}
               isMulti={true}
               menuPlacement="bottom"
+              isDisabled={
+                !specializationOptionSelected || specializationOptionSelected.length === 0
+              }
             />
           )}
 

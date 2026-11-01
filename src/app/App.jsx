@@ -71,7 +71,7 @@ function App() {
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
 
-  const { categories, isLoading: areProductsLoading } = useProducts();
+  const { categories, isLoading: areCategoriesLoading } = useProducts();
 
   const isAuthorized = !!user.id;
   const isContractor = user.role === UserRole.Contractor;
@@ -140,7 +140,7 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (Object.keys(categories).length === 0 && areProductsLoading) {
+  if (Object.keys(categories).length === 0 && areCategoriesLoading) {
     return 'Loading...';
   }
 

@@ -296,9 +296,9 @@ export function MessageFeed({
         )}
         {messages.map((message) => {
           const userId =
-            message.type === MessageType.User || message.type === MessageType.Dispute
-            ? message.from
-            : message.authorId;
+            message.type === MessageType.Admin
+            ? message.authorId
+            : message.from;
           const user = userId ? usersMap.get(userId) : null;
           const userName = user?.fullname || user?.name;
           const avatar = user?.avatar;
