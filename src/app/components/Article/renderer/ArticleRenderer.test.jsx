@@ -1,5 +1,6 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-container, no-script-url -- DOM structure and hostile URL assertions are intentional in renderer regression tests. */
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import ArticleRenderer from './ArticleRenderer';
 
@@ -81,7 +82,8 @@ const blocks = [
 ];
 
 describe('ArticleRenderer — Article Format 1.3', () => {
-  it('renders all 12 supported block types in the supplied order', () => {
+  it('renders all 12 supported block types in the supplied order', async () => {
+    const user = userEvent.setup();
     const { container } = render(
       <ArticleRenderer blocks={blocks} mediaBaseUrl="/articles/demo/" />,
     );
@@ -123,7 +125,8 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     expect(container.querySelector('aside')).not.toBeNull();
     expect(container.querySelector('table')).not.toBeNull();
     expect(container.querySelector('pre code')).not.toBeNull();
-    expect(container.querySelector('model-viewer')).not.toBeNull();
+    await user.click(screen.getByRole('button', { name: /Показать 3D-модель/ }));
+    await waitFor(() => expect(container.querySelector('model-viewer')).not.toBeNull());
   });
 
   it('renders ordered and unordered lists with their declared semantics', () => {
@@ -191,7 +194,7 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     );
 
     expect(container.querySelector('iframe')).toBeNull();
-    expect(screen.getByText('Видео недоступно для встроенного просмотра.')).toBeInTheDocument();
+    expect(screen.getAllByText('Видео недоступно для встроенного просмотра.')).toHaveLength(2);
     expect(container.querySelector('a[href^="javascript:"]')).toBeNull();
   });
 
