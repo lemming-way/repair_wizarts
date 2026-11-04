@@ -9,8 +9,8 @@ const DATA_URL = /^(?:data|blob):/i;
 export function resolveArticleMedia(file: string | undefined, baseUrl?: string): string {
   if (!file) return '';
   if (ABSOLUTE_URL.test(file)) return file;
-  if (DATA_URL.test(file)) return /^data:image\\//i.test(file) ? file : '';
-  if (/^[a-z][a-z\\d+.-]*:/i.test(file)) return '';
+  if (DATA_URL.test(file)) return /^data:image\//i.test(file) ? file : '';
+  if (/^[a-z][a-z\d+.-]*:/i.test(file)) return '';
 
   const cleanFile = file.replace(/^\.?\//, '');
   if (baseUrl) {
