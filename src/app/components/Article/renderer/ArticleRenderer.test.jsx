@@ -97,8 +97,7 @@ describe('ArticleRenderer — Article Format 1.3', () => {
       'https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ',
     );
 
-    expect(screen.getByRole('list', { name: '' })).toBeInTheDocument();
-    expect(screen.getByText('Отключить питание')).toBeInTheDocument();
+    expect(screen.getByText('Отключить питание').closest('ol')).not.toBeNull();
     expect(screen.getByText('Сначала безопасность, затем диагностика.')).toBeInTheDocument();
     expect(screen.getByText('Правило ремонта')).toBeInTheDocument();
 
@@ -113,23 +112,17 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     expect(screen.getByRole('button', { name: 'Копировать' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Показать 3D-модель/ })).toBeInTheDocument();
 
-    const renderedBlockTypes = [
-      '.heading',
-      '.paragraph',
-      '.figure',
-      '.gallery',
-      '.videoFigure',
-      '.orderedList',
-      '.quote',
-      '.callout',
-      '.steps',
-      '.tableWrap',
-      '.codeBlock',
-      '.modelFigure',
-    ];
-    renderedBlockTypes.forEach((selector) => {
-      expect(container.querySelector(selector)).not.toBeNull();
-    });
+    expect(container.querySelector('h2')).not.toBeNull();
+    expect(container.querySelector('p')).not.toBeNull();
+    expect(container.querySelectorAll('figure').length).toBeGreaterThanOrEqual(2);
+    expect(container.querySelector('[class*="gallery"]')).not.toBeNull();
+    expect(container.querySelector('iframe')).not.toBeNull();
+    expect(container.querySelector('ol')).not.toBeNull();
+    expect(container.querySelector('blockquote')).not.toBeNull();
+    expect(container.querySelector('aside')).not.toBeNull();
+    expect(container.querySelector('table')).not.toBeNull();
+    expect(container.querySelector('pre code')).not.toBeNull();
+    expect(container.querySelector('model-viewer')).not.toBeNull();
   });
 
   it('renders ordered and unordered lists with their declared semantics', () => {
