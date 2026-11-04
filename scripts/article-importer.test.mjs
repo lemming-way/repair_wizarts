@@ -115,7 +115,7 @@ test('imports a valid article ZIP and rejects missing article.json or media', ()
       noMediaPath,
       zipLocalEntries([{ name: 'article.json', data: JSON.stringify(validArticle) }]),
     );
-    assert.throws(() => readArticleZip(noMediaPath), /media\\/ directory not found/);
+    assert.throws(() => readArticleZip(noMediaPath), /media[/] directory not found/);
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
