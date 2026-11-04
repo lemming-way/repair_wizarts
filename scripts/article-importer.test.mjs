@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import zlib from 'node:zlib';
 
-import { assertArticle, readArticleZip, readZipEntries } from './article-importer.mjs';
+import { assertArticle, crc32, readArticleZip, readZipEntries } from './article-importer.mjs';
 
 function zipLocalEntries(entries) {
   return Buffer.concat(
@@ -27,10 +27,11 @@ function zipLocalEntries(entries) {
   );
 }
 
-function zipDataDescriptorEntry({ name = 'x', data = 'x', method = 8, signature = true }) {
+function zipDataDescriptorEntry({ name = 'x', data = 'x', method = 8, signature = true, crc }) {
   const filename = Buffer.from(name);
   const source = Buffer.from(data);
   const compressed = method === 8 ? zlib.deflateRawSync(source) : source;
+  const checksum = crc === undefined ? crc32(source) : crc;
   const header = Buffer.alloc(30);
   header.writeUInt32LE(0x04034b50, 0);
   header.writeUInt16LE(20, 4);
@@ -44,7 +45,7 @@ function zipDataDescriptorEntry({ name = 'x', data = 'x', method = 8, signature 
     descriptor.writeUInt32LE(0x08074b50, 0);
     offset = 4;
   }
-  descriptor.writeUInt32LE(0, offset);
+  descriptor.writeUInt32LE(checksum >>> 0, offset);
   descriptor.writeUInt32LE(compressed.length, offset + 4);
   descriptor.writeUInt32LE(source.length, offset + 8);
 
@@ -92,6 +93,33 @@ test('reads ZIP entries with signed and unsigned data descriptors', () => {
       assert.equal(entries[0].name, 'article.json');
       assert.equal(entries[0].data.toString(), '{"ok":true}');
     }
+  }
+});
+
+test('supports empty files with signed and unsigned data descriptors', () => {
+  for (const signature of [true, false]) {
+    const entries = readZipEntries(
+      zipDataDescriptorEntry({ name: 'empty.txt', data: '', method: 0, signature }),
+    );
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].data.length, 0);
+  }
+});
+
+test('rejects a data descriptor with a wrong CRC32', () => {
+  for (const signature of [true, false]) {
+    assert.throws(
+      () =>
+        readZipEntries(
+          zipDataDescriptorEntry({
+            name: 'broken.txt',
+            data: 'payload',
+            signature,
+            crc: 0x12345678,
+          }),
+        ),
+      /CRC32 mismatch/,
+    );
   }
 });
 

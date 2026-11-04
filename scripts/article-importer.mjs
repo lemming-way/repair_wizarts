@@ -22,6 +22,24 @@ const CENTRAL_DIRECTORY_MAGIC = 0x02014b50;
 const END_OF_CENTRAL_DIRECTORY_MAGIC = 0x06054b50;
 const DATA_DESCRIPTOR_MAGIC = Buffer.from([0x50, 0x4b, 0x07, 0x08]);
 
+const CRC32_TABLE = new Uint32Array(256);
+for (let index = 0; index < 256; index += 1) {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
+  }
+  CRC32_TABLE[index] = value >>> 0;
+}
+
+/** CRC32 в том же виде, в котором он хранится в ZIP. */
+export function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (let index = 0; index < buffer.length; index += 1) {
+    crc = CRC32_TABLE[(crc ^ buffer[index]) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
 export function fail(message) {
   throw new Error(message);
 }
@@ -65,17 +83,24 @@ function readDataDescriptorEntry(buffer, dataStart, name, method) {
     const signatureOffset = buffer.indexOf(DATA_DESCRIPTOR_MAGIC, searchFrom);
     if (signatureOffset === -1) break;
 
+    const descriptorCrc = buffer.readUInt32LE(signatureOffset + 4);
     const compressedSize = buffer.readUInt32LE(signatureOffset + 8);
     const uncompressedSize = buffer.readUInt32LE(signatureOffset + 12);
-    if (compressedSize > 0 && signatureOffset - dataStart === compressedSize) {
+    if (signatureOffset - dataStart === compressedSize) {
       const raw = buffer.subarray(dataStart, signatureOffset);
+      let data;
       try {
-        const data = unpackEntry(raw, method, name);
-        if (data.length === uncompressedSize) {
-          return { data, nextOffset: signatureOffset + 16 };
-        }
+        data = unpackEntry(raw, method, name);
       } catch {
         // Сигнатура встретилась внутри сжатых данных — ищем следующую.
+        searchFrom = signatureOffset + 4;
+        continue;
+      }
+      if (data.length === uncompressedSize) {
+        if (crc32(data) !== descriptorCrc) {
+          fail(`ZIP CRC32 mismatch for "${name}".`);
+        }
+        return { data, nextOffset: signatureOffset + 16 };
       }
     }
     searchFrom = signatureOffset + 4;
@@ -98,12 +123,16 @@ function readDataDescriptorEntry(buffer, dataStart, name, method) {
 
   if (nextHeader !== -1 && nextHeader - dataStart >= 12) {
     const descriptorOffset = nextHeader - 12;
+    const descriptorCrc = buffer.readUInt32LE(descriptorOffset);
     const compressedSize = buffer.readUInt32LE(descriptorOffset + 4);
     const uncompressedSize = buffer.readUInt32LE(descriptorOffset + 8);
-    if (compressedSize > 0 && dataStart + compressedSize === descriptorOffset) {
+    if (dataStart + compressedSize === descriptorOffset) {
       const raw = buffer.subarray(dataStart, descriptorOffset);
       const data = unpackEntry(raw, method, name);
       if (data.length === uncompressedSize) {
+        if (crc32(data) !== descriptorCrc) {
+          fail(`ZIP CRC32 mismatch for "${name}".`);
+        }
         return { data, nextOffset: nextHeader };
       }
     }

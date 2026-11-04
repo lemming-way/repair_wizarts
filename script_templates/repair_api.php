@@ -334,6 +334,8 @@ $out = call_user_func(function() {
 
   $blog_public_where = '';
   $blog_public_params = [];
+  $blog_public_config_error = null;
+  $blog_numeric_status_columns = ['id_blog_status', 'status_id', 'id_status'];
   if ($blog_status_column) {
     if (in_array($blog_status_column, ['is_published', 'published'], true)) {
       $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=1';
@@ -346,10 +348,24 @@ $out = call_user_func(function() {
         $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=:published_status';
         $blog_public_params['published_status'] = $blog_published_status_id;
       }
+      else {
+        $blog_public_config_error =
+          'Blog publication status is numeric, but the published status ID is not configured. ' .
+          'Apply sql/blog_article_publication.sql or set $blog_published_status_id in repair_api.php.';
+      }
     }
-    elseif ($blog_published_status_id !== null) {
-      $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=:published_status';
-      $blog_public_params['published_status'] = $blog_published_status_id;
+    elseif (in_array($blog_status_column, $blog_numeric_status_columns, true)) {
+      if ($blog_published_status_id !== null) {
+        $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=:published_status';
+        $blog_public_params['published_status'] = $blog_published_status_id;
+      }
+      else {
+        // Не угадываем числовой статус: без явной настройки публичная
+        // выдача не выполняется, чтобы не отдать черновики.
+        $blog_public_config_error =
+          'Blog publication status is numeric, but the published status ID is not configured. ' .
+          'Apply sql/blog_article_publication.sql or set $blog_published_status_id in repair_api.php.';
+      }
     }
   }
 
@@ -3156,6 +3172,7 @@ $out = call_user_func(function() {
 
     // Список статей (имя действия сохранено по контракту AGENTS.md)
     case 'getBlogTopics':
+      if ($blog_public_config_error) $die(500, $blog_public_config_error);
       $result = $query(
         'SELECT ' .
           '`p`.`id_blog_post` AS `id`,' .
@@ -3190,6 +3207,7 @@ $out = call_user_func(function() {
 
     // Детальная страница статьи
     case 'getBlogTopicById':
+      if ($blog_public_config_error) $die(500, $blog_public_config_error);
       $article_id = isset($data['id']) ? intval($data['id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
       if ($article_id <= 0) $die(400, 'Article ID not set.');
       $row = $query_one(
@@ -3224,6 +3242,7 @@ $out = call_user_func(function() {
 
     // Комментарии статьи
     case 'getBlogPosts':
+      if ($blog_public_config_error) $die(500, $blog_public_config_error);
       $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
       if ($article_id <= 0) $die(400, 'Article ID not set.');
       $exists = $query_one(
@@ -3276,6 +3295,7 @@ $out = call_user_func(function() {
 
     // Добавить комментарий или ответ
     case 'addBlogPost':
+      if ($blog_public_config_error) $die(500, $blog_public_config_error);
       $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
       if ($article_id <= 0) $die(400, 'Article ID not set.');
       $parent_id = null;
