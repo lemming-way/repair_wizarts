@@ -140,7 +140,10 @@ function App() {
     }
   }, [connectNotifications, status, user.id]);
 
-  if (Object.keys(categories).length === 0 && areCategoriesLoading) {
+  const isBlogRoute =
+    location.pathname === '/articles' || location.pathname.startsWith('/articles/');
+
+  if (!isBlogRoute && Object.keys(categories).length === 0 && areCategoriesLoading) {
     return 'Loading...';
   }
 

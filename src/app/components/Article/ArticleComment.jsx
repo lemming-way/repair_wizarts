@@ -1,72 +1,258 @@
-import styles from "./Article.module.css"
-import dislikeImage from "../../img/dislike.png"
-import likeImage from "../../img/like.png"
-// todo: Добавить реальный вызов API для лайков/дизлайков комментариев
-// import {
-//     likeArticleComment,
-//     dislikeArticleComment
-// } from "../../services/article.service"
-import { useLanguage } from '../../state/language'
-import { formatDate } from "app/shared/lib/formatDate"
+import { useId, useState } from 'react';
 
-const ArticleComment = (props) => {
-    const {
-        id,
-        sender,
-        text: commentText,
-        likes,
-        created_at,
-        isAnswer
-    } = props
+import { countUnicodeChars, formatBlogDateTime } from '../../shared/lib/blog';
+import { PencilIcon, TrashIcon } from '../../shared/ui/BlogIcons';
+import BlogAvatar from './BlogAvatar';
+import styles from './Article.module.css';
 
-    const text = useLanguage()
-    // todo: Заменить на реальный вызов likeArticleComment(id)
-    const onLike = () => Promise.resolve().then(() => console.log(`Liked comment ${id}`))
-    // todo: Заменить на реальный вызов dislikeArticleComment(id)
-    const onDislike = () => Promise.resolve().then(() => console.log(`Disliked comment ${id}`))
+export const MAX_COMMENT_LENGTH = 1000;
 
-    return (
-        <div className={`${styles.comment} ${isAnswer? styles.isAnswer : ""}`}>
-            <div className={styles.commentUser}>
-                <img
-                    className={styles.commentUserAvatar}
-                    // src={SERVER_PATH + sender.avatar}
-                    src="/img/img-kiril.png"
-                    alt="user avatar"
-                />
-                <div className={styles.commentUserInfo}>
-                    <div className={styles.commentUserName}>{sender.name} {sender.lastname}
-                    {isAnswer? 
-                        <div>
-                            <img src="/img/icons/answer.png" alt="" style={{marginRight: "10px"}} />
-                            <span style={{color: "grey"}}>Логин</span>
-                        </div> 
-                        : null}
-                    </div>
-                    <div className={styles.commentUserDate}>{formatDate(created_at)}</div>
-                </div>
-            </div>
-            <div className={styles.commentContent}>
-                {commentText}
-            </div>
-            <div className={styles.commentLikes}>
-                <span className={styles.answer}>{text('Reply')}</span>
-                <button
-                    className={styles.commentThumb}
-                    onClick={onLike}
-                >
-                    <img src={likeImage} alt="like" />
-                </button>
-                <button
-                    className={styles.commentThumb}
-                    onClick={onDislike}
-                >
-                    <img src={dislikeImage} alt="dislike" />
-                </button>
-                <span className={styles.commentCount}>{likes}</span>
-            </div>
+export function CommentForm({
+  value,
+  onChange,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  busy,
+  placeholder,
+}) {
+  const textareaId = useId();
+  const length = countUnicodeChars(value);
+  const tooLong = length > MAX_COMMENT_LENGTH;
+
+  return (
+    <form className={styles.commentForm} onSubmit={onSubmit}>
+      <label className={styles.srOnly} htmlFor={textareaId}>
+        {placeholder}
+      </label>
+      <textarea
+        id={textareaId}
+        className={styles.commentTextarea}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <div className={styles.commentFormFooter}>
+        <span className={tooLong ? styles.counterError : undefined}>
+          {length} / {MAX_COMMENT_LENGTH}
+        </span>
+        <div className={styles.commentFormButtons}>
+          {onCancel && (
+            <button
+              type="button"
+              className={styles.cancelButton}
+              onClick={onCancel}
+              disabled={busy}
+            >
+              Отмена
+            </button>
+          )}
+          <button
+            type="submit"
+            className={styles.primaryButton}
+            disabled={busy || !value.trim() || tooLong}
+          >
+            {busy ? 'Отправляем…' : submitLabel}
+          </button>
         </div>
-    )
+      </div>
+    </form>
+  );
 }
 
-export default ArticleComment
+function ArticleComment({
+  comment,
+  currentUserId,
+  allowGuestTesting = false,
+  onReply,
+  onEdit,
+  onDelete,
+}) {
+  const [mode, setMode] = useState('idle');
+  const [draft, setDraft] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const isOwn = currentUserId > 0 && comment.author.id === currentUserId;
+  const canReply = currentUserId > 0 || allowGuestTesting;
+
+  const reset = () => {
+    setMode('idle');
+    setDraft('');
+    setError('');
+    setBusy(false);
+  };
+
+  const handleReply = async (event) => {
+    event.preventDefault();
+    if (!draft.trim()) return;
+
+    setBusy(true);
+    setError('');
+    try {
+      await onReply(comment.id, draft.trim());
+      reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось отправить ответ.');
+      setBusy(false);
+    }
+  };
+
+  const handleEdit = async (event) => {
+    event.preventDefault();
+    if (!draft.trim()) return;
+
+    setBusy(true);
+    setError('');
+    try {
+      await onEdit(comment.id, draft.trim());
+      reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось сохранить комментарий.');
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await onDelete(comment.id);
+      reset();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось удалить комментарий.');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <li className={`${styles.commentItem} ${comment.can_edit ? styles.commentItemOwn : ''}`}>
+      <div className={styles.commentRow}>
+        <BlogAvatar name={comment.author.name} src={comment.author.avatar} size="lg" />
+
+        <div className={styles.commentBody}>
+          <div className={styles.commentHeader}>
+            <span className={styles.commentAuthorName}>{comment.author.name}</span>
+            {isOwn && <span className={styles.ownBadge}>Вы</span>}
+            <time className={styles.commentDate} dateTime={comment.created_at}>
+              {formatBlogDateTime(comment.created_at)}
+            </time>
+            {comment.updated_at && !comment.deleted && (
+              <span className={styles.editedMark}>изменено</span>
+            )}
+          </div>
+
+          {comment.deleted ? (
+            <p className={styles.deletedComment}>Комментарий удалён</p>
+          ) : mode === 'edit' ? (
+            <CommentForm
+              value={draft}
+              onChange={setDraft}
+              onSubmit={handleEdit}
+              onCancel={reset}
+              submitLabel="Сохранить"
+              placeholder="Текст комментария"
+              busy={busy}
+            />
+          ) : (
+            <p className={styles.commentText}>{comment.text}</p>
+          )}
+
+          {mode === 'reply' && (
+            <CommentForm
+              value={draft}
+              onChange={setDraft}
+              onSubmit={handleReply}
+              onCancel={reset}
+              submitLabel="Ответить"
+              placeholder={`Ответ на комментарий ${comment.author.name}`}
+              busy={busy}
+            />
+          )}
+
+          {mode === 'delete' && (
+            <div className={styles.deleteConfirm}>
+              <span>Удалить комментарий?</span>
+              <button
+                type="button"
+                className={styles.dangerButton}
+                onClick={handleDelete}
+                disabled={busy}
+              >
+                {busy ? 'Удаляем…' : 'Да, удалить'}
+              </button>
+              <button type="button" className={styles.cancelButton} onClick={reset} disabled={busy}>
+                Нет
+              </button>
+            </div>
+          )}
+
+          {error && <p className={styles.commentError}>{error}</p>}
+
+          {mode === 'idle' && (
+            <div className={styles.commentActions}>
+              {!comment.deleted && canReply && (
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => {
+                    setDraft('');
+                    setError('');
+                    setMode('reply');
+                  }}
+                >
+                  Ответить
+                </button>
+              )}
+              {comment.can_edit && (
+                <button
+                  type="button"
+                  className={styles.textButton}
+                  onClick={() => {
+                    setDraft(comment.text);
+                    setError('');
+                    setMode('edit');
+                  }}
+                >
+                  <PencilIcon />
+                  Редактировать
+                </button>
+              )}
+              {comment.can_delete && (
+                <button
+                  type="button"
+                  className={`${styles.textButton} ${styles.textButtonDanger}`}
+                  onClick={() => {
+                    setError('');
+                    setMode('delete');
+                  }}
+                >
+                  <TrashIcon />
+                  Удалить
+                </button>
+              )}
+            </div>
+          )}
+
+          {comment.children.length > 0 && (
+            <ol className={styles.commentChildren}>
+              {comment.children.map((child) => (
+                <ArticleComment
+                  comment={child}
+                  currentUserId={currentUserId}
+                  allowGuestTesting={allowGuestTesting}
+                  key={child.id}
+                  onReply={onReply}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              ))}
+            </ol>
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+export default ArticleComment;

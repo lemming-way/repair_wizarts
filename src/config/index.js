@@ -20,6 +20,12 @@ const CONFIG = {
 		initialLifetime: 604800
 	},
 
+	BLOG: {
+		// ВРЕМЕННО: гостевой режим комментариев для тестирования без регистрации.
+		// ОБЯЗАТЕЛЬНО выставить false перед публикацией в прод.
+		allowGuestTesting: true,
+	},
+
 	API: {
 		url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
 		userDataStaleTime: 15 * 60000,

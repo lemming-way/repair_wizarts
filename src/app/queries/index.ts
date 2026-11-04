@@ -1,3 +1,4 @@
+export * from './blog';
 export * from './categories';
 export * from './messages';
 export * from './offers';

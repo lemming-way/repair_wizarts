@@ -1,210 +1,184 @@
-import DOMPurify from 'dompurify'
-import React, { useEffect, useState, Suspense } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Navigation } from 'swiper';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
-import styles from './Article.module.css'
-import ArticleComments from './ArticleComments'
-import SERVER_PATH from '../../../config/SERVER_PATH'
-import backgroundImg from '../../img/article.png'
-import calendarIcon from '../../img/calendar.png'
-import groupIcon from '../../img/group.png'
-import likeImage from '../../img/like.png'
-import viewImage from '../../img/view.png'
-// todo: Добавить реальные вызовы API для статей
-// import {
-//     getArticle,
-//     getArticles
-// } from '../../services/article.service'
-import { useLanguage } from '../../state/language'
-import { useUser } from '../../state/user'
-import homeStyles from '../../styles/home/HomeSections.module.scss'
+import { useBlogArticle, useBlogArticles } from '../../hooks/useBlog';
+import sanitizeHtml from '../../shared/lib/sanitizeHtml';
+import { stripHtml } from '../../shared/lib/blog';
+import { formatDate } from '../../shared/lib/formatDate';
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  CommentIcon,
+} from '../../shared/ui/BlogIcons';
+import { useUser } from '../../state/user';
+import ArticleComments from './ArticleComments';
+import BlogArticleCard from './BlogArticleCard';
+import BlogAvatar from './BlogAvatar';
+import styles from './Article.module.css';
 
-// Фиктивные данные для статьи
-const mockArticleData = (id) => ({
-    id: id,
-    title: `Заголовок тестовой статьи ${id}`,
-    views: Math.floor(Math.random() * 1000) + 100,
-    created_at: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-    text: "<p>Это содержимое тестовой статьи. Здесь может быть любой <b>HTML</b> контент. <br/> Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
-    cover_image: null, // или фиктивный путь, если нужно
-    likes: Math.floor(Math.random() * 50)
-});
-
-const mockArticlesData = Array.from({ length: 8 }).map((_, i) => mockArticleData(i + 1));
-
-const Article = (props) => {
-    const text = useLanguage()
-    const { id } = useParams()
-    const [articles, setArticles] = useState([])
-    const [data, setData] = useState({
-        title: "Заголовок статьи", // Заголовок статьи
-        views: 123,                // Количество просмотров
-        created_at: "2023-10-05T00:00:00Z", // Дата создания статьи (в формате ISO)
-        text: "<p>Содержимое статьи в формате HTML.</p>" // Содержимое статьи в HTML
-    });
-
-    const [headerStyle, setHeaderStyle] = useState({ background: `url("${backgroundImg}")` })
-    const { user } = useUser()
-
-    useEffect(() => {
-        // todo: Заменить на реальный вызов getArticle(id)
-        Promise.resolve(mockArticleData(id)).then((articleData) => {
-            if (articleData.cover_image) {
-                const path = SERVER_PATH + articleData.cover_image
-                setHeaderStyle({ background: `center / cover no-repeat url("${path}")` })
-                setData(articleData)
-                return
-            }
-            setData(articleData)
-            setHeaderStyle({ background: `url("${backgroundImg}")` })
-        })
-        // todo: Заменить на реальный вызов getArticles()
-        Promise.resolve(mockArticlesData).then(setArticles)
-    }, [id]) // Зависимость [id] сохранена для обновления при смене статьи
-
-    const filterText = (v) => v.replace(/<[^>]*>/g, '');
-
-    const getImage = (path) =>
-        path ? SERVER_PATH + path : backgroundImg
-
-    const formatDate = (date) => {
-        const _date = new Date(date)
-        return `${_date.getDate()}.${_date.getMonth()+1}.${_date.getFullYear()}`
-    }
-
-    const [offsetContent, setOffsetContent] = useState(true)
-
-    return (
-        <div className={styles.container} style={{padding: 0}}>
-            <div className={styles.header} style={headerStyle}>
-                <div className={styles.headerContainer}>
-                    <h2 className={styles.headerTitle}>{data.title}</h2>
-                    <div className={styles.headerInfo}>
-                        <span className={styles.headerViews}>
-                            <img className={styles.headerIcon} src={groupIcon}  alt='no icon'/>
-                            {data.views}
-                        </span>
-                        <span className={styles.headerDate}>
-                            <img className={styles.headerIcon} src={calendarIcon} alt='no icon' />
-                            {formatDate(data.created_at)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-            {/* красный меню блок  справа */}
-            <ul className={styles.aside_menu}>
-                <li>Электроника</li>
-                <div className={styles.aside__line}></div>
-                <li>Ремонт телефонов</li>
-                <div className={styles.aside__line}></div>
-                <li className={styles.aside__active_item}>
-                    <img src="/img/arrowleft-white.png" alt="" />
-                    Ремонт Iphone
-                </li>
-            </ul>
-
-            <div className={styles.body}>
-                <div
-                    data-testid="article-body"
-                    className={`${styles.bodyContent} ${offsetContent? styles.offset_content : ""}`}
-                    dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(
-                            Array(100).fill(data.text).join('') || '',
-                            {
-                                USE_PROFILES: { html: true },
-                            },
-                        ),
-                    }}
-                >
-                </div>
-                {offsetContent ? 
-                    <div className={styles.gradient}></div>
-                : null}
-                
-            </div>
-            <div className={styles.buttons_row}>
-                {offsetContent ? 
-                    <div className={styles.bodyActions}>
-                        <span className={styles.bodyButton} onClick={()=> setOffsetContent(false)}>{text('Read more')}</span>
-                    </div>
-                : null}
-                <div className={styles.bodyActions}>
-                    <Link to={user.id ? "/client/requests/create/data" : "/register/client"} className={styles.bodyButton}>Оформить услугу</Link>
-                </div>
-            </div>
-            <ArticleComments
-                articleId={id}
-                likes={data.likes}
-            />
-            <section className={`blog ${homeStyles.section}`}>
-                <div className="container ircontainer">
-                    <h2 className={homeStyles.title}>Другие статьи</h2>
-                    <div className="blog__card__list">
-                <Suspense fallback={<div className="swiper-loading" />}>
-                    <Swiper
-                        slidesPerView={4}
-                        spaceBetween={30}
-                        navigation={true}
-                        modules={[Navigation]}
-                        className={`mySwiper ${homeStyles.slider} ${homeStyles.articleSlider}`}
-                        breakpoints={{
-                            0: {
-                                slidesPerView: 2
-                            },
-                            775: {
-                                slidesPerView: 2
-                            },
-                            1099: {
-                                slidesPerView: 3
-                            },
-                            1585: {
-                                slidesPerView: 4
-                            },
-                        }}
-                    >
-                        {articles.map((v) => (
-                            <SwiperSlide className="swiper-slier" key={v.id}>
-                                <Link
-                                    to={"/articles/" + v.id}
-                                    className={homeStyles.articleLink}
-                                    onClick={() => document.documentElement.scrollTop = 0}
-                                >
-                                    <div className="blog__card">
-                                        <img
-                                            className="blog-card__picture"
-                                            src={getImage(v.cover_image)}
-                                            alt=""
-                                        />
-                                        <div className="blog__card__content">
-                                            <h4 className="blog-card__title">{v.title}</h4>
-                                            <p className="blog-card__description">{filterText(v.text)}</p>
-                                            <span className="blog-card__date">{formatDate(v.created_at)}</span>
-                                            <div className="blog-card-stats">
-                                                <div className="blog-card-stats__item">
-                                                    <img src={likeImage} className="blog-card-stats__picture" alt="" />
-                                                    <span className="blog-card-stats__count">{v.likes}</span>
-                                                </div>
-                                                <div className="blog-card-stats__item">
-                                                    <img src={viewImage} className="blog-card-stats__picture blog-card-stats__view-picture" alt="" />
-                                                    <span className="blog-card-stats__count">{v.views}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </SwiperSlide>
-                        ))}
-                    </Swiper>
-                </Suspense>
-                    </div>
-                </div>
-            </section>
+function ArticlePageState({ title, message, onRetry }) {
+  return (
+    <div className={styles.articlesPage}>
+      <div className={styles.articleStateCard}>
+        <h1>{title}</h1>
+        <p>{message}</p>
+        <div className={styles.articleStateActions}>
+          <Link className={styles.secondaryButton} to="/articles">
+            Все статьи
+          </Link>
+          {onRetry && (
+            <button type="button" className={styles.primaryButton} onClick={onRetry}>
+              Повторить
+            </button>
+          )}
         </div>
-    )
+      </div>
+    </div>
+  );
 }
 
-export default Article
+const Article = () => {
+  const { id } = useParams();
+  const articleId = Number(id);
+  const { user } = useUser();
+  const { data: article, isLoading, isError, error, refetch } = useBlogArticle(articleId);
+  const { data: articles = [] } = useBlogArticles();
+
+  const [expanded, setExpanded] = useState(false);
+  const [canExpand, setCanExpand] = useState(false);
+  const contentRef = useRef(null);
+
+  const cleanContent = useMemo(() => sanitizeHtml(article?.content || ''), [article?.content]);
+  const plainText = useMemo(() => stripHtml(cleanContent), [cleanContent]);
+  const readingMinutes = Math.max(1, Math.ceil(Array.from(plainText).length / 1000));
+
+  useEffect(() => {
+    setExpanded(false);
+    setCanExpand(false);
+  }, [articleId]);
+
+  useEffect(() => {
+    if (!cleanContent) return;
+    const element = contentRef.current;
+    if (!element) return;
+    setCanExpand(element.scrollHeight > 360 || Array.from(plainText).length > 1200);
+  }, [cleanContent, plainText]);
+
+  if (isLoading) {
+    return <ArticlePageState title="Загружаем статью" message="Это займёт несколько секунд." />;
+  }
+
+  if (isError) {
+    return (
+      <ArticlePageState
+        title="Не удалось загрузить статью"
+        message={error instanceof Error ? error.message : 'Попробуйте обновить страницу.'}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  if (!article) {
+    return (
+      <ArticlePageState title="Статья не найдена" message="Возможно, публикация была удалена." />
+    );
+  }
+
+  const otherArticles = articles.filter((item) => item.id !== article.id).slice(0, 3);
+  const serviceLink = user.id ? '/client/requests/create/data' : '/register/client';
+  const publishedAt = formatDate(article.created_at, 'ru', 'long').replace(' г.', '');
+
+  return (
+    <div className={styles.articlesPage}>
+      <header className={styles.articleHero}>
+        <div className={styles.articleHeroInner}>
+          <Link className={styles.articlesBack} to="/articles">
+            <ArrowLeftIcon />
+            Все статьи
+          </Link>
+          <p className={styles.articleHeroCategory}>{article.topic_name}</p>
+          <h1 className={styles.articleHeroTitle}>{article.title}</h1>
+          <div className={styles.articleHeroMeta}>
+            <span>
+              <CalendarIcon />
+              {publishedAt}
+            </span>
+            <span>
+              <CommentIcon />
+              {article.comments_count} комментариев
+            </span>
+            <span>{readingMinutes} мин чтения</span>
+          </div>
+        </div>
+      </header>
+
+      <div className={styles.articleContentCard}>
+        <div className={styles.articleLayout}>
+          <div className={styles.articleMain}>
+            <article className={styles.article}>
+              <div className={styles.articleAuthor}>
+                <BlogAvatar name={article.author.name} src={article.author.avatar} />
+                <div>
+                  <p className={styles.articleAuthorName}>
+                    {article.author.name}
+                    <span> ({article.author.role === 2 ? 'Мастер' : 'Клиент'})</span>
+                  </p>
+                  <p className={styles.articleAuthorDate}>Опубликовано {publishedAt}</p>
+                </div>
+              </div>
+
+              <div className={styles.articleBodyWrap}>
+                <div
+                  ref={contentRef}
+                  className={`${styles.articleBody} ${expanded ? styles.articleBodyExpanded : styles.articleBodyCollapsed}`}
+                  dangerouslySetInnerHTML={{ __html: cleanContent }}
+                />
+                {!expanded && canExpand && <div className={styles.articleBodyGradient} />}
+              </div>
+
+              <div className={styles.articleActions}>
+                {canExpand && (
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => setExpanded((value) => !value)}
+                  >
+                    {expanded ? 'Свернуть' : 'Читать далее'}
+                  </button>
+                )}
+                <Link className={styles.serviceLink} to={serviceLink}>
+                  Оформить услугу
+                  <ArrowRightIcon />
+                </Link>
+              </div>
+            </article>
+
+            <ArticleComments articleId={article.id} commentsCount={article.comments_count} />
+
+            {otherArticles.length > 0 && (
+              <section className={styles.otherArticles}>
+                <h2 className={styles.otherArticlesTitle}>Другие статьи</h2>
+                <div className={styles.otherArticlesGrid}>
+                  {otherArticles.map((item) => (
+                    <BlogArticleCard article={item} key={item.id} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          <aside className={styles.articleAside}>
+            <p className={styles.asideTitle}>Категория</p>
+            <p className={styles.asideItemActive}>{article.topic_name}</p>
+            <Link className={styles.asideFooterLink} to="/articles">
+              Все статьи
+            </Link>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Article;

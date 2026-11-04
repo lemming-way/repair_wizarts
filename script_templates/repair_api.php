@@ -133,8 +133,18 @@ $out = call_user_func(function() {
     else {
       $numeric_fields = [];
     }
+    if (isset($options['text_fields']) && is_array($options['text_fields'])) {
+      $text_fields = $options['text_fields'];
+    }
+    else {
+      $text_fields = [];
+    }
 
-    foreach ($data as &$value) {
+    foreach ($data as $key => &$value) {
+      if (in_array($key, $text_fields, true)) {
+        $value = "'" . real_escape_string(strval($value)) . "'";
+        continue;
+      }
       if (is_array($value)) {
         if ($value === []) {
           $value = "''";
@@ -243,6 +253,134 @@ $out = call_user_func(function() {
       throw new Exception($err, $errno);
     }
     $in_transaction = false;
+  };
+
+  // Вспомогательные функции для статей и комментариев
+  $blog_char_length = function($value) {
+    if (function_exists('mb_strlen')) return mb_strlen($value, 'UTF-8');
+    $count = preg_match_all('/./us', $value, $matches);
+    return $count === false ? 0 : $count;
+  };
+
+  $blog_datetime = function($value) {
+    if (!$value || strpos($value, '0000-00-00') === 0) return null;
+    return $value;
+  };
+
+  // ВРЕМЕННЫЙ РЕЖИМ ТЕСТИРОВАНИЯ КОММЕНТАРИЕВ.
+  // true — неавторизованный пользователь пишет/правит/удаляет комментарии
+  // от имени автора статьи. ОБЯЗАТЕЛЬНО выставить false перед публикацией в прод.
+  $blog_guest_testing = true;
+
+  $blog_actor_id = function($article_id, $user_id) use($query_one, $blog_guest_testing) {
+    $user_id = (int)$user_id;
+    if ($user_id > 0) return $user_id;
+    if (!$blog_guest_testing) return 0;
+
+    return (int)$query_one(
+      'SELECT `id_user` FROM `blog_post` WHERE `id_blog_post`=:article',
+      [ 'article' => (int)$article_id ]
+    );
+  };
+
+  $blog_excerpt = function($html, $limit = 240) use($blog_char_length) {
+    $html = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', ' ', (string)$html);
+    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $text = trim(preg_replace('/\s+/u', ' ', $text));
+    if ($text === '') return '';
+    if ($blog_char_length($text) > $limit) {
+      $text = function_exists('mb_substr') ? mb_substr($text, 0, $limit, 'UTF-8') : substr($text, 0, $limit);
+      $text = rtrim($text) . '…';
+    }
+    return $text;
+  };
+
+  $blog_cover_url = function($html) {
+    if (!$html) return null;
+    $cover = null;
+    if (preg_match('/<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1/is', $html, $matches)) {
+      $cover = html_entity_decode(trim($matches[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    elseif (preg_match('/<img\b[^>]*\bsrc\s*=\s*([^\s>]+)/is', $html, $matches)) {
+      $cover = html_entity_decode(trim($matches[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+    if (!$cover) return null;
+    if (!preg_match('#^(?:https?:)?//|^/|^data:image/#i', $cover)) return null;
+    return $cover;
+  };
+
+  $blog_author = function($row) {
+    $parts = [];
+    foreach (['author_name', 'author_middle', 'author_family'] as $field) {
+      if (isset($row[$field]) && $row[$field] !== '') $parts[] = $row[$field];
+    }
+    return [
+      'id' => (int)$row['author_id'],
+      'name' => trim(join(' ', $parts)),
+      'avatar' => isset($row['author_avatar']) ? strval($row['author_avatar']) : '',
+      'role' => (int)$row['author_role']
+    ];
+  };
+
+  $blog_article = function($row, $with_content = true) use($blog_author, $blog_excerpt, $blog_cover_url, $blog_datetime) {
+    $article = [
+      'id' => (int)$row['id'],
+      'topic_id' => (int)$row['topic_id'],
+      'topic_name' => (string)$row['topic_name'],
+      'title' => (string)$row['title'],
+      'excerpt' => $blog_excerpt($row['content']),
+      'cover_url' => $blog_cover_url($row['content']),
+      'author' => $blog_author($row),
+      'created_at' => (string)$row['created_at'],
+      'updated_at' => $blog_datetime($row['updated_at']),
+      'comments_count' => (int)$row['comments_count']
+    ];
+    if ($with_content) $article['content'] = (string)$row['content'];
+    return $article;
+  };
+
+  $blog_lock_comment = function($comment_id, $user_id) use($query, $query_one, $query_transaction, $die, $blog_actor_id) {
+    $article_id = (int)$query_one(
+      'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:id',
+      [ 'id' => $comment_id ]
+    );
+    if ($article_id <= 0) $die(404, 'Comment not found.');
+
+    $user_id = $blog_actor_id($article_id, $user_id);
+    if ($user_id <= 0) $die(403, 'Unauthorized.');
+
+    $query_transaction();
+    $query(
+      'SELECT `id_blog_post` FROM `blog_post` WHERE `id_blog_post`=:article FOR UPDATE',
+      [ 'article' => $article_id ]
+    );
+    $comment = $query_one(
+      'SELECT `id_blog_post` AS `article_id`,`parent_id`,`id_user`,`deleted` ' .
+      'FROM `blog_comment` WHERE `id_blog_comment`=:id FOR UPDATE',
+      [ 'id' => $comment_id ],
+      [ 'numeric_fields' => [ 'article_id', 'parent_id', 'id_user', 'deleted' ] ]
+    );
+    if (!$comment) $die(404, 'Comment not found.');
+    if ((int)$comment['id_user'] !== (int)$user_id) $die(403, 'You can only change your own comments.');
+    if ((int)$comment['deleted'] !== 0) $die(400, 'Comment is deleted.');
+
+    $children_count = $query_one(
+      'SELECT COUNT(1) AS `children_count` FROM `blog_comment` WHERE `parent_id`=:id',
+      [ 'id' => $comment_id ],
+      [ 'numeric_fields' => [ 'children_count' ] ]
+    );
+    if ((int)$children_count > 0) $die(400, 'Only the last nested comment in a branch can be changed.');
+
+    $last_id = $query_one(
+      'SELECT MAX(`id_blog_comment`) AS `last_id` FROM `blog_comment` ' .
+      'WHERE `id_blog_post`=:article AND ((`parent_id` IS NULL AND :parent IS NULL) OR `parent_id`=:parent)',
+      [ 'article' => $article_id, 'parent' => $comment['parent_id'] ],
+      [ 'numeric_fields' => [ 'last_id' ] ]
+    );
+    if ((int)$last_id !== (int)$comment_id) $die(400, 'Only the last nested comment in a branch can be changed.');
+
+    $comment['actor_id'] = $user_id;
+    return $comment;
   };
 
   try {
@@ -2808,6 +2946,201 @@ $out = call_user_func(function() {
                       '`o`.`client`=:u_id'
                     );
       return $query($sql, $data);
+
+    // ===============================================
+    //                  Статьи и комментарии
+    // ===============================================
+
+    // Список статей (имя действия сохранено по контракту AGENTS.md)
+    case 'getBlogTopics':
+      $result = $query(
+        'SELECT ' .
+          '`p`.`id_blog_post` AS `id`,' .
+          '`p`.`id_blog_topic` AS `topic_id`,' .
+          '`t`.`name` AS `topic_name`,' .
+          '`p`.`name` AS `title`,' .
+          '`p`.`value` AS `content`,' .
+          'DATE_FORMAT(CONVERT_TZ(`p`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
+          'DATE_FORMAT(CONVERT_TZ(`p`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
+          '`u`.`id_user` AS `author_id`,' .
+          '`u`.`name` AS `author_name`,' .
+          '`u`.`middle` AS `author_middle`,' .
+          '`u`.`family` AS `author_family`,' .
+          '`u`.`photo_link` AS `author_avatar`,' .
+          '`u`.`id_role` AS `author_role`,' .
+          '(SELECT COUNT(1) FROM `blog_comment` `c` ' .
+            'WHERE `c`.`id_blog_post`=`p`.`id_blog_post` AND `c`.`deleted`=0) AS `comments_count` ' .
+        'FROM `blog_post` `p` ' .
+        'JOIN `blog_topic` `t` ON `t`.`id_blog_topic`=`p`.`id_blog_topic` ' .
+        'JOIN `users` `u` ON `u`.`id_user`=`p`.`id_user` ' .
+        'ORDER BY `p`.`create_datetime` DESC,`p`.`id_blog_post` DESC',
+        []
+      );
+      $articles = [];
+      foreach ($result as $row) $articles[] = $blog_article($row, false);
+      return $articles;
+
+    // Детальная страница статьи
+    case 'getBlogTopicById':
+      $article_id = isset($data['id']) ? intval($data['id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
+      if ($article_id <= 0) $die(400, 'Article ID not set.');
+      $row = $query_one(
+        'SELECT ' .
+          '`p`.`id_blog_post` AS `id`,' .
+          '`p`.`id_blog_topic` AS `topic_id`,' .
+          '`t`.`name` AS `topic_name`,' .
+          '`p`.`name` AS `title`,' .
+          '`p`.`value` AS `content`,' .
+          'DATE_FORMAT(CONVERT_TZ(`p`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
+          'DATE_FORMAT(CONVERT_TZ(`p`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
+          '`u`.`id_user` AS `author_id`,' .
+          '`u`.`name` AS `author_name`,' .
+          '`u`.`middle` AS `author_middle`,' .
+          '`u`.`family` AS `author_family`,' .
+          '`u`.`photo_link` AS `author_avatar`,' .
+          '`u`.`id_role` AS `author_role`,' .
+          '(SELECT COUNT(1) FROM `blog_comment` `c` ' .
+            'WHERE `c`.`id_blog_post`=`p`.`id_blog_post` AND `c`.`deleted`=0) AS `comments_count` ' .
+        'FROM `blog_post` `p` ' .
+        'JOIN `blog_topic` `t` ON `t`.`id_blog_topic`=`p`.`id_blog_topic` ' .
+        'JOIN `users` `u` ON `u`.`id_user`=`p`.`id_user` ' .
+        'WHERE `p`.`id_blog_post`=:id',
+        [ 'id' => $article_id ]
+      );
+      if (!$row) $die(404, 'Article not found.');
+      return $blog_article($row, true);
+
+    // Комментарии статьи
+    case 'getBlogPosts':
+      $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
+      if ($article_id <= 0) $die(400, 'Article ID not set.');
+      $exists = $query_one(
+        'SELECT 1 FROM `blog_post` WHERE `id_blog_post`=:article',
+        [ 'article' => $article_id ]
+      );
+      if (!$exists) $die(404, 'Article not found.');
+      $result = $query(
+        'SELECT ' .
+          '`c`.`id_blog_comment` AS `id`,' .
+          '`c`.`id_blog_post` AS `article_id`,' .
+          '`c`.`parent_id`,' .
+          '`c`.`id_user` AS `author_id`,' .
+          '`c`.`value` AS `text`,' .
+          '`c`.`deleted`,' .
+          'DATE_FORMAT(CONVERT_TZ(`c`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
+          'DATE_FORMAT(CONVERT_TZ(`c`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
+          'MAX(`c`.`id_blog_comment`) OVER (PARTITION BY `c`.`id_blog_post`,`c`.`parent_id`) AS `last_id`,' .
+          '(SELECT COUNT(1) FROM `blog_comment` `ch` WHERE `ch`.`parent_id`=`c`.`id_blog_comment`) AS `children_count`,' .
+          '`u`.`name` AS `author_name`,' .
+          '`u`.`middle` AS `author_middle`,' .
+          '`u`.`family` AS `author_family`,' .
+          '`u`.`photo_link` AS `author_avatar`,' .
+          '`u`.`id_role` AS `author_role` ' .
+        'FROM `blog_comment` `c` ' .
+        'JOIN `users` `u` ON `u`.`id_user`=`c`.`id_user` ' .
+        'WHERE `c`.`id_blog_post`=:article ' .
+        'ORDER BY `c`.`id_blog_comment` ASC',
+        [ 'article' => $article_id ]
+      );
+      $viewer_id = $blog_actor_id($article_id, $context['u_id']);
+      $comments = [];
+      foreach ($result as $row) {
+        $deleted = (int)$row['deleted'] === 1;
+        $is_last = (int)$row['id'] === (int)$row['last_id'] && (int)$row['children_count'] === 0;
+        $can_change = !$deleted && (int)$row['author_id'] === $viewer_id && $is_last;
+        $comments[] = [
+          'id' => (int)$row['id'],
+          'article_id' => (int)$row['article_id'],
+          'parent_id' => $row['parent_id'] === null ? null : (int)$row['parent_id'],
+          'author' => $blog_author($row),
+          'text' => $deleted ? '' : (string)$row['text'],
+          'created_at' => (string)$row['created_at'],
+          'updated_at' => $blog_datetime($row['updated_at']),
+          'deleted' => $deleted,
+          'can_edit' => $can_change,
+          'can_delete' => $can_change
+        ];
+      }
+      return $comments;
+
+    // Добавить комментарий или ответ
+    case 'addBlogPost':
+      $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
+      if ($article_id <= 0) $die(400, 'Article ID not set.');
+      $parent_id = null;
+      if (isset($data['parent_id']) && $data['parent_id'] !== '' && $data['parent_id'] !== null) {
+        $parent_id = intval($data['parent_id']);
+        if ($parent_id <= 0) $die(400, 'Invalid parent comment ID.');
+      }
+      $text = isset($data['text']) ? trim(strval($data['text'])) : '';
+      if ($text === '') $die(400, 'Comment text not set.');
+      if ($blog_char_length($text) > 1000) $die(400, 'Comment text is too long.');
+
+      $query_transaction();
+      $article = $query_one(
+        'SELECT `id_blog_post`,`id_user` FROM `blog_post` WHERE `id_blog_post`=:article FOR UPDATE',
+        [ 'article' => $article_id ],
+        [ 'numeric_fields' => [ 'id_blog_post', 'id_user' ] ]
+      );
+      if (!$article) $die(404, 'Article not found.');
+
+      $actor_id = (int)$context['u_id'];
+      if ($actor_id <= 0) {
+        if (!$blog_guest_testing) $die(403, 'Unauthorized.');
+        $actor_id = (int)$article['id_user'];
+      }
+      if ($actor_id <= 0) $die(403, 'Unauthorized.');
+
+      if ($parent_id !== null) {
+        $parent = $query_one(
+          'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:parent FOR UPDATE',
+          [ 'parent' => $parent_id ]
+        );
+        if (!$parent) $die(400, 'Parent comment not found.');
+        if ((int)$parent !== $article_id) $die(400, 'Parent comment belongs to another article.');
+      }
+
+      $result = $query(
+        'INSERT INTO `blog_comment`(`id_blog_post`,`parent_id`,`id_user`,`value`,`deleted`,`create_datetime`) ' .
+        'VALUES(:article,:parent,:user,:text,0,NOW(0))',
+        [ 'article' => $article_id, 'parent' => $parent_id, 'user' => $actor_id, 'text' => $text ],
+        [ 'text_fields' => [ 'text' ] ]
+      );
+      if (empty($result['id'])) $die(500, 'Database insert error.');
+      $query_commit();
+      return [ 'id' => (int)$result['id'] ];
+
+    // Редактировать комментарий
+    case 'editBlogPost':
+      $comment_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($comment_id <= 0) $die(400, 'Comment ID not set.');
+      $text = isset($data['text']) ? trim(strval($data['text'])) : '';
+      if ($text === '') $die(400, 'Comment text not set.');
+      if ($blog_char_length($text) > 1000) $die(400, 'Comment text is too long.');
+
+      $comment = $blog_lock_comment($comment_id, $context['u_id']);
+      $query(
+        'UPDATE `blog_comment` SET `value`=:text,`last_edit_datetime`=NOW(0),`last_edit_user`=:user ' .
+        'WHERE `id_blog_comment`=:id',
+        [ 'id' => $comment_id, 'text' => $text, 'user' => $comment['actor_id'] ],
+        [ 'text_fields' => [ 'text' ] ]
+      );
+      $query_commit();
+      return [ 'ok' => true ];
+
+    // Удалить комментарий (мягко, чтобы сохранить ветку)
+    case 'deleteBlogPost':
+      $comment_id = isset($data['id']) ? intval($data['id']) : 0;
+      if ($comment_id <= 0) $die(400, 'Comment ID not set.');
+
+      $comment = $blog_lock_comment($comment_id, $context['u_id']);
+      $query(
+        'UPDATE `blog_comment` SET `value`=\'\',`deleted`=1,`last_edit_datetime`=NOW(0),`last_edit_user`=:user ' .
+        'WHERE `id_blog_comment`=:id',
+        [ 'id' => $comment_id, 'user' => $comment['actor_id'] ]
+      );
+      $query_commit();
+      return [ 'ok' => true ];
 
     default:
       $die(400, 'Unknown action.');

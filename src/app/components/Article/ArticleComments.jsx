@@ -1,152 +1,122 @@
-import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import CONFIG from 'config';
 
-import styles from "./Article.module.css"
-import ArticleComment from "./ArticleComment"
-import dislikeImage from '../../img/dislike.png'
-import likeImage from '../../img/like.png'
-// todo: Добавить реальные вызовы API для комментариев и лайков/дизлайков статьи
-// import {
-//     getArticleComments,
-//     createArticleComment,
-//     likeArticle,
-//     dislikeArticle
-// } from "../../services/article.service"
-import { useLanguage } from '../../state/language'
+import {
+  useAddBlogComment,
+  useBlogComments,
+  useDeleteBlogComment,
+  useEditBlogComment,
+} from '../../hooks/useBlog';
+import { buildCommentTree } from '../../shared/lib/blog';
+import { useUser } from '../../state/user';
+import ArticleComment, { CommentForm } from './ArticleComment';
+import styles from './Article.module.css';
 
-const mockCommentsData = [
-    {
-        id: 1,
-        sender: { name: "Иван", lastname: "Петров" },
-        text: "Отличная статья, очень полезно!",
-        likes: 15,
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        isAnswer: false
-    },
-    {
-        id: 2,
-        sender: { name: "Мария", lastname: "Сидорова" },
-        text: "Спасибо за информацию, давно искала нечто подобное.",
-        likes: 8,
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        isAnswer: false
-    },
-    {
-        id: 3,
-        sender: { name: "Алексей", lastname: "Козлов" },
-        text: "Есть ли еще статьи на эту тему?",
-        likes: 2,
-        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        isAnswer: false
+const ArticleComments = ({ articleId, commentsCount = 0 }) => {
+  const { user } = useUser();
+  const currentUserId = user.id || 0;
+  const allowGuestTesting = Boolean(CONFIG.BLOG?.allowGuestTesting);
+  const canInteract = currentUserId > 0 || allowGuestTesting;
+  const { data: comments = [], isLoading, isError, error, refetch } = useBlogComments(
+    articleId,
+    currentUserId,
+  );
+  const addComment = useAddBlogComment(articleId);
+  const editComment = useEditBlogComment(articleId);
+  const deleteComment = useDeleteBlogComment(articleId);
+
+  const [rootText, setRootText] = useState('');
+  const [rootBusy, setRootBusy] = useState(false);
+  const [rootError, setRootError] = useState('');
+
+  const tree = useMemo(() => buildCommentTree(comments), [comments]);
+  const visibleCount = comments.filter((comment) => !comment.deleted).length;
+  const total = isLoading ? commentsCount : visibleCount;
+
+  const handleRootSubmit = async (event) => {
+    event.preventDefault();
+    if (!rootText.trim()) return;
+
+    setRootBusy(true);
+    setRootError('');
+    try {
+      await addComment.mutateAsync({ articleId, text: rootText.trim() });
+      setRootText('');
+    } catch (err) {
+      setRootError(err instanceof Error ? err.message : 'Не удалось отправить комментарий.');
+    } finally {
+      setRootBusy(false);
     }
-];
+  };
 
-const ArticleComments = (props) => {
-    const {
-        articleId,
-        likes
-    } = props
+  const handleReply = (parentId, text) => addComment.mutateAsync({ articleId, parentId, text });
+  const handleEdit = (id, text) => editComment.mutateAsync({ id, text });
+  const handleDelete = (id) => deleteComment.mutateAsync(id);
 
-    const text = useLanguage()
-    const navigate = useNavigate()
+  return (
+    <section className={styles.comments} aria-labelledby="comments-heading">
+      <h2 id="comments-heading" className={styles.commentsTitle}>
+        Комментарии ({total})
+      </h2>
 
-    const [comments, setComments] = useState([])
-    const [comment, setComment] = useState("")
+      {isLoading && <p className={styles.commentState}>Загружаем комментарии…</p>}
 
-    // todo: Заменить на реальный вызов likeArticle(articleId)
-    const onLike = (e) => Promise.resolve().then(() => console.log(`Liked article ${articleId}`))
-    // todo: Заменить на реальный вызов dislikeArticle(articleId)
-    const onDislike = (e) => Promise.resolve().then(() => console.log(`Disliked article ${articleId}`))
-
-    useEffect(() => {
-        // todo: Заменить на реальный вызов getArticleComments(articleId)
-        Promise.resolve(mockCommentsData)
-            .then(setComments)
-    }, [articleId])
-
-    const onSubmit = (e) => {
-        e.preventDefault()
-
-        // todo: Заменить на реальный вызов createArticleComment(articleId, { text: comment })
-        return Promise.resolve()
-            .then(() => {
-                // Добавление нового комментария в фиктивные данные
-                const newComment = {
-                    id: comments.length + 1,
-                    sender: { name: "Тестовый", lastname: "Пользователь" },
-                    text: comment,
-                    likes: 0,
-                    created_at: new Date().toISOString(),
-                    isAnswer: false
-                };
-                setComments(prevComments => [...prevComments, newComment]);
-                setComment("")
-            })
-            .catch((err) => {
-                if (err?.status === 401) { // Используем err?.status для безопасного доступа
-                    navigate("/register/client")
-                } else {
-                    console.error("Ошибка при создании комментария (фиктивная):", err);
-                }
-            })
-    }
-
-    return (
-        <div className={styles.comments}>
-            <div className={styles.commentsLikes}>
-                <span className={styles.commentsLabel}>Оценка статьи:</span>
-                <span className={styles.commentsCount}>{likes}</span>
-                <button
-                    className={styles.commentsThumb}
-                    onClick={onLike}
-                >
-                    <img
-                        src={likeImage}
-                        alt="like"
-                    />
-                </button>
-                <span className={styles.count_like}>5</span>
-                <button
-                    className={styles.commentsThumb}
-                    onClick={onDislike}
-                >
-                    <img
-                        src={dislikeImage}
-                        alt="dislike"
-                    />
-                </button>
-                <span className={styles.count_dislike}>-2</span>
-            </div>
-            <form
-                className={styles.commentsForm}
-                onSubmit={onSubmit}
-            >
-                <textarea
-                    className={styles.commentsText}
-                    value={comment}
-                    placeholder={text('Comment the article')}
-                    onChange={(e) => setComment(e.target.value)}
-                />
-                <button
-                    className={styles.commentsSubmit}
-                    type="submit"
-                >
-                    {text('Submit')}
-                </button>
-            </form>
-            <ul className={styles.commentsList}>
-                {comments.map((v) => (
-                    <li className={styles.commentsListItem} key={v.id}>
-                        <ArticleComment
-                            id={v.id}
-                            {...v}
-                        />
-                    </li>
-                ))}
-                {/* <ArticleComment id={comments[0].id} {...comments[0]} isAnswer={true} /> */}
-            </ul>
+      {isError && (
+        <div className={styles.commentState}>
+          <p>{error instanceof Error ? error.message : 'Не удалось загрузить комментарии.'}</p>
+          <button type="button" className={styles.secondaryButton} onClick={() => refetch()}>
+            Повторить
+          </button>
         </div>
-    )
-}
+      )}
 
-export default ArticleComments
+      {!isLoading && !isError && tree.length === 0 && (
+        <p className={styles.commentState}>Пока нет комментариев. Будьте первым.</p>
+      )}
+
+      {!isLoading && !isError && tree.length > 0 && (
+        <ol className={styles.commentList}>
+          {tree.map((comment) => (
+            <ArticleComment
+              comment={comment}
+              currentUserId={currentUserId}
+              allowGuestTesting={allowGuestTesting}
+              key={comment.id}
+              onReply={handleReply}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ))}
+        </ol>
+      )}
+
+      {canInteract ? (
+        <CommentForm
+          value={rootText}
+          onChange={setRootText}
+          onSubmit={handleRootSubmit}
+          submitLabel="Отправить"
+          placeholder="Напишите комментарий…"
+          busy={rootBusy}
+        />
+      ) : (
+        <div className={styles.authPrompt}>
+          <p>Войдите, чтобы оставить комментарий.</p>
+          <div className={styles.authPromptActions}>
+            <Link className={styles.primaryButton} to="/login">
+              Войти
+            </Link>
+            <Link className={styles.secondaryButton} to="/register/client">
+              Зарегистрироваться
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {rootError && <p className={styles.commentError}>{rootError}</p>}
+    </section>
+  );
+};
+
+export default ArticleComments;
