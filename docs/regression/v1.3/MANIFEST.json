@@ -89,13 +89,13 @@
     },
     {
       "path": "docs/regression/v1.3/README.md",
-      "size_bytes": 817,
-      "crc32": "91c34658"
+      "size_bytes": 3271,
+      "crc32": "4213dbbb"
     },
     {
       "path": "docs/regression/v1.3/COVERAGE_MATRIX.md",
-      "size_bytes": 2969,
-      "crc32": "50ae2fc9"
+      "size_bytes": 18991,
+      "crc32": "a04e2a0f"
     }
   ]
 }
