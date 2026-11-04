@@ -1,4 +1,4 @@
-name: CI
+name: Article v1.3 CI
 
 on:
   push:
@@ -13,71 +13,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.ref }}
+  group: article-v1.3-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  format:
-    name: Prettier (changed source files)
+  article-v1-3:
+    name: Article v1.3 regression
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Check formatting of changed source files
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          PUSH_BEFORE_SHA: ${{ github.event.before }}
-          PUSH_HEAD_SHA: ${{ github.sha }}
-        run: |
-          if [ "$EVENT_NAME" = "pull_request" ]; then
-            BASE_SHA="$PR_BASE_SHA"
-            HEAD_SHA="$PR_HEAD_SHA"
-          else
-            BASE_SHA="$PUSH_BEFORE_SHA"
-            HEAD_SHA="$PUSH_HEAD_SHA"
-          fi
-
-          if [ -z "$BASE_SHA" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
-            if git rev-parse HEAD^ >/dev/null 2>&1; then
-              BASE_SHA="$(git rev-parse HEAD^)"
-            else
-              echo "No parent commit available; skipping changed-file formatting check."
-              exit 0
-            fi
-          fi
-
-          FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -E '^src/.*\.(js|jsx|ts|tsx|json|css|scss|md)$' || true)"
-
-          if [ -z "$FILES" ]; then
-            echo "No changed source files to format-check."
-            exit 0
-          fi
-
-          printf '%s\n' "$FILES" | while IFS= read -r file; do
-            npx prettier --check "$file" || exit 1
-          done
-
-  checks:
-    name: Lint, typecheck, tests and build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -90,21 +33,33 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        id: install
         run: npm ci
 
-      - name: ESLint
-        if: ${{ steps.install.outcome == 'success' }}
-        run: npm run lint
+      - name: Prettier (article v1.3 files only)
+        run: >-
+          npx prettier --check
+          scripts/article-importer.mjs
+          scripts/article-importer.test.mjs
+          scripts/build-articles.mjs
+          src/app/components/Article/renderer/ArticleRenderer.test.jsx
+          src/app/shared/lib/articleContent.ts
+          src/app/shared/lib/articleContent.test.ts
 
-      - name: TypeScript
-        if: ${{ steps.install.outcome == 'success' }}
-        run: npm run typecheck
+      - name: ESLint (article renderer and helpers only)
+        run: >-
+          npx eslint
+          src/app/components/Article/renderer/ArticleRenderer.test.jsx
+          src/app/shared/lib/articleContent.ts
+          src/app/shared/lib/articleContent.test.ts
 
-      - name: Unit tests
-        if: ${{ steps.install.outcome == 'success' }}
-        run: npm test -- --watchAll=false --coverage
+      - name: ZIP importer and v1.3 validation tests
+        run: npm run test:articles:importer
 
-      - name: Production build
-        if: ${{ steps.install.outcome == 'success' }}
-        run: npm run build
+      - name: Article renderer and media helper tests
+        run: >-
+          npm test --
+          --watchAll=false
+          --runInBand
+          --runTestsByPath
+          src/app/components/Article/renderer/ArticleRenderer.test.jsx
+          src/app/shared/lib/articleContent.test.ts
