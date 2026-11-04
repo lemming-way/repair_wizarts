@@ -1,0 +1,308 @@
+{
+  "format_version": "1.3",
+  "title": "Электрический чайник не включается: безопасная проверка",
+  "summary": "Внешняя проверка чайника и признаки неисправности основания, контактов или термозащиты. Работы с сетевыми цепями выполняет специалист.",
+  "topic": {
+    "name": "Ремонт бытовой техники",
+    "path": [
+      "Бытовая техника",
+      "Кухня",
+      "Электрические чайники"
+    ]
+  },
+  "cover": {
+    "file": "media/cover.svg",
+    "alt": "Схематичное изображение чайника"
+  },
+  "assets": [
+    {
+      "file": "media/cover.svg",
+      "type": "image",
+      "format": "svg",
+      "size_bytes": 529
+    },
+    {
+      "file": "media/terminal_layout.svg",
+      "type": "image",
+      "format": "svg",
+      "size_bytes": 521
+    }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Начните с безопасных проверок"
+    },
+    {
+      "type": "paragraph",
+      "text": "Причина может быть в розетке, шнуре, контактной группе основания или внутренних узлах. По одному симптому нельзя определить неисправную деталь."
+    },
+    {
+      "type": "image",
+      "file": "media/terminal_layout.svg",
+      "caption": "Условная схема контактной группы основания",
+      "alt": "Схема электрических контактов"
+    },
+    {
+      "type": "callout",
+      "style": "danger",
+      "title": "Опасность поражения током",
+      "text": "Перед осмотром выньте вилку из розетки. Не разбирайте основание, не измеряйте сетевое напряжение и не перемыкайте термовыключатель."
+    },
+    {
+      "type": "gallery",
+      "images": [
+        {
+          "file": "media/cover.svg",
+          "caption": "Внешний вид чайника — условная иллюстрация",
+          "alt": "Силуэт чайника"
+        },
+        {
+          "file": "media/terminal_layout.svg",
+          "caption": "Контактная группа — условная схема",
+          "alt": "Схема контактов основания"
+        }
+      ]
+    },
+    {
+      "type": "steps",
+      "items": [
+        {
+          "title": "Проверить розетку",
+          "text": "Проверьте розетку другим исправным прибором."
+        },
+        {
+          "title": "Осмотреть шнур и вилку",
+          "text": "При отключённой вилке осмотрите кабель, вилку и основание на трещины и оплавление.",
+          "warning": "При следах нагрева не подключайте чайник повторно."
+        },
+        {
+          "title": "Проверить установку на подставке",
+          "text": "Убедитесь, что основание сухое и чайник стоит ровно."
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Признак",
+        "Возможная причина",
+        "Кто проверяет"
+      ],
+      "rows": [
+        [
+          "Розетка не питает приборы",
+          "Розетка/электросеть",
+          "Электрик"
+        ],
+        [
+          "Следы оплавления",
+          "Контактная группа",
+          "Специалист"
+        ],
+        [
+          "Отключается до кипения",
+          "Термостат/паровой канал",
+          "Специалист"
+        ]
+      ]
+    },
+    {
+      "type": "list",
+      "style": "unordered",
+      "items": [
+        "Не включайте прибор с повреждённым кабелем.",
+        "Не погружайте основание в воду.",
+        "Не обходите термозащиту."
+      ]
+    },
+    {
+      "type": "quote",
+      "text": "Защитное отключение — элемент безопасности.",
+      "caption": "Правило работы с нагревательными приборами"
+    },
+    {
+      "type": "code",
+      "language": "text",
+      "text": "Розетка проверена: да / нет\nКабель повреждён: да / нет\nСледы нагрева: да / нет\nЗапах гари: да / нет"
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "caption": "Тестовая видеоссылка для проверки импорта URL; не использовать как ремонтную инструкцию."
+    }
+  ],
+  "technical_knowledge": {
+    "schema_version": "1.0",
+    "objects": [
+      {
+        "id": "KETTLE",
+        "category": "kettle",
+        "name": "Электрический чайник",
+        "model_scope": "generic"
+      },
+      {
+        "id": "BASE",
+        "category": "electrical_component",
+        "name": "Основание и контакты",
+        "model_scope": "generic",
+        "parent_object_id": "KETTLE"
+      }
+    ],
+    "symptoms": [
+      {
+        "id": "K_OFF",
+        "object_ids": [
+          "KETTLE"
+        ],
+        "title": "Чайник не включается",
+        "description": "Нагрев не начинается после нажатия выключателя."
+      }
+    ],
+    "causes": [
+      {
+        "id": "K_CONTACT",
+        "symptom_ids": [
+          "K_OFF"
+        ],
+        "description": "Возможное повреждение контактной группы.",
+        "certainty": "possible",
+        "diagnostic_refs": [
+          "K_DIAG"
+        ]
+      }
+    ],
+    "diagnostics": [
+      {
+        "id": "K_DIAG",
+        "title": "Внешний осмотр чайника",
+        "purpose": "Выявить внешние повреждения без вскрытия.",
+        "performer": "customer",
+        "risk_level": "low",
+        "required_tool_ids": [],
+        "steps": [
+          {
+            "id": "K1",
+            "title": "Осмотреть корпус и кабель",
+            "instruction": "Отключите вилку и осмотрите доступные поверхности.",
+            "method": "visual_check",
+            "response": {
+              "type": "choice",
+              "options": [
+                {
+                  "value": "ok",
+                  "label": "Повреждений нет"
+                },
+                {
+                  "value": "bad",
+                  "label": "Есть повреждение"
+                }
+              ]
+            },
+            "transitions": [
+              {
+                "operator": "eq",
+                "value": "ok",
+                "next_step_id": "K2"
+              },
+              {
+                "operator": "eq",
+                "value": "bad",
+                "next_step_id": "KSTOP"
+              }
+            ]
+          },
+          {
+            "id": "K2",
+            "title": "Проверить розетку",
+            "instruction": "Проверьте её исправным бытовым прибором.",
+            "method": "functional_test",
+            "response": {
+              "type": "boolean"
+            },
+            "transitions": [
+              {
+                "operator": "eq",
+                "value": true,
+                "next_step_id": "KSTOP"
+              },
+              {
+                "operator": "eq",
+                "value": false,
+                "next_step_id": "KSTOP"
+              }
+            ]
+          },
+          {
+            "id": "KSTOP",
+            "title": "Передать специалисту",
+            "instruction": "Не вскрывайте чайник; обратитесь в сервис.",
+            "method": "professional_inspection",
+            "terminal": true,
+            "safety_refs": [
+              "KSAFE"
+            ]
+          }
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "K_REPAIR",
+        "title": "Диагностика контактной группы",
+        "description": "Проверка внутренних цепей специалистом.",
+        "performer": "professional",
+        "required_skill": "professional",
+        "diagnostic_refs": [
+          "K_DIAG"
+        ],
+        "tool_refs": [
+          "K_METER"
+        ],
+        "material_refs": [
+          "K_PART"
+        ],
+        "safety_refs": [
+          "KSAFE"
+        ],
+        "media_refs": [
+          {
+            "file": "media/terminal_layout.svg",
+            "role": "component",
+            "alt": "Условная схема контактов"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "id": "K_METER",
+        "name": "Мультиметр",
+        "purpose": "Проверка обесточенных цепей специалистом",
+        "access_options": [
+          "professional_only"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "id": "K_PART",
+        "name": "Совместимый контактный узел",
+        "compatibility": "Подбор по модели чайника."
+      }
+    ],
+    "safety": [
+      {
+        "id": "KSAFE",
+        "severity": "danger",
+        "instruction": "Вскрытие и проверка внутренних цепей — только квалифицированным специалистом после отключения от сети.",
+        "applies_to": [
+          "K_DIAG",
+          "K_REPAIR"
+        ],
+        "customer_allowed": false
+      }
+    ]
+  }
+}

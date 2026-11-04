@@ -1,0 +1,91 @@
+{
+  "format_version": "1.3",
+  "generated_at": "2026-11-04T19:37:19.402Z",
+  "source": "docs/**/*.zip",
+  "articles": [
+    {
+      "id": 1,
+      "slug": "electric_kettle",
+      "format_version": "1.3",
+      "title": "Электрический чайник не включается: безопасная проверка",
+      "summary": "Внешняя проверка чайника и признаки неисправности основания, контактов или термозащиты. Работы с сетевыми цепями выполняет специалист.",
+      "topic": {
+        "name": "Ремонт бытовой техники",
+        "path": [
+          "Бытовая техника",
+          "Кухня",
+          "Электрические чайники"
+        ]
+      },
+      "cover": "media/cover.svg",
+      "cover_url": "/articles/electric_kettle/media/cover.svg",
+      "base_path": "/articles/electric_kettle/",
+      "author": {
+        "id": 0,
+        "name": "Редакция Repair Wizards",
+        "avatar": "",
+        "role": 0
+      },
+      "created_at": "2026-11-04T17:52:16.232Z",
+      "updated_at": null,
+      "comments_count": 0,
+      "blocks_count": 11
+    },
+    {
+      "id": 2,
+      "slug": "smartphone",
+      "format_version": "1.3",
+      "title": "Смартфон не заряжается: безопасная первичная диагностика",
+      "summary": "Как отделить простые внешние причины от неисправностей разъёма, кабеля или аккумулятора. Измерения внутри устройства выполняет специалист.",
+      "topic": {
+        "name": "Ремонт смартфонов",
+        "path": [
+          "Электроника",
+          "Смартфоны",
+          "Диагностика"
+        ]
+      },
+      "cover": "media/cover.svg",
+      "cover_url": "/articles/smartphone/media/cover.svg",
+      "base_path": "/articles/smartphone/",
+      "author": {
+        "id": 0,
+        "name": "Редакция Repair Wizards",
+        "avatar": "",
+        "role": 0
+      },
+      "created_at": "2026-11-04T17:52:16.233Z",
+      "updated_at": null,
+      "comments_count": 0,
+      "blocks_count": 11
+    },
+    {
+      "id": 3,
+      "slug": "toilet_cistern",
+      "format_version": "1.3",
+      "title": "Бачок унитаза постоянно набирает воду: диагностика механизма",
+      "summary": "Проверка причин непрерывного набора воды и последовательность замены сливного узла. Иллюстрации схематические; конструкцию сверяйте с конкретной моделью.",
+      "topic": {
+        "name": "Сантехника и бытовой ремонт",
+        "path": [
+          "Дом и быт",
+          "Сантехника",
+          "Сливной бачок"
+        ]
+      },
+      "cover": "media/cover.svg",
+      "cover_url": "/articles/toilet_cistern/media/cover.svg",
+      "base_path": "/articles/toilet_cistern/",
+      "author": {
+        "id": 0,
+        "name": "Редакция Repair Wizards",
+        "avatar": "",
+        "role": 0
+      },
+      "created_at": "2026-11-04T17:52:16.234Z",
+      "updated_at": null,
+      "comments_count": 0,
+      "blocks_count": 10
+    }
+  ]
+}

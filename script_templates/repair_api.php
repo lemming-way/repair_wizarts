@@ -171,7 +171,10 @@ $out = call_user_func(function() {
     $sql = preg_replace_callback(
       '/\'(?:[^\'\\\\]+|\\\\.)*\'(*SKIP)(*FAIL)|"(?:[^"\\\\]+|\\\\.)*"(*SKIP)(*FAIL)|`(?:[^`]*)`(*SKIP)(*FAIL)|:([A-Za-z_][A-Za-z0-9_]*)/',
       function($matches) use($data) {
-        if (!isset( $data[$matches[1]] )) {
+        // isset() возвращает false для существующего ключа со значением NULL
+        // (например, parent_id корневого комментария). NULL — валидное значение,
+        // поэтому проверяем именно наличие ключа.
+        if (!array_key_exists($matches[1], $data)) {
           throw new Exception("Variable not set: $matches[1]", 400);
         }
         return $data[$matches[1]];
@@ -267,10 +270,9 @@ $out = call_user_func(function() {
     return $value;
   };
 
-  // ВРЕМЕННЫЙ РЕЖИМ ТЕСТИРОВАНИЯ КОММЕНТАРИЕВ.
-  // true — неавторизованный пользователь пишет/правит/удаляет комментарии
-  // от имени автора статьи. ОБЯЗАТЕЛЬНО выставить false перед публикацией в прод.
-  $blog_guest_testing = true;
+  // Гостевой режим тестирования комментариев отключён.
+  // Изменять комментарии может только авторизованный пользователь.
+  $blog_guest_testing = false;
 
   $blog_actor_id = function($article_id, $user_id) use($query_one, $blog_guest_testing) {
     $user_id = (int)$user_id;

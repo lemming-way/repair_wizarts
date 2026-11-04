@@ -370,6 +370,13 @@
   overflow-wrap: anywhere;
 }
 
+.articleBodyRenderer {
+  color: #252525;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
 .articleBodyCollapsed {
   max-height: 330px;
   overflow: hidden;

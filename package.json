@@ -34,7 +34,10 @@
     "typescript": "^5.9.2"
   },
   "scripts": {
+    "articles:build": "node scripts/build-articles.mjs",
+    "prestart": "npm run articles:build",
     "start": "react-scripts start",
+    "prebuild": "npm run articles:build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",

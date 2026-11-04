@@ -10,8 +10,8 @@ jest.mock('config', () => ({
       language: 'en'
     },
     API: {
-      queryStaleTime: 5000,
-      queryRetry: 5
+      queryDefaultStaleTime: 5000,
+      queryDefaultRetry: 5
     }
   }
 }));

@@ -1,11 +1,31 @@
 /**
  * Модуль api для статей и комментариев.
  *
- * Действия сохранены по контракту AGENTS.md, но работают с реальными
- * таблицами проекта: blog_post — статьи, blog_topic — категории,
- * blog_comment — комментарии.
+ * Действия сохранены по контракту AGENTS.md. Источник данных переключается
+ * через CONFIG.BLOG.source / REACT_APP_BLOG_SOURCE:
+ *  - "local" — каталог из public/articles, собранный из ZIP-архивов docs/;
+ *  - "api"   — штатный бэкенд script/template/repair_api.
+ *
+ * В обоих режимах статьи формата 1.3 отдаются как blocks и рендерятся
+ * единым ArticleRenderer.
  */
+import CONFIG from 'config';
+
+import {
+  getLocalBlogArticleById,
+  getLocalBlogArticles,
+  type ArticleAsset,
+  type ArticleBlock,
+} from './localArticles';
+import {
+  addLocalBlogPost,
+  deleteLocalBlogPost,
+  editLocalBlogPost,
+  getLocalBlogPosts,
+} from './localComments';
 import { post } from './request';
+
+export type { ArticleAsset, ArticleBlock };
 
 export type BlogAuthor = {
   id: number;
@@ -26,6 +46,12 @@ export type BlogArticle = {
   created_at: string;
   updated_at: string | null;
   comments_count: number;
+  format_version?: string;
+  blocks?: ArticleBlock[];
+  assets?: ArticleAsset[];
+  technical_knowledge?: unknown;
+  media_base_url?: string;
+  source?: 'api' | 'local';
 };
 
 export type BlogComment = {
@@ -41,17 +67,68 @@ export type BlogComment = {
   can_delete: boolean;
 };
 
+type ParsedArticleContent = {
+  format_version?: string;
+  blocks: ArticleBlock[];
+  assets?: ArticleAsset[];
+  technical_knowledge?: unknown;
+  cover?: { file?: string };
+};
+
+const BLOG_SOURCE = process.env.REACT_APP_BLOG_SOURCE || CONFIG.BLOG?.source || 'local';
+
+export const isLocalBlogSource = BLOG_SOURCE === 'local';
+
+/** Разбирает content, если бэкенд хранит статью как JSON формата 1.3. */
+export function parseArticleContent(content: string | undefined): ParsedArticleContent | null {
+  if (!content) return null;
+  const trimmed = content.trim();
+  if (!trimmed.startsWith('{')) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed) as Partial<ParsedArticleContent>;
+    if (!parsed || !Array.isArray(parsed.blocks)) return null;
+    return {
+      format_version: parsed.format_version,
+      blocks: parsed.blocks,
+      assets: parsed.assets,
+      technical_knowledge: parsed.technical_knowledge,
+      cover: parsed.cover,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function withParsedContent(article: BlogArticle): BlogArticle {
+  const parsed = parseArticleContent(article.content);
+  if (!parsed) return article;
+
+  return {
+    ...article,
+    format_version: parsed.format_version || article.format_version || '1.3',
+    blocks: parsed.blocks,
+    assets: parsed.assets,
+    technical_knowledge: parsed.technical_knowledge,
+  };
+}
+
 export async function getBlogTopics(): Promise<BlogArticle[]> {
+  if (isLocalBlogSource) return getLocalBlogArticles();
+
   const payload = {
     is_var: 1,
     s_t_data: {
       action: 'getBlogTopics',
     },
   };
-  return post<BlogArticle[]>('script/template/repair_api', payload);
+  const articles = await post<BlogArticle[]>('script/template/repair_api', payload);
+  return articles.map(withParsedContent);
 }
 
 export async function getBlogTopicById(id: number): Promise<BlogArticle> {
+  if (isLocalBlogSource) return getLocalBlogArticleById(id);
+
   const payload = {
     is_var: 1,
     s_t_data: {
@@ -59,10 +136,13 @@ export async function getBlogTopicById(id: number): Promise<BlogArticle> {
       id,
     },
   };
-  return post<BlogArticle>('script/template/repair_api', payload);
+  const article = await post<BlogArticle>('script/template/repair_api', payload);
+  return withParsedContent(article);
 }
 
-export async function getBlogPosts(articleId: number): Promise<BlogComment[]> {
+export async function getBlogPosts(articleId: number, viewerId = 0): Promise<BlogComment[]> {
+  if (isLocalBlogSource) return getLocalBlogPosts(articleId, viewerId);
+
   const payload = {
     is_var: 1,
     s_t_data: {
@@ -77,7 +157,17 @@ export async function addBlogPost(params: {
   articleId: number;
   parentId?: number | null;
   text: string;
+  author?: BlogAuthor;
 }): Promise<{ id: number }> {
+  if (isLocalBlogSource) {
+    return addLocalBlogPost({
+      articleId: params.articleId,
+      parentId: params.parentId,
+      text: params.text,
+      author: params.author,
+    });
+  }
+
   const payload = {
     is_var: 1,
     s_t_data: {
@@ -90,7 +180,19 @@ export async function addBlogPost(params: {
   return post<{ id: number }>('script/template/repair_api', payload);
 }
 
-export async function editBlogPost(params: { id: number; text: string }): Promise<{ ok: boolean }> {
+export async function editBlogPost(params: {
+  id: number;
+  text: string;
+  viewerId?: number;
+}): Promise<{ ok: boolean }> {
+  if (isLocalBlogSource) {
+    return editLocalBlogPost({
+      id: params.id,
+      text: params.text,
+      viewerId: params.viewerId || 0,
+    });
+  }
+
   const payload = {
     is_var: 1,
     s_t_data: {
@@ -102,7 +204,11 @@ export async function editBlogPost(params: { id: number; text: string }): Promis
   return post<{ ok: boolean }>('script/template/repair_api', payload);
 }
 
-export async function deleteBlogPost(id: number): Promise<{ ok: boolean }> {
+export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: boolean }> {
+  if (isLocalBlogSource) {
+    return deleteLocalBlogPost({ id, viewerId });
+  }
+
   const payload = {
     is_var: 1,
     s_t_data: {

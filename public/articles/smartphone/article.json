@@ -1,0 +1,299 @@
+{
+  "format_version": "1.3",
+  "title": "Смартфон не заряжается: безопасная первичная диагностика",
+  "summary": "Как отделить простые внешние причины от неисправностей разъёма, кабеля или аккумулятора. Измерения внутри устройства выполняет специалист.",
+  "topic": {
+    "name": "Ремонт смартфонов",
+    "path": [
+      "Электроника",
+      "Смартфоны",
+      "Диагностика"
+    ]
+  },
+  "cover": {
+    "file": "media/cover.svg",
+    "alt": "Схематичное изображение смартфона"
+  },
+  "assets": [
+    {
+      "file": "media/cover.svg",
+      "type": "image",
+      "format": "svg",
+      "size_bytes": 512
+    },
+    {
+      "file": "media/battery_layout.svg",
+      "type": "image",
+      "format": "svg",
+      "size_bytes": 583
+    },
+    {
+      "file": "media/phone_model.glb",
+      "type": "model_3d",
+      "format": "glb",
+      "size_bytes": 732
+    }
+  ],
+  "blocks": [
+    {
+      "type": "heading",
+      "level": 2,
+      "text": "Сначала исключите внешние причины"
+    },
+    {
+      "type": "paragraph",
+      "text": "Отсутствие роста процента заряда само по себе не доказывает неисправность аккумулятора. Причиной могут быть кабель, адаптер, загрязнение разъёма, программный сбой или внутренний дефект."
+    },
+    {
+      "type": "image",
+      "file": "media/battery_layout.svg",
+      "caption": "Условная схема аккумуляторного узла; не схема конкретной модели.",
+      "alt": "Схематичный аккумуляторный блок"
+    },
+    {
+      "type": "callout",
+      "style": "danger",
+      "title": "Не вскрывайте аккумулятор",
+      "text": "Не прокалывайте, не сгибайте и не нагревайте литиевый аккумулятор. При вздутии, запахе, дыме или сильном нагреве прекратите использование."
+    },
+    {
+      "type": "list",
+      "style": "ordered",
+      "items": [
+        "Проверьте кабель и адаптер на другом исправном устройстве.",
+        "Осмотрите разъём при хорошем освещении, не вставляя металлические предметы.",
+        "Перезагрузите телефон и повторите проверку с исправным комплектом."
+      ]
+    },
+    {
+      "type": "quote",
+      "text": "Симптом — наблюдение, а не готовый диагноз.",
+      "caption": "Принцип первичной диагностики"
+    },
+    {
+      "type": "steps",
+      "items": [
+        {
+          "title": "Проверить комплект зарядки",
+          "text": "Используйте исправный совместимый адаптер и кабель.",
+          "image": "media/cover.svg"
+        },
+        {
+          "title": "Осмотреть разъём",
+          "text": "Проверьте наличие ворса, коррозии и механических повреждений.",
+          "image": "media/battery_layout.svg",
+          "warning": "Не вводите в разъём иглы, скрепки и другие проводящие предметы."
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "headers": [
+        "Наблюдение",
+        "Возможный вывод",
+        "Следующий шаг"
+      ],
+      "rows": [
+        [
+          "Заряд появляется с другим кабелем",
+          "Вероятна проблема исходного кабеля",
+          "Заменить кабель"
+        ],
+        [
+          "Разъём шатается",
+          "Возможен механический дефект",
+          "Осмотр специалистом"
+        ],
+        [
+          "Необычный нагрев",
+          "Причина не установлена; возможен риск",
+          "Отключить зарядку"
+        ]
+      ]
+    },
+    {
+      "type": "code",
+      "language": "text",
+      "text": "Модель устройства: __________\nАдаптер/кабель проверены: да / нет\nРеакция на подключение: __________\nНагрев или вздутие: да / нет"
+    },
+    {
+      "type": "model_3d",
+      "file": "media/phone_model.glb",
+      "caption": "Упрощённая демонстрационная модель корпуса",
+      "alt": "Упрощённая 3D-модель корпуса смартфона",
+      "controls": {
+        "rotate": true,
+        "zoom": true,
+        "pan": false
+      },
+      "camera": {
+        "azimuth": 35,
+        "elevation": 65
+      },
+      "scale": 1
+    },
+    {
+      "type": "video",
+      "url": "https://www.youtube.com/watch?v=aqz-KE-bpKQ",
+      "caption": "Тестовая видеоссылка Big Buck Bunny только для проверки видеоблока; не инструкция по ремонту."
+    }
+  ],
+  "technical_knowledge": {
+    "schema_version": "1.0",
+    "objects": [
+      {
+        "id": "PHONE",
+        "category": "smartphone",
+        "name": "Смартфон",
+        "model_scope": "generic"
+      },
+      {
+        "id": "BATTERY",
+        "category": "battery",
+        "name": "Литиевый аккумулятор",
+        "model_scope": "generic",
+        "parent_object_id": "PHONE"
+      }
+    ],
+    "symptoms": [
+      {
+        "id": "S_NO_CHARGE",
+        "object_ids": [
+          "PHONE"
+        ],
+        "title": "Не увеличивается уровень заряда",
+        "description": "После подключения зарядного устройства уровень заряда не растёт."
+      }
+    ],
+    "causes": [
+      {
+        "id": "C_PORT",
+        "symptom_ids": [
+          "S_NO_CHARGE"
+        ],
+        "description": "Возможное загрязнение или повреждение разъёма.",
+        "certainty": "possible",
+        "diagnostic_refs": [
+          "D_EXT"
+        ]
+      }
+    ],
+    "diagnostics": [
+      {
+        "id": "D_EXT",
+        "title": "Внешняя проверка зарядки",
+        "purpose": "Проверка без вскрытия устройства.",
+        "performer": "customer",
+        "risk_level": "low",
+        "required_tool_ids": [],
+        "steps": [
+          {
+            "id": "Q1",
+            "title": "Проверить другой кабель",
+            "instruction": "Подключите заведомо исправный совместимый кабель.",
+            "method": "functional_test",
+            "response": {
+              "type": "choice",
+              "options": [
+                {
+                  "value": "yes",
+                  "label": "Зарядка началась"
+                },
+                {
+                  "value": "no",
+                  "label": "Изменений нет"
+                }
+              ]
+            },
+            "transitions": [
+              {
+                "operator": "eq",
+                "value": "yes",
+                "next_step_id": "END1"
+              },
+              {
+                "operator": "eq",
+                "value": "no",
+                "next_step_id": "END2"
+              }
+            ]
+          },
+          {
+            "id": "END1",
+            "title": "Проверить исходный комплект",
+            "instruction": "Проверьте кабель и адаптер отдельно.",
+            "method": "observation",
+            "terminal": true
+          },
+          {
+            "id": "END2",
+            "title": "Обратиться в сервис",
+            "instruction": "Не вскрывайте устройство самостоятельно.",
+            "method": "professional_inspection",
+            "terminal": true,
+            "safety_refs": [
+              "SAFE"
+            ]
+          }
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "id": "OP_PORT",
+        "title": "Проверка разъёма зарядки",
+        "description": "Осмотр и ремонт выполняются в сервисе.",
+        "performer": "professional",
+        "required_skill": "professional",
+        "diagnostic_refs": [
+          "D_EXT"
+        ],
+        "tool_refs": [
+          "METER"
+        ],
+        "material_refs": [
+          "PORT"
+        ],
+        "safety_refs": [
+          "SAFE"
+        ],
+        "media_refs": [
+          {
+            "file": "media/battery_layout.svg",
+            "role": "component",
+            "alt": "Условная схема аккумуляторного узла"
+          }
+        ]
+      }
+    ],
+    "tools": [
+      {
+        "id": "METER",
+        "name": "Цифровой мультиметр",
+        "purpose": "Профессиональная проверка цепей питания",
+        "access_options": [
+          "professional_only"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "id": "PORT",
+        "name": "Совместимый разъём зарядки",
+        "compatibility": "Подбор по точной модели и ревизии."
+      }
+    ],
+    "safety": [
+      {
+        "id": "SAFE",
+        "severity": "danger",
+        "instruction": "При вздутии или перегреве прекратить эксплуатацию и не вскрывать аккумулятор.",
+        "applies_to": [
+          "D_EXT",
+          "OP_PORT"
+        ],
+        "customer_allowed": false
+      }
+    ]
+  }
+}

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { useBlogArticle, useBlogArticles } from '../../hooks/useBlog';
 import sanitizeHtml from '../../shared/lib/sanitizeHtml';
+import { getBlocksPlainText } from '../../shared/lib/articleContent';
 import { stripHtml } from '../../shared/lib/blog';
 import { formatDate } from '../../shared/lib/formatDate';
 import {
@@ -15,6 +16,7 @@ import { useUser } from '../../state/user';
 import ArticleComments from './ArticleComments';
 import BlogArticleCard from './BlogArticleCard';
 import BlogAvatar from './BlogAvatar';
+import ArticleRenderer from './renderer/ArticleRenderer';
 import styles from './Article.module.css';
 
 function ArticlePageState({ title, message, onRetry }) {
@@ -49,9 +51,17 @@ const Article = () => {
   const [canExpand, setCanExpand] = useState(false);
   const contentRef = useRef(null);
 
-  const cleanContent = useMemo(() => sanitizeHtml(article?.content || ''), [article?.content]);
-  const plainText = useMemo(() => stripHtml(cleanContent), [cleanContent]);
+  const hasBlocks = Array.isArray(article?.blocks) && article.blocks.length > 0;
+  const cleanContent = useMemo(
+    () => (hasBlocks ? '' : sanitizeHtml(article?.content || '')),
+    [article?.content, hasBlocks],
+  );
+  const plainText = useMemo(
+    () => (hasBlocks ? getBlocksPlainText(article.blocks) : stripHtml(cleanContent)),
+    [article?.blocks, cleanContent, hasBlocks],
+  );
   const readingMinutes = Math.max(1, Math.ceil(Array.from(plainText).length / 1000));
+  const collapsed = !hasBlocks && !expanded;
 
   useEffect(() => {
     setExpanded(false);
@@ -59,11 +69,15 @@ const Article = () => {
   }, [articleId]);
 
   useEffect(() => {
-    if (!cleanContent) return;
+    if (!hasBlocks && !cleanContent) return;
+    if (hasBlocks) {
+      setCanExpand(false);
+      return;
+    }
     const element = contentRef.current;
     if (!element) return;
     setCanExpand(element.scrollHeight > 360 || Array.from(plainText).length > 1200);
-  }, [cleanContent, plainText]);
+  }, [cleanContent, hasBlocks, plainText]);
 
   if (isLoading) {
     return <ArticlePageState title="Загружаем статью" message="Это займёт несколько секунд." />;
@@ -122,7 +136,8 @@ const Article = () => {
                 <div>
                   <p className={styles.articleAuthorName}>
                     {article.author.name}
-                    <span> ({article.author.role === 2 ? 'Мастер' : 'Клиент'})</span>
+                    {article.author.role === 2 && <span> (Мастер)</span>}
+                    {article.author.role === 1 && <span> (Клиент)</span>}
                   </p>
                   <p className={styles.articleAuthorDate}>Опубликовано {publishedAt}</p>
                 </div>
@@ -131,10 +146,18 @@ const Article = () => {
               <div className={styles.articleBodyWrap}>
                 <div
                   ref={contentRef}
-                  className={`${styles.articleBody} ${expanded ? styles.articleBodyExpanded : styles.articleBodyCollapsed}`}
-                  dangerouslySetInnerHTML={{ __html: cleanContent }}
-                />
-                {!expanded && canExpand && <div className={styles.articleBodyGradient} />}
+                  className={`${hasBlocks ? styles.articleBodyRenderer : styles.articleBody} ${collapsed ? styles.articleBodyCollapsed : styles.articleBodyExpanded}`}
+                >
+                  {hasBlocks ? (
+                    <ArticleRenderer
+                      blocks={article.blocks}
+                      mediaBaseUrl={article.media_base_url}
+                    />
+                  ) : (
+                    <div dangerouslySetInnerHTML={{ __html: cleanContent }} />
+                  )}
+                </div>
+                {collapsed && canExpand && <div className={styles.articleBodyGradient} />}
               </div>
 
               <div className={styles.articleActions}>
