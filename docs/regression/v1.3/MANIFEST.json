@@ -1,0 +1,101 @@
+{
+  "format_version": "1.3",
+  "branch": "docs/repair-wizards-article-format-v1.3",
+  "articles": [
+    {
+      "slug": "smartphone",
+      "blocks": 11,
+      "assets": 3,
+      "zip_bytes": 12582
+    },
+    {
+      "slug": "electric_kettle",
+      "blocks": 11,
+      "assets": 2,
+      "zip_bytes": 11656
+    },
+    {
+      "slug": "toilet_cistern",
+      "blocks": 10,
+      "assets": 2,
+      "zip_bytes": 11653
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/regression/v1.3/smartphone/article.json",
+      "size_bytes": 10293,
+      "crc32": "21b58a5d"
+    },
+    {
+      "path": "docs/regression/v1.3/smartphone/media/cover.svg",
+      "size_bytes": 512,
+      "crc32": "81d30822"
+    },
+    {
+      "path": "docs/regression/v1.3/smartphone/media/battery_layout.svg",
+      "size_bytes": 583,
+      "crc32": "b533b588"
+    },
+    {
+      "path": "docs/regression/v1.3/smartphone/media/phone_model.glb",
+      "size_bytes": 732,
+      "crc32": "d2b98ede"
+    },
+    {
+      "path": "docs/regression/v1.3/smartphone.zip",
+      "size_bytes": 12582,
+      "crc32": "3338e2b9"
+    },
+    {
+      "path": "docs/regression/v1.3/electric_kettle/article.json",
+      "size_bytes": 10258,
+      "crc32": "9674fe45"
+    },
+    {
+      "path": "docs/regression/v1.3/electric_kettle/media/cover.svg",
+      "size_bytes": 529,
+      "crc32": "59c0eb1f"
+    },
+    {
+      "path": "docs/regression/v1.3/electric_kettle/media/terminal_layout.svg",
+      "size_bytes": 521,
+      "crc32": "b31d6082"
+    },
+    {
+      "path": "docs/regression/v1.3/electric_kettle.zip",
+      "size_bytes": 11656,
+      "crc32": "ac3f7bee"
+    },
+    {
+      "path": "docs/regression/v1.3/toilet_cistern/article.json",
+      "size_bytes": 10353,
+      "crc32": "1546a9cc"
+    },
+    {
+      "path": "docs/regression/v1.3/toilet_cistern/media/cover.svg",
+      "size_bytes": 497,
+      "crc32": "882a0a5e"
+    },
+    {
+      "path": "docs/regression/v1.3/toilet_cistern/media/valve_layout.svg",
+      "size_bytes": 461,
+      "crc32": "5175c77c"
+    },
+    {
+      "path": "docs/regression/v1.3/toilet_cistern.zip",
+      "size_bytes": 11653,
+      "crc32": "fedd6914"
+    },
+    {
+      "path": "docs/regression/v1.3/README.md",
+      "size_bytes": 817,
+      "crc32": "91c34658"
+    },
+    {
+      "path": "docs/regression/v1.3/COVERAGE_MATRIX.md",
+      "size_bytes": 2969,
+      "crc32": "50ae2fc9"
+    }
+  ]
+}
