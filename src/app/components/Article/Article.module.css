@@ -238,6 +238,10 @@
   font-weight: 500;
 }
 
+.asideTitleSpaced {
+  margin-top: 24px;
+}
+
 .asideItem {
   display: flex;
   width: 100%;

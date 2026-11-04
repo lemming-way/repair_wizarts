@@ -24,7 +24,7 @@ jest.mock('../../hooks/useBlog', () => ({
         title: 'Смартфон не заряжается',
         excerpt: 'Проверка смартфона',
         cover_url: null,
-        author: { id: 0, name: 'Редакция', avatar: '', role: 0 },
+        author: { id: 3, name: 'Мастер', avatar: '', role: 2 },
         created_at: '2026-11-04T10:00:00Z',
         updated_at: null,
         comments_count: 0,
@@ -38,6 +38,25 @@ jest.mock('../../hooks/useBlog', () => ({
 }));
 
 describe('Articles catalog', () => {
+  it('filters articles by author together with category', async () => {
+    render(
+      <MemoryRouter>
+        <Articles />
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Мастер/ }));
+
+    expect(screen.queryByRole('heading', { name: 'Чайник не включается' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+    expect(screen.getByText('Автор:')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Все статьи/ }));
+
+    expect(screen.getByRole('heading', { name: 'Чайник не включается' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+  });
+
   it('filters articles by category and resets the filter', async () => {
     render(
       <MemoryRouter>

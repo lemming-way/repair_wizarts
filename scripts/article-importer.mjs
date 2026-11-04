@@ -18,6 +18,9 @@ const SUPPORTED_BLOCKS = new Set([
 ]);
 
 const LOCAL_ZIP_MAGIC = 0x04034b50;
+const CENTRAL_DIRECTORY_MAGIC = 0x02014b50;
+const END_OF_CENTRAL_DIRECTORY_MAGIC = 0x06054b50;
+const DATA_DESCRIPTOR_MAGIC = Buffer.from([0x50, 0x4b, 0x07, 0x08]);
 
 export function fail(message) {
   throw new Error(message);
@@ -48,6 +51,67 @@ export function safeEntryName(rawName) {
   return normalized;
 }
 
+function unpackEntry(raw, method, name) {
+  if (method === 0) return raw;
+  if (method === 8) return zlib.inflateRawSync(raw);
+  fail(`Unsupported ZIP compression method ${method} for "${name}".`);
+}
+
+/** Читает запись с data descriptor (general purpose flag bit 3). */
+function readDataDescriptorEntry(buffer, dataStart, name, method) {
+  // Вариант с сигнатурой PK\x07\x08: crc32, compressed size, uncompressed size.
+  let searchFrom = dataStart;
+  while (searchFrom + 16 <= buffer.length) {
+    const signatureOffset = buffer.indexOf(DATA_DESCRIPTOR_MAGIC, searchFrom);
+    if (signatureOffset === -1) break;
+
+    const compressedSize = buffer.readUInt32LE(signatureOffset + 8);
+    const uncompressedSize = buffer.readUInt32LE(signatureOffset + 12);
+    if (compressedSize > 0 && signatureOffset - dataStart === compressedSize) {
+      const raw = buffer.subarray(dataStart, signatureOffset);
+      try {
+        const data = unpackEntry(raw, method, name);
+        if (data.length === uncompressedSize) {
+          return { data, nextOffset: signatureOffset + 16 };
+        }
+      } catch {
+        // Сигнатура встретилась внутри сжатых данных — ищем следующую.
+      }
+    }
+    searchFrom = signatureOffset + 4;
+  }
+
+  // Вариант без сигнатуры: 12 байт (crc32, compressed size, uncompressed size)
+  // находятся непосредственно перед следующим локальным/центральным заголовком.
+  let nextHeader = -1;
+  for (let index = dataStart; index + 4 <= buffer.length; index += 1) {
+    const signature = buffer.readUInt32LE(index);
+    if (
+      signature === LOCAL_ZIP_MAGIC ||
+      signature === CENTRAL_DIRECTORY_MAGIC ||
+      signature === END_OF_CENTRAL_DIRECTORY_MAGIC
+    ) {
+      nextHeader = index;
+      break;
+    }
+  }
+
+  if (nextHeader !== -1 && nextHeader - dataStart >= 12) {
+    const descriptorOffset = nextHeader - 12;
+    const compressedSize = buffer.readUInt32LE(descriptorOffset + 4);
+    const uncompressedSize = buffer.readUInt32LE(descriptorOffset + 8);
+    if (compressedSize > 0 && dataStart + compressedSize === descriptorOffset) {
+      const raw = buffer.subarray(dataStart, descriptorOffset);
+      const data = unpackEntry(raw, method, name);
+      if (data.length === uncompressedSize) {
+        return { data, nextOffset: nextHeader };
+      }
+    }
+  }
+
+  fail(`ZIP entry "${name}" has an invalid data descriptor.`);
+}
+
 /**
  * Разбирает ZIP по локальным заголовкам. Обычные архивы с central directory
  * тоже читаются: обход прекращается на сигнатуре PK\x01\x02 / PK\x05\x06.
@@ -73,23 +137,27 @@ export function readZipEntries(buffer) {
     );
     const dataStart = offset + 30 + nameLength + extraLength;
 
-    if ((flags & 0x08) !== 0) {
-      fail(`ZIP entry "${name}" uses a data descriptor, which is not supported.`);
-    }
-    if (dataStart + compressedSize > buffer.length) fail(`Truncated ZIP entry: ${name}`);
-
-    const raw = buffer.subarray(dataStart, dataStart + compressedSize);
     let data;
-    if (method === 0) data = raw;
-    else if (method === 8) data = zlib.inflateRawSync(raw);
-    else fail(`Unsupported ZIP compression method ${method} for "${name}".`);
+    let nextOffset;
+
+    if ((flags & 0x08) !== 0) {
+      const entry = readDataDescriptorEntry(buffer, dataStart, name, method);
+      data = entry.data;
+      nextOffset = entry.nextOffset;
+    } else {
+      if (dataStart + compressedSize > buffer.length) fail(`Truncated ZIP entry: ${name}`);
+
+      const raw = buffer.subarray(dataStart, dataStart + compressedSize);
+      data = unpackEntry(raw, method, name);
+      nextOffset = dataStart + compressedSize;
+    }
 
     if (uncompressedSize !== 0 && data.length !== uncompressedSize) {
       fail(`ZIP size mismatch for "${name}".`);
     }
 
     entries.push({ name, data });
-    offset = dataStart + compressedSize;
+    offset = nextOffset;
   }
 
   if (entries.length === 0) fail('ZIP archive contains no files.');

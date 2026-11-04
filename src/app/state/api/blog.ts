@@ -11,6 +11,8 @@
  */
 import CONFIG from 'config';
 
+import { getBlocksPlainText, resolveArticleMedia } from 'app/shared/lib/articleContent';
+
 import {
   getLocalBlogArticleById,
   getLocalBlogArticles,
@@ -70,11 +72,28 @@ export type BlogComment = {
 
 type ParsedArticleContent = {
   format_version?: string;
+  summary?: string;
+  media_base_url?: string;
   blocks: ArticleBlock[];
   assets?: ArticleAsset[];
   technical_knowledge?: unknown;
   cover?: { file?: string };
 };
+
+function buildExcerpt(text: string, limit = 240): string {
+  const trimmed = text.replace(/\s+/g, ' ').trim();
+  if (!trimmed) return '';
+  const chars = Array.from(trimmed);
+  if (chars.length <= limit) return trimmed;
+  return `${chars.slice(0, limit).join('').trimEnd()}…`;
+}
+
+function deriveMediaBaseUrl(coverUrl: string | null | undefined): string | undefined {
+  if (!coverUrl) return undefined;
+  const index = coverUrl.indexOf('/media/');
+  if (index === -1) return undefined;
+  return coverUrl.slice(0, index + 1);
+}
 
 const BLOG_SOURCE = process.env.REACT_APP_BLOG_SOURCE || CONFIG.BLOG?.source || 'local';
 
@@ -91,6 +110,8 @@ export function parseArticleContent(content: string | undefined): ParsedArticleC
     if (!parsed || !Array.isArray(parsed.blocks)) return null;
     return {
       format_version: parsed.format_version,
+      summary: typeof parsed.summary === 'string' ? parsed.summary : undefined,
+      media_base_url: typeof parsed.media_base_url === 'string' ? parsed.media_base_url : undefined,
       blocks: parsed.blocks,
       assets: parsed.assets,
       technical_knowledge: parsed.technical_knowledge,
@@ -101,12 +122,21 @@ export function parseArticleContent(content: string | undefined): ParsedArticleC
   }
 }
 
-function withParsedContent(article: BlogArticle): BlogArticle {
+export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
   const parsed = parseArticleContent(article.content);
   if (!parsed) return article;
 
+  const mediaBaseUrl = parsed.media_base_url || article.media_base_url;
+  const coverUrl = parsed.cover?.file
+    ? resolveArticleMedia(parsed.cover.file, mediaBaseUrl)
+    : article.cover_url;
+  const parsedText = parsed.summary?.trim() || getBlocksPlainText(parsed.blocks);
+
   return {
     ...article,
+    excerpt: parsedText ? buildExcerpt(parsedText) : article.excerpt,
+    cover_url: coverUrl || article.cover_url,
+    media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
     assets: parsed.assets,
@@ -124,7 +154,7 @@ export async function getBlogTopics(): Promise<BlogArticle[]> {
     },
   };
   const articles = await post<BlogArticle[]>('script/template/repair_api', payload);
-  return articles.map(withParsedContent);
+  return articles.map(normalizeBlogArticleContent);
 }
 
 export async function getBlogTopicById(id: number): Promise<BlogArticle> {
@@ -138,7 +168,7 @@ export async function getBlogTopicById(id: number): Promise<BlogArticle> {
     },
   };
   const article = await post<BlogArticle>('script/template/repair_api', payload);
-  return withParsedContent(article);
+  return normalizeBlogArticleContent(article);
 }
 
 export async function getBlogPosts(articleId: number, viewerId = 0): Promise<BlogComment[]> {

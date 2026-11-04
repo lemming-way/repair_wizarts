@@ -285,10 +285,148 @@ $out = call_user_func(function() {
     );
   };
 
-  $blog_excerpt = function($html, $limit = 240) use($blog_char_length) {
-    $html = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', ' ', (string)$html);
-    $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-    $text = trim(preg_replace('/\s+/u', ' ', $text));
+  // Метаданные blog_post: схема может отличаться между окружениями.
+  // Поля публикации и JSON определяются по фактическим колонкам таблицы.
+  $blog_post_columns = [];
+  try {
+    $blog_columns = $query('SHOW COLUMNS FROM `blog_post`', []);
+    if (is_array($blog_columns)) {
+      foreach ($blog_columns as $blog_column) {
+        if (isset($blog_column['Field'])) {
+          $blog_post_columns[strtolower($blog_column['Field'])] = $blog_column;
+        }
+      }
+    }
+  }
+  catch (Exception $e) {
+    $blog_post_columns = [];
+  }
+
+  $blog_first_column = function($candidates) use($blog_post_columns) {
+    foreach ($candidates as $candidate) {
+      if (isset($blog_post_columns[$candidate])) return $candidate;
+    }
+    return null;
+  };
+
+  $blog_published_at_column = $blog_first_column([
+    'published_at', 'published_datetime', 'publish_datetime',
+    'publication_datetime', 'date_published', 'date_publication'
+  ]);
+  $blog_status_column = $blog_first_column([
+    'status', 'blog_status', 'id_blog_status', 'status_id', 'id_status',
+    'is_published', 'published'
+  ]);
+  $blog_content_json_column = $blog_first_column([
+    'content_json', 'article_json', 'json_content'
+  ]);
+  $blog_content_format_column = $blog_first_column(['content_format']);
+  $blog_content_version_column = $blog_first_column(['content_version']);
+
+  // Значение опубликованного статуса для строковых колонок
+  // (status/blog_status) и id для числовых колонок.
+  $blog_published_status_value = 'published';
+  $blog_published_status_id = null;
+
+  $blog_status_type = ($blog_status_column && isset($blog_post_columns[$blog_status_column]['Type']))
+    ? strtolower($blog_post_columns[$blog_status_column]['Type'])
+    : '';
+
+  $blog_public_where = '';
+  $blog_public_params = [];
+  if ($blog_status_column) {
+    if (in_array($blog_status_column, ['is_published', 'published'], true)) {
+      $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=1';
+    }
+    elseif (in_array($blog_status_column, ['status', 'blog_status'], true)) {
+      if (strpos($blog_status_type, 'int') === false) {
+        $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=\'' . str_replace("'" , "''", $blog_published_status_value) . '\'';
+      }
+      elseif ($blog_published_status_id !== null) {
+        $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=:published_status';
+        $blog_public_params['published_status'] = $blog_published_status_id;
+      }
+    }
+    elseif ($blog_published_status_id !== null) {
+      $blog_public_where = ' AND `p`.`' . $blog_status_column . '`=:published_status';
+      $blog_public_params['published_status'] = $blog_published_status_id;
+    }
+  }
+
+  $blog_published_at_select = $blog_published_at_column
+    ? 'DATE_FORMAT(CONVERT_TZ(`p`.`' . $blog_published_at_column . '`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `published_at`,'
+    : 'NULL AS `published_at`,';
+  $blog_content_json_select = $blog_content_json_column
+    ? '`p`.`' . $blog_content_json_column . '` AS `content_json`,'
+    : 'NULL AS `content_json`,';
+  $blog_content_format_select = $blog_content_format_column
+    ? '`p`.`' . $blog_content_format_column . '` AS `content_format`,'
+    : 'NULL AS `content_format`,';
+  $blog_content_version_select = $blog_content_version_column
+    ? '`p`.`' . $blog_content_version_column . '` AS `content_version`,'
+    : 'NULL AS `content_version`,';
+
+  $blog_decode_article = function($content) {
+    if (!is_string($content)) return null;
+    $trimmed = ltrim($content);
+    if ($trimmed === '' || $trimmed[0] !== '{') return null;
+    $decoded = json_decode($trimmed, true);
+    if (!is_array($decoded) || !isset($decoded['blocks']) || !is_array($decoded['blocks'])) return null;
+    return $decoded;
+  };
+
+  $blog_blocks_text = function($blocks) {
+    if (!is_array($blocks)) return '';
+    $parts = [];
+    foreach ($blocks as $block) {
+      if (!is_array($block)) continue;
+      foreach (['text', 'title', 'caption', 'alt'] as $field) {
+        if (isset($block[$field]) && is_scalar($block[$field])) $parts[] = (string)$block[$field];
+      }
+      if (isset($block['items']) && is_array($block['items'])) {
+        foreach ($block['items'] as $item) {
+          if (is_scalar($item)) $parts[] = (string)$item;
+          elseif (is_array($item)) {
+            foreach (['title', 'text', 'caption', 'alt'] as $field) {
+              if (isset($item[$field]) && is_scalar($item[$field])) $parts[] = (string)$item[$field];
+            }
+          }
+        }
+      }
+      if (isset($block['headers']) && is_array($block['headers'])) {
+        foreach ($block['headers'] as $header) {
+          if (is_scalar($header)) $parts[] = (string)$header;
+        }
+      }
+      if (isset($block['rows']) && is_array($block['rows'])) {
+        foreach ($block['rows'] as $row) {
+          if (!is_array($row)) continue;
+          foreach ($row as $cell) {
+            if (is_scalar($cell)) $parts[] = (string)$cell;
+          }
+        }
+      }
+    }
+    return trim(preg_replace('/\s+/u', ' ', implode(' ', $parts)));
+  };
+
+  $blog_excerpt = function($content, $limit = 240) use($blog_char_length, $blog_decode_article, $blog_blocks_text) {
+    $decoded = $blog_decode_article($content);
+    if ($decoded) {
+      $text = '';
+      if (isset($decoded['summary']) && is_scalar($decoded['summary'])) {
+        $text = trim((string)$decoded['summary']);
+      }
+      if ($text === '' && isset($decoded['blocks'])) {
+        $text = $blog_blocks_text($decoded['blocks']);
+      }
+    }
+    else {
+      $html = preg_replace('/<(script|style)\b[^>]*>.*?<\/\1>/is', ' ', (string)$content);
+      $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      $text = trim(preg_replace('/\s+/u', ' ', $text));
+    }
+
     if ($text === '') return '';
     if ($blog_char_length($text) > $limit) {
       $text = function_exists('mb_substr') ? mb_substr($text, 0, $limit, 'UTF-8') : substr($text, 0, $limit);
@@ -297,13 +435,25 @@ $out = call_user_func(function() {
     return $text;
   };
 
-  $blog_cover_url = function($html) {
-    if (!$html) return null;
+  $blog_cover_url = function($content) use($blog_decode_article) {
+    if (!$content) return null;
+
+    $decoded = $blog_decode_article($content);
+    if ($decoded) {
+      $cover = (isset($decoded['cover']['file']) && is_string($decoded['cover']['file']))
+        ? trim($decoded['cover']['file'])
+        : '';
+      if ($cover === '' || strpos($cover, '..') !== false) return null;
+      if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $cover)
+          && !preg_match('#^(?:https?:|data:image/)#i', $cover)) return null;
+      return $cover;
+    }
+
     $cover = null;
-    if (preg_match('/<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1/is', $html, $matches)) {
+    if (preg_match('/<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1/is', $content, $matches)) {
       $cover = html_entity_decode(trim($matches[2]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
-    elseif (preg_match('/<img\b[^>]*\bsrc\s*=\s*([^\s>]+)/is', $html, $matches)) {
+    elseif (preg_match('/<img\b[^>]*\bsrc\s*=\s*([^\s>]+)/is', $content, $matches)) {
       $cover = html_entity_decode(trim($matches[1]), ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
     if (!$cover) return null;
@@ -324,20 +474,54 @@ $out = call_user_func(function() {
     ];
   };
 
-  $blog_article = function($row, $with_content = true) use($blog_author, $blog_excerpt, $blog_cover_url, $blog_datetime) {
+  $blog_article = function($row, $with_content = true) use($blog_author, $blog_excerpt, $blog_cover_url, $blog_datetime, $blog_decode_article) {
+    $json_content = (isset($row['content_json']) && $row['content_json'] !== null && $row['content_json'] !== '')
+      ? $row['content_json']
+      : null;
+    $content = $json_content !== null ? $json_content : $row['content'];
+    $decoded = $blog_decode_article($content);
+    if (!$decoded && $json_content !== null) {
+      // content_json повреждён или не является статьёй 1.3 — используем legacy value.
+      $content = $row['content'];
+      $decoded = $blog_decode_article($content);
+    }
+
     $article = [
       'id' => (int)$row['id'],
       'topic_id' => (int)$row['topic_id'],
       'topic_name' => (string)$row['topic_name'],
       'title' => (string)$row['title'],
-      'excerpt' => $blog_excerpt($row['content']),
-      'cover_url' => $blog_cover_url($row['content']),
+      'excerpt' => $blog_excerpt($content),
+      'cover_url' => $blog_cover_url($content),
       'author' => $blog_author($row),
       'created_at' => (string)$row['created_at'],
+      'published_at' => isset($row['published_at']) ? $blog_datetime($row['published_at']) : null,
       'updated_at' => $blog_datetime($row['updated_at']),
       'comments_count' => (int)$row['comments_count']
     ];
-    if ($with_content) $article['content'] = (string)$row['content'];
+
+    if (isset($row['content_format']) && $row['content_format'] !== null && $row['content_format'] !== '') {
+      $article['content_format'] = (string)$row['content_format'];
+    }
+    if (isset($row['content_version']) && $row['content_version'] !== null && $row['content_version'] !== '') {
+      $article['content_version'] = (string)$row['content_version'];
+    }
+
+    if ($with_content) {
+      $article['content'] = (string)$content;
+      if ($decoded) {
+        if (isset($decoded['format_version'])) $article['format_version'] = (string)$decoded['format_version'];
+        if (isset($decoded['blocks']) && is_array($decoded['blocks'])) $article['blocks'] = $decoded['blocks'];
+        if (isset($decoded['assets']) && is_array($decoded['assets'])) $article['assets'] = $decoded['assets'];
+        if (array_key_exists('technical_knowledge', $decoded)) {
+          $article['technical_knowledge'] = $decoded['technical_knowledge'];
+        }
+        if (isset($decoded['media_base_url']) && is_string($decoded['media_base_url'])) {
+          $article['media_base_url'] = $decoded['media_base_url'];
+        }
+      }
+    }
+
     return $article;
   };
 
@@ -2979,6 +3163,10 @@ $out = call_user_func(function() {
           '`t`.`name` AS `topic_name`,' .
           '`p`.`name` AS `title`,' .
           '`p`.`value` AS `content`,' .
+          $blog_content_json_select .
+          $blog_content_format_select .
+          $blog_content_version_select .
+          $blog_published_at_select .
           'DATE_FORMAT(CONVERT_TZ(`p`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
           'DATE_FORMAT(CONVERT_TZ(`p`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
           '`u`.`id_user` AS `author_id`,' .
@@ -2992,8 +3180,9 @@ $out = call_user_func(function() {
         'FROM `blog_post` `p` ' .
         'JOIN `blog_topic` `t` ON `t`.`id_blog_topic`=`p`.`id_blog_topic` ' .
         'JOIN `users` `u` ON `u`.`id_user`=`p`.`id_user` ' .
-        'ORDER BY `p`.`create_datetime` DESC,`p`.`id_blog_post` DESC',
-        []
+        'WHERE 1=1' . $blog_public_where .
+        ' ORDER BY `p`.`create_datetime` DESC,`p`.`id_blog_post` DESC',
+        $blog_public_params
       );
       $articles = [];
       foreach ($result as $row) $articles[] = $blog_article($row, false);
@@ -3010,6 +3199,10 @@ $out = call_user_func(function() {
           '`t`.`name` AS `topic_name`,' .
           '`p`.`name` AS `title`,' .
           '`p`.`value` AS `content`,' .
+          $blog_content_json_select .
+          $blog_content_format_select .
+          $blog_content_version_select .
+          $blog_published_at_select .
           'DATE_FORMAT(CONVERT_TZ(`p`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
           'DATE_FORMAT(CONVERT_TZ(`p`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
           '`u`.`id_user` AS `author_id`,' .
@@ -3023,8 +3216,8 @@ $out = call_user_func(function() {
         'FROM `blog_post` `p` ' .
         'JOIN `blog_topic` `t` ON `t`.`id_blog_topic`=`p`.`id_blog_topic` ' .
         'JOIN `users` `u` ON `u`.`id_user`=`p`.`id_user` ' .
-        'WHERE `p`.`id_blog_post`=:id',
-        [ 'id' => $article_id ]
+        'WHERE `p`.`id_blog_post`=:id' . $blog_public_where,
+        array_merge([ 'id' => $article_id ], $blog_public_params)
       );
       if (!$row) $die(404, 'Article not found.');
       return $blog_article($row, true);
@@ -3034,8 +3227,8 @@ $out = call_user_func(function() {
       $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
       if ($article_id <= 0) $die(400, 'Article ID not set.');
       $exists = $query_one(
-        'SELECT 1 FROM `blog_post` WHERE `id_blog_post`=:article',
-        [ 'article' => $article_id ]
+        'SELECT 1 FROM `blog_post` `p` WHERE `p`.`id_blog_post`=:article' . $blog_public_where,
+        array_merge([ 'article' => $article_id ], $blog_public_params)
       );
       if (!$exists) $die(404, 'Article not found.');
       $result = $query(
@@ -3095,12 +3288,34 @@ $out = call_user_func(function() {
       if ($blog_char_length($text) > 1000) $die(400, 'Comment text is too long.');
 
       $query_transaction();
-      $article = $query_one(
-        'SELECT `id_blog_post`,`id_user` FROM `blog_post` WHERE `id_blog_post`=:article FOR UPDATE',
-        [ 'article' => $article_id ],
-        [ 'numeric_fields' => [ 'id_blog_post', 'id_user' ] ]
-      );
-      if (!$article) $die(404, 'Article not found.');
+
+      if ($parent_id === null) {
+        // Корневая группа: блокируем статью.
+        $article = $query_one(
+          'SELECT `p`.`id_blog_post`,`p`.`id_user` FROM `blog_post` `p` ' .
+          'WHERE `p`.`id_blog_post`=:article' . $blog_public_where . ' FOR UPDATE',
+          array_merge([ 'article' => $article_id ], $blog_public_params),
+          [ 'numeric_fields' => [ 'id_blog_post', 'id_user' ] ]
+        );
+        if (!$article) $die(404, 'Article not found.');
+      }
+      else {
+        // Ответ: блокируем только родительский комментарий, статью не блокируем.
+        $parent = $query_one(
+          'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:parent FOR UPDATE',
+          [ 'parent' => $parent_id ]
+        );
+        if (!$parent) $die(400, 'Parent comment not found.');
+        if ((int)$parent !== $article_id) $die(400, 'Parent comment belongs to another article.');
+
+        $article = $query_one(
+          'SELECT `p`.`id_blog_post`,`p`.`id_user` FROM `blog_post` `p` ' .
+          'WHERE `p`.`id_blog_post`=:article' . $blog_public_where,
+          array_merge([ 'article' => $article_id ], $blog_public_params),
+          [ 'numeric_fields' => [ 'id_blog_post', 'id_user' ] ]
+        );
+        if (!$article) $die(404, 'Article not found.');
+      }
 
       $actor_id = (int)$context['u_id'];
       if ($actor_id <= 0) {
@@ -3108,15 +3323,6 @@ $out = call_user_func(function() {
         $actor_id = (int)$article['id_user'];
       }
       if ($actor_id <= 0) $die(403, 'Unauthorized.');
-
-      if ($parent_id !== null) {
-        $parent = $query_one(
-          'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:parent FOR UPDATE',
-          [ 'parent' => $parent_id ]
-        );
-        if (!$parent) $die(400, 'Parent comment not found.');
-        if ((int)$parent !== $article_id) $die(400, 'Parent comment belongs to another article.');
-      }
 
       $result = $query(
         'INSERT INTO `blog_comment`(`id_blog_post`,`parent_id`,`id_user`,`value`,`deleted`,`create_datetime`) ' .

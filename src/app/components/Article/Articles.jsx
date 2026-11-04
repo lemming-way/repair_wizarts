@@ -9,6 +9,7 @@ import styles from './Article.module.css';
 const Articles = () => {
   const { data: articles = [], isLoading, isError, error, refetch } = useBlogArticles();
   const [activeTopic, setActiveTopic] = useState(null);
+  const [activeAuthor, setActiveAuthor] = useState(null);
 
   const topics = useMemo(() => {
     const names = new Map();
@@ -19,16 +20,50 @@ const Articles = () => {
     return Array.from(names, ([name, count]) => ({ name, count }));
   }, [articles]);
 
-  const visibleArticles = useMemo(() => {
-    if (!activeTopic) return articles;
-    return articles.filter((article) => article.topic_name === activeTopic);
-  }, [activeTopic, articles]);
+  const authors = useMemo(() => {
+    const names = new Map();
+    for (const article of articles) {
+      const author = article.author;
+      if (!author?.name) continue;
+      const key = `${author.id}:${author.name}`;
+      const entry = names.get(key) || { key, name: author.name, count: 0 };
+      entry.count += 1;
+      names.set(key, entry);
+    }
+    return Array.from(names.values());
+  }, [articles]);
+
+  const visibleArticles = useMemo(
+    () =>
+      articles.filter(
+        (article) =>
+          (!activeTopic || article.topic_name === activeTopic) &&
+          (!activeAuthor || `${article.author.id}:${article.author.name}` === activeAuthor),
+      ),
+    [activeAuthor, activeTopic, articles],
+  );
+
+  const activeAuthorName = activeAuthor
+    ? authors.find((author) => author.key === activeAuthor)?.name
+    : '';
+  const hasActiveFilters = Boolean(activeTopic || activeAuthor);
+
+  const resetFilters = () => {
+    setActiveTopic(null);
+    setActiveAuthor(null);
+  };
 
   useEffect(() => {
     if (activeTopic && !topics.some((topic) => topic.name === activeTopic)) {
       setActiveTopic(null);
     }
   }, [activeTopic, topics]);
+
+  useEffect(() => {
+    if (activeAuthor && !authors.some((author) => author.key === activeAuthor)) {
+      setActiveAuthor(null);
+    }
+  }, [activeAuthor, authors]);
 
   return (
     <div className={styles.articlesPage}>
@@ -74,16 +109,22 @@ const Articles = () => {
               </div>
             )}
 
-            {!isLoading && !isError && activeTopic && (
+            {!isLoading && !isError && hasActiveFilters && (
               <div className={styles.activeFilter}>
                 <span>
-                  Категория: <strong>{activeTopic}</strong>
+                  {activeTopic && (
+                    <>
+                      Категория: <strong>{activeTopic}</strong>
+                    </>
+                  )}
+                  {activeTopic && activeAuthor && ' · '}
+                  {activeAuthor && (
+                    <>
+                      Автор: <strong>{activeAuthorName}</strong>
+                    </>
+                  )}
                 </span>
-                <button
-                  type="button"
-                  className={styles.activeFilterReset}
-                  onClick={() => setActiveTopic(null)}
-                >
+                <button type="button" className={styles.activeFilterReset} onClick={resetFilters}>
                   Сбросить
                 </button>
               </div>
@@ -91,13 +132,9 @@ const Articles = () => {
 
             {!isLoading && !isError && articles.length > 0 && visibleArticles.length === 0 && (
               <div className={styles.emptyState}>
-                <h2>В этой категории пока нет статей</h2>
-                <p>Попробуйте выбрать другую категорию или сбросить фильтр.</p>
-                <button
-                  type="button"
-                  className={styles.retryButton}
-                  onClick={() => setActiveTopic(null)}
-                >
+                <h2>Нет статей по выбранным фильтрам</h2>
+                <p>Попробуйте выбрать другую категорию, автора или сбросить фильтр.</p>
+                <button type="button" className={styles.retryButton} onClick={resetFilters}>
                   Все статьи
                 </button>
               </div>
@@ -117,9 +154,9 @@ const Articles = () => {
             {topics.length === 0 && <p className={styles.asideMuted}>Нет категорий</p>}
             <button
               type="button"
-              className={`${styles.asideItem} ${!activeTopic ? styles.asideItemSelected : ''}`}
-              aria-pressed={!activeTopic}
-              onClick={() => setActiveTopic(null)}
+              className={`${styles.asideItem} ${!hasActiveFilters ? styles.asideItemSelected : ''}`}
+              aria-pressed={!hasActiveFilters}
+              onClick={resetFilters}
             >
               <span>Все статьи</span>
               <span>{articles.length}</span>
@@ -136,12 +173,32 @@ const Articles = () => {
                 <span>{topic.count}</span>
               </button>
             ))}
-            {activeTopic && (
+
+            <p className={`${styles.asideTitle} ${styles.asideTitleSpaced}`}>Авторы</p>
+            {authors.length === 0 && <p className={styles.asideMuted}>Нет авторов</p>}
+            <button
+              type="button"
+              className={`${styles.asideItem} ${!activeAuthor ? styles.asideItemSelected : ''}`}
+              aria-pressed={!activeAuthor}
+              onClick={() => setActiveAuthor(null)}
+            >
+              <span>Все авторы</span>
+              <span>{articles.length}</span>
+            </button>
+            {authors.map((author) => (
               <button
                 type="button"
-                className={styles.asideFooterLink}
-                onClick={() => setActiveTopic(null)}
+                className={`${styles.asideItem} ${activeAuthor === author.key ? styles.asideItemSelected : ''}`}
+                aria-pressed={activeAuthor === author.key}
+                key={author.key}
+                onClick={() => setActiveAuthor(author.key)}
               >
+                <span>{author.name}</span>
+                <span>{author.count}</span>
+              </button>
+            ))}
+            {hasActiveFilters && (
+              <button type="button" className={styles.asideFooterLink} onClick={resetFilters}>
                 Сбросить фильтр
               </button>
             )}

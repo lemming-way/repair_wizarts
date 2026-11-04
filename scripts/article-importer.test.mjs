@@ -27,6 +27,32 @@ function zipLocalEntries(entries) {
   );
 }
 
+function zipDataDescriptorEntry({ name = 'x', data = 'x', method = 8, signature = true }) {
+  const filename = Buffer.from(name);
+  const source = Buffer.from(data);
+  const compressed = method === 8 ? zlib.deflateRawSync(source) : source;
+  const header = Buffer.alloc(30);
+  header.writeUInt32LE(0x04034b50, 0);
+  header.writeUInt16LE(20, 4);
+  header.writeUInt16LE(0x08, 6);
+  header.writeUInt16LE(method, 8);
+  header.writeUInt16LE(filename.length, 26);
+
+  const descriptor = Buffer.alloc(signature ? 16 : 12);
+  let offset = 0;
+  if (signature) {
+    descriptor.writeUInt32LE(0x08074b50, 0);
+    offset = 4;
+  }
+  descriptor.writeUInt32LE(0, offset);
+  descriptor.writeUInt32LE(compressed.length, offset + 4);
+  descriptor.writeUInt32LE(source.length, offset + 8);
+
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  return Buffer.concat([header, filename, compressed, descriptor, eocd]);
+}
+
 const validArticle = {
   format_version: '1.3',
   title: 'Проверка',
@@ -48,15 +74,25 @@ test('reads stored and deflated ZIP local entries', () => {
   assert.equal(entries[1].data.toString(), 'image-bytes');
 });
 
-test('rejects empty, truncated, unsupported and data-descriptor ZIP entries', () => {
+test('rejects empty, truncated and unsupported ZIP entries', () => {
   assert.throws(() => readZipEntries(Buffer.alloc(0)), /contains no files/);
   assert.throws(() => readZipEntries(Buffer.from([0x50, 0x4b, 0x03])), /contains no files/);
   const unsupported = zipLocalEntries([{ name: 'x', data: 'x' }]);
   unsupported.writeUInt16LE(99, 8);
   assert.throws(() => readZipEntries(unsupported), /Unsupported ZIP compression method/);
-  const descriptor = zipLocalEntries([{ name: 'x', data: 'x' }]);
-  descriptor.writeUInt16LE(0x08, 6);
-  assert.throws(() => readZipEntries(descriptor), /data descriptor/);
+});
+
+test('reads ZIP entries with signed and unsigned data descriptors', () => {
+  for (const method of [0, 8]) {
+    for (const signature of [true, false]) {
+      const entries = readZipEntries(
+        zipDataDescriptorEntry({ name: 'article.json', data: '{"ok":true}', method, signature }),
+      );
+      assert.equal(entries.length, 1);
+      assert.equal(entries[0].name, 'article.json');
+      assert.equal(entries[0].data.toString(), '{"ok":true}');
+    }
+  }
 });
 
 test('rejects traversal and absolute archive paths', () => {
