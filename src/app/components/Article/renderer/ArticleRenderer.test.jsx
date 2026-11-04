@@ -1,3 +1,4 @@
+/* eslint-disable testing-library/no-node-access, testing-library/no-container, no-script-url -- DOM structure and hostile URL assertions are intentional in renderer regression tests. */
 import { render, screen } from '@testing-library/react';
 
 import ArticleRenderer from './ArticleRenderer';
