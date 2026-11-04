@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useBlogArticles } from '../../hooks/useBlog';
@@ -8,6 +8,7 @@ import styles from './Article.module.css';
 
 const Articles = () => {
   const { data: articles = [], isLoading, isError, error, refetch } = useBlogArticles();
+  const [activeTopic, setActiveTopic] = useState(null);
 
   const topics = useMemo(() => {
     const names = new Map();
@@ -17,6 +18,17 @@ const Articles = () => {
     }
     return Array.from(names, ([name, count]) => ({ name, count }));
   }, [articles]);
+
+  const visibleArticles = useMemo(() => {
+    if (!activeTopic) return articles;
+    return articles.filter((article) => article.topic_name === activeTopic);
+  }, [activeTopic, articles]);
+
+  useEffect(() => {
+    if (activeTopic && !topics.some((topic) => topic.name === activeTopic)) {
+      setActiveTopic(null);
+    }
+  }, [activeTopic, topics]);
 
   return (
     <div className={styles.articlesPage}>
@@ -62,9 +74,38 @@ const Articles = () => {
               </div>
             )}
 
-            {!isLoading && !isError && articles.length > 0 && (
+            {!isLoading && !isError && activeTopic && (
+              <div className={styles.activeFilter}>
+                <span>
+                  Категория: <strong>{activeTopic}</strong>
+                </span>
+                <button
+                  type="button"
+                  className={styles.activeFilterReset}
+                  onClick={() => setActiveTopic(null)}
+                >
+                  Сбросить
+                </button>
+              </div>
+            )}
+
+            {!isLoading && !isError && articles.length > 0 && visibleArticles.length === 0 && (
+              <div className={styles.emptyState}>
+                <h2>В этой категории пока нет статей</h2>
+                <p>Попробуйте выбрать другую категорию или сбросить фильтр.</p>
+                <button
+                  type="button"
+                  className={styles.retryButton}
+                  onClick={() => setActiveTopic(null)}
+                >
+                  Все статьи
+                </button>
+              </div>
+            )}
+
+            {!isLoading && !isError && visibleArticles.length > 0 && (
               <div className={styles.articlesGrid}>
-                {articles.map((article) => (
+                {visibleArticles.map((article) => (
                   <BlogArticleCard article={article} key={article.id} />
                 ))}
               </div>
@@ -74,15 +115,36 @@ const Articles = () => {
           <aside className={styles.articlesAside}>
             <p className={styles.asideTitle}>Категории</p>
             {topics.length === 0 && <p className={styles.asideMuted}>Нет категорий</p>}
+            <button
+              type="button"
+              className={`${styles.asideItem} ${!activeTopic ? styles.asideItemSelected : ''}`}
+              aria-pressed={!activeTopic}
+              onClick={() => setActiveTopic(null)}
+            >
+              <span>Все статьи</span>
+              <span>{articles.length}</span>
+            </button>
             {topics.map((topic) => (
-              <p className={styles.asideItem} key={topic.name}>
+              <button
+                type="button"
+                className={`${styles.asideItem} ${activeTopic === topic.name ? styles.asideItemSelected : ''}`}
+                aria-pressed={activeTopic === topic.name}
+                key={topic.name}
+                onClick={() => setActiveTopic(topic.name)}
+              >
                 <span>{topic.name}</span>
                 <span>{topic.count}</span>
-              </p>
+              </button>
             ))}
-            <Link className={styles.asideFooterLink} to="/articles">
-              Все статьи
-            </Link>
+            {activeTopic && (
+              <button
+                type="button"
+                className={styles.asideFooterLink}
+                onClick={() => setActiveTopic(null)}
+              >
+                Сбросить фильтр
+              </button>
+            )}
           </aside>
         </div>
       </div>

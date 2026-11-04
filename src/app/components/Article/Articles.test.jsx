@@ -1,0 +1,62 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
+
+import Articles from './Articles';
+
+jest.mock('../../hooks/useBlog', () => ({
+  useBlogArticles: () => ({
+    data: [
+      {
+        id: 1,
+        topic_name: 'Ремонт бытовой техники',
+        title: 'Чайник не включается',
+        excerpt: 'Проверка чайника',
+        cover_url: null,
+        author: { id: 0, name: 'Редакция', avatar: '', role: 0 },
+        created_at: '2026-11-04T10:00:00Z',
+        updated_at: null,
+        comments_count: 0,
+      },
+      {
+        id: 2,
+        topic_name: 'Ремонт смартфонов',
+        title: 'Смартфон не заряжается',
+        excerpt: 'Проверка смартфона',
+        cover_url: null,
+        author: { id: 0, name: 'Редакция', avatar: '', role: 0 },
+        created_at: '2026-11-04T10:00:00Z',
+        updated_at: null,
+        comments_count: 0,
+      },
+    ],
+    isLoading: false,
+    isError: false,
+    error: null,
+    refetch: jest.fn(),
+  }),
+}));
+
+describe('Articles catalog', () => {
+  it('filters articles by category and resets the filter', async () => {
+    render(
+      <MemoryRouter>
+        <Articles />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Чайник не включается' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Ремонт смартфонов/ }));
+
+    expect(screen.queryByRole('heading', { name: 'Чайник не включается' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+    expect(screen.getByText('Категория:')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Сбросить' }));
+
+    expect(screen.getByRole('heading', { name: 'Чайник не включается' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+  });
+});

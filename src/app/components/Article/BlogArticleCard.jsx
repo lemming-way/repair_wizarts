@@ -28,7 +28,7 @@ function BlogArticleCard({ article }) {
           <div className={styles.articleCardMeta}>
             <span>
               <CalendarIcon />
-              {formatDate(article.created_at)}
+              {formatDate(article.published_at || article.created_at)}
             </span>
             <span>
               <CommentIcon />

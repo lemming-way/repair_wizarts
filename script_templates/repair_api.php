@@ -342,20 +342,42 @@ $out = call_user_func(function() {
   };
 
   $blog_lock_comment = function($comment_id, $user_id) use($query, $query_one, $query_transaction, $die, $blog_actor_id) {
-    $article_id = (int)$query_one(
-      'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:id',
-      [ 'id' => $comment_id ]
+    // Читаем метаданные без блокировки, чтобы выбрать правильную область lock.
+    $meta = $query_one(
+      'SELECT `id_blog_post` AS `article_id`,`parent_id` FROM `blog_comment` WHERE `id_blog_comment`=:id',
+      [ 'id' => $comment_id ],
+      [ 'numeric_fields' => [ 'article_id', 'parent_id' ] ]
     );
-    if ($article_id <= 0) $die(404, 'Comment not found.');
+    if (!$meta) $die(404, 'Comment not found.');
+
+    $article_id = (int)$meta['article_id'];
+    $parent_id = $meta['parent_id'] === null ? null : (int)$meta['parent_id'];
 
     $user_id = $blog_actor_id($article_id, $user_id);
     if ($user_id <= 0) $die(403, 'Unauthorized.');
 
     $query_transaction();
-    $query(
-      'SELECT `id_blog_post` FROM `blog_post` WHERE `id_blog_post`=:article FOR UPDATE',
-      [ 'article' => $article_id ]
-    );
+
+    if ($parent_id === null) {
+      // Корневые комментарии: блокируем статью, чтобы сериализовать
+      // изменения корневой группы.
+      $query(
+        'SELECT `id_blog_post` FROM `blog_post` WHERE `id_blog_post`=:article FOR UPDATE',
+        [ 'article' => $article_id ]
+      );
+    }
+    else {
+      // Ответы: блокируем только родительский комментарий, чтобы
+      // независимые ветки одной статьи не ждали друг друга.
+      $parent_article_id = $query_one(
+        'SELECT `id_blog_post` FROM `blog_comment` WHERE `id_blog_comment`=:parent FOR UPDATE',
+        [ 'parent' => $parent_id ]
+      );
+      if ((int)$parent_article_id !== $article_id) {
+        $die(409, 'Parent comment belongs to another article.');
+      }
+    }
+
     $comment = $query_one(
       'SELECT `id_blog_post` AS `article_id`,`parent_id`,`id_user`,`deleted` ' .
       'FROM `blog_comment` WHERE `id_blog_comment`=:id FOR UPDATE',
@@ -366,20 +388,15 @@ $out = call_user_func(function() {
     if ((int)$comment['id_user'] !== (int)$user_id) $die(403, 'You can only change your own comments.');
     if ((int)$comment['deleted'] !== 0) $die(400, 'Comment is deleted.');
 
-    $children_count = $query_one(
-      'SELECT COUNT(1) AS `children_count` FROM `blog_comment` WHERE `parent_id`=:id',
-      [ 'id' => $comment_id ],
-      [ 'numeric_fields' => [ 'children_count' ] ]
-    );
-    if ((int)$children_count > 0) $die(400, 'Only the last nested comment in a branch can be changed.');
-
+    // Менять можно последний комментарий в своей группе (article_id, parent_id),
+    // даже если у него уже есть ответы.
     $last_id = $query_one(
       'SELECT MAX(`id_blog_comment`) AS `last_id` FROM `blog_comment` ' .
       'WHERE `id_blog_post`=:article AND ((`parent_id` IS NULL AND :parent IS NULL) OR `parent_id`=:parent)',
       [ 'article' => $article_id, 'parent' => $comment['parent_id'] ],
       [ 'numeric_fields' => [ 'last_id' ] ]
     );
-    if ((int)$last_id !== (int)$comment_id) $die(400, 'Only the last nested comment in a branch can be changed.');
+    if ((int)$last_id !== (int)$comment_id) $die(400, 'Only the latest comment in its group can be changed.');
 
     $comment['actor_id'] = $user_id;
     return $comment;
@@ -3032,7 +3049,6 @@ $out = call_user_func(function() {
           'DATE_FORMAT(CONVERT_TZ(`c`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
           'DATE_FORMAT(CONVERT_TZ(`c`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
           'MAX(`c`.`id_blog_comment`) OVER (PARTITION BY `c`.`id_blog_post`,`c`.`parent_id`) AS `last_id`,' .
-          '(SELECT COUNT(1) FROM `blog_comment` `ch` WHERE `ch`.`parent_id`=`c`.`id_blog_comment`) AS `children_count`,' .
           '`u`.`name` AS `author_name`,' .
           '`u`.`middle` AS `author_middle`,' .
           '`u`.`family` AS `author_family`,' .
@@ -3048,7 +3064,7 @@ $out = call_user_func(function() {
       $comments = [];
       foreach ($result as $row) {
         $deleted = (int)$row['deleted'] === 1;
-        $is_last = (int)$row['id'] === (int)$row['last_id'] && (int)$row['children_count'] === 0;
+        $is_last = (int)$row['id'] === (int)$row['last_id'];
         $can_change = !$deleted && (int)$row['author_id'] === $viewer_id && $is_last;
         $comments[] = [
           'id' => (int)$row['id'],

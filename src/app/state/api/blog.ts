@@ -44,6 +44,7 @@ export type BlogArticle = {
   cover_url: string | null;
   author: BlogAuthor;
   created_at: string;
+  published_at?: string | null;
   updated_at: string | null;
   comments_count: number;
   format_version?: string;

@@ -3,7 +3,7 @@
  *
  * Пока статьи не импортированы в БД, комментарии хранятся в localStorage,
  * чтобы интерфейс оставался рабочим. Правила те же, что на бэкенде:
- * менять можно только свой последний комментарий в ветке.
+ * менять можно только свой последний комментарий в своей группе.
  */
 import type { BlogAuthor, BlogComment } from './blog';
 
@@ -65,7 +65,6 @@ function toBlogComment(
   comments: StoredComment[],
   viewerId: number,
 ): BlogComment {
-  const children = comments.filter((item) => item.parent_id === comment.id);
   const siblings = comments.filter(
     (item) => item.article_id === comment.article_id && item.parent_id === comment.parent_id,
   );
@@ -74,7 +73,6 @@ function toBlogComment(
     !comment.deleted &&
     viewerId > 0 &&
     comment.author.id === viewerId &&
-    children.length === 0 &&
     comment.id === lastSiblingId;
 
   return {
@@ -113,8 +111,12 @@ export function addLocalBlogPost(params: {
 
   const state = cloneState();
   const parentId = params.parentId ?? null;
-  if (parentId !== null && !state.comments.some((comment) => comment.id === parentId)) {
-    throw new Error('Родительский комментарий не найден.');
+  if (parentId !== null) {
+    const parent = state.comments.find((comment) => comment.id === parentId);
+    if (!parent) throw new Error('Родительский комментарий не найден.');
+    if (parent.article_id !== params.articleId) {
+      throw new Error('Родительский комментарий относится к другой статье.');
+    }
   }
 
   const comment: StoredComment = {
@@ -142,13 +144,12 @@ function findEditableComment(state: StoredState, id: number, viewerId: number): 
   }
   if (comment.deleted) throw new Error('Комментарий уже удалён.');
 
-  const children = state.comments.filter((item) => item.parent_id === id);
   const siblings = state.comments.filter(
     (item) => item.article_id === comment.article_id && item.parent_id === comment.parent_id,
   );
   const lastSiblingId = Math.max(...siblings.map((item) => item.id));
-  if (children.length > 0 || lastSiblingId !== id) {
-    throw new Error('Можно изменять только последний комментарий в ветке.');
+  if (lastSiblingId !== id) {
+    throw new Error('Можно изменять только последний комментарий в своей группе.');
   }
 
   return comment;

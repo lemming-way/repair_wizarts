@@ -191,7 +191,7 @@ function ArticleComment({
 
           {mode === 'idle' && (
             <div className={styles.commentActions}>
-              {!comment.deleted && canReply && (
+              {canReply && (
                 <button
                   type="button"
                   className={styles.textButton}

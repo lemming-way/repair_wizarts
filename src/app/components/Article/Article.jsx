@@ -101,7 +101,9 @@ const Article = () => {
 
   const otherArticles = articles.filter((item) => item.id !== article.id).slice(0, 3);
   const serviceLink = user.id ? '/client/requests/create/data' : '/register/client';
-  const publishedAt = formatDate(article.created_at, 'ru', 'long').replace(' г.', '');
+  const publicationDateValue = article.published_at || article.created_at;
+  const publicationDate = formatDate(publicationDateValue, 'ru', 'long').replace(' г.', '');
+  const publicationLabel = article.published_at ? 'Опубликовано' : 'Создано';
 
   return (
     <div className={styles.articlesPage}>
@@ -116,7 +118,7 @@ const Article = () => {
           <div className={styles.articleHeroMeta}>
             <span>
               <CalendarIcon />
-              {publishedAt}
+              {publicationLabel}: {publicationDate}
             </span>
             <span>
               <CommentIcon />
@@ -139,7 +141,9 @@ const Article = () => {
                     {article.author.role === 2 && <span> (Мастер)</span>}
                     {article.author.role === 1 && <span> (Клиент)</span>}
                   </p>
-                  <p className={styles.articleAuthorDate}>Опубликовано {publishedAt}</p>
+                  <p className={styles.articleAuthorDate}>
+                    {publicationLabel}: {publicationDate}
+                  </p>
                 </div>
               </div>
 
