@@ -1,4 +1,4 @@
-import { getBlocksPlainText, getYouTubeEmbedUrl, resolveArticleMedia } from './articleContent';
+import { getBlocksPlainText, getYouTubeEmbedUrl, isSafeMediaUrl, resolveArticleMedia } from './articleContent';
 
 describe('article content helpers', () => {
   it('builds YouTube embed urls for supported link formats', () => {
@@ -37,6 +37,20 @@ describe('article content helpers', () => {
     expect(resolveArticleMedia('media/a.png')).toBe(
       'https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png',
     );
+    expect(resolveArticleMedia('javascript:alert(1)', '/articles/x/')).toBe('');
+    expect(resolveArticleMedia('vbscript:msgbox(1)', '/articles/x/')).toBe('');
+    expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
+    expect(resolveArticleMedia('data:image/png;base64,AAAA')).toBe('data:image/png;base64,AAAA');
+    expect(resolveArticleMedia('data:text/html;base64,AAAA')).toBe('');
+  });
+
+  it('allows only safe media URL schemes', () => {
+    expect(isSafeMediaUrl('/articles/a/media/photo.jpg')).toBe(true);
+    expect(isSafeMediaUrl('https://cdn.example.com/photo.jpg')).toBe(true);
+    expect(isSafeMediaUrl('data:image/png;base64,AAAA')).toBe(true);
+    expect(isSafeMediaUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeMediaUrl('vbscript:msgbox(1)')).toBe(false);
+    expect(isSafeMediaUrl('data:text/html;base64,AAAA')).toBe(false);
   });
 
   it('collects plain text from all display blocks', () => {
