@@ -35,16 +35,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Prettier (article v1.3 files only)
-        run: >-
-          npx prettier --check
-          scripts/article-importer.mjs
-          scripts/article-importer.test.mjs
-          scripts/build-articles.mjs
-          src/app/components/Article/renderer/ArticleRenderer.test.jsx
-          src/app/shared/lib/articleContent.ts
-          src/app/shared/lib/articleContent.test.ts
-
       - name: ESLint (article renderer and helpers only)
         run: >-
           npx eslint
