@@ -141,6 +141,11 @@ $out = call_user_func(function() {
     }
 
     foreach ($data as $key => &$value) {
+      // NULL — валидное значение параметра (например, parent_id корневого
+      // комментария). Не превращаем его в строку и подставляем как SQL NULL.
+      if (is_null($value)) {
+        continue;
+      }
       if (in_array($key, $text_fields, true)) {
         $value = "'" . real_escape_string(strval($value)) . "'";
         continue;
@@ -177,7 +182,7 @@ $out = call_user_func(function() {
         if (!array_key_exists($matches[1], $data)) {
           throw new Exception("Variable not set: $matches[1]", 400);
         }
-        return $data[$matches[1]];
+        return is_null($data[$matches[1]]) ? 'NULL' : $data[$matches[1]];
       },
       $sql
     );
@@ -268,21 +273,6 @@ $out = call_user_func(function() {
   $blog_datetime = function($value) {
     if (!$value || strpos($value, '0000-00-00') === 0) return null;
     return $value;
-  };
-
-  // Гостевой режим тестирования комментариев отключён.
-  // Изменять комментарии может только авторизованный пользователь.
-  $blog_guest_testing = false;
-
-  $blog_actor_id = function($article_id, $user_id) use($query_one, $blog_guest_testing) {
-    $user_id = (int)$user_id;
-    if ($user_id > 0) return $user_id;
-    if (!$blog_guest_testing) return 0;
-
-    return (int)$query_one(
-      'SELECT `id_user` FROM `blog_post` WHERE `id_blog_post`=:article',
-      [ 'article' => (int)$article_id ]
-    );
   };
 
   // Метаданные blog_post: схема может отличаться между окружениями.
@@ -541,7 +531,7 @@ $out = call_user_func(function() {
     return $article;
   };
 
-  $blog_lock_comment = function($comment_id, $user_id) use($query, $query_one, $query_transaction, $die, $blog_actor_id) {
+  $blog_lock_comment = function($comment_id, $user_id) use($query, $query_one, $query_transaction, $die) {
     // Читаем метаданные без блокировки, чтобы выбрать правильную область lock.
     $meta = $query_one(
       'SELECT `id_blog_post` AS `article_id`,`parent_id` FROM `blog_comment` WHERE `id_blog_comment`=:id',
@@ -553,8 +543,8 @@ $out = call_user_func(function() {
     $article_id = (int)$meta['article_id'];
     $parent_id = $meta['parent_id'] === null ? null : (int)$meta['parent_id'];
 
-    $user_id = $blog_actor_id($article_id, $user_id);
-    if ($user_id <= 0) $die(403, 'Unauthorized.');
+    $user_id = (int)$user_id;
+    if ($user_id <= 0) $die(401, 'Unauthorized.');
 
     $query_transaction();
 
@@ -3272,7 +3262,7 @@ $out = call_user_func(function() {
         'ORDER BY `c`.`id_blog_comment` ASC',
         [ 'article' => $article_id ]
       );
-      $viewer_id = $blog_actor_id($article_id, $context['u_id']);
+      $viewer_id = (int)$context['u_id'];
       $comments = [];
       foreach ($result as $row) {
         $deleted = (int)$row['deleted'] === 1;
@@ -3295,6 +3285,7 @@ $out = call_user_func(function() {
 
     // Добавить комментарий или ответ
     case 'addBlogPost':
+      if ((int)$context['u_id'] <= 0) $die(401, 'Unauthorized.');
       if ($blog_public_config_error) $die(500, $blog_public_config_error);
       $article_id = isset($data['article_id']) ? intval($data['article_id']) : (isset($data['id_blog_post']) ? intval($data['id_blog_post']) : 0);
       if ($article_id <= 0) $die(400, 'Article ID not set.');
@@ -3338,11 +3329,7 @@ $out = call_user_func(function() {
       }
 
       $actor_id = (int)$context['u_id'];
-      if ($actor_id <= 0) {
-        if (!$blog_guest_testing) $die(403, 'Unauthorized.');
-        $actor_id = (int)$article['id_user'];
-      }
-      if ($actor_id <= 0) $die(403, 'Unauthorized.');
+      if ($actor_id <= 0) $die(401, 'Unauthorized.');
 
       $result = $query(
         'INSERT INTO `blog_comment`(`id_blog_post`,`parent_id`,`id_user`,`value`,`deleted`,`create_datetime`) ' .
@@ -3356,6 +3343,7 @@ $out = call_user_func(function() {
 
     // Редактировать комментарий
     case 'editBlogPost':
+      if ((int)$context['u_id'] <= 0) $die(401, 'Unauthorized.');
       $comment_id = isset($data['id']) ? intval($data['id']) : 0;
       if ($comment_id <= 0) $die(400, 'Comment ID not set.');
       $text = isset($data['text']) ? trim(strval($data['text'])) : '';
@@ -3374,6 +3362,7 @@ $out = call_user_func(function() {
 
     // Удалить комментарий (мягко, чтобы сохранить ветку)
     case 'deleteBlogPost':
+      if ((int)$context['u_id'] <= 0) $die(401, 'Unauthorized.');
       $comment_id = isset($data['id']) ? intval($data['id']) : 0;
       if ($comment_id <= 0) $die(400, 'Comment ID not set.');
 
