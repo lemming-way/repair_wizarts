@@ -96,6 +96,25 @@ test('reads ZIP entries with signed and unsigned data descriptors', () => {
   }
 });
 
+
+test('ignores a local-header signature embedded in unsigned-descriptor file data', () => {
+  const payload = Buffer.concat([
+    Buffer.from('prefix-data-'),
+    Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+    Buffer.from('-not-a-real-header-suffix'),
+  ]);
+  const entries = readZipEntries(
+    zipDataDescriptorEntry({
+      name: 'embedded-signature.bin',
+      data: payload.toString('latin1'),
+      method: 0,
+      signature: false,
+    }),
+  );
+  assert.equal(entries.length, 1);
+  assert.deepEqual(entries[0].data, payload);
+});
+
 test('supports empty files with signed and unsigned data descriptors', () => {
   for (const signature of [true, false]) {
     const entries = readZipEntries(
