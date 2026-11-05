@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
-import { crc32, readArticleZip } from './article-importer.mjs';
+import { crc32, readArticleZip, readZipEntries } from './article-importer.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REGRESSION_DIR = path.join(ROOT, 'docs', 'regression', 'v1.3');
@@ -55,6 +55,59 @@ function collectMediaReferences(article) {
   visit(article.technical_knowledge);
 
   return [...new Set(references)];
+}
+
+function createStandardZip(entries) {
+  const localParts = [];
+  const centralParts = [];
+  let localOffset = 0;
+
+  for (const { name, data } of entries) {
+    const filename = Buffer.from(name);
+    const source = Buffer.from(data);
+    const checksum = crc32(source);
+
+    const localHeader = Buffer.alloc(30);
+    localHeader.writeUInt32LE(0x04034b50, 0);
+    localHeader.writeUInt16LE(20, 4);
+    localHeader.writeUInt16LE(0, 6);
+    localHeader.writeUInt16LE(0, 8);
+    localHeader.writeUInt32LE(checksum, 14);
+    localHeader.writeUInt32LE(source.length, 18);
+    localHeader.writeUInt32LE(source.length, 22);
+    localHeader.writeUInt16LE(filename.length, 26);
+    localHeader.writeUInt16LE(0, 28);
+    localParts.push(localHeader, filename, source);
+
+    const centralHeader = Buffer.alloc(46);
+    centralHeader.writeUInt32LE(0x02014b50, 0);
+    centralHeader.writeUInt16LE(20, 4);
+    centralHeader.writeUInt16LE(20, 6);
+    centralHeader.writeUInt16LE(0, 8);
+    centralHeader.writeUInt16LE(0, 10);
+    centralHeader.writeUInt32LE(checksum, 16);
+    centralHeader.writeUInt32LE(source.length, 20);
+    centralHeader.writeUInt32LE(source.length, 24);
+    centralHeader.writeUInt16LE(filename.length, 28);
+    centralHeader.writeUInt16LE(0, 30);
+    centralHeader.writeUInt16LE(0, 32);
+    centralHeader.writeUInt16LE(0, 34);
+    centralHeader.writeUInt16LE(0, 36);
+    centralHeader.writeUInt32LE(0, 38);
+    centralHeader.writeUInt32LE(localOffset, 42);
+    centralParts.push(centralHeader, filename);
+
+    localOffset += localHeader.length + filename.length + source.length;
+  }
+
+  const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0);
+  end.writeUInt16LE(entries.length, 8);
+  end.writeUInt16LE(entries.length, 10);
+  end.writeUInt32LE(centralSize, 12);
+  end.writeUInt32LE(localOffset, 16);
+  return Buffer.concat([...localParts, ...centralParts, end]);
 }
 
 function createLocalZip(entries) {
@@ -197,10 +250,37 @@ test('build script does not erase previous output when an article JSON is invali
   );
 });
 
+
+test('reads a standard ZIP with a valid central directory', (t) => {
+  const targetDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rw-standard-zip-'));
+  t.after(() => fs.rmSync(targetDir, { recursive: true, force: true }));
+  const zipPath = path.join(targetDir, 'standard.zip');
+  fs.writeFileSync(
+    zipPath,
+    createStandardZip([
+      { name: 'article.json', data: '{"format_version":"1.3"}' },
+      { name: 'media/photo.txt', data: 'standard ZIP media' },
+    ]),
+  );
+
+  const entries = readZipEntries(fs.readFileSync(zipPath));
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].data.toString(), '{"format_version":"1.3"}');
+  assert.equal(entries[1].data.toString(), 'standard ZIP media');
+
+  const unzip = spawnSync('unzip', ['-t', zipPath], { encoding: 'utf8' });
+  if (unzip.error?.code === 'ENOENT') {
+    t.skip('unzip is not installed in this environment');
+    return;
+  }
+  assert.equal(unzip.status, 0, unzip.stdout + '\n' + unzip.stderr);
+});
+
 test(
   'regression ZIP files are readable by standard unzip tools',
   { todo: 'Enable as a required check after confirming/rebuilding the regression archives.' },
   (t) => {
+    const failures = [];
     for (const slug of ARTICLE_SLUGS) {
       const zipPath = path.join(REGRESSION_DIR, slug + '.zip');
       const result = spawnSync('unzip', ['-t', zipPath], { encoding: 'utf8' });
@@ -208,7 +288,10 @@ test(
         t.skip('unzip is not installed in this environment');
         return;
       }
-      assert.equal(result.status, 0, slug + '.zip:\n' + result.stdout + '\n' + result.stderr);
+      if (result.status !== 0) {
+        failures.push(slug + '.zip:\n' + result.stdout + '\n' + result.stderr);
+      }
     }
+    assert.deepEqual(failures, [], failures.join('\n\n'));
   },
 );
