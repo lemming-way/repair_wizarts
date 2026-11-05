@@ -49,7 +49,7 @@
     "ci:check": "npm run lint && npm run format:check && npm run typecheck && npm run test -- --watchAll=false --coverage",
     "analyze": "source-map-explorer 'build/static/js/*.js'",
     "size": "size-limit",
-    "test:articles:importer": "node --test scripts/article-importer.test.mjs"
+    "test:articles:importer": "node --test scripts/article-importer.test.mjs scripts/article-pipeline.test.mjs"
   },
   "eslintConfig": {
     "extends": [
