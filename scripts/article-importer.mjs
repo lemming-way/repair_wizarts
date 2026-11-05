@@ -108,36 +108,39 @@ function readDataDescriptorEntry(buffer, dataStart, name, method) {
 
   // Вариант без сигнатуры: 12 байт (crc32, compressed size, uncompressed size)
   // находятся непосредственно перед следующим локальным/центральным заголовком.
-  let nextHeader = -1;
-  for (let index = dataStart; index + 4 <= buffer.length; index += 1) {
-    const signature = buffer.readUInt32LE(index);
+  let crcMismatch = false;
+  for (let nextHeader = dataStart + 12; nextHeader + 4 <= buffer.length; nextHeader += 1) {
+    const signature = buffer.readUInt32LE(nextHeader);
     if (
-      signature === LOCAL_ZIP_MAGIC ||
-      signature === CENTRAL_DIRECTORY_MAGIC ||
-      signature === END_OF_CENTRAL_DIRECTORY_MAGIC
+      signature !== LOCAL_ZIP_MAGIC &&
+      signature !== CENTRAL_DIRECTORY_MAGIC &&
+      signature !== END_OF_CENTRAL_DIRECTORY_MAGIC
     ) {
-      nextHeader = index;
-      break;
+      continue;
     }
-  }
 
-  if (nextHeader !== -1 && nextHeader - dataStart >= 12) {
     const descriptorOffset = nextHeader - 12;
     const descriptorCrc = buffer.readUInt32LE(descriptorOffset);
     const compressedSize = buffer.readUInt32LE(descriptorOffset + 4);
     const uncompressedSize = buffer.readUInt32LE(descriptorOffset + 8);
-    if (dataStart + compressedSize === descriptorOffset) {
-      const raw = buffer.subarray(dataStart, descriptorOffset);
-      const data = unpackEntry(raw, method, name);
-      if (data.length === uncompressedSize) {
-        if (crc32(data) !== descriptorCrc) {
-          fail(`ZIP CRC32 mismatch for "${name}".`);
-        }
-        return { data, nextOffset: nextHeader };
-      }
+    if (dataStart + compressedSize !== descriptorOffset) continue;
+
+    const raw = buffer.subarray(dataStart, descriptorOffset);
+    let data;
+    try {
+      data = unpackEntry(raw, method, name);
+    } catch {
+      continue;
     }
+    if (data.length !== uncompressedSize) continue;
+    if (crc32(data) !== descriptorCrc) {
+      crcMismatch = true;
+      continue;
+    }
+    return { data, nextOffset: nextHeader };
   }
 
+  if (crcMismatch) fail(`ZIP CRC32 mismatch for "${name}".`);
   fail(`ZIP entry "${name}" has an invalid data descriptor.`);
 }
 
