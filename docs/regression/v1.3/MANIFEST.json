@@ -6,19 +6,19 @@
       "slug": "smartphone",
       "blocks": 11,
       "assets": 3,
-      "zip_bytes": 12582
+      "zip_bytes": 12590
     },
     {
       "slug": "electric_kettle",
       "blocks": 11,
       "assets": 2,
-      "zip_bytes": 11656
+      "zip_bytes": 11662
     },
     {
       "slug": "toilet_cistern",
       "blocks": 10,
       "assets": 2,
-      "zip_bytes": 11653
+      "zip_bytes": 11659
     }
   ],
   "files": [
@@ -44,8 +44,8 @@
     },
     {
       "path": "docs/regression/v1.3/smartphone.zip",
-      "size_bytes": 12582,
-      "crc32": "3338e2b9"
+      "size_bytes": 12590,
+      "crc32": "52292a66"
     },
     {
       "path": "docs/regression/v1.3/electric_kettle/article.json",
@@ -64,8 +64,8 @@
     },
     {
       "path": "docs/regression/v1.3/electric_kettle.zip",
-      "size_bytes": 11656,
-      "crc32": "ac3f7bee"
+      "size_bytes": 11662,
+      "crc32": "98a7f4e4"
     },
     {
       "path": "docs/regression/v1.3/toilet_cistern/article.json",
@@ -84,18 +84,18 @@
     },
     {
       "path": "docs/regression/v1.3/toilet_cistern.zip",
-      "size_bytes": 11653,
-      "crc32": "fedd6914"
+      "size_bytes": 11659,
+      "crc32": "08b021f1"
     },
     {
       "path": "docs/regression/v1.3/README.md",
-      "size_bytes": 3271,
-      "crc32": "4213dbbb"
+      "size_bytes": 3186,
+      "crc32": "ba9fdcf5"
     },
     {
       "path": "docs/regression/v1.3/COVERAGE_MATRIX.md",
-      "size_bytes": 18991,
-      "crc32": "a04e2a0f"
+      "size_bytes": 18578,
+      "crc32": "c323d51c"
     }
   ]
 }

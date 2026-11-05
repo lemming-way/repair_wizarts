@@ -47,7 +47,11 @@ function collectMediaReferences(article) {
 
   const visit = (value) => {
     if (!value || typeof value !== 'object') return;
-    if (!Array.isArray(value) && typeof value.file === 'string' && value.file.startsWith('media/')) {
+    if (
+      !Array.isArray(value) &&
+      typeof value.file === 'string' &&
+      value.file.startsWith('media/')
+    ) {
       references.push(value.file);
     }
     for (const child of Object.values(value)) visit(child);
@@ -137,17 +141,14 @@ function copyBuildScripts(targetRoot) {
 }
 
 function runBuild(targetRoot) {
-  return spawnSync(
-    process.execPath,
-    [path.join(targetRoot, 'scripts', 'build-articles.mjs')],
-    { cwd: targetRoot, encoding: 'utf8' },
-  );
+  return spawnSync(process.execPath, [path.join(targetRoot, 'scripts', 'build-articles.mjs')], {
+    cwd: targetRoot,
+    encoding: 'utf8',
+  });
 }
 
 test('regression ZIP pack covers all 12 block types and all referenced media', () => {
-  const manifest = JSON.parse(
-    fs.readFileSync(path.join(REGRESSION_DIR, 'MANIFEST.json'), 'utf8'),
-  );
+  const manifest = JSON.parse(fs.readFileSync(path.join(REGRESSION_DIR, 'MANIFEST.json'), 'utf8'));
   const allTypes = new Set();
 
   for (const slug of ARTICLE_SLUGS) {
@@ -190,10 +191,7 @@ test('build script creates a catalog and preserves article JSON and media for al
   const fixtureDir = path.join(targetRoot, 'docs', 'regression', 'v1.3');
   fs.mkdirSync(fixtureDir, { recursive: true });
   for (const slug of ARTICLE_SLUGS) {
-    fs.copyFileSync(
-      path.join(REGRESSION_DIR, slug + '.zip'),
-      path.join(fixtureDir, slug + '.zip'),
-    );
+    fs.copyFileSync(path.join(REGRESSION_DIR, slug + '.zip'), path.join(fixtureDir, slug + '.zip'));
   }
 
   const result = runBuild(targetRoot);
@@ -244,12 +242,8 @@ test('build script does not erase previous output when an article JSON is invali
   const result = runBuild(targetRoot);
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /JSON|Unexpected end|Expected property name/);
-  assert.equal(
-    fs.readFileSync(path.join(outputDir, 'keep-me.txt'), 'utf8'),
-    'previous build',
-  );
+  assert.equal(fs.readFileSync(path.join(outputDir, 'keep-me.txt'), 'utf8'), 'previous build');
 });
-
 
 test('reads a standard ZIP with a valid central directory', (t) => {
   const targetDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rw-standard-zip-'));
@@ -276,22 +270,18 @@ test('reads a standard ZIP with a valid central directory', (t) => {
   assert.equal(unzip.status, 0, unzip.stdout + '\n' + unzip.stderr);
 });
 
-test(
-  'regression ZIP files are readable by standard unzip tools',
-  { todo: 'Enable as a required check after confirming/rebuilding the regression archives.' },
-  (t) => {
-    const failures = [];
-    for (const slug of ARTICLE_SLUGS) {
-      const zipPath = path.join(REGRESSION_DIR, slug + '.zip');
-      const result = spawnSync('unzip', ['-t', zipPath], { encoding: 'utf8' });
-      if (result.error?.code === 'ENOENT') {
-        t.skip('unzip is not installed in this environment');
-        return;
-      }
-      if (result.status !== 0) {
-        failures.push(slug + '.zip:\n' + result.stdout + '\n' + result.stderr);
-      }
+test('regression ZIP files are readable by standard unzip tools', (t) => {
+  const failures = [];
+  for (const slug of ARTICLE_SLUGS) {
+    const zipPath = path.join(REGRESSION_DIR, slug + '.zip');
+    const result = spawnSync('unzip', ['-t', zipPath], { encoding: 'utf8' });
+    if (result.error?.code === 'ENOENT') {
+      t.skip('unzip is not installed in this environment');
+      return;
     }
-    assert.deepEqual(failures, [], failures.join('\n\n'));
-  },
-);
+    if (result.status !== 0) {
+      failures.push(slug + '.zip:\n' + result.stdout + '\n' + result.stderr);
+    }
+  }
+  assert.deepEqual(failures, [], failures.join('\n\n'));
+});

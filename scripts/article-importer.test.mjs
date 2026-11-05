@@ -153,6 +153,16 @@ test('validates v1.3 root structure, block types and referenced assets', () => {
   );
 });
 
+test('parses the repository regression archives', () => {
+  for (const slug of ['smartphone', 'electric_kettle', 'toilet_cistern']) {
+    const archivePath = path.join(process.cwd(), 'docs', 'regression', 'v1.3', `${slug}.zip`);
+    const imported = readArticleZip(archivePath);
+    assert.equal(imported.slug, slug);
+    assert.ok(imported.article.blocks.length > 0);
+    assert.ok(imported.mediaEntries.length > 0);
+  }
+});
+
 test('imports a valid article ZIP and rejects missing article.json or media', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rw-article-'));
   try {
