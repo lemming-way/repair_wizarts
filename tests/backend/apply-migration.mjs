@@ -49,8 +49,8 @@ try {
   const [userCols] = await connection.query(
     "SELECT COLUMN_NAME, COLUMN_TYPE, COLUMN_KEY FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='users' AND COLUMN_NAME='id_user'"
   );
-  if (postCols.length !== 1 || postCols[0].COLUMN_KEY !== 'PRI' || !/^int\b/i.test(postCols[0].COLUMN_TYPE)) throw new Error('blog_post.id_blog_post is not the expected INT primary key.');
-  if (userCols.length !== 1 || userCols[0].COLUMN_KEY !== 'PRI' || !/^int\b/i.test(userCols[0].COLUMN_TYPE)) throw new Error('users.id_user is not the expected INT primary key.');
+  if (postCols.length !== 1 || postCols[0].COLUMN_KEY !== 'PRI' || postCols[0].COLUMN_TYPE.toLowerCase() !== 'int') throw new Error('blog_post.id_blog_post must be a signed INT primary key to match the migration.');
+  if (userCols.length !== 1 || userCols[0].COLUMN_KEY !== 'PRI' || userCols[0].COLUMN_TYPE.toLowerCase() !== 'int') throw new Error('users.id_user must be a signed INT primary key to match the migration.');
 
   await connection.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -79,7 +79,13 @@ try {
     "SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='blog_comment' ORDER BY ORDINAL_POSITION"
   );
   console.log('blog_comment columns verified: '+verify.map(c => c.COLUMN_NAME).join(', '));
-  if (verify.length !== 9) throw new Error('Unexpected blog_comment column count: '+verify.length);
+  const expectedColumns = ['id_blog_comment','id_blog_post','parent_id','id_user','value','deleted','create_datetime','last_edit_datetime','last_edit_user'];
+  if (verify.map(c => c.COLUMN_NAME).join(',') !== expectedColumns.join(',')) throw new Error('Unexpected blog_comment column layout.');
+  const [foreignKeys] = await connection.query(
+    "SELECT COUNT(*) AS n FROM information_schema.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE() AND TABLE_NAME='blog_comment'"
+  );
+  if (Number(foreignKeys[0].n) !== 4) throw new Error('Expected four blog_comment foreign-key constraints; found '+foreignKeys[0].n+'.');
+  console.log('Foreign keys verified: 4');
   console.log('PASS');
 } finally {
   await connection.end();
