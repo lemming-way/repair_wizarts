@@ -38,13 +38,11 @@ if (parsedBase.protocol !== 'https:') {
 }
 
 const endpoint = `${base}/api/v1/data`;
-const payload = {
-  private: 1,
-  fields: 'script_templates',
-};
-
+// Match the frontend request.ts implementation: each property is a
+// separate form field. Do not wrap these parameters in a JSON "data" field.
 const form = new URLSearchParams({
-  data: JSON.stringify(payload),
+  private: '1',
+  fields: 'script_templates',
   token: process.env.REPAIR_API_TOKEN,
   u_hash: process.env.REPAIR_API_U_HASH,
 });
