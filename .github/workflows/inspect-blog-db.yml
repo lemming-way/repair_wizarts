@@ -23,10 +23,10 @@ jobs:
         run: npm install --prefix .db-deps --no-save --package-lock=false --ignore-scripts mysql2@3.14.1
       - name: Inspect blog schema and existing records (read only)
         env:
-          REPAIR_DB_HOST: \${{ secrets.REPAIR_DB_HOST }}
-          REPAIR_DB_PORT: \${{ secrets.REPAIR_DB_PORT }}
-          REPAIR_DB_NAME: \${{ secrets.REPAIR_DB_NAME }}
-          REPAIR_DB_USER: \${{ secrets.REPAIR_DB_USER }}
-          REPAIR_DB_PASSWORD: \${{ secrets.REPAIR_DB_PASSWORD }}
-          REPAIR_DB_ENVIRONMENT: \${{ vars.REPAIR_DB_ENVIRONMENT }}
+          REPAIR_DB_HOST: ${{ secrets.REPAIR_DB_HOST }}
+          REPAIR_DB_PORT: ${{ secrets.REPAIR_DB_PORT }}
+          REPAIR_DB_NAME: ${{ secrets.REPAIR_DB_NAME }}
+          REPAIR_DB_USER: ${{ secrets.REPAIR_DB_USER }}
+          REPAIR_DB_PASSWORD: ${{ secrets.REPAIR_DB_PASSWORD }}
+          REPAIR_DB_ENVIRONMENT: ${{ vars.REPAIR_DB_ENVIRONMENT }}
         run: node tests/backend/inspect-blog-db.mjs
