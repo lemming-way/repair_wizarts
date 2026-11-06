@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import mysql from 'mysql2/promise';
+import mysql from '../../.db-deps/node_modules/mysql2/promise.js';
 
 const required = ['REPAIR_DB_HOST','REPAIR_DB_PORT','REPAIR_DB_NAME','REPAIR_DB_USER','REPAIR_DB_PASSWORD','REPAIR_DB_ENVIRONMENT'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing DB environment value: ' + key);
