@@ -55,7 +55,8 @@ function check(condition, message) {
 }
 
 const articles = await api('getBlogTopics');
-if (Array.isArray(articles) && articles.length === 0) {\n  console.error('BLOCKED: getBlogTopics returned 0 published DB articles. No comment writes were attempted. Import/publish at least one article into blog_post, then rerun this integration test. The local public/articles catalog is not the MySQL article table.');\n  process.exit(2);\n}\ncheck(Array.isArray(articles) && articles.length > 0, 'getBlogTopics returned an invalid response');
+if (Array.isArray(articles) && articles.length === 0) throw new Error('BLOCKED: getBlogTopics returned 0 published DB articles; no comment writes were attempted. Import/publish at least one article into blog_post, then rerun. Local public/articles is not the MySQL article table.');
+check(Array.isArray(articles) && articles.length > 0, 'getBlogTopics returned an invalid response');
 const initialCounts = new Map(articles.map((a) => [Number(a.id), Number(a.comments_count) || 0]));
 const roots = new Map();
 console.log('Published articles: ' + articles.length);
