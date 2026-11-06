@@ -3,7 +3,8 @@ import fs from 'node:fs';
 
 const required = ['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing API environment value: ' + key);
-const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
+const rawBase = process.env.REPAIR_API_BASE.trim();
+const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 const url = new URL(base + '/api/v1/data');
 if (url.protocol !== 'https:') throw new Error('Refusing non-HTTPS API endpoint');
 
