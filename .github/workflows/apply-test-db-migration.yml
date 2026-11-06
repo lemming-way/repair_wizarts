@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install MySQL driver
-        run: npm install --no-save --ignore-scripts mysql2@3.14.1
+        run: npm install --no-save --package-lock=false --ignore-scripts mysql2@3.14.1
 
       - name: Apply selected migration
         env:
