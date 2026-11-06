@@ -28,14 +28,11 @@ Do not commit credentials to the repository or put them in workflow inputs.
    the repository's default branch. Until then, use the automatic branch-push
    trigger.
 
-The script sends a POST request to `{REPAIR_API_BASE}/api/v1/data` with the
-form-urlencoded `data` field containing:
-
-```json
-{"private":1,"fields":"script_templates"}
-```
-
-The token and user hash are sent as separate form fields. The response body is
+The script sends a POST request to `{REPAIR_API_BASE}/api/v1/data` with
+separate form-urlencoded fields: `private=1`, `fields=script_templates`,
+`token`, and `u_hash`. This matches the frontend implementation in
+`src/app/state/api/request.ts`, which serializes object properties as
+individual form fields rather than nesting them under a JSON `data` field. The response body is
 not printed because it may contain private template data.
 
 ### Safety boundary
