@@ -45,7 +45,7 @@ jobs:
         with:
           node-version: 24
       - name: Install MySQL driver
-        run: npm install --no-save --package-lock=false --ignore-scripts mysql2@3.14.1
+        run: npm install --prefix .db-deps --no-save --package-lock=false --ignore-scripts mysql2@3.14.1
       - name: Inspect article schema and existing rows (read only)
         env:
           REPAIR_DB_HOST: ${{ secrets.REPAIR_DB_HOST }}
