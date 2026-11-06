@@ -21,9 +21,12 @@ Do not commit credentials to the repository or put them in workflow inputs.
 
 ### Run
 
-Open **Actions → Backend read-only smoke test → Run workflow**.
-Select the branch `test/backend-readonly-smoke`, enable the confirmation checkbox,
-and start the workflow.
+1. Add the three secrets above before merging.
+2. Merge the PR into `docs/repair-wizards-article-format-v1.3`. The push to that
+   branch automatically starts the read-only check.
+3. To use **Run workflow** manually, the workflow file must also be present on
+   the repository's default branch. Until then, use the automatic branch-push
+   trigger.
 
 The script sends a POST request to `{REPAIR_API_BASE}/api/v1/data` with the
 form-urlencoded `data` field containing:
