@@ -1,0 +1,42 @@
+name: Apply test database migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration:
+        description: Allowlisted migration to apply
+        required: true
+        type: choice
+        options:
+          - blog_comment
+      confirm_test_database:
+        description: Confirm this targets the isolated TEST database only
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    if: ${{ inputs.confirm_test_database == true }}
+    runs-on: ubuntu-latest
+    environment: test
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MySQL driver
+        run: npm install --no-save --ignore-scripts mysql2@3.14.1
+
+      - name: Apply selected migration
+        env:
+          REPAIR_DB_HOST: ${{ secrets.REPAIR_DB_HOST }}
+          REPAIR_DB_PORT: ${{ secrets.REPAIR_DB_PORT }}
+          REPAIR_DB_NAME: ${{ secrets.REPAIR_DB_NAME }}
+          REPAIR_DB_USER: ${{ secrets.REPAIR_DB_USER }}
+          REPAIR_DB_PASSWORD: ${{ secrets.REPAIR_DB_PASSWORD }}
+          REPAIR_DB_ENVIRONMENT: ${{ vars.REPAIR_DB_ENVIRONMENT }}
+          REPAIR_MIGRATION: ${{ inputs.migration }}
+        run: node tests/backend/apply-migration.mjs
