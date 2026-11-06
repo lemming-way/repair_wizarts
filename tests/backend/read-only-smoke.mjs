@@ -132,6 +132,22 @@ try {
     if (metadata.var === 'repair_api_test') foundTestVar = true;
     console.log(`Template[${index}] metadata: ${JSON.stringify(metadata)}`);
     console.log(`Template[${index}] fields: ${Object.keys(record).sort().join(', ')}`);
+
+    // The API exposes a "file" field, but it may contain PHP source rather
+    // than a filename. Report only its shape and a safe filename if obvious.
+    const fileValue = record.file;
+    if (typeof fileValue === 'string') {
+      const trimmed = fileValue.trim();
+      const isSafeFilename = /^[A-Za-z0-9_.-]+\\.php$/i.test(trimmed);
+      console.log(`Template[${index}] file field: string, ${Buffer.byteLength(fileValue, 'utf8')} bytes`);
+      if (isSafeFilename) {
+        console.log(`Template[${index}] file filename: ${trimmed}`);
+      } else {
+        console.log(`Template[${index}] file field appears to contain content or a non-filename value; source not printed`);
+      }
+    } else {
+      console.log(`Template[${index}] file field type: ${fileValue === null ? 'null' : typeof fileValue}`);
+    }
   }
 
   console.log(`repair_api_test var already present: ${foundTestVar ? 'yes' : 'no'}`);
