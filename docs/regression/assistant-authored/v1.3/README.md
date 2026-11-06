@@ -13,6 +13,6 @@ The articles are test content, not verified repair instructions.
 - `washing_machine_drain.zip` — washing-machine drainage.
 - `bicycle_brakes.zip` — bicycle braking system.
 
-The ZIP files use the v1.3 package structure: root `article.json` and `media/`.
+The ZIP files use the v1.3 package structure: root `article.json` and `media/`. They are stored with the ZIP Store method (no compression) so the fixtures are deterministic and do not depend on a compressor implementation.
 They are intentionally included under `docs/` so `npm run articles:build`
 discovers them together with the freelancer-authored articles.
