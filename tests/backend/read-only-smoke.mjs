@@ -13,6 +13,7 @@
  * or delete templates and does not print credentials or response contents.
  */
 
+async function main() {
 const required = ['REPAIR_API_BASE', 'REPAIR_API_TOKEN', 'REPAIR_API_U_HASH'];
 const missing = required.filter((key) => !process.env[key]);
 
@@ -118,3 +119,10 @@ try {
 } finally {
   clearTimeout(timeout);
 }
+
+}
+
+main().catch((error) => {
+  console.error(`FAIL: ${error?.message || 'unexpected test runner error'}`);
+  process.exitCode = 1;
+});
