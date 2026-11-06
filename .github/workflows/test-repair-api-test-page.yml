@@ -1,4 +1,4 @@
-name: Test repair_api_test_page (read-only)
+name: Test repair_api_test_page (article comments DB integration)
 on:
   push:
     branches:
@@ -8,11 +8,12 @@ permissions:
   contents: read
 jobs:
   test:
+    name: Authenticated article comments integration
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Execute read-only getBlogTopics action
+      - name: Execute DB-backed article/comment CRUD and validation tests
         env:
           REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
           REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
