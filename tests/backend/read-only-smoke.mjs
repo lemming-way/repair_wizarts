@@ -107,6 +107,34 @@ try {
 
   console.log('PASS: authenticated read of script_templates succeeded.');
   console.log(`Template records returned: ${count}`);
+
+  // Print only identifying metadata needed for a safe inventory. Never print
+  // template source, credentials, or arbitrary response values.
+  const records = Array.isArray(templates)
+    ? templates
+    : typeof templates === 'object'
+      ? Object.values(templates)
+      : [];
+  const safeFields = ['var', 'name', 'filename', 'file_name', 'title', 'id'];
+  let foundTestVar = false;
+
+  for (const [index, record] of records.entries()) {
+    if (!record || typeof record !== 'object') {
+      console.log(`Template[${index}]: non-object record`);
+      continue;
+    }
+    const metadata = {};
+    for (const key of safeFields) {
+      if (record[key] !== undefined && ['string', 'number', 'boolean'].includes(typeof record[key])) {
+        metadata[key] = String(record[key]).slice(0, 160);
+      }
+    }
+    if (metadata.var === 'repair_api_test') foundTestVar = true;
+    console.log(`Template[${index}] metadata: ${JSON.stringify(metadata)}`);
+    console.log(`Template[${index}] fields: ${Object.keys(record).sort().join(', ')}`);
+  }
+
+  console.log(`repair_api_test var already present: ${foundTestVar ? 'yes' : 'no'}`);
 } catch (error) {
   const message = error?.name === 'AbortError'
     ? 'request timed out after 20 seconds'
