@@ -3,7 +3,7 @@
 const required = ['REPAIR_API_BASE', 'REPAIR_API_TOKEN', 'REPAIR_API_U_HASH'];
 const missing = required.filter((k) => !process.env[k]);
 if (missing.length) throw new Error('Missing required environment variables: ' + missing.join(', '));
-const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
+const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
 const parsed = new URL(base);
 if (parsed.protocol !== 'https:') throw new Error('Refusing non-HTTPS backend');
 const endpoint = base + '/api/v1/script/template/repair_api_test_page/';
