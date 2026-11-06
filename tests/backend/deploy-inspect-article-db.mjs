@@ -3,8 +3,10 @@ import fs from 'node:fs';
 
 const required = ['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing API environment value: ' + key);
-const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
-if (new URL(base).protocol !== 'https:') throw new Error('Refusing non-HTTPS API endpoint');
+const base = process.env.REPAIR_API_BASE.trim().replace(/^\\+/, '').replace(/\\\\\//g, '/').replace(/\\/+$/, '');
+let parsedBase;
+try { parsedBase = new URL(base); } catch { throw new Error('REPAIR_API_BASE is malformed; expected an HTTPS API base URL.'); }
+if (parsedBase.protocol !== 'https:') throw new Error('Refusing non-HTTPS API endpoint');
 
 async function post(path, form) {
   const response = await fetch(base + path, {
