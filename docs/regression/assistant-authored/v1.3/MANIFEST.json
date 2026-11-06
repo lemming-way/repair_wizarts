@@ -1,0 +1,22 @@
+{
+  "format_version": "1.3",
+  "source": "assistant-authored synthetic test fixtures",
+  "articles": [
+    {
+      "slug": "laptop_overheating",
+      "title": "Ноутбук перегревается",
+      "zip": "laptop_overheating.zip"
+    },
+    {
+      "slug": "washing_machine_drain",
+      "title": "Стиральная машина не сливает воду",
+      "zip": "washing_machine_drain.zip"
+    },
+    {
+      "slug": "bicycle_brakes",
+      "title": "Велосипед: тормоза работают хуже",
+      "zip": "bicycle_brakes.zip"
+    }
+  ],
+  "note": "Illustrations are schematic placeholders. These are not freelancer-authored materials or verified repair instructions."
+}
