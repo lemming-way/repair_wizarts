@@ -117,6 +117,7 @@ try {
       : [];
   const safeFields = ['var', 'name', 'filename', 'file_name', 'title', 'id'];
   let foundTestVar = false;
+  let foundTestPageVar = false;
 
   for (const [index, record] of records.entries()) {
     if (!record || typeof record !== 'object') {
@@ -130,6 +131,7 @@ try {
       }
     }
     if (metadata.var === 'repair_api_test') foundTestVar = true;
+    if (metadata.var === 'repair_api_test_page') foundTestPageVar = true;
     console.log(`Template[${index}] metadata: ${JSON.stringify(metadata)}`);
     console.log(`Template[${index}] fields: ${Object.keys(record).sort().join(', ')}`);
 
@@ -151,6 +153,8 @@ try {
   }
 
   console.log(`repair_api_test var already present: ${foundTestVar ? 'yes' : 'no'}`);
+  console.log(`repair_api_test_page var present: ${foundTestPageVar ? 'yes' : 'no'}`);
+  if (!foundTestPageVar) process.exitCode = 1;
 } catch (error) {
   const message = error?.name === 'AbortError'
     ? 'request timed out after 20 seconds'
