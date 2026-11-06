@@ -50,6 +50,9 @@ jobs:
       - name: ZIP importer and v1.3 validation tests
         run: npm run test:articles:importer
 
+      - name: Build static article catalog from all docs ZIP packages
+        run: npm run articles:build
+
       - name: Article renderer, catalog, API and media helper tests
         run: >-
           npm test --
