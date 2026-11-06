@@ -8,7 +8,7 @@ const base = rawBase.endsWith('/') ? rawBase.slice(0, -1) : rawBase;
 const url = new URL(base + '/api/v1/data');
 if (url.protocol !== 'https:') throw new Error('Refusing non-HTTPS API endpoint');
 
-async function post(path, form) {
+async function post(path, form, label) {
   const response = await fetch(base + path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8', Accept: 'application/json' },
@@ -18,33 +18,43 @@ async function post(path, form) {
   });
   const raw = await response.text();
   let json;
-  try { json = JSON.parse(raw); } catch { throw new Error(path + ' returned non-JSON HTTP ' + response.status); }
+  try { json = JSON.parse(raw); } catch { throw new Error(label + ' returned non-JSON HTTP ' + response.status); }
   if (!response.ok || json?.status === 'error' || String(json?.code) !== '200') {
-    throw new Error(path + ' rejected request: HTTP ' + response.status + ', API code ' +
-      String(json?.code ?? 'n/a') + ', message ' + String(json?.message ?? 'n/a').slice(0, 250));
+    throw new Error(label + ' rejected request: HTTP ' + response.status + ', API code ' +
+      String(json?.code ?? 'n/a') + ', message ' + JSON.stringify(json?.message ?? 'not provided').slice(0, 500));
   }
   return json;
 }
 
+const auth = { token: process.env.REPAIR_API_TOKEN, u_hash: process.env.REPAIR_API_U_HASH };
+const inventoryForm = new URLSearchParams({ private: '1', fields: 'script_templates', ...auth });
+const inventory = await post('/api/v1/data', inventoryForm, 'Template preflight read');
+const recordsValue = inventory?.data?.script_templates;
+const records = Array.isArray(recordsValue) ? recordsValue :
+  recordsValue && typeof recordsValue === 'object' ? Object.values(recordsValue) : [];
+const existing = records.find(item => item && item.var === 'repair_api_test_page');
+if (!existing) throw new Error('repair_api_test_page is absent from script_templates; refusing to create or overwrite a new record');
+
 const source = fs.readFileSync('script_templates/repair_api_test_page.php', 'utf8');
+if (!source.startsWith('<?php')) throw new Error('Template source is not PHP');
+const updatedRecord = { ...existing, file: source };
 const updateForm = new URLSearchParams({
-  data: JSON.stringify({ script_templates: [{ var: 'repair_api_test_page', file: source }] }),
-  token: process.env.REPAIR_API_TOKEN,
-  u_hash: process.env.REPAIR_API_U_HASH,
+  private: '1',
+  data: JSON.stringify({ script_templates: [updatedRecord] }),
+  ...auth,
 });
-const updated = await post('/api/v1/data', updateForm);
+const updated = await post('/api/v1/data', updateForm, 'Template update');
 console.log('Template update accepted: ' + JSON.stringify({
-  code: updated.code, status: updated.status, created_id: updated.data?.created_id,
+  code: updated.code, status: updated.status,
   affected_fields: updated.data?.affected_fields, version: updated.data?.version,
 }));
 
 const inspectForm = new URLSearchParams({
   is_var: '1',
   s_t_data: JSON.stringify({ action: 'inspectBlogDb' }),
-  token: process.env.REPAIR_API_TOKEN,
-  u_hash: process.env.REPAIR_API_U_HASH,
+  ...auth,
 });
-const inspected = await post('/api/v1/script/template/repair_api_test_page/', inspectForm);
+const inspected = await post('/api/v1/script/template/repair_api_test_page/', inspectForm, 'Article DB inspection');
 const data = inspected.data?.data ?? inspected.data;
 if (!data || typeof data !== 'object') throw new Error('inspectBlogDb returned no object');
 console.log('ARTICLE_DB_INSPECTION ' + JSON.stringify(data));
