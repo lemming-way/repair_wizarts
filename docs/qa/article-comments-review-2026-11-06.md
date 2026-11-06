@@ -156,3 +156,74 @@
 ### Статус
 
 BUG-ART-COM-001, BUG-ART-COM-002 и BUG-ART-COM-006 требуют исправления. NOTE-ART-COM-007 требует согласовать ожидаемую актуальность счётчика. Этап 1 остаётся не принятым до исправлений и фактических runtime-проверок.
+
+
+## Runtime-проверка GitHub Actions на актуальной ветке реализации
+
+Дата проверки: 2026-11-06.
+
+**Важно о версии:** актуальная вершина ветки `docs/repair-wizards-article-format-v1.3` на момент проверки — `f2398773c0c9c4af36acfbc2e045a9769fd262fa`. Она новее первоначально проверявшегося коммита `2e6116a`. Ветка уже содержит CI workflow и отдельные backend smoke workflows. Предыдущий вывод об отсутствии `.github/workflows/` относился к старому проверенному дереву и не должен переноситься на текущую вершину ветки.
+
+### Успешный CI Article v1.3
+
+- Workflow: [Article v1.3 CI](https://github.com/lemming-way/repair_wizarts/actions/runs/42251228805)
+- Commit: `f2398773c0c9c4af36acfbc2e045a9769fd262fa`
+- Итог: **success**.
+- Checkout и установка зависимостей: success.
+- `php -l script_templates/repair_api.php`: success, синтаксических ошибок PHP не обнаружено.
+- ESLint для указанных workflow файлов: success.
+- ZIP importer / Article Format 1.3: **15 тестов пройдены, 0 ошибок**.
+- Jest: **4 набора тестов пройдены, 18 тестов пройдены, 0 ошибок**:
+  - `ArticleRenderer.test.jsx`
+  - `Articles.test.jsx`
+  - `blog.test.ts`
+  - `articleContent.test.ts`
+
+Ограничение покрытия: workflow запускает выборочный ESLint и только перечисленные тестовые файлы. Он не запускает полный `npm run ci:check`, полный lint проекта, полный typecheck, production build или тесты `localComments.ts`. Файл `src/app/state/api/blog.test.ts` тестирует нормализацию JSON статьи, а не операции комментариев.
+
+### Успешная read-only проверка доступности backend
+
+- Workflow: [Backend read-only smoke test](https://github.com/lemming-way/repair_wizarts/actions/runs/42251228720)
+- Итог: **success**.
+- HTTP 200, API status success, code 200.
+- Прочитаны метаданные двух шаблонов: `repair_api` и `repair_api_test_page`.
+- Исходный код шаблонов и секреты в лог не выводились.
+
+Это подтверждает доступность API и наличие шаблонов, но не подтверждает работоспособность `getBlogTopics`.
+
+### FAIL — реальный backend-вызов getBlogTopics
+
+- Workflow: [Test repair_api_test_page (read-only)](https://github.com/lemming-way/repair_wizarts/actions/runs/42251228978)
+- Итог: **failure**.
+- HTTP 200, API status error, API code 1146.
+- Точная ошибка из лога: `Table 'aristotel_tutor.blog_comment' doesn't exist`.
+- Запрос дошёл до backend и исполнил шаблон, но чтение статей завершилось ошибкой из-за отсутствующей таблицы комментариев.
+
+Это не ошибка сетевой доступности и не ошибка авторизации: read-only smoke на том же commit успешно прочитал `script_templates`. Это подтверждённая проблема состояния тестовой БД/миграции. Пока таблица не создана в тестовой БД, runtime-проверка API статей и комментариев заблокирована.
+
+### Миграция тестовой БД
+
+В текущей ветке присутствуют:
+- `.github/workflows/apply-test-db-migration.yml`
+- `tests/backend/apply-migration.mjs`
+- `sql/blog_comment.sql`
+
+Workflow требует ручного запуска, выбора allowlisted миграции `blog_comment` и подтверждения `confirm_test_database=true`; скрипт дополнительно отказывается работать, если `REPAIR_DB_ENVIRONMENT` не равно `test`. Он проверяет целевые таблицы и типы ключей, применяет DDL и проверяет столбцы и четыре внешних ключа.
+
+**Миграция в рамках этой проверки не запускалась.** Это изменение схемы БД, а не read-only тест. Доступное GitHub-подключение позволяет читать workflow и логи, но не предоставляет действие для отправки `workflow_dispatch`. Не утверждать, что таблица создана или миграция применена.
+
+## Итог по фактическим запускам
+
+| Проверка | Результат |
+|---|---|
+| PHP syntax check | PASS |
+| ESLint выбранных файлов | PASS |
+| ZIP importer / Article Format 1.3 | 15/15 PASS |
+| Jest: 4 набора | 18/18 PASS |
+| Read-only доступ к script_templates | PASS |
+| Backend `getBlogTopics` | FAIL — отсутствует `blog_comment` |
+| Полный `npm run ci:check` | Не запускался |
+| Runtime CRUD/права/конкурентность комментариев | Не проверялись |
+| Миграция тестовой БД | Не запускалась |
+
+Этап 1 **не принят**. Следующий обязательный шаг — применить `blog_comment` migration именно к изолированной TEST-БД с подтверждением окружения, после чего повторить read-only `getBlogTopics` и выполнить API-регрессию CRUD комментариев. До этого runtime-выводы о корректности backend-комментариев делать нельзя.
