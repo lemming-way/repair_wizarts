@@ -33,7 +33,7 @@
 ### NOTE-ART-COM-003 — флаг гостевого режима frontend/backend может расходиться
 
 - Frontend: `src/app/components/Article/ArticleComments.jsx` разрешает взаимодействие по `CONFIG.BLOG?.allowGuestTesting`.
-- Backend: `script_templates/repair_api.php` устанавливает `$blog_guest_testing = false`.
+- В проверенном `script_templates/repair_api_test_page.php` флага `$blog_guest_testing` нет; `addBlogPost` требует авторизованный `u_id > 0`. Следовательно, гостевая отправка комментария через этот шаблон запрещена независимо от frontend-флага.
 - Риск: если frontend-конфигурация включит гостевой режим, UI покажет форму, но backend отклонит запись как Unauthorized.
 - Статус: условное замечание. Проверить конфигурацию окружения и принять одно согласованное решение; не включать гостевой режим без отдельного согласования.
 
@@ -46,7 +46,7 @@
 
 ## Что выглядит реализованным по статическому анализу
 
-- Серверная проверка, что родительский комментарий принадлежит той же статье: `script_templates/repair_api.php`, действие `addBlogPost`.
+- Серверная проверка, что родительский комментарий принадлежит той же статье: `script_templates/repair_api_test_page.php`, действие `addBlogPost`.
 - Серверная проверка авторства при редактировании/удалении: helper `$blog_lock_comment`.
 - Серверное мягкое удаление с сохранением записи и ветки.
 - Ограничение длины текста комментария до 1000 символов на backend; frontend использует счётчик Unicode-символов.
@@ -276,7 +276,7 @@ UI-компонент `CommentForm` считает Unicode-символы и б�
 
 ### NOTE-ART-COM-006 — потенциальная взаимная блокировка при одновременном ответе и удалении корневого комментария
 
-Файл: `script_templates/repair_api.php`, действия `addBlogPost` и `deleteBlogPost`, helper `$blog_lock_comment`.
+Файл: `script_templates/repair_api_test_page.php`, действия `addBlogPost` и `deleteBlogPost`, helper `$blog_lock_comment`.
 
 - Добавление ответа сначала блокирует родительский комментарий через `SELECT ... FOR UPDATE`, а затем вставляет строку, ссылающуюся внешним ключом на статью.
 - Удаление корневого комментария сначала блокирует строку статьи через `SELECT ... FOR UPDATE`, затем блокирует сам корневой комментарий.
@@ -307,7 +307,7 @@ InnoDB может разрешить такой цикл обнаружение�
 
 На коммите `f2398773c0c9c4af36acfbc2e045a9769fd262fa`:
 
-1. В `script_templates/repair_api.php` присутствуют только действия чтения статей и CRUD комментариев: `getBlogTopics`, `getBlogTopicById`, `getBlogPosts`, `addBlogPost`, `editBlogPost`, `deleteBlogPost`. API-действия создания/редактирования статьи в этом шаблоне нет.
+1. В `script_templates/repair_api_test_page.php` присутствуют только действия чтения статей и CRUD комментариев: `getBlogTopics`, `getBlogTopicById`, `getBlogPosts`, `addBlogPost`, `editBlogPost`, `deleteBlogPost`. API-действия создания/редактирования статьи в этом шаблоне нет.
 2. `getBlogPosts` и `addBlogPost` проверяют публичность статьи через `$blog_public_where`. Поэтому комментарии к статье со статусом `draft` через штатный API недоступны.
 3. `sql/blog_article_publication.sql` добавляет `status` с `DEFAULT 'published'`. Вставка тестовой статьи без явного статуса может сделать её публичной. Автоматически создавать тестовую запись обычным INSERT без предварительной проверки схемы и явного статуса запрещено.
 4. `src/app/state/api/blog.ts` переключает источник между `local` и `api`; значение по умолчанию — `local`. Локальные статьи читаются из `public/articles/catalog.json` и файлов `article.json`. Локальные комментарии хранятся отдельно в браузерном `localStorage`; это не проверяет backend.
@@ -353,7 +353,7 @@ InnoDB может разрешить такой цикл обнаружение�
 
 Дата проверки: 2026-11-06. Проверена ветка реализации `docs/repair-wizards-article-format-v1.3`.
 
-**Правильное имя шаблона в системе — `repair_api_test_page`.** Проверенный файл реализации: `script_templates/repair_api_test_page.php`, blob SHA `b489b77ebcf1a6a0250eee17487b63a24514e460`. Ранее приведённые ссылки на `script_templates/repair_api.php` не следует трактовать как имя используемого шаблона. Статические выводы по этому файлу необходимо считать предварительными до сверки с указанным ниже файлом.
+**Правильное имя шаблона в системе — `repair_api_test_page`.** Проверенный файл реализации: `script_templates/repair_api_test_page.php`, blob SHA `b489b77ebcf1a6a0250eee17487b63a24514e460`. Ранее приведённые ссылки на `script_templates/repair_api.php` были ошибочно использованы для обозначения рабочего шаблона; корректная атрибуция результатов приведена ниже.
 
 ### Проверка набора действий шаблона
 
