@@ -1,6 +1,9 @@
 name: Backend read-only smoke test
 
 on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
   workflow_dispatch:
     inputs:
       confirm_read_only:
@@ -17,7 +20,7 @@ jobs:
     name: Read-only tutor API check
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: ${{ inputs.confirm_read_only == true }}
+    if: ${{ github.event_name == 'push' || inputs.confirm_read_only == true }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
