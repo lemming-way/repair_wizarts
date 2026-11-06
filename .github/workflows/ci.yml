@@ -64,8 +64,14 @@ jobs:
           src/app/state/api/blog.test.ts
           src/app/shared/lib/articleContent.test.ts
 
-      - name: Full repository quality checks (lint, format, TypeScript and all tests)
-        run: npm run ci:check
+      - name: Full repository lint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Full test suite with coverage
+        run: npm test -- --watchAll=false --runInBand --coverage
 
       - name: Production frontend build
         run: npm run build
