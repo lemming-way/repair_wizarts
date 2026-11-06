@@ -3375,6 +3375,35 @@ $out = call_user_func(function() {
       $query_commit();
       return [ 'ok' => true ];
 
+    // Read-only inspection used to prepare the Article 1.3 database import.
+    case 'inspectBlogDb':
+      if ((int)$context['u_role'] !== 4) $die(403, 'Administrator role required.');
+      $post_columns = $query('SHOW COLUMNS FROM `blog_post`', []);
+      $topic_columns = $query('SHOW COLUMNS FROM `blog_topic`', []);
+      $topic_rows = $query('SELECT * FROM `blog_topic` ORDER BY `id_blog_topic`', []);
+      $post_fields = ['id_blog_post', 'id_blog_topic', 'id_user', 'title'];
+      foreach (['status', 'published_at', 'content_json', 'content_format', 'content_version', 'value', 'create_datetime'] as $field) {
+        if (isset($blog_post_columns[$field])) $post_fields[] = $field;
+      }
+      $post_fields = array_values(array_unique(array_filter($post_fields, function($field) use($blog_post_columns) {
+        return isset($blog_post_columns[$field]);
+      })));
+      $posts = $query(
+        'SELECT ' . join(',', array_map(function($field) { return '`' . $field . '`'; }, $post_fields)) .
+        ' FROM `blog_post` ORDER BY `id_blog_post` DESC LIMIT 20',
+        []
+      );
+      $count = $query_one('SELECT COUNT(*) AS `total` FROM `blog_post`', []);
+      return [
+        'actor_id' => (int)$context['u_id'],
+        'actor_role' => (int)$context['u_role'],
+        'blog_post_columns' => $post_columns,
+        'blog_topic_columns' => $topic_columns,
+        'topics' => $topic_rows,
+        'blog_post_total' => (int)$count['total'],
+        'recent_posts' => $posts
+      ];
+
     default:
       $die(400, 'Unknown action.');
     }
