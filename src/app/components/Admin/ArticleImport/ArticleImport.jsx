@@ -135,7 +135,6 @@ export default function ArticleImport() {
     if (!ready.length || busy) return;
     if (!window.confirm('Импортировать ' + ready.length + ' проверенных статей? Все записи будут сохранены как черновики.')) return;
     setBusy(true);
-    setError('');
     const updated = [...results];
     let completed = 0;
     for (let index = 0; index < updated.length; index += 1) {
