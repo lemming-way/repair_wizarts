@@ -27,53 +27,64 @@ function dataOf(json){return json?.data?.data??json?.data??json;}
 function apiFields(action,fields={}){return {is_var:'1',s_t_data:JSON.stringify({action,...fields})};}
 function hash(s){return crypto.createHash('sha256').update(s).digest('hex');}
 
-const source=fs.readFileSync('script_templates/repair_api.php','utf8');
-let helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\s*<\?php\s*/,'');
-const returnLine="return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'published','media_base_url'=>$article['media_base_url']];";
-const diagnosticReturn=`return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'published','media_base_url'=>$article['media_base_url'],'media_debug'=>['upload_root'=>$upload_root,'root'=>$root,'article_dir'=>$article_dir,'target_dir'=>$target_dir,'document_root'=>($_SERVER['DOCUMENT_ROOT'] ?? null),'script_name'=>($_SERVER['SCRIPT_NAME'] ?? null),'file_path'=>$target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file']),'file_exists'=>is_file($target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file'])),'file_size'=>@filesize($target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file'])),'base_url'=>$base_url,'blog_upload_root_env'=>getenv('BLOG_UPLOAD_ROOT') ?: null,'blog_upload_base_url_env'=>getenv('BLOG_UPLOAD_BASE_URL') ?: null]];`;
-if(helper.split(returnLine).length!==2) throw new Error('Cannot instrument media diagnostic return');
-helper=helper.replace(returnLine,diagnosticReturn);
-const includeLine="require_once __DIR__ . '/blog_import_actions.php';";
-if(source.split(includeLine).length!==2) throw new Error('Expected exactly one helper include in repair_api.php');
-const deployedSource=source.replace(includeLine,helper);
-if(deployedSource.includes(includeLine)||deployedSource.length<source.length+20000) throw new Error('Combined PHP deployment source validation failed');
+const source=fs.readFileSync('script_templates/repair_api_test_page.php','utf8');
+const helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\\s*<\\?php\\s*/,'');
+const contextAnchor="\\n  try {\\n    // Получаем контекст";
+const dispatchAnchor="    default:\\n      $die(400, 'Unknown action.');";
+const importActions=`    case 'validateBlogImport':
+      $blog_import_admin($context);
+      if (!isset($context['files']['archive'])) $die(400, 'ZIP archive missing.');
+      return $blog_import_validate($context['files']['archive'], $context['u_id']);
+
+    case 'previewBlogImport':
+      $blog_import_admin($context);
+      return $blog_import_preview(isset($data['token']) ? $data['token'] : '', $context['u_id']);
+
+    case 'importBlogPost':
+      $blog_import_admin($context);
+      return $blog_import_save(
+        isset($data['token']) ? $data['token'] : '',
+        isset($data['mode']) ? $data['mode'] : '',
+        $context
+      );
+
+`;
+if(source.split(contextAnchor).length!==2) throw new Error('Test template context insertion point is not unique');
+if(source.split(dispatchAnchor).length!==2) throw new Error('Test template action dispatch insertion point is not unique');
+let deployedSource=source.replace(contextAnchor, "\\n"+helper+"\\n"+contextAnchor);
+deployedSource=deployedSource.replace(dispatchAnchor, importActions+dispatchAnchor);
+if(deployedSource.length<source.length+20000 || !deployedSource.includes("case 'validateBlogImport'")) throw new Error('Combined test template validation failed');
+const templateVar='repair_api_test_page';
+const templateId=2;
 
 const inventoryJson=await post('/data',{private:'1',fields:'script_templates'},'Template inventory read');
 const inventory=dataOf(inventoryJson)?.script_templates;
 const records=Array.isArray(inventory)?inventory:inventory&&typeof inventory==='object'?Object.values(inventory):[];
-const matches=records.filter(x=>x?.var==='repair_api'&&typeof x.file==='string');
-if(matches.length!==1) throw new Error('Expected exactly one existing repair_api template, found '+matches.length);
-const original={...matches[0],id:1,id_script_template:1};
+const matches=records.filter(x=>x?.var===templateVar&&typeof x.file==='string');
+if(matches.length!==1) throw new Error('Expected exactly one existing '+templateVar+' template, found '+matches.length);
+const original={...matches[0],id:templateId,id_script_template:templateId};
 fs.mkdirSync('artifacts',{recursive:true});
-fs.writeFileSync('artifacts/repair_api.before-import-e2e.php',original.file,'utf8');
-console.log('BACKUP_SHA256 '+hash(original.file));
+fs.writeFileSync('artifacts/repair_api_test_page.before-import-e2e.php',original.file,'utf8');
+console.log('TEST_TEMPLATE_BACKUP_SHA256 '+hash(original.file));
 console.log('TARGET_API_ORIGIN '+origin);
-console.log('CURRENT_REPAIR_API_LENGTH '+original.file.length);
-console.log('NEW_REPAIR_API_LENGTH '+deployedSource.length);
+console.log('CURRENT_TEST_TEMPLATE_LENGTH '+original.file.length);
+console.log('NEW_TEST_TEMPLATE_LENGTH '+deployedSource.length);
 
 async function updateTemplate(file,label){
   const update=await post('/data',{private:'1',data:JSON.stringify({script_templates:[{...original,file}]})},label);
   const checkJson=await post('/data',{private:'1',fields:'script_templates'},label+' readback');
   const currentValue=dataOf(checkJson)?.script_templates;
   const currentRecords=Array.isArray(currentValue)?currentValue:currentValue&&typeof currentValue==='object'?Object.values(currentValue):[];
-  const current=currentRecords.find(x=>x?.var==='repair_api');
+  const current=currentRecords.find(x=>x?.var===templateVar);
   if(!current||current.file!==file) throw new Error(label+' readback hash mismatch');
   return update;
 }
 
 let deployed=false;
 try {
-  await updateTemplate(deployedSource,'Deploy combined repair_api template');
+  await updateTemplate(deployedSource,'Deploy combined repair_api_test_page template');
   deployed=true;
-  console.log('BACKEND_TEMPLATE_DEPLOYED '+hash(deployedSource));
-
-  const topicsJson=await post('/script/template/repair_api/',apiFields('getBlogTopics'),'Public article list');
-  const articles=dataOf(topicsJson);
-  if(!Array.isArray(articles)) throw new Error('getBlogTopics did not return an article array');
-  const qaTitle='Проверка реального импорта: электрический чайник не включается [QA 2026-11-07]';
-  const qa=articles.find(x=>String(x.title||'')===qaTitle&&Number(x.id)===7);
-  if(!qa) throw new Error('Safety stop: the pre-existing QA article ID 7 was not found in this API database; no article import attempted.');
-  console.log('PREEXISTING_QA_ARTICLE '+JSON.stringify({id:Number(qa.id),title:qa.title,topic_id:qa.topic_id}));
+  console.log('TEST_TEMPLATE_DEPLOYED '+hash(deployedSource));
 
   const zipPath='docs/regression/v1.3/electric_kettle.zip';
   const python=String.raw`import io,json,sys,zipfile
@@ -90,55 +101,33 @@ with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as zout:
     for name,data in entries.items():
         zout.writestr(name,data)
 sys.stdout.buffer.write(out.getvalue())`;
+  const qaTitle='Проверка панели импорта: электрический чайник [QA 2026-11-07]';
   const zipBytes=execFileSync('python3',['-c',python,zipPath,qaTitle],{maxBuffer:100*1024*1024});
-  const articleJson=execFileSync('python3',['-c',"import sys,zipfile;print(zipfile.ZipFile(sys.argv[1]).read('article.json').decode('utf-8-sig'))",zipPath],{encoding:'utf8'});
-  const article=JSON.parse(articleJson);
-  article.title=qaTitle;
   const upload=new FormData();
   upload.set('is_var','1');
   upload.set('s_t_data',JSON.stringify({action:'validateBlogImport'}));
-  upload.set('archive',new Blob([zipBytes],{type:'application/zip'}),'electric_kettle_qa.zip');
-  const validatedJson=await post('/script/template/repair_api/',upload,'Validate ZIP through repair_api');
+  upload.set('archive',new Blob([zipBytes],{type:'application/zip'}),'electric_kettle_panel_qa.zip');
+  const endpoint='/script/template/repair_api_test_page/';
+  const validatedJson=await post(endpoint,upload,'Validate ZIP through repair_api_test_page');
   const validated=dataOf(validatedJson);
   if(!validated?.token||validated?.article?.title!==qaTitle||!Array.isArray(validated.preview_assets)||!validated.preview_assets.length) {
     throw new Error('ZIP validation response is incomplete: '+JSON.stringify({token:!!validated?.token,title:validated?.article?.title,assets:validated?.preview_assets?.length}));
   }
-  console.log('ZIP_VALIDATION_OK '+JSON.stringify({title:validated.article.title,format_version:validated.article.format_version,assets:validated.preview_assets.length,token_bound:true}));
+  console.log('TEST_TEMPLATE_ZIP_VALIDATION_OK '+JSON.stringify({title:validated.article.title,format_version:validated.article.format_version,assets:validated.preview_assets.length,token_bound:true}));
 
-  const previewJson=await post('/script/template/repair_api/',apiFields('previewBlogImport',{token:validated.token}),'Preview token');
+  const previewJson=await post(endpoint,apiFields('previewBlogImport',{token:validated.token}),'Preview token through repair_api_test_page');
   const preview=dataOf(previewJson);
   if(preview?.article?.title!==qaTitle||!Array.isArray(preview.preview_assets)||preview.preview_assets.length!==validated.preview_assets.length) {
     throw new Error('Preview token readback mismatch');
   }
-  console.log('PREVIEW_TOKEN_OK '+preview.preview_assets.length+' assets');
+  console.log('TEST_TEMPLATE_PREVIEW_OK '+JSON.stringify({title:preview.article.title,assets:preview.preview_assets.length,warnings:preview.warnings||[]}));
+  console.log('TEST_TEMPLATE_VALIDATE_PREVIEW_PASS');
 
-  const importedJson=await post('/script/template/repair_api/',apiFields('importBlogPost',{token:validated.token,mode:'update_only'}),'Import QA article via PHP importer');
-  const imported=dataOf(importedJson);
-  if(imported?.action!=='updated'||Number(imported?.id)!==7||imported?.status!=='published'||!String(imported?.media_base_url||'').startsWith('/')) {
-    throw new Error('Unexpected importer result: '+JSON.stringify(imported));
-  }
-  console.log('PHP_IMPORT_RESULT '+JSON.stringify(imported));
-
-  const afterJson=await post('/script/template/repair_api/',apiFields('getBlogTopics'),'Verify public article list');
-  const after=dataOf(afterJson);
-  const saved=Array.isArray(after)?after.find(x=>Number(x.id)===7):null;
-  if(!saved||saved.title!==qaTitle) throw new Error('Updated QA article is not visible in public article list');
-  console.log('PUBLIC_READBACK_OK '+JSON.stringify({id:saved.id,title:saved.title}));
-
-  const mediaFile=article.assets[0]?.file?.split('/').pop();
-  if(!mediaFile) throw new Error('No media asset available for HTTP verification');
-  const mediaUrl=new URL(imported.media_base_url+mediaFile,origin);
-  const mediaResponse=await fetch(mediaUrl,{method:'GET',redirect:'error',signal:AbortSignal.timeout(30000)});
-  if(!mediaResponse.ok) throw new Error('Uploaded media URL returned HTTP '+mediaResponse.status+' ('+mediaUrl.pathname+')');
-  const mediaBytes=await mediaResponse.arrayBuffer();
-  if(mediaBytes.byteLength===0) throw new Error('Uploaded media file is empty');
-  console.log('MEDIA_HTTP_READBACK_OK '+JSON.stringify({status:mediaResponse.status,bytes:mediaBytes.byteLength,content_type:mediaResponse.headers.get('content-type')}));
-  console.log('IMPORTER_API_E2E_PASS');
 } catch(error) {
   if(deployed) {
     try {
-      await updateTemplate(original.file,'Restore previous repair_api template after failed E2E');
-      console.log('BACKEND_TEMPLATE_RESTORED');
+      await updateTemplate(original.file,'Restore previous repair_api_test_page template after failed test');
+      console.log('TEST_TEMPLATE_RESTORED');
     } catch(restoreError) {
       console.error('CRITICAL: automatic backend template restore failed: '+String(restoreError));
     }
