@@ -311,15 +311,20 @@ $blog_import_save = function($token,$mode,$context) use(
 ) {
   if (!in_array($mode,['upsert','insert_only','update_only'],true)) throw new Exception('Invalid import mode.',400);
   [$temp_dir,$meta]=$blog_import_load($token,$context['u_id']);
-  if (!$blog_status_column) throw new Exception('Import blocked: blog_post has no publication status column. Apply the reviewed publication migration first.',409);
-  $status_type=strtolower((string)($blog_post_columns[$blog_status_column]['Type'] ?? ''));
-  if (in_array($blog_status_column,['status','blog_status'],true) &&
-      (strpos($status_type,'enum')!==false || strpos($status_type,'char')!==false)) {
-    if (strpos($status_type,'enum')!==false && strpos($status_type,"'draft'")===false) throw new Exception('Publication status enum does not contain draft.',409);
-    $status='draft';
-  } elseif (in_array($blog_status_column,['is_published','published'],true) && strpos($status_type,'int')!==false) {
-    $status=0;
-  } else throw new Exception('Numeric status mapping is not configured; import stopped.',409);
+  // This importer publishes immediately. If a status column exists, map it
+  // explicitly to a published value; a schema without such a column is public
+  // by the current API contract and needs no synthetic status field.
+  $status=null;
+  if ($blog_status_column) {
+    $status_type=strtolower((string)($blog_post_columns[$blog_status_column]['Type'] ?? ''));
+    if (in_array($blog_status_column,['status','blog_status'],true) &&
+        (strpos($status_type,'enum')!==false || strpos($status_type,'char')!==false)) {
+      if (strpos($status_type,'enum')!==false && strpos($status_type,"'published'")===false) throw new Exception('Publication status enum does not contain published.',409);
+      $status='published';
+    } elseif (in_array($blog_status_column,['is_published','published'],true) && strpos($status_type,'int')!==false) {
+      $status=1;
+    } else throw new Exception('Publication status mapping is not configured; import stopped.',409);
+  }
 
   $upload_root=getenv('BLOG_UPLOAD_ROOT');
   if (!$upload_root) $upload_root=rtrim((string)($_SERVER['DOCUMENT_ROOT'] ?? ''),DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'blog';
@@ -348,8 +353,8 @@ $blog_import_save = function($token,$mode,$context) use(
       $columns=['id_blog_topic','id_user','name','value','last_edit_datetime','last_edit_user','create_datetime'];
       $values=[':topic',':user',':name',':value','NOW(0)',':editor','NOW(0)'];
       $params=['topic'=>(int)$topic['id_blog_topic'],'user'=>(int)$context['u_id'],'name'=>$article['title'],'value'=>'{}','editor'=>(int)$context['u_id']];
-      $columns[]=$blog_status_column; $values[]=':status'; $params['status']=$status;
-      if (isset($blog_post_columns['published_at'])) { $columns[]='published_at'; $values[]='NULL'; }
+      if ($blog_status_column) { $columns[]=$blog_status_column; $values[]=':status'; $params['status']=$status; }
+      if (isset($blog_post_columns['published_at'])) { $columns[]='published_at'; $values[]='NOW(0)'; }
       if (isset($blog_post_columns['content_json'])) { $columns[]='content_json'; $values[]=':content_json'; $params['content_json']='{}'; }
       if (isset($blog_post_columns['content_format'])) { $columns[]='content_format'; $values[]="'json'"; }
       if (isset($blog_post_columns['content_version'])) { $columns[]='content_version'; $values[]=':version'; $params['version']=$article['format_version']; }
@@ -374,24 +379,30 @@ $blog_import_save = function($token,$mode,$context) use(
     $article['media_base_url']=rtrim($base_url,'/').'/'.$id.'/'.$token.'/';
     $content=json_encode($article,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
     if (!is_string($content)) throw new Exception('Cannot encode article JSON.',500);
-    $parts=['value=:value','last_edit_datetime=NOW(0)','last_edit_user=:editor',$blog_status_column.'=:status'];
-    $params=['value'=>$content,'editor'=>(int)$context['u_id'],'status'=>$status,'id'=>$id];
-    if (isset($blog_post_columns['published_at'])) $parts[]='published_at=NULL';
+    $parts=['value=:value','last_edit_datetime=NOW(0)','last_edit_user=:editor'];
+    $params=['value'=>$content,'editor'=>(int)$context['u_id'],'id'=>$id];
+    if ($blog_status_column) { $parts[]=$blog_status_column.'=:status'; $params['status']=$status; }
+    if (isset($blog_post_columns['published_at'])) $parts[]='published_at=NOW(0)';
     if (isset($blog_post_columns['content_json'])) { $parts[]='content_json=:content_json'; $params['content_json']=$content; }
     if (isset($blog_post_columns['content_format'])) $parts[]="content_format='json'";
     if (isset($blog_post_columns['content_version'])) { $parts[]='content_version=:version'; $params['version']=$article['format_version']; }
     $query('UPDATE blog_post SET '.implode(',',$parts).' WHERE id_blog_post=:id',$params,['text_fields'=>['value','content_json']]);
-    $readback=$query_one('SELECT JSON_VALID(value) AS valid_json,JSON_UNQUOTE(JSON_EXTRACT(value, \'$.format_version\')) AS format_version,JSON_UNQUOTE(JSON_EXTRACT(value, \'$.media_base_url\')) AS media_base_url,' . $blog_status_column . ' AS saved_status FROM blog_post WHERE id_blog_post=:id',['id'=>$id]);
+    $readback_sql='SELECT JSON_VALID(value) AS valid_json,JSON_UNQUOTE(JSON_EXTRACT(value, \'$.format_version\')) AS format_version,JSON_UNQUOTE(JSON_EXTRACT(value, \'$.media_base_url\')) AS media_base_url';
+    if ($blog_status_column) $readback_sql.=','.$blog_status_column.' AS saved_status';
+    $readback=$query_one($readback_sql.' FROM blog_post WHERE id_blog_post=:id',['id'=>$id]);
     if (!$readback) throw new Exception('Saved article readback is missing.',500);
-    $saved_status_ok = in_array($blog_status_column,['status','blog_status'],true)
-      ? (string)($readback['saved_status'] ?? '')==='draft'
-      : (int)($readback['saved_status'] ?? 1)===0;
-    if (!$readback || (int)$readback['valid_json']!==1 || (string)$readback['format_version']!==(string)$article['format_version'] ||
+    $saved_status_ok=true;
+    if ($blog_status_column) {
+      $saved_status_ok = in_array($blog_status_column,['status','blog_status'],true)
+        ? (string)($readback['saved_status'] ?? '')==='published'
+        : (int)($readback['saved_status'] ?? 0)===1;
+    }
+    if ((int)$readback['valid_json']!==1 || (string)$readback['format_version']!==(string)$article['format_version'] ||
         (string)$readback['media_base_url']!==(string)$article['media_base_url'] || !$saved_status_ok) {
       throw new Exception('Saved article readback verification failed.',500);
     }
     $query_commit(); $started=false; $blog_import_delete_tree($temp_dir);
-    return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'draft','media_base_url'=>$article['media_base_url']];
+    return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'published','media_base_url'=>$article['media_base_url']];
   } catch (Throwable $e) {
     if ($started) @query('ROLLBACK');
     if ($target_dir) $blog_import_delete_tree($target_dir);
