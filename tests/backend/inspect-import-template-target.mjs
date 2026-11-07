@@ -14,4 +14,4 @@ const value=json?.data?.script_templates;
 const records=Array.isArray(value)?value:value&&typeof value==='object'?Object.values(value):[];
 const selected=records.filter(x=>x&&['repair_api','blog_import_actions','repair_api_test_page'].includes(x.var));
 console.log('API_ORIGIN '+url.origin);
-console.log('TEMPLATE_INVENTORY '+JSON.stringify(selected.map(x=>({var:x.var,has_file:typeof x.file==='string',length:typeof x.file==='string'?x.file.length:0,sha256:typeof x.file==='string'?crypto.createHash('sha256').update(x.file).digest('hex'):null}))));
+console.log('TEMPLATE_INVENTORY '+JSON.stringify(selected.map(x=>({var:x.var,keys:Object.keys(x),numeric_fields:Object.fromEntries(Object.entries(x).filter(([k,v])=>typeof v==='number'||/^id/i.test(k)).map(([k,v])=>[k,v])),has_file:typeof x.file==='string',length:typeof x.file==='string'?x.file.length:0,sha256:typeof x.file==='string'?crypto.createHash('sha256').update(x.file).digest('hex'):null}))));
