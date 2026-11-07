@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { post } from '../../state/api/request';
-import ArticleRenderer from '../Article/renderer/ArticleRenderer';
+import { post } from '../../../state/api/request';
+import ArticleRenderer from '../../Article/renderer/ArticleRenderer';
 import styles from './ArticleImport.module.css';
 
 const API_PATH = 'script/template/repair_api';
