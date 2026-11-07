@@ -1,4 +1,4 @@
-name: Test PHP article importer on repair_api_test_page
+name: Staging PHP article importer end-to-end
 on:
   push:
     branches:
@@ -6,7 +6,7 @@ on:
     paths:
       - 'tests/backend/deploy-and-test-article-import-api.mjs'
       - '.github/workflows/deploy-and-test-article-import-api.yml'
-      - 'script_templates/repair_api_test_page.php'
+      - 'script_templates/repair_api.php'
       - 'script_templates/blog_import_actions.php'
 permissions:
   contents: read
@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Deploy test template and exercise ZIP validation and preview
+      - name: Deploy combined PHP importer and exercise validation, preview, import and media
         env:
           REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
           REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
@@ -35,7 +35,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: repair-api-test-page-before-import-e2e
-          path: artifacts/repair_api_test_page.before-import-e2e.php
+          name: repair-api-before-import-e2e
+          path: artifacts/repair_api.before-import-e2e.php
           if-no-files-found: ignore
           retention-days: 30

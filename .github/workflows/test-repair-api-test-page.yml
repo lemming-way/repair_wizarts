@@ -1,8 +1,5 @@
 name: Test repair_api_test_page (article comments DB integration)
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
   workflow_dispatch:
 permissions:
   contents: read

@@ -28,9 +28,9 @@ function apiFields(action,fields={}){return {is_var:'1',s_t_data:JSON.stringify(
 function hash(s){return crypto.createHash('sha256').update(s).digest('hex');}
 
 const source=fs.readFileSync('script_templates/repair_api_test_page.php','utf8');
-const helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\\s*<\\?php\\s*/,'');
-const contextAnchor="\\n  try {\\n    // Получаем контекст";
-const dispatchAnchor="    default:\\n      $die(400, 'Unknown action.');";
+const helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\s*<\?php\s*/,'');
+const contextAnchor="\n  try {\n    // Получаем контекст";
+const dispatchAnchor="    default:\n      $die(400, 'Unknown action.');";
 const importActions=`    case 'validateBlogImport':
       $blog_import_admin($context);
       if (!isset($context['files']['archive'])) $die(400, 'ZIP archive missing.');
@@ -51,7 +51,7 @@ const importActions=`    case 'validateBlogImport':
 `;
 if(source.split(contextAnchor).length!==2) throw new Error('Test template context insertion point is not unique');
 if(source.split(dispatchAnchor).length!==2) throw new Error('Test template action dispatch insertion point is not unique');
-let deployedSource=source.replace(contextAnchor, "\\n"+helper+"\\n"+contextAnchor);
+let deployedSource=source.replace(contextAnchor, "\n"+helper+"\n"+contextAnchor);
 deployedSource=deployedSource.replace(dispatchAnchor, importActions+dispatchAnchor);
 if(deployedSource.length<source.length+20000 || !deployedSource.includes("case 'validateBlogImport'")) throw new Error('Combined test template validation failed');
 const templateVar='repair_api_test_page';
