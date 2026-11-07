@@ -110,6 +110,7 @@ sys.stdout.buffer.write(out.getvalue())`;
   const endpoint='/script/template/repair_api_test_page/';
   const validatedJson=await post(endpoint,upload,'Validate ZIP through repair_api_test_page');
   const validated=dataOf(validatedJson);
+  console.log('TEST_TEMPLATE_VALIDATION_RESPONSE_META '+JSON.stringify({topKeys:Object.keys(validatedJson||{}),dataKeys:Object.keys(validatedJson?.data||{}),normalizedKeys:Object.keys(validated||{}),code:validatedJson?.code,status:validatedJson?.status,message:validatedJson?.message,tokenPresent:!!validated?.token,articleTitle:validated?.article?.title,assetCount:validated?.preview_assets?.length}));
   if(!validated?.token||validated?.article?.title!==qaTitle||!Array.isArray(validated.preview_assets)||!validated.preview_assets.length) {
     throw new Error('ZIP validation response is incomplete: '+JSON.stringify({token:!!validated?.token,title:validated?.article?.title,assets:validated?.preview_assets?.length}));
   }
