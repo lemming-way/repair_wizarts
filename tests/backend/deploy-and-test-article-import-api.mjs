@@ -28,7 +28,11 @@ function apiFields(action,fields={}){return {is_var:'1',s_t_data:JSON.stringify(
 function hash(s){return crypto.createHash('sha256').update(s).digest('hex');}
 
 const source=fs.readFileSync('script_templates/repair_api.php','utf8');
-const helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\s*<\?php\s*/,'');
+let helper=fs.readFileSync('script_templates/blog_import_actions.php','utf8').replace(/^\s*<\?php\s*/,'');
+const returnLine="return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'published','media_base_url'=>$article['media_base_url']];";
+const diagnosticReturn=`return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'published','media_base_url'=>$article['media_base_url'],'media_debug'=>['upload_root'=>$upload_root,'root'=>$root,'article_dir'=>$article_dir,'target_dir'=>$target_dir,'document_root'=>($_SERVER['DOCUMENT_ROOT'] ?? null),'script_name'=>($_SERVER['SCRIPT_NAME'] ?? null),'file_path'=>$target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file']),'file_exists'=>is_file($target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file'])),'file_size'=>@filesize($target_dir.DIRECTORY_SEPARATOR.basename($article['assets'][0]['file'])),'base_url'=>$base_url,'blog_upload_root_env'=>getenv('BLOG_UPLOAD_ROOT') ?: null,'blog_upload_base_url_env'=>getenv('BLOG_UPLOAD_BASE_URL') ?: null]];`;
+if(helper.split(returnLine).length!==2) throw new Error('Cannot instrument media diagnostic return');
+helper=helper.replace(returnLine,diagnosticReturn);
 const includeLine="require_once __DIR__ . '/blog_import_actions.php';";
 if(source.split(includeLine).length!==2) throw new Error('Expected exactly one helper include in repair_api.php');
 const deployedSource=source.replace(includeLine,helper);
