@@ -133,7 +133,7 @@ export default function ArticleImport() {
   const importAll = async () => {
     const ready = results.filter((item) => item.token && !item.error && !item.imported);
     if (!ready.length || busy) return;
-    if (!window.confirm('Импортировать ' + ready.length + ' проверенных статей? Все записи будут сохранены как черновики.')) return;
+    if (!window.confirm('Импортировать ' + ready.length + ' проверенных статей? Все записи сразу станут публичными.')) return;
     setBusy(true);
     const updated = [...results];
     let completed = 0;
