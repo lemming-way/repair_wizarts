@@ -141,6 +141,14 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
       if (!$allowed || !in_array($format,$allowed,true) || !in_array($ext,$exts,true)) $fail($path.' has incompatible type/format/extension.');
       if (!isset($files[$file]) || !isset($asset['size_bytes']) || !is_int($asset['size_bytes']) || $asset['size_bytes']!==$files[$file]) $fail($path.' file or size_bytes does not match ZIP.');
       if ($type==='image' && $files[$file]>10*1024*1024) $fail($path.' image exceeds 10 MB.');
+      if ($type==='image' && $ext==='svg') {
+        $svg = file_get_contents($dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$file));
+        if (!is_string($svg) || preg_match('/<script\b|<foreignObject\b|\bon[a-z]+\s*=|javascript\s*:/i',$svg) ||
+            preg_match('/(?:href|src)\s*=\s*["\']\s*(?:https?:)?\/\//i',$svg) ||
+            preg_match('/url\s*\(\s*["\']?\s*(?:https?:)?\/\//i',$svg)) {
+          $fail($path.' SVG contains active or external content.');
+        }
+      }
       $assets[$file]=$asset;
     }
     foreach ($files as $file=>$size) if ($file!=='article.json' && !isset($assets[$file])) $fail('Unregistered media file: '.$file);
