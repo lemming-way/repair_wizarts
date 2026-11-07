@@ -1,0 +1,35 @@
+name: One-article production SQL import verification
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/import-article-qa-to-mysql.mjs'
+      - '.github/workflows/import-article-qa-to-mysql.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  import-qa-article:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/repair-wizards-article-format-v1.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install MySQL client library
+        run: npm install --no-save --no-package-lock mysql2
+      - name: Import one marked QA article directly into production MySQL and verify readback
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_SSL: ${{ secrets.MYSQL_SSL }}
+        run: node tests/backend/import-article-qa-to-mysql.mjs
