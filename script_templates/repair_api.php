@@ -452,6 +452,13 @@ $out = call_user_func(function() {
       if ($cover === '' || strpos($cover, '..') !== false) return null;
       if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $cover)
           && !preg_match('#^(?:https?:|data:image/)#i', $cover)) return null;
+      $media_base = isset($decoded['media_base_url']) && is_string($decoded['media_base_url'])
+        ? trim($decoded['media_base_url'])
+        : '';
+      if ($media_base !== '' && preg_match('#^(?:/|https://)[A-Za-z0-9._~:/-]+$#D', $media_base)
+          && !preg_match('#^(?:https?:|data:image/|/)#i', $cover)) {
+        return rtrim($media_base, '/') . '/' . ltrim($cover, '/');
+      }
       return $cover;
     }
 
