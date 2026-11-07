@@ -22,7 +22,13 @@ $blog_import_load = function($token, $uid) use ($blog_import_root) {
   if (!is_string($token) || !preg_match('/^[a-f0-9]{48}$/D', $token)) throw new Exception('Invalid import token.', 400);
   $dir = $blog_import_root . DIRECTORY_SEPARATOR . $token;
   $path = $dir . DIRECTORY_SEPARATOR . 'meta.json';
-  if (!is_file($path) || is_link($path)) throw new Exception('Import session expired.', 404);
+  $root_real = realpath($blog_import_root);
+  $dir_real = realpath($dir);
+  if (!$root_real || !$dir_real || is_link($blog_import_root) || is_link($dir) ||
+      dirname($dir_real) !== $root_real || basename($dir_real) !== $token ||
+      !is_file($path) || is_link($path)) {
+    throw new Exception('Import session expired.', 404);
+  }
   $meta = json_decode((string)file_get_contents($path), true);
   if (!is_array($meta) || (int)($meta['uid'] ?? 0) !== (int)$uid ||
       (int)($meta['created'] ?? 0) < time() - 1800 || !is_array($meta['article'] ?? null)) {
@@ -56,8 +62,14 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
   if (!class_exists('ZipArchive')) throw new Exception('PHP ZipArchive extension is required.', 500);
   if (!is_array($upload) || empty($upload['tmp_name']) || !is_uploaded_file($upload['tmp_name'])) throw new Exception('ZIP archive missing.', 400);
   if ((int)$upload['size'] < 1 || (int)$upload['size'] > 100 * 1024 * 1024) throw new Exception('ZIP must not exceed 100 MB.', 413);
+  if (is_link($blog_import_root)) throw new Exception('Temporary import storage must not be a symbolic link.', 500);
   if (!is_dir($blog_import_root) && !@mkdir($blog_import_root, 0700, true) && !is_dir($blog_import_root)) throw new Exception('Cannot create temporary import storage.', 500);
-  foreach (glob($blog_import_root . DIRECTORY_SEPARATOR . '*/meta.json') ?: [] as $old_meta_path) {
+  $temp_root_real = realpath($blog_import_root);
+  if (!$temp_root_real || !is_dir($temp_root_real) || !@chmod($temp_root_real, 0700) ||
+      ((fileperms($temp_root_real) & 0077) !== 0)) {
+    throw new Exception('Temporary import storage must have private permissions (0700).', 500);
+  }
+  foreach (glob($temp_root_real . DIRECTORY_SEPARATOR . '*/meta.json') ?: [] as $old_meta_path) {
     $old_meta = json_decode((string)@file_get_contents($old_meta_path), true);
     if (!is_array($old_meta) || (int)($old_meta['created'] ?? 0) < time() - 1800) {
       $blog_import_delete_tree(dirname($old_meta_path));
@@ -281,7 +293,11 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
       $walk($article['technical_knowledge']);
     }
     foreach ($assets as $file=>$asset) if (!isset($used[$file])) $fail('Unused asset: '.$file);
-    file_put_contents($dir.DIRECTORY_SEPARATOR.'meta.json',json_encode(['uid'=>(int)$uid,'created'=>time(),'article'=>$article],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),LOCK_EX);
+    $meta_json = json_encode(['uid'=>(int)$uid,'created'=>time(),'article'=>$article],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+    if (!is_string($meta_json) ||
+        file_put_contents($dir.DIRECTORY_SEPARATOR.'meta.json',$meta_json,LOCK_EX) !== strlen($meta_json)) {
+      throw new Exception('Cannot save import session metadata.', 500);
+    }
     return $token;
   }
   catch (Throwable $e) {
@@ -341,9 +357,15 @@ $blog_import_save = function($token,$mode,$context) use(
       if (empty($result['id'])) throw new Exception('Article insert failed.',500);
       $id=(int)$result['id'];
     }
-    $target_dir=$root.DIRECTORY_SEPARATOR.$id.DIRECTORY_SEPARATOR.$token;
+    $article_dir=$root.DIRECTORY_SEPARATOR.$id;
+    if (is_link($article_dir)) throw new Exception('Media article directory must not be a symbolic link.',500);
+    if (!is_dir($article_dir) && !@mkdir($article_dir,0755,true) && !is_dir($article_dir)) throw new Exception('Cannot create media directory.',500);
+    $article_dir_real=realpath($article_dir);
+    if (!$article_dir_real || dirname($article_dir_real)!==$root || basename($article_dir_real)!==(string)$id) {
+      throw new Exception('Media article directory resolves outside the configured storage root.',500);
+    }
+    $target_dir=$article_dir_real.DIRECTORY_SEPARATOR.$token;
     if (file_exists($target_dir) || is_link($target_dir)) throw new Exception('Media destination already exists.',409);
-    if (!is_dir(dirname($target_dir)) && !@mkdir(dirname($target_dir),0755,true) && !is_dir(dirname($target_dir))) throw new Exception('Cannot create media directory.',500);
     if (!@mkdir($target_dir,0755,true)) throw new Exception('Cannot create media version directory.',500);
     foreach ($article['assets'] as $asset) {
       $source=$temp_dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$asset['file']);
