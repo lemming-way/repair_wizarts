@@ -39,11 +39,14 @@ jobs:
       - name: PHP syntax check (article APIs)
         run: |
           php -l script_templates/repair_api.php
+          php -l script_templates/blog_import_actions.php
           php -l script_templates/repair_api_test_page.php
 
       - name: ESLint (article renderer, catalog, API and helpers)
         run: >-
           npx eslint
+          src/app/App.jsx
+          src/app/components/Admin/ArticleImport/ArticleImport.jsx
           src/app/components/Article/renderer/ArticleRenderer.test.jsx
           src/app/components/Article/Articles.test.jsx
           src/app/components/Article/ArticleComment.jsx
@@ -53,6 +56,9 @@ jobs:
           src/app/state/api/localComments.test.ts
           src/app/shared/lib/articleContent.ts
           src/app/shared/lib/articleContent.test.ts
+
+      - name: Production build
+        run: npm run build
 
       - name: ZIP importer and v1.3 validation tests
         run: npm run test:articles:importer

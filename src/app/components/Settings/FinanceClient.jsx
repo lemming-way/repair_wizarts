@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 
 import style from './finance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
-import { useUser, updateUser } from '../../state/user';
+import { useUser } from '../../state/user';
 
 const FinanceClient = () => {
-  const queryClient = useQueryClient();
   const { user } = useUser();
   const [card, setCard] = useState('');
   const [webmoney, setWebmoney] = useState('');
@@ -36,15 +34,6 @@ const FinanceClient = () => {
 
   const onSubmitWallets = async () => {
     try {
-      const wallets = [
-        { type: 'card', value: card },
-        { type: 'webmoney', value: webmoney },
-      ];
-
-      const walletsData = {
-        wallets,
-      };
-
       //~ await updateUser(queryClient, { details: walletsData });  // todo: сохранять баланс по-другому
       setVisibleSuccess(true);
       setSuccess(true);

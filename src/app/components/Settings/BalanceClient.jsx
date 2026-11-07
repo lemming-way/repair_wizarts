@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 import Pagination from 'react-bootstrap/Pagination';
-import { useQueryClient } from '@tanstack/react-query';
 
 import style from './Balance.module.css';
 import ModalConfirm from './ModalConfirm';
 import ModalDelete from './ModalDelete';
 import ModalSuccess from './ModalSuccess';
 import ModalVivod from '../ChoiceOfReplenishmentMethod/ModalVivod';
-import { useUser, updateUser } from '../../state/user';
+import { useUser } from '../../state/user';
 
 const BalanceClient = () => {
-  const queryClient = useQueryClient();
   const { user } = useUser();
 
   const [isVisibleModalVivod, setInputModalVivod] = useState(false);
@@ -172,16 +170,6 @@ const BalanceClient = () => {
                   className={style.button}
                   onClick={() => {
                     setInputModalVivod(true);
-                    const oldHistory = user.details?.history_of_pay   /* todo: загружать баланс отдельно */
-                      ? user.details?.history_of_pay   /* todo: загружать баланс отдельно */
-                      : [];
-                    const newPayment = {
-                      cost: Number(inputPrice),
-                      type: 'вывод',
-                      date: new Date().toISOString(),
-                      status: 'Успешно',
-                      title: 'Вывод средств',
-                    };
                     if (!user.id) {
                       return;
                     }

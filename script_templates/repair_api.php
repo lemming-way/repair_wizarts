@@ -452,6 +452,13 @@ $out = call_user_func(function() {
       if ($cover === '' || strpos($cover, '..') !== false) return null;
       if (preg_match('#^[a-z][a-z0-9+.-]*:#i', $cover)
           && !preg_match('#^(?:https?:|data:image/)#i', $cover)) return null;
+      $media_base = isset($decoded['media_base_url']) && is_string($decoded['media_base_url'])
+        ? trim($decoded['media_base_url'])
+        : '';
+      if ($media_base !== '' && strpos($media_base, '//') !== 0 && strpos($media_base, '..') === false && preg_match('#^(?:/(?!/)|https://)[A-Za-z0-9._~:/-]+$#D', $media_base)
+          && !preg_match('#^(?:https?:|data:image/|/)#i', $cover)) {
+        return rtrim($media_base, '/') . '/' . ltrim($cover, '/');
+      }
       return $cover;
     }
 
@@ -591,6 +598,8 @@ $out = call_user_func(function() {
     $comment['actor_id'] = $user_id;
     return $comment;
   };
+
+  require_once __DIR__ . '/blog_import_actions.php';
 
   try {
     // Получаем контекст
@@ -3159,6 +3168,21 @@ $out = call_user_func(function() {
     // ===============================================
     //                  Статьи и комментарии
     // ===============================================
+
+    // Временный импорт ZIP-статей. Только для роли администратора 4.
+    case 'validateBlogImport':
+      $blog_import_admin($context);
+      if (empty($context['files']['archive'])) $die(400, 'ZIP archive not uploaded.');
+      $token = $blog_import_validate($context['files']['archive'], $context['u_id']);
+      return $blog_import_preview($token, $context['u_id']);
+
+    case 'previewBlogImport':
+      $blog_import_admin($context);
+      return $blog_import_preview($data['token'] ?? '', $context['u_id']);
+
+    case 'importBlogPost':
+      $blog_import_admin($context);
+      return $blog_import_save($data['token'] ?? '', $data['mode'] ?? 'upsert', $context);
 
     // Список статей (имя действия сохранено по контракту AGENTS.md)
     case 'getBlogTopics':
