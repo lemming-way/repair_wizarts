@@ -14,6 +14,6 @@ try{
  try{[columns]=await db.query('SHOW COLUMNS FROM script_template')}catch(e){throw new Error('SCRIPT_TEMPLATE_TABLE_ERROR '+String(e.message));}
  console.log('DB_IDENTITY '+JSON.stringify(identity));
  console.log('SCRIPT_TEMPLATE_COLUMNS '+JSON.stringify(columns.map(x=>({field:x.Field,type:x.Type,key:x.Key,extra:x.Extra}))));
- const [rows]=await db.execute("SELECT var,LENGTH(file) AS length,SHA2(file,256) AS sha256 FROM script_template WHERE var IN ('repair_api','repair_api_test_page') ORDER BY var");
+ const [rows]=await db.execute("SELECT id_script_template,var,LENGTH(content) AS length,SHA2(content,256) AS sha256 FROM script_template WHERE var IN ('repair_api','repair_api_test_page') ORDER BY var");
  console.log('SCRIPT_TEMPLATE_ROWS '+JSON.stringify(rows));
 }finally{await db.end();}
