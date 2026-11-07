@@ -165,7 +165,7 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
             <Route path="articles/:id" element={<Article />} />
-            <Route path="admin/article-import" element={isAuthorized ? <ArticleImport /> : <Navigate to="/login" replace />} />
+            <Route path="admin/article-import" element={status === "pending" ? "Loading..." : isAuthorized ? <ArticleImport /> : <Navigate to="/login" replace />} />
             <Route path="contact" element={<MapContractor />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register">
