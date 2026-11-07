@@ -220,9 +220,12 @@ function requireOptionalString(value, field, sourceName) {
   }
 }
 
-function requireFile(file, field, sourceName, assets, usedFiles) {
+function requireFile(file, field, sourceName, assets, usedFiles, expectedType) {
   if (!isSafeRelativeFile(file)) fail(sourceName + ': invalid file path at ' + field + '.');
   if (!assets.has(file)) fail(sourceName + ': ' + field + ' references an unregistered asset: ' + file);
+  if (expectedType && assets.get(file).type !== expectedType) {
+    fail(sourceName + ': ' + field + ' must reference an asset of type ' + expectedType + '.');
+  }
   usedFiles.add(file);
 }
 
@@ -274,7 +277,7 @@ function validateBlock(block, index, sourceName, assets, usedFiles) {
       text('text');
       break;
     case 'image':
-      requireFile(block.file, at + '.file', sourceName, assets, usedFiles);
+      requireFile(block.file, at + '.file', sourceName, assets, usedFiles, 'image');
       text('alt');
       optionalText('caption');
       break;
@@ -285,7 +288,7 @@ function validateBlock(block, index, sourceName, assets, usedFiles) {
       block.images.forEach((image, imageIndex) => {
         const imageAt = at + '.images[' + imageIndex + ']';
         if (!isRecord(image)) fail(sourceName + ': ' + imageAt + ' must be an object.');
-        requireFile(image.file, imageAt + '.file', sourceName, assets, usedFiles);
+        requireFile(image.file, imageAt + '.file', sourceName, assets, usedFiles, 'image');
         requireString(image.alt, imageAt + '.alt', sourceName);
         requireOptionalString(image.caption, imageAt + '.caption', sourceName);
       });
@@ -321,7 +324,7 @@ function validateBlock(block, index, sourceName, assets, usedFiles) {
         requireString(step.text, stepAt + '.text', sourceName);
         requireOptionalString(step.warning, stepAt + '.warning', sourceName);
         if (step.image !== undefined && step.image !== null && step.image !== '') {
-          requireFile(step.image, stepAt + '.image', sourceName, assets, usedFiles);
+          requireFile(step.image, stepAt + '.image', sourceName, assets, usedFiles, 'image');
         }
       });
       break;
@@ -343,7 +346,7 @@ function validateBlock(block, index, sourceName, assets, usedFiles) {
       text('text');
       break;
     case 'model_3d':
-      requireFile(block.file, at + '.file', sourceName, assets, usedFiles);
+      requireFile(block.file, at + '.file', sourceName, assets, usedFiles, 'model_3d');
       text('alt');
       optionalText('caption');
       if (block.controls !== undefined) {
@@ -396,6 +399,15 @@ export function assertArticle(article, sourceName, mediaFiles) {
     requireString(asset.type, at + '.type', sourceName);
     enumAssetType(asset.type, sourceName, at);
     requireString(asset.format, at + '.format', sourceName);
+    const extension = path.posix.extname(asset.file).slice(1).toLowerCase();
+    const format = asset.format.toLowerCase();
+    const allowedFormats = asset.type === 'image'
+      ? ['svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']
+      : ['glb', 'gltf'];
+    const compatibleExtensions = format === 'jpg' ? ['jpg', 'jpeg'] : [format];
+    if (!allowedFormats.includes(format) || !compatibleExtensions.includes(extension)) {
+      fail(sourceName + ': asset type/format/extension mismatch at ' + at + '.');
+    }
     if (!Number.isSafeInteger(asset.size_bytes) || asset.size_bytes < 0) {
       fail(sourceName + ': ' + at + '.size_bytes must be a non-negative integer.');
     }
@@ -410,15 +422,30 @@ export function assertArticle(article, sourceName, mediaFiles) {
   const usedFiles = new Set();
   if (article.cover !== undefined && article.cover !== null) {
     if (!isRecord(article.cover)) fail(sourceName + ': cover must be an object.');
-    requireFile(article.cover.file, 'cover.file', sourceName, assets, usedFiles);
+    requireFile(article.cover.file, 'cover.file', sourceName, assets, usedFiles, 'image');
     requireString(article.cover.alt, 'cover.alt', sourceName);
   }
 
   article.blocks.forEach((block, index) => validateBlock(block, index, sourceName, assets, usedFiles));
 
-  if (article.format_version === '1.3' && article.technical_knowledge !== undefined &&
-      !isRecord(article.technical_knowledge)) {
-    fail(sourceName + ': technical_knowledge must be an object when provided.');
+  if (article.format_version === '1.3' && article.technical_knowledge !== undefined) {
+    if (!isRecord(article.technical_knowledge)) {
+      fail(sourceName + ': technical_knowledge must be an object when provided.');
+    }
+    const visit = (value) => {
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+      } else if (isRecord(value)) {
+        if (Array.isArray(value.media_refs)) {
+          value.media_refs.forEach((media, index) => {
+            if (!isRecord(media)) fail(sourceName + ': invalid technical_knowledge media_refs entry.');
+            requireFile(media.file, 'technical_knowledge.media_refs[' + index + '].file', sourceName, assets, usedFiles);
+          });
+        }
+        Object.values(value).forEach(visit);
+      }
+    };
+    visit(article.technical_knowledge);
   }
 
   for (const file of assets.keys()) {
@@ -432,7 +459,7 @@ export function readArticleZip(zipPath) {
   const jsonEntry = entries.find((entry) => entry.name === 'article.json');
   if (!jsonEntry) fail(`${zipPath}: article.json not found in the archive root.`);
 
-  const mediaEntries = entries.filter((entry) => entry.name.startsWith('media/'));
+  const mediaEntries = entries.filter((entry) => entry.name.startsWith('media/') && !entry.name.endsWith('/'));
   if (mediaEntries.length === 0) fail(`${zipPath}: media/ directory not found.`);
 
   const article = JSON.parse(jsonEntry.data.toString('utf8').replace(/^\uFEFF/, ''));
