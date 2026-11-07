@@ -224,6 +224,15 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
         case 'model_3d':
           $safe_file($block['file'] ?? null,$path.'.file','model_3d'); $used[$block['file']]=true;
           $string($block['alt'] ?? null,$path.'.alt'); $optional('caption');
+          if (isset($block['controls'])) {
+            if (!is_array($block['controls']) || $blog_import_is_object($block['controls'])===false) $fail($path.'.controls must be an object.');
+            foreach (['rotate','zoom','pan'] as $control) if (isset($block['controls'][$control]) && !is_bool($block['controls'][$control])) $fail($path.'.controls.'.$control.' must be boolean.');
+          }
+          if (isset($block['camera'])) {
+            if (!$blog_import_is_object($block['camera'])) $fail($path.'.camera must be an object.');
+            foreach (['azimuth','elevation'] as $angle) if (isset($block['camera'][$angle]) && (!is_numeric($block['camera'][$angle]) || !is_finite((float)$block['camera'][$angle]))) $fail($path.'.camera.'.$angle.' must be finite numeric.');
+          }
+          if (isset($block['scale']) && (!is_numeric($block['scale']) || !is_finite((float)$block['scale']) || (float)$block['scale']<=0)) $fail($path.'.scale must be a positive finite number.');
           $ext=strtolower(pathinfo($block['file'],PATHINFO_EXTENSION));
           $model=file_get_contents($dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$block['file']));
           if ($ext==='glb' && (substr($model,0,4)!=='glTF' || strlen($model)<12 || unpack('V',substr($model,4,4))[1]!==2)) $fail($path.'.file is not a GLB v2 model.');
