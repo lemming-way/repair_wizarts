@@ -2,18 +2,16 @@ import { useState, useEffect } from 'react';
 import '../../styles/legacy/ChoiceOfReplenishmentMethod.css';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
 import ChoiceOfReplenishmentMethodCard from './ChoiceOfReplenishmentMethodCard';
 import ChoiceOfReplenishmentMethodHistoryClient from './ChoiceOfReplenishmentMethodHistoryClient';
 import style from './style.module.css';
 import { useLanguage } from '../../state/language';
-import { useUser, updateUser } from '../../state/user';
+import { useUser } from '../../state/user';
 
 function ChoiceOfReplenishmentMethodClient() {
   const text = useLanguage();
-  const queryClient = useQueryClient();
   const { user } = useUser();
   const navigator = useNavigate();
 
@@ -209,25 +207,7 @@ function ChoiceOfReplenishmentMethodClient() {
                 if (!user.id) {
                   return;
                 }
-                const oldHistory = user.details?.history_of_pay || []; /* todo: загружать баланс отдельно */
-                const newPayment = {
-                  cost: Number(cost),
-                  type: 'Credit',
-                  date: new Date().toISOString(),
-                  status: 'Active',
-                  title: 'Credit',
-                };
                 // todo: сохранять баланс по-другому
-                //~ updateUser(
-                  //~ queryClient,
-                  //~ {
-                    //~ details: {
-                      //~ balance:
-                        //~ Number(cost) + Number(user.details?.balance || 0), /* todo: загружать баланс отдельно */
-                      //~ history_of_pay: [...oldHistory, newPayment],
-                    //~ },
-                  //~ },
-                //~ );
                 setStage(0);
               }}
             >
