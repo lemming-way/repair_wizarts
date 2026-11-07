@@ -11,7 +11,7 @@ The temporary administrator page is available at /admin/article-import after the
    - insert_only — skip an article when the same topic/title already exists;
    - update_only — skip an article when no same topic/title exists.
 4. Run validation. Every archive is checked independently and a preview is shown with the existing ArticleRenderer.
-5. Confirm import. Imported records are explicitly set to draft/unpublished.
+5. Confirm import. Imported records are published immediately.
 
 The browser stores only the selected import mode in localStorage. ZIP contents and preview URLs are not persisted there.
 
