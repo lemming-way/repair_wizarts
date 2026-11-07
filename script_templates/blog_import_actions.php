@@ -141,12 +141,20 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
       if (!$allowed || !in_array($format,$allowed,true) || !in_array($ext,$exts,true)) $fail($path.' has incompatible type/format/extension.');
       if (!isset($files[$file]) || !isset($asset['size_bytes']) || !is_int($asset['size_bytes']) || $asset['size_bytes']!==$files[$file]) $fail($path.' file or size_bytes does not match ZIP.');
       if ($type==='image' && $files[$file]>10*1024*1024) $fail($path.' image exceeds 10 MB.');
+      $asset_path = $dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$file);
       if ($type==='image' && $ext==='svg') {
-        $svg = file_get_contents($dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$file));
-        if (!is_string($svg) || preg_match('/<script\b|<foreignObject\b|\bon[a-z]+\s*=|javascript\s*:/i',$svg) ||
+        $svg = file_get_contents($asset_path);
+        if (!is_string($svg) || !preg_match('/<svg\b/i',$svg) ||
+            preg_match('/<!DOCTYPE|<!ENTITY|<script\b|<foreignObject\b|\bon[a-z]+\s*=|javascript\s*:/i',$svg) ||
             preg_match('/(?:href|src)\s*=\s*["\']\s*(?:https?:)?\/\//i',$svg) ||
             preg_match('/url\s*\(\s*["\']?\s*(?:https?:)?\/\//i',$svg)) {
-          $fail($path.' SVG contains active or external content.');
+          $fail($path.' SVG contains invalid, active or external content.');
+        }
+      } elseif ($type==='image') {
+        $image = @getimagesize($asset_path);
+        $expected_mime = ['png'=>'image/png','jpg'=>'image/jpeg','jpeg'=>'image/jpeg','webp'=>'image/webp','gif'=>'image/gif','avif'=>'image/avif'][$ext] ?? '';
+        if (!is_array($image) || $expected_mime==='' || ($image['mime'] ?? '')!==$expected_mime) {
+          $fail($path.' actual image format does not match its declared extension.');
         }
       }
       $assets[$file]=$asset;
