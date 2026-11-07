@@ -1,6 +1,7 @@
 <?php
 // Included from repair_api.php inside its request scope.
 $blog_import_root = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'repair-wizards-blog-import';
+$blog_import_is_object = function($value) { return is_array($value) && ($value === [] || array_keys($value) !== range(0, count($value) - 1)); };
 
 $blog_import_delete_tree = function($path) use (&$blog_import_delete_tree) {
   if (is_link($path) || is_file($path)) { @unlink($path); return; }
@@ -105,14 +106,14 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
     $zip->close();
     if (!is_string($article_json)) throw new Exception('article.json must be at ZIP root.', 400);
     $article = json_decode($article_json,true,128);
-    if (json_last_error() !== JSON_ERROR_NONE || !is_array($article) || array_is_list($article)) throw new Exception('Invalid article.json: ' . json_last_error_msg(),400);
+    if (json_last_error() !== JSON_ERROR_NONE || !$blog_import_is_object($article)) throw new Exception('Invalid article.json: ' . json_last_error_msg(),400);
 
     $fail = function($message) { throw new Exception($message,400); };
     $string = function($value,$path) use($fail) { if (!is_string($value) || trim($value)==='') $fail($path . ' must be a non-empty string.'); };
     if (!in_array($article['format_version'] ?? null,['1.2','1.3'],true)) $fail('Unsupported format_version.');
     $string($article['title'] ?? null,'title');
     $string($article['summary'] ?? null,'summary');
-    if (!is_array($article['topic'] ?? null) || array_is_list($article['topic'])) $fail('topic must be an object.');
+    if (!$blog_import_is_object($article['topic'] ?? null)) $fail('topic must be an object.');
     $string($article['topic']['name'] ?? null,'topic.name');
     if (!is_array($article['topic']['path'] ?? null) || !$article['topic']['path']) $fail('topic.path must be a non-empty array.');
     foreach ($article['topic']['path'] as $n=>$part) $string($part,'topic.path['.$n.']');
@@ -122,7 +123,7 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
     $assets=[];
     foreach ($article['assets'] as $n=>$asset) {
       $path='assets['.$n.']';
-      if (!is_array($asset) || array_is_list($asset)) $fail($path.' must be an object.');
+      if (!$blog_import_is_object($asset)) $fail($path.' must be an object.');
       $file=$asset['file'] ?? null;
       if (!is_string($file) || !preg_match('#^media/[^/]+$#uD',$file)) $fail($path.'.file is unsafe.');
       if (isset($assets[$file])) $fail('Duplicate asset: '.$file);
@@ -144,14 +145,14 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
     };
     $used=[];
     if (isset($article['cover'])) {
-      if (!is_array($article['cover']) || array_is_list($article['cover'])) $fail('cover must be an object.');
+      if (!$blog_import_is_object($article['cover'])) $fail('cover must be an object.');
       $safe_file($article['cover']['file'] ?? null,'cover.file','image');
       $string($article['cover']['alt'] ?? null,'cover.alt');
       $used[$article['cover']['file']]=true;
     }
     foreach ($article['blocks'] as $n=>$block) {
       $path='blocks['.$n.']';
-      if (!is_array($block) || array_is_list($block)) $fail($path.' must be an object.');
+      if (!$blog_import_is_object($block)) $fail($path.' must be an object.');
       $type=$block['type'] ?? null;
       $optional=function($field) use($block,$string,$path) { if (isset($block[$field])) $string($block[$field],$path.'.'.$field); };
       switch ($type) {
@@ -167,7 +168,7 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
         case 'gallery':
           if (!is_array($block['images'] ?? null) || count($block['images'])<2) $fail($path.'.images must contain at least two images.');
           foreach ($block['images'] as $i=>$image) {
-            if (!is_array($image) || array_is_list($image)) $fail($path.'.images['.$i.'] must be an object.');
+            if (!$blog_import_is_object($image)) $fail($path.'.images['.$i.'] must be an object.');
             $safe_file($image['file'] ?? null,$path.'.images['.$i.'].file','image'); $used[$image['file']]=true;
             $string($image['alt'] ?? null,$path.'.images['.$i.'].alt');
           } break;
@@ -184,7 +185,7 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
         case 'steps':
           if (!is_array($block['items'] ?? null) || !$block['items']) $fail($path.'.items must be non-empty.');
           foreach ($block['items'] as $i=>$step) {
-            if (!is_array($step) || array_is_list($step)) $fail($path.'.items['.$i.'] must be an object.');
+            if (!$blog_import_is_object($step)) $fail($path.'.items['.$i.'] must be an object.');
             $string($step['title'] ?? null,$path.'.items['.$i.'].title'); $string($step['text'] ?? null,$path.'.items['.$i.'].text');
             if (isset($step['warning'])) $string($step['warning'],$path.'.items['.$i.'].warning');
             if (!empty($step['image'])) { $safe_file($step['image'],$path.'.items['.$i.'].image','image'); $used[$step['image']]=true; }
@@ -209,7 +210,7 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
       }
     }
     if (isset($article['technical_knowledge'])) {
-      if (!is_array($article['technical_knowledge']) || array_is_list($article['technical_knowledge'])) $fail('technical_knowledge must be an object.');
+      if (!$blog_import_is_object($article['technical_knowledge'])) $fail('technical_knowledge must be an object.');
       foreach (['objects','symptoms','causes','diagnostics','operations','tools','materials','safety'] as $key) {
         if (isset($article['technical_knowledge'][$key]) && !is_array($article['technical_knowledge'][$key])) $fail('technical_knowledge.'.$key.' must be an array.');
       }
