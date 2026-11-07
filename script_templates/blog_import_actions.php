@@ -290,13 +290,13 @@ $blog_import_save = function($token,$mode,$context) use(
   if (!preg_match('#^(?:/|https://)[A-Za-z0-9._~:/-]+$#D',$base_url)) throw new Exception('Invalid BLOG_UPLOAD_BASE_URL.',500);
 
   $article=$meta['article'];
-  $topic_rows=$query('SELECT id_blog_topic FROM blog_topic WHERE name=:name ORDER BY id_blog_topic',['name'=>$article['topic']['name']],['numeric_fields'=>['id_blog_topic']]);
+  $topic_rows=$query('SELECT id_blog_topic,name FROM blog_topic WHERE name=:name ORDER BY id_blog_topic',['name'=>$article['topic']['name']],['numeric_fields'=>['id_blog_topic']]);
   if (count($topic_rows)!==1) throw new Exception(count($topic_rows)===0 ? 'Topic not found in blog_topic: '.$article['topic']['name'] : 'Topic name is ambiguous in blog_topic: '.$article['topic']['name'],409);
   $topic=$topic_rows[0];
   $target_dir=null; $started=false;
   try {
     $query_transaction(); $started=true;
-    $existing_rows=$query('SELECT id_blog_post FROM blog_post WHERE id_blog_topic=:topic AND name=:name ORDER BY id_blog_post FOR UPDATE',
+    $existing_rows=$query('SELECT id_blog_post,name FROM blog_post WHERE id_blog_topic=:topic AND name=:name ORDER BY id_blog_post FOR UPDATE',
       ['topic'=>(int)$topic['id_blog_topic'],'name'=>$article['title']],['numeric_fields'=>['id_blog_post']]);
     if (count($existing_rows)>1) throw new Exception('More than one article matches the topic/title key; resolve duplicates before importing.',409);
     $existing=$existing_rows[0] ?? null;
