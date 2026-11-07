@@ -19,7 +19,7 @@ async function post(path,fields,label){
   const raw=await response.text(); let json;
   try{json=JSON.parse(raw)}catch{throw new Error(label+' returned non-JSON HTTP '+response.status+': '+raw.slice(0,250))}
   if(!response.ok||json?.status==='error'||String(json?.code)!=='200') {
-    throw new Error(label+' failed HTTP '+response.status+', code '+String(json?.code??'n/a')+', message '+String(json?.message??'').slice(0,500));
+    throw new Error(label+' failed HTTP '+response.status+', code '+String(json?.code??'n/a')+', message '+(typeof json?.message==='object'?JSON.stringify(json.message):String(json?.message??'')).slice(0,1000));
   }
   return json;
 }
