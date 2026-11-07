@@ -39,7 +39,7 @@ const inventory=dataOf(inventoryJson)?.script_templates;
 const records=Array.isArray(inventory)?inventory:inventory&&typeof inventory==='object'?Object.values(inventory):[];
 const matches=records.filter(x=>x?.var==='repair_api'&&typeof x.file==='string');
 if(matches.length!==1) throw new Error('Expected exactly one existing repair_api template, found '+matches.length);
-const original={...matches[0],id_script_template:1};
+const original={...matches[0],id:1,id_script_template:1};
 fs.mkdirSync('artifacts',{recursive:true});
 fs.writeFileSync('artifacts/repair_api.before-import-e2e.php',original.file,'utf8');
 console.log('BACKUP_SHA256 '+hash(original.file));
