@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Re-run production read-only schema inspection for the article importer.
 import mysql from 'mysql2/promise';
 
 const required = ['MYSQL_HOST', 'MYSQL_DATABASE', 'MYSQL_USER', 'MYSQL_PASSWORD'];
