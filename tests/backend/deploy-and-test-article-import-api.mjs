@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import JSZip from 'jszip';
+import { execFileSync } from 'node:child_process';
 
 const required=['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH'];
 for(const key of required) if(!process.env[key]) throw new Error('Missing '+key);
@@ -72,13 +72,24 @@ try {
   console.log('PREEXISTING_QA_ARTICLE '+JSON.stringify({id:Number(qa.id),title:qa.title,topic_id:qa.topic_id}));
 
   const zipPath='docs/regression/v1.3/electric_kettle.zip';
-  const zip=await JSZip.loadAsync(fs.readFileSync(zipPath));
-  const jsonEntry=zip.file('article.json');
-  if(!jsonEntry) throw new Error('Fixture lacks article.json');
-  const article=JSON.parse(await jsonEntry.async('string'));
+  const python=String.raw`import io,json,sys,zipfile
+src,title=sys.argv[1],sys.argv[2]
+out=io.BytesIO()
+with zipfile.ZipFile(src,'r') as zin:
+    entries={name:zin.read(name) for name in zin.namelist()}
+if 'article.json' not in entries:
+    raise SystemExit('Fixture lacks article.json')
+article=json.loads(entries['article.json'].decode('utf-8-sig'))
+article['title']=title
+entries['article.json']=json.dumps(article,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+with zipfile.ZipFile(out,'w',compression=zipfile.ZIP_DEFLATED) as zout:
+    for name,data in entries.items():
+        zout.writestr(name,data)
+sys.stdout.buffer.write(out.getvalue())`;
+  const zipBytes=execFileSync('python3',['-c',python,zipPath,qaTitle],{maxBuffer:100*1024*1024});
+  const articleJson=execFileSync('python3',['-c',"import sys,zipfile;print(zipfile.ZipFile(sys.argv[1]).read('article.json').decode('utf-8-sig'))",zipPath],{encoding:'utf8'});
+  const article=JSON.parse(articleJson);
   article.title=qaTitle;
-  zip.file('article.json',JSON.stringify(article));
-  const zipBytes=await zip.generateAsync({type:'nodebuffer',compression:'DEFLATE'});
   const upload=new FormData();
   upload.set('is_var','1');
   upload.set('s_t_data',JSON.stringify({action:'validateBlogImport'}));
