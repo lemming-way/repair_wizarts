@@ -61,12 +61,17 @@ export default function ArticleImport() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState('');
-  const [error, setError] = useState('');
   const objectUrls = useRef([]);
+  const folderInput = useRef(null);
 
   useEffect(() => {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode })); } catch {}
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ mode })); } catch { /* Storage may be disabled. */ }
   }, [mode]);
+
+  useEffect(() => {
+    folderInput.current?.setAttribute('webkitdirectory', '');
+    folderInput.current?.setAttribute('directory', '');
+  }, []);
 
   useEffect(() => () => objectUrls.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
@@ -83,7 +88,6 @@ export default function ArticleImport() {
     setFiles(selected);
     setResults([]);
     setActiveIndex(0);
-    setError('');
     setProgress('');
   };
 
@@ -91,7 +95,6 @@ export default function ArticleImport() {
     if (!files.length || busy) return;
     clearPreviewUrls();
     setResults([]);
-    setError('');
     setBusy(true);
     const validated = [];
     for (let index = 0; index < files.length; index += 1) {
@@ -165,7 +168,7 @@ export default function ArticleImport() {
       <section className={styles.panel}>
         <div className={styles.field}>
           <label htmlFor="article-import-folder">Папка с архивами</label>
-          <input id="article-import-folder" type="file" multiple accept=".zip,application/zip" webkitdirectory="" directory="" onChange={onFolderChange} />
+          <input ref={folderInput} id="article-import-folder" type="file" multiple accept=".zip,application/zip" onChange={onFolderChange} />
           <small>Найдено ZIP-архивов: {files.length}. Файлы не сохраняются в браузере.</small>
         </div>
         <div className={styles.field}>
@@ -180,7 +183,6 @@ export default function ArticleImport() {
           <button type="button" onClick={importAll} disabled={!validCount || busy}>Подтвердить импорт ({validCount})</button>
         </div>
         {progress && <p className={styles.progress} role="status">{progress}</p>}
-        {error && <p className={styles.error}>{error}</p>}
       </section>
 
       {results.length > 0 && (
