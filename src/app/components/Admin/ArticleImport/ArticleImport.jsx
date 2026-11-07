@@ -4,7 +4,9 @@ import { post } from '../../../state/api/request';
 import ArticleRenderer from '../../Article/renderer/ArticleRenderer';
 import styles from './ArticleImport.module.css';
 
-const API_PATH = 'script/template/repair_api';
+const API_PATH = new URLSearchParams(window.location.search).get('api') === 'test'
+  ? 'script/template/repair_api_test_page'
+  : 'script/template/repair_api';
 const SETTINGS_KEY = 'repair-wizards.article-import.settings.v1';
 const MODE_OPTIONS = [
   { value: 'upsert', label: 'Добавлять новые и обновлять существующие' },
