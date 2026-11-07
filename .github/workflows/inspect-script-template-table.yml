@@ -1,0 +1,32 @@
+name: Read-only script template DB schema preflight
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/inspect-script-template-table.mjs'
+      - '.github/workflows/inspect-script-template-table.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/repair-wizards-article-format-v1.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install MySQL client
+        run: npm install --no-save --no-package-lock mysql2
+      - name: Inspect table metadata and template hashes only
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_SSL: ${{ secrets.MYSQL_SSL }}
+        run: node tests/backend/inspect-script-template-table.mjs
