@@ -42,12 +42,14 @@ describe('article content helpers', () => {
     expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
     expect(resolveArticleMedia('data:image/png;base64,AAAA')).toBe('data:image/png;base64,AAAA');
     expect(resolveArticleMedia('data:text/html;base64,AAAA')).toBe('');
+    expect(resolveArticleMedia('blob:https://example.com/preview-id')).toBe('blob:https://example.com/preview-id');
   });
 
   it('allows only safe media URL schemes', () => {
     expect(isSafeMediaUrl('/articles/a/media/photo.jpg')).toBe(true);
     expect(isSafeMediaUrl('https://cdn.example.com/photo.jpg')).toBe(true);
     expect(isSafeMediaUrl('data:image/png;base64,AAAA')).toBe(true);
+    expect(isSafeMediaUrl('blob:https://example.com/preview-id')).toBe(true);
     expect(isSafeMediaUrl('javascript:alert(1)')).toBe(false);
     expect(isSafeMediaUrl('vbscript:msgbox(1)')).toBe(false);
     expect(isSafeMediaUrl('data:text/html;base64,AAAA')).toBe(false);
