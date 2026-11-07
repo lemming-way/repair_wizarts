@@ -11,7 +11,7 @@ const db=await mysql.createConnection({
 try{
  const [[identity]]=await db.query('SELECT DATABASE() AS db,@@hostname AS host,@@read_only AS read_only');
  let columns;
- try{[columns]=await db.query('SHOW COLUMNS FROM script_template')}catch(e){console.log('SCRIPT_TEMPLATE_TABLE_ERROR '+String(e.message));process.exitCode=2;return;}
+ try{[columns]=await db.query('SHOW COLUMNS FROM script_template')}catch(e){throw new Error('SCRIPT_TEMPLATE_TABLE_ERROR '+String(e.message));}
  console.log('DB_IDENTITY '+JSON.stringify(identity));
  console.log('SCRIPT_TEMPLATE_COLUMNS '+JSON.stringify(columns.map(x=>({field:x.Field,type:x.Type,key:x.Key,extra:x.Extra}))));
  const [rows]=await db.execute("SELECT var,LENGTH(file) AS length,SHA2(file,256) AS sha256 FROM script_template WHERE var IN ('repair_api','repair_api_test_page') ORDER BY var");
