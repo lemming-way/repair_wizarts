@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import mysql from 'mysql2/promise';
+import mysql from '/tmp/mysql/node_modules/mysql2/promise.js';
 const required=['MYSQL_HOST','MYSQL_DATABASE','MYSQL_USER','MYSQL_PASSWORD'];
 for(const k of required) if(!process.env[k]) throw new Error('Missing '+k);
 const db=await mysql.createConnection({
