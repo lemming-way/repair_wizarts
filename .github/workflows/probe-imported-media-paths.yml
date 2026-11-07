@@ -1,0 +1,22 @@
+name: Probe imported article media URLs
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/probe-imported-media-paths.mjs'
+      - '.github/workflows/probe-imported-media-paths.yml'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/repair-wizards-article-format-v1.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tests/backend/probe-imported-media-paths.mjs
