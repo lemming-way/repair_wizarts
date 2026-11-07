@@ -592,6 +592,8 @@ $out = call_user_func(function() {
     return $comment;
   };
 
+  require_once __DIR__ . '/blog_import_actions.php';
+
   try {
     // Получаем контекст
     $context = $get_context();
@@ -3159,6 +3161,21 @@ $out = call_user_func(function() {
     // ===============================================
     //                  Статьи и комментарии
     // ===============================================
+
+    // Временный импорт ZIP-статей. Только для роли администратора 4.
+    case 'validateBlogImport':
+      $blog_import_admin($context);
+      if (empty($context['files']['archive'])) $die(400, 'ZIP archive not uploaded.');
+      $token = $blog_import_validate($context['files']['archive'], $context['u_id']);
+      return $blog_import_preview($token, $context['u_id']);
+
+    case 'previewBlogImport':
+      $blog_import_admin($context);
+      return $blog_import_preview($data['token'] ?? '', $context['u_id']);
+
+    case 'importBlogPost':
+      $blog_import_admin($context);
+      return $blog_import_save($data['token'] ?? '', $data['mode'] ?? 'upsert', $context);
 
     // Список статей (имя действия сохранено по контракту AGENTS.md)
     case 'getBlogTopics':
