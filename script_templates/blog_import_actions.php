@@ -151,9 +151,17 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
           $fail($path.' SVG contains invalid, active or external content.');
         }
       } elseif ($type==='image') {
-        $image = @getimagesize($asset_path);
+        $actual_mime = '';
+        if (function_exists('getimagesize')) {
+          $image = @getimagesize($asset_path);
+          $actual_mime = is_array($image) ? (string)($image['mime'] ?? '') : '';
+        }
+        if ($actual_mime==='' && class_exists('finfo')) {
+          $finfo = new finfo(FILEINFO_MIME_TYPE);
+          $actual_mime = (string)$finfo->file($asset_path);
+        }
         $expected_mime = ['png'=>'image/png','jpg'=>'image/jpeg','jpeg'=>'image/jpeg','webp'=>'image/webp','gif'=>'image/gif','avif'=>'image/avif'][$ext] ?? '';
-        if (!is_array($image) || $expected_mime==='' || ($image['mime'] ?? '')!==$expected_mime) {
+        if ($actual_mime==='' || $expected_mime==='' || $actual_mime!==$expected_mime) {
           $fail($path.' actual image format does not match its declared extension.');
         }
       }
