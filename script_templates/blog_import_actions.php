@@ -57,6 +57,12 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
   if (!is_array($upload) || empty($upload['tmp_name']) || !is_uploaded_file($upload['tmp_name'])) throw new Exception('ZIP archive missing.', 400);
   if ((int)$upload['size'] < 1 || (int)$upload['size'] > 100 * 1024 * 1024) throw new Exception('ZIP must not exceed 100 MB.', 413);
   if (!is_dir($blog_import_root) && !@mkdir($blog_import_root, 0700, true) && !is_dir($blog_import_root)) throw new Exception('Cannot create temporary import storage.', 500);
+  foreach (glob($blog_import_root . DIRECTORY_SEPARATOR . '*/meta.json') ?: [] as $old_meta_path) {
+    $old_meta = json_decode((string)@file_get_contents($old_meta_path), true);
+    if (!is_array($old_meta) || (int)($old_meta['created'] ?? 0) < time() - 1800) {
+      $blog_import_delete_tree(dirname($old_meta_path));
+    }
+  }
   $token = bin2hex(random_bytes(24));
   $dir = $blog_import_root . DIRECTORY_SEPARATOR . $token;
   if (!@mkdir($dir, 0700, true)) throw new Exception('Cannot create temporary import session.', 500);
