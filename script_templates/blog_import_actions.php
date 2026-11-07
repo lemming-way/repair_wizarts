@@ -312,7 +312,7 @@ $blog_import_save = function($token,$mode,$context) use(
   $root=realpath($upload_root);
   if (!$root || !is_writable($root) || is_link($upload_root)) throw new Exception('Media storage root is not writable/safe.',500);
   $base_url=getenv('BLOG_UPLOAD_BASE_URL') ?: '/uploads/blog';
-  if (!preg_match('#^(?:/|https://)[A-Za-z0-9._~:/-]+$#D',$base_url)) throw new Exception('Invalid BLOG_UPLOAD_BASE_URL.',500);
+  if (strpos($base_url,'//')===0 || strpos($base_url,'..')!==false || !preg_match('#^(?:/(?!/)|https://)[A-Za-z0-9._~:/-]+$#D',$base_url)) throw new Exception('Invalid BLOG_UPLOAD_BASE_URL.',500);
 
   $article=$meta['article'];
   $topic_rows=$query('SELECT id_blog_topic,name FROM blog_topic WHERE name=:name ORDER BY id_blog_topic',['name'=>$article['topic']['name']],['numeric_fields'=>['id_blog_topic']]);
