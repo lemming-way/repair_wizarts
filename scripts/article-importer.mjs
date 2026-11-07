@@ -347,6 +347,9 @@ function validateBlock(block, index, sourceName, assets, usedFiles) {
       break;
     case 'model_3d':
       requireFile(block.file, at + '.file', sourceName, assets, usedFiles, 'model_3d');
+      if (!['glb', 'gltf'].includes(assets.get(block.file).format.toLowerCase())) {
+        fail(sourceName + ': ' + at + '.file must reference a GLB or glTF model.');
+      }
       text('alt');
       optionalText('caption');
       if (block.controls !== undefined) {
@@ -417,6 +420,12 @@ export function assertArticle(article, sourceName, mediaFiles) {
       fail(sourceName + ': asset size mismatch for ' + asset.file + ': expected ' + asset.size_bytes + ', got ' + fileData.length + '.');
     }
     assets.set(asset.file, asset);
+  }
+
+  if (availableFiles instanceof Map) {
+    for (const file of availableFiles.keys()) {
+      if (!assets.has(file)) fail(sourceName + ': unregistered file in media/: ' + file);
+    }
   }
 
   const usedFiles = new Set();
