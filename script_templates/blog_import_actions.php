@@ -351,6 +351,11 @@ $blog_import_save = function($token,$mode,$context) use(
     if (isset($blog_post_columns['content_format'])) $parts[]="content_format='json'";
     if (isset($blog_post_columns['content_version'])) { $parts[]='content_version=:version'; $params['version']=$article['format_version']; }
     $query('UPDATE blog_post SET '.implode(',',$parts).' WHERE id_blog_post=:id',$params,['text_fields'=>['value','content_json']]);
+    $readback=$query_one('SELECT JSON_VALID(value) AS valid_json,JSON_UNQUOTE(JSON_EXTRACT(value, "$.format_version")) AS format_version,JSON_UNQUOTE(JSON_EXTRACT(value, "$.media_base_url")) AS media_base_url FROM blog_post WHERE id_blog_post=:id',['id'=>$id]);
+    if (!$readback || (int)$readback['valid_json']!==1 || (string)$readback['format_version']!==(string)$article['format_version'] ||
+        (string)$readback['media_base_url']!==(string)$article['media_base_url']) {
+      throw new Exception('Saved article readback verification failed.',500);
+    }
     $query_commit(); $started=false; $blog_import_delete_tree($temp_dir);
     return ['action'=>$existing?'updated':'inserted','id'=>$id,'title'=>$article['title'],'status'=>'draft','media_base_url'=>$article['media_base_url']];
   } catch (Throwable $e) {
