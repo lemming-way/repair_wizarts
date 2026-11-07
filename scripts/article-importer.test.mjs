@@ -267,7 +267,7 @@ test('rejects malformed block payloads, unregistered references and incorrect as
   );
   assert.throws(
     () => assertArticle({ ...validArticle, blocks: [{ type: 'steps', items: [{ title: 'Step' }] }] }, 'bad.zip', files),
-    /blocks\\[0\\]\\.items\\[0\\]\\.text must be a non-empty string/,
+    /blocks\[0\]\.items\[0\]\.text must be a non-empty string/,
   );
   assert.throws(
     () => assertArticle({ ...validArticle, blocks: [{ type: 'table', headers: ['A', 'B'], rows: [['only one']] }] }, 'bad.zip', files),
