@@ -38,6 +38,7 @@ describe('article content helpers', () => {
       'https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png',
     );
     expect(resolveArticleMedia('javascript:alert(1)', '/articles/x/')).toBe('');
+    expect(resolveArticleMedia('media/a.png', '//evil.example/blog/')).toBe('https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png');
     expect(resolveArticleMedia('vbscript:msgbox(1)', '/articles/x/')).toBe('');
     expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
     expect(resolveArticleMedia('data:image/png;base64,AAAA')).toBe('data:image/png;base64,AAAA');
@@ -47,6 +48,7 @@ describe('article content helpers', () => {
 
   it('allows only safe media URL schemes', () => {
     expect(isSafeMediaUrl('/articles/a/media/photo.jpg')).toBe(true);
+    expect(isSafeMediaUrl('//evil.example/photo.jpg')).toBe(false);
     expect(isSafeMediaUrl('https://cdn.example.com/photo.jpg')).toBe(true);
     expect(isSafeMediaUrl('data:image/png;base64,AAAA')).toBe(true);
     expect(isSafeMediaUrl('blob:https://example.com/preview-id')).toBe(true);
