@@ -455,7 +455,7 @@ $out = call_user_func(function() {
       $media_base = isset($decoded['media_base_url']) && is_string($decoded['media_base_url'])
         ? trim($decoded['media_base_url'])
         : '';
-      if ($media_base !== '' && preg_match('#^(?:/|https://)[A-Za-z0-9._~:/-]+$#D', $media_base)
+      if ($media_base !== '' && strpos($media_base, '//') !== 0 && strpos($media_base, '..') === false && preg_match('#^(?:/(?!/)|https://)[A-Za-z0-9._~:/-]+$#D', $media_base)
           && !preg_match('#^(?:https?:|data:image/|/)#i', $cover)) {
         return rtrim($media_base, '/') . '/' . ltrim($cover, '/');
       }
