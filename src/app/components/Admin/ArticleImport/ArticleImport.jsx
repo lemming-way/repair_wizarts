@@ -155,6 +155,7 @@ export default function ArticleImport() {
   };
 
   const validCount = results.filter((item) => item.token && !item.error).length;
+  const readyCount = results.filter((item) => item.token && !item.error && !item.imported).length;
   const active = results[activeIndex];
 
   return (
@@ -180,7 +181,7 @@ export default function ArticleImport() {
         </div>
         <div className={styles.actions}>
           <button type="button" onClick={validateAll} disabled={!files.length || busy}>Проверить архивы</button>
-          <button type="button" onClick={importAll} disabled={!validCount || busy}>Подтвердить импорт ({validCount})</button>
+          <button type="button" onClick={importAll} disabled={!readyCount || busy}>Подтвердить импорт ({readyCount})</button>
         </div>
         {progress && <p className={styles.progress} role="status">{progress}</p>}
       </section>
