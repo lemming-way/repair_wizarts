@@ -35,6 +35,7 @@ import WalletConfirm from './components/ChoiceOfReplenishmentMethod/WalletConfir
 import Finance from './components/Settings/Finance';
 import Balance from './components/Settings/Balance';
 import Article from './components/Article';
+import ArticleImport from './components/Admin/ArticleImport/ArticleImport';
 import { getLocation } from './services/location.service';
 import { useUser, updateUser, UserRole } from './state/user';
 //~ import PersonalRequests from './features/orders/contractor/list/PersonalRequests';
@@ -164,6 +165,7 @@ function App() {
             <Route path="reviews" element={<Reviews />} />
             <Route path="articles" element={<Articles />} />
             <Route path="articles/:id" element={<Article />} />
+            <Route path="admin/article-import" element={isAuthorized ? <ArticleImport /> : <Navigate to="/login" replace />} />
             <Route path="contact" element={<MapContractor />} />
             <Route path="login" element={<LoginPage />} />
             <Route path="register">
