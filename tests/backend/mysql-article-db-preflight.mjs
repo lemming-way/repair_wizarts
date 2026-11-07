@@ -73,6 +73,23 @@ try {
     }
   }
 
+
+  const [relatedTables] = await connection.execute(
+    "SELECT TABLE_NAME AS table_name FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%topic%' OR TABLE_NAME LIKE '%user%') ORDER BY TABLE_NAME"
+  );
+  console.log('RELATED_TABLES ' + JSON.stringify(relatedTables));
+  for (const { table_name } of relatedTables) {
+    const [columns] = await connection.execute(
+      'SELECT COLUMN_NAME AS name, COLUMN_TYPE AS type, IS_NULLABLE AS nullable, COLUMN_DEFAULT AS default_value, EXTRA AS extra FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION',
+      [table_name]
+    );
+    console.log('RELATED_COLUMNS ' + table_name + ' ' + JSON.stringify(columns));
+    if (/topic/i.test(table_name)) {
+      const safeTable = '`' + table_name.replace(/`/g, '``') + '`';
+      const [rows] = await connection.query('SELECT * FROM ' + safeTable + ' LIMIT 100');
+      console.log('TOPIC_SAMPLE ' + table_name + ' ' + JSON.stringify(rows));
+    }
+  }
   console.log('PREFLIGHT_READ_ONLY_COMPLETE; no rows were inserted, updated, or deleted.');
 } catch (error) {
   const safeMessage = error?.code || error?.name || 'MYSQL_ERROR';
