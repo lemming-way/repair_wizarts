@@ -243,7 +243,16 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
           if (isset($block['scale']) && (!is_numeric($block['scale']) || !is_finite((float)$block['scale']) || (float)$block['scale']<=0)) $fail($path.'.scale must be a positive finite number.');
           $ext=strtolower(pathinfo($block['file'],PATHINFO_EXTENSION));
           $model=file_get_contents($dir.DIRECTORY_SEPARATOR.str_replace('/',DIRECTORY_SEPARATOR,$block['file']));
-          if ($ext==='glb' && (substr($model,0,4)!=='glTF' || strlen($model)<12 || unpack('V',substr($model,4,4))[1]!==2)) $fail($path.'.file is not a GLB v2 model.');
+          if ($ext==='glb') {
+            if (substr($model,0,4)!=='glTF' || strlen($model)<20) $fail($path.'.file is not a GLB v2 model.');
+            $header=unpack('Vversion/Vlength',substr($model,4,8));
+            $chunk=unpack('Vlength/Vtype',substr($model,12,8));
+            if ((int)$header['version']!==2 || (int)$header['length']!==strlen($model) ||
+                (int)$chunk['type']!==0x4E4F534A || (int)$chunk['length']<2 ||
+                20+(int)$chunk['length']>strlen($model)) $fail($path.'.file has an invalid GLB header or JSON chunk.');
+            $gltf_json=json_decode(substr($model,20,(int)$chunk['length']),true);
+            if (!is_array($gltf_json) || ($gltf_json['asset']['version'] ?? null)!=='2.0') $fail($path.'.file has invalid glTF 2.0 JSON.');
+          }
           break;
         default: $fail($path.' has unsupported block type.');
       }
