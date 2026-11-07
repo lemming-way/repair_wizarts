@@ -8,6 +8,7 @@ const DATA_URL = /^(?:data|blob):/i;
 /** Безопасно склеивает путь к медиа статьи с её базовым адресом. */
 export function resolveArticleMedia(file: string | undefined, baseUrl?: string): string {
   if (!file) return '';
+  if (/^blob:https?:\/\//i.test(file)) return file;
   if (ABSOLUTE_URL.test(file)) return file;
   if (DATA_URL.test(file)) return /^data:image\//i.test(file) ? file : '';
   if (/^[a-z][a-z\d+.-]*:/i.test(file)) return '';
@@ -24,6 +25,7 @@ export function resolveArticleMedia(file: string | undefined, baseUrl?: string):
 /** Проверяет, что URL можно использовать в src/href. */
 export function isSafeMediaUrl(url: string): boolean {
   if (!url) return false;
+  if (/^blob:https?:\/\//i.test(url)) return true;
   if (DATA_URL.test(url)) return /^data:image\//i.test(url);
   if (/^[a-z][a-z\d+.-]*:/i.test(url) && !/^https?:/i.test(url)) return false;
   return true;
