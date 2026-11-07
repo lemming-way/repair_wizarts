@@ -44,6 +44,7 @@ jobs:
       - name: ESLint (article renderer, catalog, API and helpers)
         run: >-
           npx eslint
+          src/app/App.jsx
           src/app/components/Admin/ArticleImport/ArticleImport.jsx
           src/app/components/Article/renderer/ArticleRenderer.test.jsx
           src/app/components/Article/Articles.test.jsx
@@ -54,6 +55,9 @@ jobs:
           src/app/state/api/localComments.test.ts
           src/app/shared/lib/articleContent.ts
           src/app/shared/lib/articleContent.test.ts
+
+      - name: Production build
+        run: npm run build
 
       - name: ZIP importer and v1.3 validation tests
         run: npm run test:articles:importer
