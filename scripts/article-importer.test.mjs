@@ -164,7 +164,7 @@ test('validates v1.3 root structure, block types and referenced assets', () => {
     /unsupported format_version/,
   );
   assert.throws(
-    () => assertArticle({ ...validArticle, blocks: [{ type: 'unknown' }] }, 'bad.zip', new Set()),
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'unknown' }] }, 'bad.zip', new Set(['media/photo.png', 'media/model.glb'])),
     /unsupported block type/,
   );
   assert.throws(
@@ -267,7 +267,7 @@ test('rejects malformed block payloads, unregistered references and incorrect as
   );
   assert.throws(
     () => assertArticle({ ...validArticle, blocks: [{ type: 'steps', items: [{ title: 'Step' }] }] }, 'bad.zip', files),
-    /items\\[0\\].text must be a non-empty string/,
+    /blocks\\[0\\]\\.items\\[0\\]\\.text must be a non-empty string/,
   );
   assert.throws(
     () => assertArticle({ ...validArticle, blocks: [{ type: 'table', headers: ['A', 'B'], rows: [['only one']] }] }, 'bad.zip', files),
