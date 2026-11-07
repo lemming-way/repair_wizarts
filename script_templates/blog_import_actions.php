@@ -52,7 +52,7 @@ $blog_import_preview = function($token, $uid) use ($blog_import_load) {
   return ['valid'=>true,'token'=>$token,'article'=>$meta['article'],'preview_assets'=>$assets,'warnings'=>$warnings];
 };
 
-$blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_import_delete_tree) {
+$blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_import_delete_tree, $blog_import_is_object) {
   if (!class_exists('ZipArchive')) throw new Exception('PHP ZipArchive extension is required.', 500);
   if (!is_array($upload) || empty($upload['tmp_name']) || !is_uploaded_file($upload['tmp_name'])) throw new Exception('ZIP archive missing.', 400);
   if ((int)$upload['size'] < 1 || (int)$upload['size'] > 100 * 1024 * 1024) throw new Exception('ZIP must not exceed 100 MB.', 413);
