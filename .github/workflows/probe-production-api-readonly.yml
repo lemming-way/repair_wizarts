@@ -1,0 +1,26 @@
+name: Production API read-only auth preflight
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/probe-production-api-readonly.mjs'
+      - '.github/workflows/probe-production-api-readonly.yml'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: docs/repair-wizards-article-format-v1.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Read-only production API authentication check
+        env:
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/probe-production-api-readonly.mjs
