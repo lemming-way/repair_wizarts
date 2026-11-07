@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 20
       - name: Install MySQL client
-        run: npm install --no-save --no-package-lock mysql2
+        run: npm install --prefix /tmp/mysql mysql2
       - name: Inspect table metadata and template hashes only
         env:
           MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
