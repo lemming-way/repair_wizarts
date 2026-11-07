@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: docs/repair-wizards-article-format-v1.3
+          ref: feature/article-import-admin-panel
       - uses: actions/setup-node@v4
         with:
           node-version: 20
