@@ -204,7 +204,15 @@ $blog_import_validate = function($upload, $uid) use ($blog_import_root, $blog_im
           } break;
         case 'video':
           $url=is_string($block['url'] ?? null)?parse_url($block['url']):false;
-          if (!$url || ($url['scheme'] ?? '')!=='https' || !in_array(strtolower($url['host'] ?? ''),['youtube.com','www.youtube.com','m.youtube.com','youtu.be','www.youtube-nocookie.com'],true)) $fail($path.'.url must be a supported HTTPS YouTube URL.');
+          $host=strtolower($url['host'] ?? '');
+          $video_path=$url['path'] ?? '';
+          parse_str($url['query'] ?? '',$video_query);
+          $video_id='';
+          if ($host==='youtu.be' && preg_match('#^/([A-Za-z0-9_-]{6,20})$#D',$video_path,$match)) $video_id=$match[1];
+          elseif ($video_path==='/watch' && preg_match('/^[A-Za-z0-9_-]{6,20}$/D',(string)($video_query['v'] ?? ''))) $video_id=(string)$video_query['v'];
+          elseif (in_array($host,['youtube.com','www.youtube.com','m.youtube.com','www.youtube-nocookie.com'],true) &&
+              preg_match('#^/(?:embed|shorts)/([A-Za-z0-9_-]{6,20})$#D',$video_path,$match)) $video_id=$match[1];
+          if (!$url || ($url['scheme'] ?? '')!=='https' || $video_id==='') $fail($path.'.url must be a supported HTTPS YouTube video URL.');
           $optional('caption'); break;
         case 'list':
           if (!in_array($block['style'] ?? null,['ordered','unordered'],true) || !is_array($block['items'] ?? null) || !$block['items']) $fail($path.' has invalid list style/items.');
