@@ -51,7 +51,7 @@ The selected article topic must already exist in blog_topic with an exact name m
 
 ## Temporary storage and cleanup
 
-Validated archives are extracted into a private temporary directory with a random 192-bit token, bound to the authenticated user and expiring after 30 minutes. Media files are copied to a unique per-article version directory. Re-importing an article creates a new media version so the previous content remains intact if an import fails.
+Validated archives are extracted into a private temporary directory with a random 192-bit token, bound to the authenticated user and expiring after 30 minutes. Expired temporary sessions are removed opportunistically when another archive is validated. Media files are copied to a unique per-article version directory. Re-importing an article creates a new media version so the previous content remains intact if an import fails.
 
 The temporary panel does not publish articles, alter publication workflow settings, or run SQL supplied by the browser.
 
