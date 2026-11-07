@@ -40,12 +40,12 @@ If BLOG_UPLOAD_ROOT is omitted, the helper falls back to DOCUMENT_ROOT/uploads/b
 
 ## Database prerequisite
 
-The importer refuses to write unless blog_post has a supported publication-status column that can represent a draft. It supports:
+The importer publishes each inserted or updated article immediately. If blog_post has a supported publication-status column, it sets an explicit published value:
 
-- status or blog_status with a string/enum value draft;
-- is_published or published with an integer/boolean value 0.
+- status or blog_status with a string/enum value published;
+- is_published or published with an integer/boolean value 1.
 
-The repository contains sql/blog_article_publication.sql, but the migration is not run by this feature. Apply and verify the migration in the intended database separately before enabling import. The importer never assumes a numeric status ID.
+A schema without a publication-status column is also supported: the current public API treats rows as public when no status filter can be applied. Numeric status-ID columns remain unsupported unless their published ID is explicitly configured.
 
 The selected article topic must already exist in blog_topic with an exact name match. The idempotency key is (id_blog_topic, blog_post.name).
 
@@ -53,7 +53,7 @@ The selected article topic must already exist in blog_topic with an exact name m
 
 Validated archives are extracted into a private temporary directory with a random 192-bit token, bound to the authenticated user and expiring after 30 minutes. Expired temporary sessions are removed opportunistically when another archive is validated. Media files are copied to a unique per-article version directory. Re-importing an article creates a new media version so the previous content remains intact if an import fails.
 
-The temporary panel does not publish articles, alter publication workflow settings, or run SQL supplied by the browser.
+The temporary panel publishes articles immediately; it does not alter publication workflow settings or run SQL supplied by the browser.
 
 ## Current validation boundary
 
