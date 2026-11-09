@@ -70,12 +70,12 @@ jobs:
           preview_url="https://$preview_host"
           echo "Vercel preview: $preview_url" >> "$GITHUB_STEP_SUMMARY"
 
-          deployment_id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/deployments" \
-            -f ref="$GITHUB_SHA" \
-            -f environment="preview" \
-            -f description="Vercel preview" \
-            -F auto_merge=false \
-            --jq '.id')
+          deployment_id=$(jq -n \
+            --arg ref "$GITHUB_SHA" \
+            --arg environment "preview" \
+            --arg description "Vercel preview" \
+            '{ref:$ref, environment:$environment, description:$description, auto_merge:false, required_contexts:[]}' \
+            | gh api -X POST "repos/$GITHUB_REPOSITORY/deployments" --input - --jq '.id')
 
           gh api -X POST "repos/$GITHUB_REPOSITORY/deployments/$deployment_id/statuses" \
             -f state="success" \
