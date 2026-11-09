@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - docs/repair-wizards-article-format-v1.3
+      - 'work/**'
   pull_request:
     branches:
       - docs/repair-wizards-article-format-v1.3
@@ -71,4 +72,3 @@ jobs:
           src/app/state/api/blog.test.ts
           src/app/state/api/localComments.test.ts
           src/app/shared/lib/articleContent.test.ts
-

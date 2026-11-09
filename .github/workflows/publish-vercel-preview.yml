@@ -1,0 +1,87 @@
+name: Publish Vercel preview URL
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+      - 'work/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: vercel-preview-url-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Publish preview URL for commit
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check Vercel secrets
+        id: config
+        run: |
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_PROJECT_ID" ] && [ -n "$VERCEL_ORG_ID" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Vercel secrets are not configured; preview URL publication is skipped."
+          fi
+
+      - name: Wait for Vercel deployment and publish GitHub deployment
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+
+          preview_host=""
+          for attempt in $(seq 1 90); do
+            response=$(curl -fsS \
+              -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v6/deployments?projectId=$VERCEL_PROJECT_ID&teamId=$VERCEL_ORG_ID&limit=50")
+
+            preview_host=$(printf '%s' "$response" | jq -r --arg sha "$GITHUB_SHA" '
+              .deployments[]
+              | select((.meta.githubCommitSha // "") == $sha)
+              | select(.readyState == "READY")
+              | .url
+            ' | head -n 1)
+
+            if [ -n "$preview_host" ] && [ "$preview_host" != "null" ]; then
+              break
+            fi
+
+            echo "Waiting for Vercel preview for $GITHUB_SHA (attempt $attempt/90)..."
+            sleep 10
+          done
+
+          if [ -z "$preview_host" ] || [ "$preview_host" = "null" ]; then
+            echo "::error::Vercel preview for $GITHUB_SHA was not found within 15 minutes. Check Vercel Git Integration for this branch."
+            exit 1
+          fi
+
+          preview_url="https://$preview_host"
+          echo "Vercel preview: $preview_url" >> "$GITHUB_STEP_SUMMARY"
+
+          deployment_id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/deployments" \
+            -f ref="$GITHUB_SHA" \
+            -f environment="preview" \
+            -f description="Vercel preview" \
+            -F auto_merge=false \
+            --jq '.id')
+
+          gh api -X POST "repos/$GITHUB_REPOSITORY/deployments/$deployment_id/statuses" \
+            -f state="success" \
+            -f environment_url="$preview_url" \
+            -f description="Vercel preview is ready" \
+            -f log_url="https://vercel.com" \
+            --jq '.id' >/dev/null
+
+          echo "Published GitHub deployment $deployment_id for $GITHUB_SHA"
