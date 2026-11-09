@@ -24,9 +24,10 @@ const CONFIG = {
     // Гостевой режим комментариев отключён вместе с $blog_guest_testing
     // в script_templates/repair_api.php.
     allowGuestTesting: false,
-    // Боевой режим: статьи и комментарии обслуживаются PHP API / MySQL.
-    // REACT_APP_BLOG_SOURCE может переопределить это значение на этапе сборки.
-    source: 'api',
+    // "local" — статьи из public/articles (собираются из docs/**/*.zip),
+    // "api"   — статьи из БД через script/template/repair_api.
+    // Переопределяется переменной окружения REACT_APP_BLOG_SOURCE.
+    source: 'local',
   },
 
   API: {
