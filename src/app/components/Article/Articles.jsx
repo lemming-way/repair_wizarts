@@ -38,7 +38,7 @@ const Articles = () => {
       articles.filter(
         (article) =>
           (!activeTopic || article.topic_name === activeTopic) &&
-          (!activeAuthor || `${article.author.id}:${article.author.name}` === activeAuthor),
+          (!activeAuthor || `${article.author?.id ?? ''}:${article.author?.name ?? ''}` === activeAuthor),
       ),
     [activeAuthor, activeTopic, articles],
   );

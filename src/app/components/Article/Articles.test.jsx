@@ -19,6 +19,17 @@ jest.mock('../../hooks/useBlog', () => ({
         comments_count: 0,
       },
       {
+        id: 3,
+        topic_name: 'Ремонт другой техники',
+        title: 'Статья без автора',
+        excerpt: 'Проверка отсутствующего автора',
+        cover_url: null,
+        author: null,
+        created_at: '2026-11-04T10:00:00Z',
+        updated_at: null,
+        comments_count: 0,
+      },
+      {
         id: 2,
         topic_name: 'Ремонт смартфонов',
         title: 'Смартфон не заряжается',
@@ -55,6 +66,21 @@ describe('Articles catalog', () => {
 
     expect(screen.getByRole('heading', { name: 'Чайник не включается' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+  });
+
+  it('filters by author when an article has no author metadata', async () => {
+    render(
+      <MemoryRouter>
+        <Articles />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Статья без автора' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: /Мастер/ }));
+
+    expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Статья без автора' })).not.toBeInTheDocument();
   });
 
   it('filters articles by category and resets the filter', async () => {
