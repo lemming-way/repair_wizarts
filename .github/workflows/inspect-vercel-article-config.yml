@@ -45,7 +45,6 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
-          const dotenv = require('dotenv');
           const expectedApi = process.env.EXPECTED_API_URL.replace(/\/+$/, '');
           const targets = [
             ['Production', '.vercel/.env.production.local'],
@@ -58,7 +57,21 @@ jobs:
               failed = true;
               continue;
             }
-            const env = dotenv.parse(fs.readFileSync(file));
+            const lines = fs.readFileSync(file, 'utf8').split(/\\r?\\n/);
+            const read = (key) => {
+              const line = lines.find((entry) => entry.startsWith(key + '='));
+              if (!line) return '';
+              let value = line.slice(key.length + 1).trim();
+              if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              return value;
+            };
+            const env = {
+              REACT_APP_BLOG_SOURCE: read('REACT_APP_BLOG_SOURCE'),
+              REACT_APP_API_URL: read('REACT_APP_API_URL'),
+              REACT_APP_BLOG_API_PATH: read('REACT_APP_BLOG_API_PATH'),
+            };
             const source = env.REACT_APP_BLOG_SOURCE || 'local (application default)';
             const apiUrl = (env.REACT_APP_API_URL || '').replace(/\/+$/, '');
             const apiPath = env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api (application default)';
