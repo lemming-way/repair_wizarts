@@ -191,7 +191,7 @@ function fillUserProfile(data: UserAPI.UserData): UserProfile {
     isEmailVerified: Number( data.u_email_checked) === 1,
     blackList: Array.isArray(u_details?.blackList) ? u_details.blackList : [],
     isOnline: 'boolean' === typeof u_details?.isOnline ? u_details.isOnline : false,
-    lastTimeBeenOnline: new Date(Date.parse(String(u_details.lastTimeBeenOnline)) || 0)
+    lastTimeBeenOnline: new Date(Date.parse(String(u_details?.lastTimeBeenOnline)) || 0)
   };
 
   if (baseProfile.role === UserRole.Client) {
