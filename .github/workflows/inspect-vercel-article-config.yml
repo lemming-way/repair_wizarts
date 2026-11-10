@@ -1,0 +1,80 @@
+name: Inspect Vercel article configuration
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - .github/workflows/inspect-vercel-article-config.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    name: Check Production and branch Preview settings
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      EXPECTED_API_URL: https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/
+      CHECK_BRANCH: docs/repair-wizards-article-format-v1.3
+    steps:
+      - name: Validate Vercel credentials are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN" || { echo "::error::VERCEL_TOKEN is missing"; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo "::error::VERCEL_ORG_ID is missing"; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo "::error::VERCEL_PROJECT_ID is missing"; exit 1; }
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pull Production environment (values stay on runner)
+        run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Pull Preview environment for the current branch
+        run: npx --yes vercel@latest pull --yes --environment=preview --git-branch="$CHECK_BRANCH" --token="$VERCEL_TOKEN"
+
+      - name: Compare settings without printing values
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const dotenv = require('dotenv');
+          const expectedApi = process.env.EXPECTED_API_URL.replace(/\\/+$/, '');
+          const targets = [
+            ['Production', '.vercel/.env.production.local'],
+            ['Preview (' + process.env.CHECK_BRANCH + ')', '.vercel/.env.preview.local'],
+          ];
+          let failed = false;
+          for (const [label, file] of targets) {
+            if (!fs.existsSync(file)) {
+              console.log(label + ': environment file not returned by Vercel');
+              failed = true;
+              continue;
+            }
+            const env = dotenv.parse(fs.readFileSync(file));
+            const source = env.REACT_APP_BLOG_SOURCE || 'local (application default)';
+            const apiUrl = (env.REACT_APP_API_URL || '').replace(/\\/+$/, '');
+            const apiPath = env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api (application default)';
+            const sourceOk = source === 'api';
+            const apiOk = apiUrl === expectedApi;
+            console.log(label + ':');
+            console.log('  REACT_APP_BLOG_SOURCE: ' + source + (sourceOk ? ' [OK]' : ' [NOT API]'));
+            console.log('  REACT_APP_API_URL matches intended backend: ' + (apiOk ? 'YES' : 'NO / NOT SET'));
+            console.log('  REACT_APP_BLOG_API_PATH: ' + apiPath);
+            if (!sourceOk || !apiOk) failed = true;
+          }
+          if (failed) process.exitCode = 1;
+          NODE
+
+      - name: Remove pulled environment files
+        if: always()
+        run: rm -f .vercel/.env.production.local .vercel/.env.preview.local
