@@ -57,7 +57,7 @@ jobs:
               failed = true;
               continue;
             }
-            const lines = fs.readFileSync(file, 'utf8').split(/\\r?\\n/);
+            const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
             const read = (key) => {
               const line = lines.find((entry) => entry.startsWith(key + '='));
               if (!line) return '';
