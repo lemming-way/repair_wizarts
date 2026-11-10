@@ -163,7 +163,6 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
     excerpt: parsedText ? buildExcerpt(parsedText) : article.excerpt,
     cover_url: coverUrl || article.cover_url,
     cover_file_id: parsed.cover_file_id || article.cover_file_id,
-    assets,
     media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
