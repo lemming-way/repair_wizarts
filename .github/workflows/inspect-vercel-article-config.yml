@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - docs/repair-wizards-article-format-v1.3
-    paths:
-      - .github/workflows/inspect-vercel-article-config.yml
   workflow_dispatch:
 
 permissions:
