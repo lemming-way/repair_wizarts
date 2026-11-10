@@ -100,6 +100,14 @@ function deriveMediaBaseUrl(coverUrl: string | null | undefined): string | undef
 const BLOG_SOURCE = process.env.REACT_APP_BLOG_SOURCE || CONFIG.BLOG?.source || 'local';
 const BLOG_API_PATH =
   process.env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api_test_page';
+const BLOG_API_IS_VAR = process.env.REACT_APP_BLOG_API_IS_VAR !== '0';
+
+function buildBlogPayload(data: Record<string, unknown>) {
+  return {
+    ...(BLOG_API_IS_VAR ? { is_var: 1 } : {}),
+    s_t_data: data,
+  };
+}
 
 export const isLocalBlogSource = BLOG_SOURCE === 'local';
 
@@ -161,12 +169,7 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
 export async function getBlogTopics(): Promise<BlogArticle[]> {
   if (isLocalBlogSource) return getLocalBlogArticles();
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'getBlogTopics',
-    },
-  };
+  const payload = buildBlogPayload({ action: 'getBlogTopics' });
   const articles = await post<BlogArticle[]>(BLOG_API_PATH, payload);
   return articles.map(normalizeBlogArticleContent);
 }
@@ -174,13 +177,7 @@ export async function getBlogTopics(): Promise<BlogArticle[]> {
 export async function getBlogTopicById(id: number): Promise<BlogArticle> {
   if (isLocalBlogSource) return getLocalBlogArticleById(id);
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'getBlogTopicById',
-      id,
-    },
-  };
+  const payload = buildBlogPayload({ action: 'getBlogTopicById', id });
   const article = await post<BlogArticle>(BLOG_API_PATH, payload);
   return normalizeBlogArticleContent(article);
 }
@@ -188,13 +185,10 @@ export async function getBlogTopicById(id: number): Promise<BlogArticle> {
 export async function getBlogPosts(articleId: number, viewerId = 0): Promise<BlogComment[]> {
   if (isLocalBlogSource) return getLocalBlogPosts(articleId, viewerId);
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'getBlogPosts',
-      article_id: articleId,
-    },
-  };
+  const payload = buildBlogPayload({
+    action: 'getBlogPosts',
+    article_id: articleId,
+  });
   return post<BlogComment[]>(BLOG_API_PATH, payload);
 }
 
@@ -213,15 +207,12 @@ export async function addBlogPost(params: {
     });
   }
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'addBlogPost',
-      article_id: params.articleId,
-      parent_id: params.parentId ?? undefined,
-      text: params.text,
-    },
-  };
+  const payload = buildBlogPayload({
+    action: 'addBlogPost',
+    article_id: params.articleId,
+    parent_id: params.parentId ?? undefined,
+    text: params.text,
+  });
   return post<{ id: number }>(BLOG_API_PATH, payload);
 }
 
@@ -238,14 +229,11 @@ export async function editBlogPost(params: {
     });
   }
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'editBlogPost',
-      id: params.id,
-      text: params.text,
-    },
-  };
+  const payload = buildBlogPayload({
+    action: 'editBlogPost',
+    id: params.id,
+    text: params.text,
+  });
   return post<{ ok: boolean }>(BLOG_API_PATH, payload);
 }
 
@@ -254,12 +242,9 @@ export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: bo
     return deleteLocalBlogPost({ id, viewerId });
   }
 
-  const payload = {
-    is_var: 1,
-    s_t_data: {
-      action: 'deleteBlogPost',
-      id,
-    },
-  };
+  const payload = buildBlogPayload({
+    action: 'deleteBlogPost',
+    id,
+  });
   return post<{ ok: boolean }>(BLOG_API_PATH, payload);
 }
