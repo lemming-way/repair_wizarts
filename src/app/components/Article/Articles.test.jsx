@@ -49,6 +49,23 @@ jest.mock('../../hooks/useBlog', () => ({
 }));
 
 describe('Articles catalog', () => {
+  it('opens the mobile filters panel and closes it after selecting a filter', async () => {
+    render(
+      <MemoryRouter>
+        <Articles />
+      </MemoryRouter>,
+    );
+
+    const toggle = screen.getByRole('button', { name: /^Фильтры/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+    await userEvent.click(screen.getByRole('button', { name: /Ремонт смартфонов/ }));
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('filters articles by author together with category', async () => {
     render(
       <MemoryRouter>

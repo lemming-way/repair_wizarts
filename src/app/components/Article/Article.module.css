@@ -100,6 +100,57 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+.filtersToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.filtersToggle:hover,
+.filtersToggle:focus-visible {
+  border-color: rgba(217, 87, 59, 0.55);
+  box-shadow: 0 1px 4px rgba(217, 87, 59, 0.15);
+  outline: none;
+}
+
+.filtersToggleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtersToggleIcon {
+  width: 18px;
+  height: 18px;
+  color: #d9573b;
+}
+
+.filtersToggleChevron {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+}
+
+.filtersToggleChevronOpen {
+  transform: rotate(180deg);
+}
+
 .articlesLayout,
 .articleLayout {
   display: grid;
@@ -228,6 +279,10 @@
   color: #fff;
   background: #d9573b;
   border-radius: 20px;
+}
+
+.articlesAsideOpen {
+  display: block;
 }
 
 .asideTitle {
@@ -987,6 +1042,16 @@
   }
 }
 
+@media (max-width: 1023.98px) {
+  .articlesMain {
+    order: 2;
+  }
+
+  .articlesAside {
+    order: 1;
+  }
+}
+
 @media (min-width: 768px) {
   .articlesHeroTitle,
   .articleHeroTitle {
@@ -1013,6 +1078,10 @@
   .articlesAside,
   .articleAside {
     display: block;
+  }
+
+  .filtersToggle {
+    display: none;
   }
 
   .otherArticlesGrid {

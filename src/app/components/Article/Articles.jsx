@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useBlogArticles } from '../../hooks/useBlog';
-import { ArrowLeftIcon } from '../../shared/ui/BlogIcons';
+import { ArrowLeftIcon, ChevronDownIcon, FilterIcon } from '../../shared/ui/BlogIcons';
 import BlogArticleCard from './BlogArticleCard';
 import styles from './Article.module.css';
 
@@ -10,6 +10,7 @@ const Articles = () => {
   const { data: articles = [], isLoading, isError, error, refetch } = useBlogArticles();
   const [activeTopic, setActiveTopic] = useState(null);
   const [activeAuthor, setActiveAuthor] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const topics = useMemo(() => {
     const names = new Map();
@@ -47,10 +48,26 @@ const Articles = () => {
     ? authors.find((author) => author.key === activeAuthor)?.name
     : '';
   const hasActiveFilters = Boolean(activeTopic || activeAuthor);
+  const activeFilterCount = Number(Boolean(activeTopic)) + Number(Boolean(activeAuthor));
 
   const resetFilters = () => {
     setActiveTopic(null);
     setActiveAuthor(null);
+  };
+
+  const selectAllFilters = () => {
+    resetFilters();
+    setFiltersOpen(false);
+  };
+
+  const selectTopic = (name) => {
+    setActiveTopic(name);
+    setFiltersOpen(false);
+  };
+
+  const selectAuthor = (key) => {
+    setActiveAuthor(key);
+    setFiltersOpen(false);
   };
 
   useEffect(() => {
@@ -82,6 +99,25 @@ const Articles = () => {
       </header>
 
       <div className={styles.articlesContentCard}>
+        <button
+          type="button"
+          className={styles.filtersToggle}
+          aria-expanded={filtersOpen}
+          aria-controls="articles-filters"
+          onClick={() => setFiltersOpen((open) => !open)}
+        >
+          <span className={styles.filtersToggleLabel}>
+            <FilterIcon className={styles.filtersToggleIcon} />
+            Фильтры
+            {activeFilterCount > 0 ? ` · ${activeFilterCount}` : ''}
+          </span>
+          <ChevronDownIcon
+            className={`${styles.filtersToggleChevron} ${
+              filtersOpen ? styles.filtersToggleChevronOpen : ''
+            }`}
+          />
+        </button>
+
         <div className={styles.articlesLayout}>
           <div className={styles.articlesMain}>
             {isLoading && (
@@ -149,14 +185,17 @@ const Articles = () => {
             )}
           </div>
 
-          <aside className={styles.articlesAside}>
+          <aside
+            id="articles-filters"
+            className={`${styles.articlesAside} ${filtersOpen ? styles.articlesAsideOpen : ''}`}
+          >
             <p className={styles.asideTitle}>Категории</p>
             {topics.length === 0 && <p className={styles.asideMuted}>Нет категорий</p>}
             <button
               type="button"
               className={`${styles.asideItem} ${!hasActiveFilters ? styles.asideItemSelected : ''}`}
               aria-pressed={!hasActiveFilters}
-              onClick={resetFilters}
+              onClick={selectAllFilters}
             >
               <span>Все статьи</span>
               <span>{articles.length}</span>
@@ -167,7 +206,7 @@ const Articles = () => {
                 className={`${styles.asideItem} ${activeTopic === topic.name ? styles.asideItemSelected : ''}`}
                 aria-pressed={activeTopic === topic.name}
                 key={topic.name}
-                onClick={() => setActiveTopic(topic.name)}
+                onClick={() => selectTopic(topic.name)}
               >
                 <span>{topic.name}</span>
                 <span>{topic.count}</span>
@@ -180,7 +219,7 @@ const Articles = () => {
               type="button"
               className={`${styles.asideItem} ${!activeAuthor ? styles.asideItemSelected : ''}`}
               aria-pressed={!activeAuthor}
-              onClick={() => setActiveAuthor(null)}
+              onClick={() => selectAuthor(null)}
             >
               <span>Все авторы</span>
               <span>{articles.length}</span>
@@ -191,14 +230,14 @@ const Articles = () => {
                 className={`${styles.asideItem} ${activeAuthor === author.key ? styles.asideItemSelected : ''}`}
                 aria-pressed={activeAuthor === author.key}
                 key={author.key}
-                onClick={() => setActiveAuthor(author.key)}
+                onClick={() => selectAuthor(author.key)}
               >
                 <span>{author.name}</span>
                 <span>{author.count}</span>
               </button>
             ))}
             {hasActiveFilters && (
-              <button type="button" className={styles.asideFooterLink} onClick={resetFilters}>
+              <button type="button" className={styles.asideFooterLink} onClick={selectAllFilters}>
                 Сбросить фильтр
               </button>
             )}
