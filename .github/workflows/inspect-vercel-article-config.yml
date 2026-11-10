@@ -48,7 +48,7 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const dotenv = require('dotenv');
-          const expectedApi = process.env.EXPECTED_API_URL.replace(/\\/+$/, '');
+          const expectedApi = process.env.EXPECTED_API_URL.replace(/\/+$/, '');
           const targets = [
             ['Production', '.vercel/.env.production.local'],
             ['Preview (' + process.env.CHECK_BRANCH + ')', '.vercel/.env.preview.local'],
@@ -62,7 +62,7 @@ jobs:
             }
             const env = dotenv.parse(fs.readFileSync(file));
             const source = env.REACT_APP_BLOG_SOURCE || 'local (application default)';
-            const apiUrl = (env.REACT_APP_API_URL || '').replace(/\\/+$/, '');
+            const apiUrl = (env.REACT_APP_API_URL || '').replace(/\/+$/, '');
             const apiPath = env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api (application default)';
             const sourceOk = source === 'api';
             const apiOk = apiUrl === expectedApi;
