@@ -69,6 +69,11 @@ const Articles = () => {
     setActiveAuthor(null);
   };
 
+  const selectAllFilters = () => {
+    resetFilters();
+    setFiltersOpen(false);
+  };
+
   const selectTopic = (name) => {
     setActiveTopic(name);
     setFiltersOpen(false);
@@ -294,7 +299,7 @@ const Articles = () => {
               </>
             )}
             {hasActiveFilters && (
-              <button type="button" className={styles.asideFooterLink} onClick={resetFilters}>
+              <button type="button" className={styles.asideFooterLink} onClick={selectAllFilters}>
                 Сбросить фильтр
               </button>
             )}
