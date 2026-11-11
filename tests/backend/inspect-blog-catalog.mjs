@@ -34,3 +34,5 @@ for (const article of articles) {
     keys:Object.keys(article)
   }));
 }
+
+// Trigger workflow registration after adding the workflow definition.
