@@ -13,7 +13,7 @@ if (missing.length) throw new Error('Missing required GitHub Actions secrets: ' 
 const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
 if (new URL(base).protocol !== 'https:') throw new Error('Refusing non-HTTPS backend');
 const apiBase = base + '/api/v1/';
-const templateEndpoint = apiBase + 'script/template/repair_api_test_page/';
+const templateEndpoint = apiBase + 'script/template/repair_api_comments_public/';
 const marker = '[QA-CLIENT-MASTER-COMMENT-' +
   (process.env.GITHUB_RUN_ID || 'manual') + '-' +
   (process.env.GITHUB_RUN_ATTEMPT || '1') + ']';
