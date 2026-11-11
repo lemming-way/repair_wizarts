@@ -10,7 +10,7 @@ const required = [
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) throw new Error('Missing required GitHub Actions secrets: ' + missing.join(', '));
 
-const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
+const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
 if (new URL(base).protocol !== 'https:') throw new Error('Refusing non-HTTPS backend');
 const apiBase = base + '/api/v1/';
 const templateEndpoint = apiBase + 'script/template/repair_api_test_page/';
@@ -44,7 +44,7 @@ async function postJson(path, payload) {
 function normalizeLogin(login) {
   if (login.includes('@')) return login;
   const trimmed = login.trim();
-  const digits = trimmed.replace(/\\D/g, '');
+  const digits = trimmed.replace(/\D/g, '');
   return trimmed.startsWith('+') ? '+' + digits : digits;
 }
 async function authenticate(prefix, expectedRole) {
