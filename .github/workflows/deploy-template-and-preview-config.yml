@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   deploy-backend-template:
-    name: Create backend test template
+    name: Deploy backend test template
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
@@ -27,12 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Create repair_api_test_page if absent
+      - name: Update repair_api_test_page from repository source and verify
         env:
           REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
           REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
           REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
-        run: node tests/backend/create-template.mjs
+        run: node tests/backend/deploy-inspect-article-db.mjs
 
   configure-preview:
     name: Set branch-specific Preview path and rebuild
