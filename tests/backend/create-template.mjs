@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Re-run preflight/create after comment-flow test found the server template missing.
 
 const required = ['REPAIR_API_BASE', 'REPAIR_API_TOKEN', 'REPAIR_API_U_HASH'];
 const missing = required.filter((key) => !process.env[key]);
