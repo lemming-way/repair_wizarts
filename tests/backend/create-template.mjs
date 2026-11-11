@@ -70,6 +70,7 @@ const payload = {
 
 console.log('Creating one script_templates record: repair_api_test_page.');
 const created = await post({
+  private: '1',
   data: JSON.stringify(payload),
   ...auth,
 }, 'Template creation');
