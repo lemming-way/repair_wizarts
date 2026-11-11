@@ -18,8 +18,8 @@ jobs:
       - name: Verify separate client and master accounts and comment flow
         env:
           REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
-          BLOG_TEST_CLIENT_LOGIN: ${{ secrets.BLOG_TEST_CLIENT_LOGIN }}
-          BLOG_TEST_CLIENT_PASSWORD: ${{ secrets.BLOG_TEST_CLIENT_PASSWORD }}
-          BLOG_TEST_MASTER_LOGIN: ${{ secrets.BLOG_TEST_MASTER_LOGIN }}
-          BLOG_TEST_MASTER_PASSWORD: ${{ secrets.BLOG_TEST_MASTER_PASSWORD }}
+          BLOG_TEST_CLIENT_LOGIN: ${{ secrets.E2E_CLIENT_1_LOGIN }}
+          BLOG_TEST_CLIENT_PASSWORD: ${{ secrets.E2E_CLIENT_1_PASSWORD }}
+          BLOG_TEST_MASTER_LOGIN: ${{ secrets.E2E_MASTER_1_LOGIN }}
+          BLOG_TEST_MASTER_PASSWORD: ${{ secrets.E2E_MASTER_1_PASSWORD }}
         run: node tests/backend/test-client-master-comment-flow.mjs
