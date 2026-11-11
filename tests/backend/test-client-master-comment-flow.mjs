@@ -37,7 +37,8 @@ async function postJson(path, payload) {
   catch { throw new Error(path + ': non-JSON response, HTTP ' + response.status); }
   if (!response.ok || json?.status === 'error' || String(json?.code) !== '200') {
     throw new Error(path + ': authentication request failed, HTTP ' + response.status +
-      ', API code ' + String(json?.code ?? 'n/a') + ', status ' + String(json?.status ?? 'n/a'));
+      ', API code ' + String(json?.code ?? 'n/a') + ', status ' + String(json?.status ?? 'n/a') +
+      ', message ' + String(json?.message ?? 'not provided').slice(0, 300));
   }
   return json;
 }
