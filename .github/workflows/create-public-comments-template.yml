@@ -1,0 +1,26 @@
+name: Create public article comments template
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - '.github/workflows/create-public-comments-template.yml'
+      - 'tests/backend/create-public-comments-template.mjs'
+      - 'script_templates/repair_api_comments_public.php'
+permissions:
+  contents: read
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Create and verify isolated public comments template
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/create-public-comments-template.mjs
