@@ -1,6 +1,11 @@
 name: Test client-to-master comment flow
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - tests/backend/test-client-master-comment-flow.mjs
 permissions:
   contents: read
 jobs:
