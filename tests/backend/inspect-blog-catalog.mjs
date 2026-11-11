@@ -28,7 +28,7 @@ if (!articles) { console.log('RAW_RESPONSE_SHAPE', JSON.stringify(json).slice(0,
 console.log('ARTICLE_COUNT',articles.length);
 for (const article of articles) {
   console.log('ARTICLE',JSON.stringify({
-    id:article.id,title:article.title,slug:article.slug,topic:article.topic,
+    id:article.id,title:article.title,slug:article.slug,topic:article.topic,topic_id:article.topic_id,topic_name:article.topic_name,
     category:article.category,categories:article.categories,
     author:article.author,author_id:article.author_id,author_name:article.author_name,
     keys:Object.keys(article)
@@ -36,3 +36,10 @@ for (const article of articles) {
 }
 
 // Trigger workflow registration after adding the workflow definition.
+
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+execFileSync(process.execPath,['scripts/build-articles.mjs'],{stdio:'inherit'});
+const catalog=JSON.parse(fs.readFileSync('public/articles/catalog.json','utf8'));
+console.log('LOCAL_CATALOG_COUNT',catalog.articles.length);
+for(const article of catalog.articles) console.log('LOCAL_ARTICLE',JSON.stringify({id:article.id,title:article.title,topic:article.topic,author:article.author}));
