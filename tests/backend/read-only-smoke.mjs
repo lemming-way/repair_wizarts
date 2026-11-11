@@ -115,7 +115,7 @@ try {
     : typeof templates === 'object'
       ? Object.values(templates)
       : [];
-  const safeFields = ['var', 'name', 'filename', 'file_name', 'title', 'id'];
+  const safeFields = ['var', 'name', 'filename', 'file_name', 'title', 'id', 'only_admin'];
   let foundTestVar = false;
   let foundTestPageVar = false;
 
