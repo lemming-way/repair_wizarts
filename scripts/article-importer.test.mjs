@@ -58,9 +58,17 @@ const validArticle = {
   format_version: '1.3',
   title: 'Проверка',
   summary: 'Тестовая статья',
-  topic: 'electronics',
-  assets: [{ file: 'media/photo.png' }],
-  blocks: [{ type: 'heading', text: 'Диагностика' }, { type: 'model_3d', file: 'media/model.glb' }],
+  topic: { name: 'Электроника', path: ['Электроника', 'Ремонт'] },
+  assets: [
+    { file: 'media/photo.png', type: 'image', format: 'png', size_bytes: 11 },
+    { file: 'media/model.glb', type: 'model_3d', format: 'glb', size_bytes: 11 },
+  ],
+  blocks: [
+    { type: 'heading', level: 2, text: 'Диагностика' },
+    { type: 'paragraph', text: 'Проверочный абзац.' },
+    { type: 'image', file: 'media/photo.png', alt: 'Тестовое изображение' },
+    { type: 'model_3d', file: 'media/model.glb', alt: 'Тестовая модель' },
+  ],
 };
 
 test('reads stored and deflated ZIP local entries', () => {
@@ -150,12 +158,13 @@ test('rejects traversal and absolute archive paths', () => {
 
 test('validates v1.3 root structure, block types and referenced assets', () => {
   assertArticle(validArticle, 'valid.zip', new Set(['media/photo.png', 'media/model.glb']));
+  assertArticle({ ...validArticle, format_version: '1.2' }, 'legacy.zip', new Set(['media/photo.png', 'media/model.glb']));
   assert.throws(
-    () => assertArticle({ ...validArticle, format_version: '1.2' }, 'bad.zip', new Set()),
+    () => assertArticle({ ...validArticle, format_version: '2.0' }, 'bad.zip', new Set()),
     /unsupported format_version/,
   );
   assert.throws(
-    () => assertArticle({ ...validArticle, blocks: [{ type: 'unknown' }] }, 'bad.zip', new Set()),
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'unknown' }] }, 'bad.zip', new Set(['media/photo.png', 'media/model.glb'])),
     /unsupported block type/,
   );
   assert.throws(
@@ -212,4 +221,60 @@ test('imports a valid article ZIP and rejects missing article.json or media', ()
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+});
+
+
+test('validates all twelve Article Format block types and their required fields', () => {
+  const article = {
+    ...validArticle,
+    blocks: [
+      { type: 'heading', level: 2, text: 'Заголовок' },
+      { type: 'paragraph', text: 'Абзац' },
+      { type: 'image', file: 'media/photo.png', alt: 'Изображение' },
+      { type: 'gallery', images: [
+        { file: 'media/photo.png', alt: 'Первое' },
+        { file: 'media/photo.png', alt: 'Второе' },
+      ] },
+      { type: 'video', url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ', caption: 'Видео' },
+      { type: 'list', style: 'ordered', items: ['Раз', 'Два'] },
+      { type: 'quote', text: 'Цитата' },
+      { type: 'callout', style: 'warning', text: 'Предупреждение' },
+      { type: 'steps', items: [{ title: 'Шаг', text: 'Описание', image: 'media/photo.png' }] },
+      { type: 'table', headers: ['Параметр', 'Значение'], rows: [['VBAT', '4.0 V']] },
+      { type: 'code', language: 'bash', text: 'echo ok' },
+      { type: 'model_3d', file: 'media/model.glb', alt: 'Модель', controls: { rotate: true, zoom: true } },
+    ],
+  };
+  assertArticle(article, 'all-blocks.zip', new Set(['media/photo.png', 'media/model.glb']));
+});
+
+test('rejects malformed block payloads, unregistered references and incorrect asset sizes', () => {
+  const files = new Map([
+    ['media/photo.png', Buffer.from('image-bytes')],
+    ['media/model.glb', Buffer.from('model-bytes')],
+  ]);
+  assert.throws(
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'heading', level: 1, text: 'Bad' }] }, 'bad.zip', files),
+    /level must be an integer from 2 to 4/,
+  );
+  assert.throws(
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'gallery', images: [{ file: 'media/photo.png', alt: 'Only one' }] }] }, 'bad.zip', files),
+    /at least two images/,
+  );
+  assert.throws(
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'video', url: 'https://evil.example/video' }] }, 'bad.zip', files),
+    /unsupported video platform/,
+  );
+  assert.throws(
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'steps', items: [{ title: 'Step' }] }] }, 'bad.zip', files),
+    /blocks\[0\]\.items\[0\]\.text must be a non-empty string/,
+  );
+  assert.throws(
+    () => assertArticle({ ...validArticle, blocks: [{ type: 'table', headers: ['A', 'B'], rows: [['only one']] }] }, 'bad.zip', files),
+    /must contain 2 string cells/,
+  );
+  assert.throws(
+    () => assertArticle({ ...validArticle, assets: [{ ...validArticle.assets[0], size_bytes: 10 }] }, 'bad.zip', files),
+    /asset size mismatch/,
+  );
 });

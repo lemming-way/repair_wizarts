@@ -198,43 +198,267 @@ export function readZipEntries(buffer) {
 
 function isSafeRelativeFile(value) {
   if (typeof value !== 'string' || !value.trim()) return false;
-  const normalized = path.posix.normalize(value.replace(/\\/g, '/'));
-  return !normalized.startsWith('/') && normalized !== '..' && !normalized.startsWith('../');
+  if (value.includes('\\') || value.startsWith('/') || /^[a-zA-Z]:/.test(value)) return false;
+  const normalized = path.posix.normalize(value);
+  return normalized === value && normalized.startsWith('media/') &&
+    !normalized.split('/').some((part) => part === '' || part === '.' || part === '..');
+}
+
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function requireString(value, field, sourceName) {
+  if (typeof value !== 'string' || value.trim() === '') {
+    fail(sourceName + ': ' + field + ' must be a non-empty string.');
+  }
+}
+
+function requireOptionalString(value, field, sourceName) {
+  if (value !== undefined && value !== null && typeof value !== 'string') {
+    fail(sourceName + ': ' + field + ' must be a string when provided.');
+  }
+}
+
+function requireFile(file, field, sourceName, assets, usedFiles, expectedType) {
+  if (!isSafeRelativeFile(file)) fail(sourceName + ': invalid file path at ' + field + '.');
+  if (!assets.has(file)) fail(sourceName + ': ' + field + ' references an unregistered asset: ' + file);
+  if (expectedType && assets.get(file).type !== expectedType) {
+    fail(sourceName + ': ' + field + ' must reference an asset of type ' + expectedType + '.');
+  }
+  usedFiles.add(file);
+}
+
+function validateYouTubeUrl(value, sourceName, field) {
+  requireString(value, field, sourceName);
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    fail(sourceName + ': ' + field + ' must be a valid URL.');
+  }
+  if (url.protocol !== 'https:') fail(sourceName + ': ' + field + ' must use HTTPS.');
+  const host = url.hostname.toLowerCase();
+  const allowedHosts = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtube-nocookie.com']);
+  if (!allowedHosts.has(host)) fail(sourceName + ': unsupported video platform in ' + field + '.');
+  const validPath = host === 'youtu.be'
+    ? /^\/[A-Za-z0-9_-]{6,}$/.test(url.pathname)
+    : /^\/(?:watch|shorts\/[A-Za-z0-9_-]{6,}|embed\/[A-Za-z0-9_-]{6,})$/.test(url.pathname);
+  if (!validPath || (url.pathname === '/watch' && !/^[A-Za-z0-9_-]{6,}$/.test(url.searchParams.get('v') || ''))) {
+    fail(sourceName + ': unsupported YouTube URL in ' + field + '.');
+  }
+}
+
+function enumAssetType(value, sourceName, field) {
+  if (!['image', 'model_3d'].includes(value)) {
+    fail(sourceName + ': ' + field + '.type has an unsupported value "' + value + '".');
+  }
+}
+
+function validateBlock(block, index, sourceName, assets, usedFiles) {
+  const at = 'blocks[' + index + ']';
+  if (!isRecord(block) || typeof block.type !== 'string') {
+    fail(sourceName + ': ' + at + ' must be an object with a type.');
+  }
+  const text = (field) => requireString(block[field], at + '.' + field, sourceName);
+  const optionalText = (field) => requireOptionalString(block[field], at + '.' + field, sourceName);
+  const enumValue = (value, allowed, field) => {
+    if (!allowed.includes(value)) fail(sourceName + ': ' + at + '.' + field + ' has an unsupported value.');
+  };
+
+  switch (block.type) {
+    case 'heading':
+      if (!Number.isInteger(block.level) || block.level < 2 || block.level > 4) {
+        fail(sourceName + ': ' + at + '.level must be an integer from 2 to 4.');
+      }
+      text('text');
+      break;
+    case 'paragraph':
+      text('text');
+      break;
+    case 'image':
+      requireFile(block.file, at + '.file', sourceName, assets, usedFiles, 'image');
+      text('alt');
+      optionalText('caption');
+      break;
+    case 'gallery':
+      if (!Array.isArray(block.images) || block.images.length < 2) {
+        fail(sourceName + ': ' + at + '.images must contain at least two images.');
+      }
+      block.images.forEach((image, imageIndex) => {
+        const imageAt = at + '.images[' + imageIndex + ']';
+        if (!isRecord(image)) fail(sourceName + ': ' + imageAt + ' must be an object.');
+        requireFile(image.file, imageAt + '.file', sourceName, assets, usedFiles, 'image');
+        requireString(image.alt, imageAt + '.alt', sourceName);
+        requireOptionalString(image.caption, imageAt + '.caption', sourceName);
+      });
+      break;
+    case 'video':
+      validateYouTubeUrl(block.url, sourceName, at + '.url');
+      optionalText('caption');
+      break;
+    case 'list':
+      enumValue(block.style, ['ordered', 'unordered'], 'style');
+      if (!Array.isArray(block.items) || block.items.length === 0 ||
+          block.items.some((item) => typeof item !== 'string' || item.trim() === '')) {
+        fail(sourceName + ': ' + at + '.items must be a non-empty array of strings.');
+      }
+      break;
+    case 'quote':
+      text('text');
+      optionalText('caption');
+      break;
+    case 'callout':
+      enumValue(block.style, ['info', 'warning', 'danger', 'tip'], 'style');
+      text('text');
+      optionalText('title');
+      break;
+    case 'steps':
+      if (!Array.isArray(block.items) || block.items.length === 0) {
+        fail(sourceName + ': ' + at + '.items must be a non-empty array.');
+      }
+      block.items.forEach((step, stepIndex) => {
+        const stepAt = at + '.items[' + stepIndex + ']';
+        if (!isRecord(step)) fail(sourceName + ': ' + stepAt + ' must be an object.');
+        requireString(step.title, stepAt + '.title', sourceName);
+        requireString(step.text, stepAt + '.text', sourceName);
+        requireOptionalString(step.warning, stepAt + '.warning', sourceName);
+        if (step.image !== undefined && step.image !== null && step.image !== '') {
+          requireFile(step.image, stepAt + '.image', sourceName, assets, usedFiles, 'image');
+        }
+      });
+      break;
+    case 'table':
+      if (!Array.isArray(block.headers) || block.headers.length === 0 ||
+          block.headers.some((header) => typeof header !== 'string' || header.trim() === '')) {
+        fail(sourceName + ': ' + at + '.headers must be a non-empty array of strings.');
+      }
+      if (!Array.isArray(block.rows)) fail(sourceName + ': ' + at + '.rows must be an array.');
+      block.rows.forEach((row, rowIndex) => {
+        if (!Array.isArray(row) || row.length !== block.headers.length ||
+            row.some((cell) => typeof cell !== 'string')) {
+          fail(sourceName + ': ' + at + '.rows[' + rowIndex + '] must contain ' + block.headers.length + ' string cells.');
+        }
+      });
+      break;
+    case 'code':
+      text('language');
+      text('text');
+      break;
+    case 'model_3d':
+      requireFile(block.file, at + '.file', sourceName, assets, usedFiles, 'model_3d');
+      if (!['glb', 'gltf'].includes(assets.get(block.file).format.toLowerCase())) {
+        fail(sourceName + ': ' + at + '.file must reference a GLB or glTF model.');
+      }
+      text('alt');
+      optionalText('caption');
+      if (block.controls !== undefined) {
+        if (!isRecord(block.controls) ||
+            ['rotate', 'zoom', 'pan'].some((key) => block.controls[key] !== undefined && typeof block.controls[key] !== 'boolean')) {
+          fail(sourceName + ': ' + at + '.controls must contain boolean options.');
+        }
+      }
+      if (block.camera !== undefined) {
+        if (!isRecord(block.camera) ||
+            ['azimuth', 'elevation'].some((key) => block.camera[key] !== undefined && !Number.isFinite(block.camera[key]))) {
+          fail(sourceName + ': ' + at + '.camera must contain finite numeric angles.');
+        }
+      }
+      if (block.scale !== undefined && (!Number.isFinite(block.scale) || block.scale <= 0)) {
+        fail(sourceName + ': ' + at + '.scale must be a positive number.');
+      }
+      break;
+    default:
+      fail(sourceName + ': unsupported block type "' + block.type + '".');
+  }
 }
 
 export function assertArticle(article, sourceName, mediaFiles) {
-  if (!article || typeof article !== 'object')
-    fail(`${sourceName}: article.json is not an object.`);
-  if (article.format_version !== '1.3') {
-    fail(`${sourceName}: unsupported format_version "${article.format_version}".`);
+  if (!isRecord(article)) fail(sourceName + ': article.json is not an object.');
+  if (!['1.2', '1.3'].includes(article.format_version)) {
+    fail(sourceName + ': unsupported format_version "' + article.format_version + '".');
   }
-  for (const field of ['title', 'summary', 'topic', 'assets', 'blocks']) {
-    if (!(field in article)) fail(`${sourceName}: missing root field "${field}".`);
+  for (const field of ['title', 'summary']) requireString(article[field], field, sourceName);
+  if (!isRecord(article.topic)) fail(sourceName + ': topic must be an object.');
+  requireString(article.topic.name, 'topic.name', sourceName);
+  if (!Array.isArray(article.topic.path) || article.topic.path.length === 0 ||
+      article.topic.path.some((part) => typeof part !== 'string' || part.trim() === '')) {
+    fail(sourceName + ': topic.path must be a non-empty array of strings.');
   }
-  if (!Array.isArray(article.blocks) || article.blocks.length === 0) {
-    fail(`${sourceName}: blocks must be a non-empty array.`);
+  if (!Array.isArray(article.blocks) || article.blocks.length === 0 || article.blocks.length > 200) {
+    fail(sourceName + ': blocks must be a non-empty array with at most 200 items.');
   }
-  if (!Array.isArray(article.assets)) fail(`${sourceName}: assets must be an array.`);
+  if (!Array.isArray(article.assets)) fail(sourceName + ': assets must be an array.');
 
-  for (const block of article.blocks) {
-    if (!block || typeof block.type !== 'string') fail(`${sourceName}: block without type.`);
-    if (!SUPPORTED_BLOCKS.has(block.type)) {
-      fail(`${sourceName}: unsupported block type "${block.type}".`);
+  const availableFiles = mediaFiles instanceof Map
+    ? mediaFiles
+    : new Map([...mediaFiles].map((name) => [name, null]));
+  const assets = new Map();
+  for (const [index, asset] of article.assets.entries()) {
+    const at = 'assets[' + index + ']';
+    if (!isRecord(asset)) fail(sourceName + ': ' + at + ' must be an object.');
+    if (!isSafeRelativeFile(asset.file)) fail(sourceName + ': invalid asset path at ' + at + '.file.');
+    if (assets.has(asset.file)) fail(sourceName + ': duplicate asset path: ' + asset.file);
+    requireString(asset.type, at + '.type', sourceName);
+    enumAssetType(asset.type, sourceName, at);
+    requireString(asset.format, at + '.format', sourceName);
+    const extension = path.posix.extname(asset.file).slice(1).toLowerCase();
+    const format = asset.format.toLowerCase();
+    const allowedFormats = asset.type === 'image'
+      ? ['svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'avif']
+      : ['glb', 'gltf'];
+    const compatibleExtensions = format === 'jpg' ? ['jpg', 'jpeg'] : [format];
+    if (!allowedFormats.includes(format) || !compatibleExtensions.includes(extension)) {
+      fail(sourceName + ': asset type/format/extension mismatch at ' + at + '.');
+    }
+    if (!Number.isSafeInteger(asset.size_bytes) || asset.size_bytes < 0) {
+      fail(sourceName + ': ' + at + '.size_bytes must be a non-negative integer.');
+    }
+    if (!availableFiles.has(asset.file)) fail(sourceName + ': asset file is missing: ' + asset.file);
+    const fileData = availableFiles.get(asset.file);
+    if (fileData && fileData.length !== asset.size_bytes) {
+      fail(sourceName + ': asset size mismatch for ' + asset.file + ': expected ' + asset.size_bytes + ', got ' + fileData.length + '.');
+    }
+    assets.set(asset.file, asset);
+  }
+
+  if (availableFiles instanceof Map) {
+    for (const file of availableFiles.keys()) {
+      if (!assets.has(file)) fail(sourceName + ': unregistered file in media/: ' + file);
     }
   }
 
-  for (const asset of article.assets) {
-    if (!asset || !isSafeRelativeFile(asset.file)) {
-      fail(`${sourceName}: invalid asset path.`);
-    }
-    if (!mediaFiles.has(asset.file)) fail(`${sourceName}: asset file is missing: ${asset.file}`);
+  const usedFiles = new Set();
+  if (article.cover !== undefined && article.cover !== null) {
+    if (!isRecord(article.cover)) fail(sourceName + ': cover must be an object.');
+    requireFile(article.cover.file, 'cover.file', sourceName, assets, usedFiles, 'image');
+    requireString(article.cover.alt, 'cover.alt', sourceName);
   }
 
-  if (article.cover) {
-    if (!isSafeRelativeFile(article.cover.file)) fail(`${sourceName}: invalid cover path.`);
-    if (!mediaFiles.has(article.cover.file)) {
-      fail(`${sourceName}: cover file is missing: ${article.cover.file}`);
+  article.blocks.forEach((block, index) => validateBlock(block, index, sourceName, assets, usedFiles));
+
+  if (article.format_version === '1.3' && article.technical_knowledge !== undefined) {
+    if (!isRecord(article.technical_knowledge)) {
+      fail(sourceName + ': technical_knowledge must be an object when provided.');
     }
+    const visit = (value) => {
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+      } else if (isRecord(value)) {
+        if (Array.isArray(value.media_refs)) {
+          value.media_refs.forEach((media, index) => {
+            if (!isRecord(media)) fail(sourceName + ': invalid technical_knowledge media_refs entry.');
+            requireFile(media.file, 'technical_knowledge.media_refs[' + index + '].file', sourceName, assets, usedFiles);
+          });
+        }
+        Object.values(value).forEach(visit);
+      }
+    };
+    visit(article.technical_knowledge);
+  }
+
+  for (const file of assets.keys()) {
+    if (!usedFiles.has(file)) fail(sourceName + ': unused asset: ' + file);
   }
 }
 
@@ -244,11 +468,11 @@ export function readArticleZip(zipPath) {
   const jsonEntry = entries.find((entry) => entry.name === 'article.json');
   if (!jsonEntry) fail(`${zipPath}: article.json not found in the archive root.`);
 
-  const mediaEntries = entries.filter((entry) => entry.name.startsWith('media/'));
+  const mediaEntries = entries.filter((entry) => entry.name.startsWith('media/') && !entry.name.endsWith('/'));
   if (mediaEntries.length === 0) fail(`${zipPath}: media/ directory not found.`);
 
   const article = JSON.parse(jsonEntry.data.toString('utf8').replace(/^\uFEFF/, ''));
-  assertArticle(article, zipPath, new Set(mediaEntries.map((entry) => entry.name)));
+  assertArticle(article, zipPath, new Map(mediaEntries.map((entry) => [entry.name, entry.data])));
 
   return { slug, article, mediaEntries, zipPath };
 }
