@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Verifies a real client -> master comment/reply flow using two separate accounts.
 // QA comments are intentionally retained for frontend verification.
+// Trigger revision: run the authenticated client/master integration on this branch.
 const required = [
   'REPAIR_API_BASE',
   'BLOG_TEST_CLIENT_LOGIN', 'BLOG_TEST_CLIENT_PASSWORD',
