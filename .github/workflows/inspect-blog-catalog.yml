@@ -1,0 +1,22 @@
+name: Inspect blog catalog (read only)
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - tests/backend/inspect-blog-catalog.mjs
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect getBlogTopics response without modifying data
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          BLOG_TEST_CLIENT_LOGIN: ${{ secrets.E2E_CLIENT_1_LOGIN }}
+          BLOG_TEST_CLIENT_PASSWORD: ${{ secrets.E2E_CLIENT_1_PASSWORD }}
+        run: node tests/backend/inspect-blog-catalog.mjs
