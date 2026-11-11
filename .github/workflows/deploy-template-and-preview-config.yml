@@ -1,0 +1,99 @@
+name: Deploy repair API test template and configure Preview
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - '.github/workflows/deploy-template-and-preview-config.yml'
+      - 'tests/backend/create-template.mjs'
+      - 'script_templates/repair_api_test_page.php'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repair-api-preview-config
+  cancel-in-progress: false
+
+jobs:
+  deploy-backend-template:
+    name: Create backend test template
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Create repair_api_test_page if absent
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/create-template.mjs
+
+  configure-preview:
+    name: Set branch-specific Preview path and rebuild
+    needs: deploy-backend-template
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PREVIEW_BRANCH: docs/repair-wizards-article-format-v1.3
+      BLOG_API_PATH: script/template/repair_api_test_page
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate Vercel credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN" || { echo "::error::VERCEL_TOKEN is missing"; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo "::error::VERCEL_ORG_ID is missing"; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo "::error::VERCEL_PROJECT_ID is missing"; exit 1; }
+      - name: Link project and set only this Preview branch variable
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest pull --yes --environment=preview --git-branch="$PREVIEW_BRANCH" --token="$VERCEL_TOKEN"
+          printf '%s\n' "$BLOG_API_PATH" | npx --yes vercel@latest env add REACT_APP_BLOG_API_PATH preview "$PREVIEW_BRANCH" --force --token="$VERCEL_TOKEN"
+      - name: Verify branch-specific Preview configuration without exposing other values
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest pull --yes --environment=preview --git-branch="$PREVIEW_BRANCH" --token="$VERCEL_TOKEN"
+          node <<'NODE'
+          const fs = require('fs');
+          const file = '.vercel/.env.preview.local';
+          if (!fs.existsSync(file)) throw new Error('Vercel Preview env file was not created');
+          const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+          const line = lines.find((entry) => entry.startsWith('REACT_APP_BLOG_API_PATH='));
+          if (!line) throw new Error('REACT_APP_BLOG_API_PATH is missing from branch Preview');
+          let value = line.slice('REACT_APP_BLOG_API_PATH='.length).trim();
+          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+          if (value !== process.env.BLOG_API_PATH) throw new Error('Preview path verification failed');
+          console.log('Preview branch: ' + process.env.PREVIEW_BRANCH);
+          console.log('REACT_APP_BLOG_API_PATH: ' + value + ' [OK]');
+          NODE
+      - name: Build a new Preview deployment (never Production)
+        shell: bash
+        run: |
+          set -euo pipefail
+          deploy_output="$(npx --yes vercel@latest deploy --yes --token="$VERCEL_TOKEN" 2>&1)"
+          printf '%s\n' "$deploy_output"
+          preview_url="$(printf '%s\n' "$deploy_output" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -n 1 || true)"
+          if [ -z "$preview_url" ]; then
+            echo "::error::Vercel CLI did not return a Preview URL"
+            exit 1
+          fi
+          echo "Preview URL: $preview_url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production was not deployed."
+      - name: Remove local Vercel environment files
+        if: always()
+        run: rm -f .vercel/.env.preview.local .vercel/.env.production.local
