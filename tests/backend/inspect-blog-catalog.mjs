@@ -5,7 +5,7 @@ for (const key of required) if (!process.env[key]) throw new Error('Missing ' + 
 const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
 if (new URL(base).protocol !== 'https:') throw new Error('HTTPS required');
 const api = base + '/api/v1/';
-const endpoint = api + 'script/template/repair_api_comments_public/';
+const endpoint = api + 'script/template/repair_api_test_page/';
 async function post(path, payload) {
   const r = await fetch(api + path, {method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json'},body:new URLSearchParams(payload),redirect:'error',signal:AbortSignal.timeout(30000)});
   const j = await r.json();
