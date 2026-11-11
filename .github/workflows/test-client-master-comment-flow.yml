@@ -1,0 +1,20 @@
+name: Test client-to-master comment flow
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    name: Client comment and master reply integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify separate client and master accounts and comment flow
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          BLOG_TEST_CLIENT_LOGIN: ${{ secrets.BLOG_TEST_CLIENT_LOGIN }}
+          BLOG_TEST_CLIENT_PASSWORD: ${{ secrets.BLOG_TEST_CLIENT_PASSWORD }}
+          BLOG_TEST_MASTER_LOGIN: ${{ secrets.BLOG_TEST_MASTER_LOGIN }}
+          BLOG_TEST_MASTER_PASSWORD: ${{ secrets.BLOG_TEST_MASTER_PASSWORD }}
+        run: node tests/backend/test-client-master-comment-flow.mjs
