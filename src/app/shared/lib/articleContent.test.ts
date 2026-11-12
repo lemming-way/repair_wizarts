@@ -37,6 +37,10 @@ describe('article content helpers', () => {
     expect(resolveArticleMedia('media/a.png')).toBe(
       'https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png',
     );
+    expect(resolveArticleMedia('dropbox:12345')).toBe(
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/12345',
+    );
+    expect(resolveArticleMedia('dropbox:not-a-number')).toBe('');
     expect(resolveArticleMedia('javascript:alert(1)', '/articles/x/')).toBe('');
     expect(resolveArticleMedia('vbscript:msgbox(1)', '/articles/x/')).toBe('');
     expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
