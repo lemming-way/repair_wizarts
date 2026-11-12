@@ -9,6 +9,8 @@ export type BlogCommentNode = BlogComment & {
 export function resolveMediaUrl(src: string | null | undefined): string {
   if (!src) return '';
   if (/^(?:https?:)?\/\//i.test(src) || /^(?:data|blob):/i.test(src)) return src;
+  const dropboxMatch = src.match(/^dropbox:(\d+)$/i);
+  if (dropboxMatch) return `${SERVER_PATH.replace(/\/+$/, '')}/dropbox/file/${dropboxMatch[1]}`;
 
   return `${SERVER_PATH.replace(/\/+$/, '')}/${src.replace(/^\/+/, '')}`;
 }
