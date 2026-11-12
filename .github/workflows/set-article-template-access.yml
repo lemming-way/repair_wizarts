@@ -1,0 +1,26 @@
+name: Allow client and master access to article test template
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/set-article-template-access.mjs'
+      - '.github/workflows/set-article-template-access.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  update-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Change only repair_api_test_page.only_admin and verify
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/set-article-template-access.mjs
