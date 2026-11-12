@@ -15,7 +15,7 @@ async function post(path, payload, label) {
   const raw=await response.text(); let json;
   try { json=JSON.parse(raw); } catch { throw new Error(label+' returned non-JSON HTTP '+response.status); }
   if (!response.ok || json?.status==='error' || String(json?.code)!=='200')
-    throw new Error(label+' rejected: HTTP '+response.status+', code '+String(json?.code)+', message '+String(json?.message));
+    throw new Error(label+' rejected: HTTP '+response.status+', code '+String(json?.code)+', message '+JSON.stringify(json?.message ?? null));
   return json;
 }
 async function inventory() {
