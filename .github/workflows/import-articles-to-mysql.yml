@@ -1,4 +1,4 @@
-name: Import six v1.3 articles directly into MySQL
+name: Import six v1.3 articles and migrate all media to Dropbox
 
 on:
   push:
@@ -23,19 +23,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build static article media for the six ZIP fixtures
-        run: npm run articles:build
-      - name: Publish generated article media to the branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/articles
-          if ! git diff --cached --quiet; then
-            git commit -m "Build static media for six v1.3 article fixtures"
-            git push origin HEAD:docs/repair-wizards-article-format-v1.3
-          else
-            echo "Article media already up to date."
-          fi
       - name: Install MySQL client library
         run: npm install --no-save --no-package-lock mysql2
       - name: Insert missing articles directly into MySQL
@@ -46,4 +33,7 @@ jobs:
           MYSQL_USER: ${{ secrets.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
           MYSQL_SSL: ${{ secrets.MYSQL_SSL }}
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
         run: node tests/backend/import-articles-to-mysql.mjs
