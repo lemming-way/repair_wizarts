@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import mysql from 'mysql2/promise';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { findZipFiles, readArticleZip } from '../../scripts/article-importer.mjs';
 
 const required = [
@@ -91,6 +92,38 @@ async function uploadMediaToDropbox(asset, entry, ownerId, uploadedIds) {
   }
   uploadedIds.push(id);
   return 'dropbox:' + id;
+}
+
+async function verifyDropboxAsset(asset, sourceEntry) {
+  const match = typeof asset?.file === 'string' ? asset.file.match(/^dropbox:(\\d+)$/) : null;
+  if (!match) throw new Error('Invalid Dropbox asset reference: ' + JSON.stringify(asset));
+  const id = Number(match[1]);
+  const response = await fetch(apiBase + '/dropbox/file/' + id, {
+    method: 'GET',
+    headers: { Accept: '*/*' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(60000),
+  });
+  if (!response.ok) throw new Error('Dropbox read failed for dl_id ' + id + ': HTTP ' + response.status);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!Number.isSafeInteger(asset.size_bytes) || bytes.length !== asset.size_bytes) {
+    throw new Error('Dropbox size mismatch for dl_id ' + id + ': expected ' + asset.size_bytes + ', received ' + bytes.length);
+  }
+  if (!sourceEntry || !Buffer.isBuffer(sourceEntry.data) || !bytes.equals(sourceEntry.data)) {
+    const sourceHash = sourceEntry?.data ? createHash('sha256').update(sourceEntry.data).digest('hex') : 'missing';
+    const storedHash = createHash('sha256').update(bytes).digest('hex');
+    throw new Error('Dropbox byte-for-byte verification failed for dl_id ' + id + ' (' + sourceHash + ' != ' + storedHash + ')');
+  }
+  const format = String(asset.format || '').toLowerCase();
+  const expectedMime = MIME_BY_FORMAT[format];
+  const actualMime = String(response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (expectedMime && actualMime !== expectedMime) {
+    throw new Error('Dropbox MIME mismatch for dl_id ' + id + ': expected ' + expectedMime + ', received ' + actualMime);
+  }
+  if (format === 'glb' && bytes.subarray(0, 4).toString('ascii') !== 'glTF') {
+    throw new Error('Dropbox GLB signature mismatch for dl_id ' + id);
+  }
+  return { dl_id: id, source_file: asset.source_file, format, bytes: bytes.length, mime: actualMime };
 }
 
 function rewriteMediaReferences(article, mediaRefs) {
@@ -253,6 +286,14 @@ try {
         !Array.isArray(assets) || !assets.length ||
         assets.some((asset) => typeof asset?.file !== 'string' || !/^dropbox:\d+$/.test(asset.file))) {
       throw new Error('Dropbox media readback validation failed for article ' + row.id_blog_post + ': ' + JSON.stringify(row));
+    }
+    const write = writes.find((item) => item.id === Number(row.id_blog_post));
+    const sourceArticle = imported.find((item) => item.slug === write?.slug);
+    if (!sourceArticle) throw new Error('Source ZIP not found for article ID ' + row.id_blog_post);
+    const sourceEntries = new Map(sourceArticle.mediaEntries.map((entry) => [entry.name, entry]));
+    for (const asset of assets) {
+      const verified = await verifyDropboxAsset(asset, sourceEntries.get(asset.source_file));
+      console.log('DROPBOX_ASSET_READBACK ' + JSON.stringify(verified));
     }
   }
   console.log('DB_IDENTITY ' + JSON.stringify(identity));
