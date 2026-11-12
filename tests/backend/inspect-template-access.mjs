@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Read-only comparison of backend template access metadata. Never prints PHP source or credentials.
+// Read-only template metadata inspection. Never prints PHP source or credentials.
 const required = ['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing ' + key);
-const base = process.env.REPAIR_API_BASE.replace(/\/+$/, '');
+const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
 if (new URL(base + '/api/v1/data').protocol !== 'https:') throw new Error('HTTPS required');
 const form = new URLSearchParams({ private: '1', fields: 'script_templates',
   token: process.env.REPAIR_API_TOKEN, u_hash: process.env.REPAIR_API_U_HASH });
@@ -15,14 +15,21 @@ if (!response.ok || json?.status === 'error' || String(json?.code) !== '200') {
   throw new Error('Inventory rejected: HTTP ' + response.status + ', code ' + String(json?.code) + ', message ' + String(json?.message));
 }
 const value = json?.data?.script_templates;
-const records = Array.isArray(value) ? value.map((item, index) => ({ key: String(index), item })) : value && typeof value === 'object' ? Object.entries(value).map(([key, item]) => ({ key, item })) : [];
+const records = Array.isArray(value)
+  ? value.map((item, index) => ({ key: String(index), item }))
+  : value && typeof value === 'object'
+    ? Object.entries(value).map(([key, item]) => ({ key, item }))
+    : [];
 for (const name of ['repair_api_test_page','repair_api_comments_public','repair_api']) {
-  const entry = records.find(({item}) => item?.var === name);\n  const record = entry?.item;
-  if (!record) { console.log('TEMPLATE_METADATA ' + JSON.stringify({name,found:false})); continue; }
-  const metadata = { record_key: entry.key, only_admin: record.only_admin ?? null };
-  for (const [key,val] of Object.entries(record)) {
-    if (key === 'file' || /token|password|secret|hash/i.test(key)) continue;
-    if (/role|access|right|permission|public|private|active|status|owner|user|group|type|var|id/i.test(key)) metadata[key] = val;
+  const entry = records.find(({ item }) => item?.var === name);
+  const record = entry?.item;
+  if (!record) {
+    console.log('TEMPLATE_METADATA ' + JSON.stringify({ name, found: false }));
+    continue;
   }
-  console.log('TEMPLATE_METADATA ' + JSON.stringify({name,found:true,keys:Object.keys(record).filter(k=>k!=='file'),metadata}));
+  console.log('TEMPLATE_METADATA ' + JSON.stringify({
+    name, found: true, record_key: entry.key,
+    only_admin: record.only_admin ?? null,
+    keys: Object.keys(record).filter(key => key !== 'file')
+  }));
 }
