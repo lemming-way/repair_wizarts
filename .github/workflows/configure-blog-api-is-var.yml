@@ -1,0 +1,80 @@
+name: Configure blog API is_var for Preview
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - '.github/workflows/configure-blog-api-is-var.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blog-api-is-var-preview
+  cancel-in-progress: false
+
+jobs:
+  configure-preview:
+    name: Set Preview is_var and rebuild
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      PREVIEW_BRANCH: docs/repair-wizards-article-format-v1.3
+      BLOG_API_IS_VAR: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Validate Vercel credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$VERCEL_TOKEN" || { echo "::error::VERCEL_TOKEN is missing"; exit 1; }
+          test -n "$VERCEL_ORG_ID" || { echo "::error::VERCEL_ORG_ID is missing"; exit 1; }
+          test -n "$VERCEL_PROJECT_ID" || { echo "::error::VERCEL_PROJECT_ID is missing"; exit 1; }
+      - name: Set branch-specific Preview variable
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest pull --yes --environment=preview --git-branch="$PREVIEW_BRANCH" --token="$VERCEL_TOKEN"
+          printf '%s\n' "$BLOG_API_IS_VAR" | npx --yes vercel@latest env add REACT_APP_BLOG_API_IS_VAR preview "$PREVIEW_BRANCH" --force --token="$VERCEL_TOKEN"
+      - name: Verify Preview variable without exposing unrelated values
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --yes vercel@latest pull --yes --environment=preview --git-branch="$PREVIEW_BRANCH" --token="$VERCEL_TOKEN"
+          node <<'NODE'
+          const fs = require('fs');
+          const file = '.vercel/.env.preview.local';
+          if (!fs.existsSync(file)) throw new Error('Vercel Preview env file was not created');
+          const lines = fs.readFileSync(file, 'utf8').split(/\\r?\\n/);
+          const line = lines.find((entry) => entry.startsWith('REACT_APP_BLOG_API_IS_VAR='));
+          if (!line) throw new Error('REACT_APP_BLOG_API_IS_VAR is missing from branch Preview');
+          let value = line.slice('REACT_APP_BLOG_API_IS_VAR='.length).trim();
+          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+          if (value !== process.env.BLOG_API_IS_VAR) throw new Error('Preview is_var verification failed');
+          console.log('Preview branch: ' + process.env.PREVIEW_BRANCH);
+          console.log('REACT_APP_BLOG_API_IS_VAR=1 [OK]');
+          NODE
+      - name: Build Preview deployment only
+        shell: bash
+        run: |
+          set -euo pipefail
+          deploy_output="$(npx --yes vercel@latest deploy --yes --token="$VERCEL_TOKEN" 2>&1)"
+          printf '%s\n' "$deploy_output"
+          preview_url="$(printf '%s\n' "$deploy_output" | grep -Eo 'https://[^[:space:]]+\.vercel\.app' | tail -n 1 || true)"
+          if [ -z "$preview_url" ]; then
+            echo "::error::Vercel CLI did not return a Preview URL"
+            exit 1
+          fi
+          echo "Preview URL: $preview_url" >> "$GITHUB_STEP_SUMMARY"
+          echo "Production was not deployed."
+      - name: Remove local Vercel environment files
+        if: always()
+        run: rm -f .vercel/.env.preview.local .vercel/.env.production.local
