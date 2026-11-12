@@ -27,7 +27,7 @@ const CONFIG = {
     // "local" — статьи из public/articles (собираются из docs/**/*.zip),
     // "api"   — статьи из БД через script/template/repair_api.
     // Переопределяется переменной окружения REACT_APP_BLOG_SOURCE.
-    source: 'local',
+    source: 'api',
   },
 
   API: {
