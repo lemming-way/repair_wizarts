@@ -38,7 +38,7 @@ async function readTemplates() {
   const entry = entries.find(([, record]) => record?.var === 'repair_api_test_page');
   if (!entry) throw new Error('repair_api_test_page not found; refusing to create');
   const recordId = String(entry[1]?.id ?? entry[1]?.id_script_template ?? entry[0]);
-  if (!/^\\d+$/.test(recordId)) throw new Error('Unexpected template ID; refusing update');
+  if (!/^\d+$/.test(recordId)) throw new Error('Unexpected template ID; refusing update');
   return { recordId, record: entry[1] };
 }
 
