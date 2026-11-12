@@ -10,6 +10,8 @@ export function resolveArticleMedia(file: string | undefined, baseUrl?: string):
   if (!file) return '';
   if (ABSOLUTE_URL.test(file)) return file;
   if (DATA_URL.test(file)) return /^data:image\//i.test(file) ? file : '';
+  const dropboxMatch = file.match(/^dropbox:(\d+)$/i);
+  if (dropboxMatch) return `${SERVER_PATH.replace(/\\/+$/, '')}/dropbox/file/${dropboxMatch[1]}`;
   if (/^[a-z][a-z\d+.-]*:/i.test(file)) return '';
 
   const cleanFile = file.replace(/^\.?\//, '');
