@@ -1,0 +1,33 @@
+name: Fix repair API test template access and verify roles
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/fix-template-access.mjs'
+      - '.github/workflows/fix-template-access.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: repair-api-template-access-fix
+  cancel-in-progress: false
+jobs:
+  fix-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Update only_admin and verify client/master access
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+          E2E_CLIENT_1_LOGIN: ${{ secrets.E2E_CLIENT_1_LOGIN }}
+          E2E_CLIENT_1_PASSWORD: ${{ secrets.E2E_CLIENT_1_PASSWORD }}
+          E2E_MASTER_1_LOGIN: ${{ secrets.E2E_MASTER_1_LOGIN }}
+          E2E_MASTER_1_PASSWORD: ${{ secrets.E2E_MASTER_1_PASSWORD }}
+        run: node tests/backend/fix-template-access.mjs
