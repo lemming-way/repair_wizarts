@@ -83,6 +83,9 @@ describe('blog helpers', () => {
     expect(resolveMediaUrl('/files/avatar.png')).toBe(
       'https://ibronevik.ru/taxi/c/tutor/api/v1/files/avatar.png',
     );
+    expect(resolveMediaUrl('dropbox:209')).toBe(
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/209',
+    );
     expect(resolveMediaUrl('https://cdn.example.com/a.png')).toBe(
       'https://cdn.example.com/a.png',
     );
