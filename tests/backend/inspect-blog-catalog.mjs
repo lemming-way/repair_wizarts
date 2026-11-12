@@ -64,17 +64,22 @@ for (const role of roles) {
   const credentials = await getToken(role.login, role.password, role.label);
   if (!credentials) continue;
   for (const template of templates) {
-    const result = await apiPost('script/template/' + template + '/', {
-      s_t_data: JSON.stringify({ action: 'getBlogTopics' }),
-      token: credentials.token,
-      u_hash: credentials.u_hash,
-    });
-    console.log('TEMPLATE_RESULT', JSON.stringify({
-      role: role.label,
-      template,
-      request_fields: ['s_t_data', 'token', 'u_hash'],
-      http_status: result.http_status,
-      response: result.json ?? result.raw_body,
-    }));
+    for (const isVar of [false, true]) {
+      const payload = {
+        s_t_data: JSON.stringify({ action: 'getBlogTopics' }),
+        token: credentials.token,
+        u_hash: credentials.u_hash,
+      };
+      if (isVar) payload.is_var = '1';
+      const result = await apiPost('script/template/' + template + '/', payload);
+      console.log('TEMPLATE_RESULT', JSON.stringify({
+        role: role.label,
+        template,
+        is_var: isVar ? '1' : 'omitted',
+        request_fields: Object.keys(payload),
+        http_status: result.http_status,
+        response: result.json ?? result.raw_body,
+      }));
+    }
   }
 }
