@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Change only repair_api_test_page.only_admin from 1 to 0; preserve its PHP and all other metadata.
+// Access is already updated by set-article-template-access.mjs; this script now verifies client/master template calls.
 const required = ['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH',
   'E2E_CLIENT_1_LOGIN','E2E_CLIENT_1_PASSWORD','E2E_MASTER_1_LOGIN','E2E_MASTER_1_PASSWORD'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing required environment: ' + key);
