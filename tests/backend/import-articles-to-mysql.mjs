@@ -95,7 +95,7 @@ async function uploadMediaToDropbox(asset, entry, ownerId, uploadedIds) {
 }
 
 async function verifyDropboxAsset(asset, sourceEntry) {
-  const match = typeof asset?.file === 'string' ? asset.file.match(/^dropbox:(\\d+)$/) : null;
+  const match = typeof asset?.file === 'string' ? asset.file.match(/^dropbox:(\d+)$/) : null;
   if (!match) throw new Error('Invalid Dropbox asset reference: ' + JSON.stringify(asset));
   const id = Number(match[1]);
   const response = await fetch(apiBase + '/dropbox/file/' + id, {
