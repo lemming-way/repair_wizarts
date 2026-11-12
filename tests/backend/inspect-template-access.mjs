@@ -15,11 +15,11 @@ if (!response.ok || json?.status === 'error' || String(json?.code) !== '200') {
   throw new Error('Inventory rejected: HTTP ' + response.status + ', code ' + String(json?.code) + ', message ' + String(json?.message));
 }
 const value = json?.data?.script_templates;
-const records = Array.isArray(value) ? value : value && typeof value === 'object' ? Object.values(value) : [];
+const records = Array.isArray(value) ? value.map((item, index) => ({ key: String(index), item })) : value && typeof value === 'object' ? Object.entries(value).map(([key, item]) => ({ key, item })) : [];
 for (const name of ['repair_api_test_page','repair_api_comments_public','repair_api']) {
-  const record = records.find(item => item?.var === name);
+  const entry = records.find(({item}) => item?.var === name);\n  const record = entry?.item;
   if (!record) { console.log('TEMPLATE_METADATA ' + JSON.stringify({name,found:false})); continue; }
-  const metadata = {};
+  const metadata = { record_key: entry.key, only_admin: record.only_admin ?? null };
   for (const [key,val] of Object.entries(record)) {
     if (key === 'file' || /token|password|secret|hash/i.test(key)) continue;
     if (/role|access|right|permission|public|private|active|status|owner|user|group|type|var|id/i.test(key)) metadata[key] = val;
