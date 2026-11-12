@@ -78,7 +78,8 @@ async function uploadMediaToDropbox(asset, entry, ownerId, uploadedIds) {
   const base64 = 'data:' + mime + ';base64,' + entry.data.toString('base64');
   const result = await dropboxPost('dropbox/file/', {
     file: JSON.stringify({
-      name: path.basename(asset.file),
+      // createDropboxFile inserts this name into Dropbox-API-Arg; keep it ASCII/path-safe.
+      name: path.basename(asset.file).replace(/[^A-Za-z0-9._-]/g, '_'),
       base64,
       private: -1,
       u_id: Number(ownerId),
