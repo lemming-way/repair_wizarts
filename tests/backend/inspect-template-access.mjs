@@ -2,7 +2,8 @@
 // Read-only template metadata inspection. Never prints PHP source or credentials.
 const required = ['REPAIR_API_BASE','REPAIR_API_TOKEN','REPAIR_API_U_HASH'];
 for (const key of required) if (!process.env[key]) throw new Error('Missing ' + key);
-const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
+let base = process.env.REPAIR_API_BASE.trim();
+while (base.endsWith('/')) base = base.slice(0, -1);
 if (new URL(base + '/api/v1/data').protocol !== 'https:') throw new Error('HTTPS required');
 const form = new URLSearchParams({ private: '1', fields: 'script_templates',
   token: process.env.REPAIR_API_TOKEN, u_hash: process.env.REPAIR_API_U_HASH });
