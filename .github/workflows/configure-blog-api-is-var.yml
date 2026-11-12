@@ -53,7 +53,7 @@ jobs:
           const fs = require('fs');
           const file = '.vercel/.env.preview.local';
           if (!fs.existsSync(file)) throw new Error('Vercel Preview env file was not created');
-          const lines = fs.readFileSync(file, 'utf8').split(/\\r?\\n/);
+          const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
           const line = lines.find((entry) => entry.startsWith('REACT_APP_BLOG_API_IS_VAR='));
           if (!line) throw new Error('REACT_APP_BLOG_API_IS_VAR is missing from branch Preview');
           let value = line.slice('REACT_APP_BLOG_API_IS_VAR='.length).trim();
