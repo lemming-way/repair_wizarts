@@ -1,4 +1,4 @@
-const SERVER_PATH = 'https://ibronevik.ru/taxi/c/tutor/api/v1/';
+const SERVER_PATH = process.env.REACT_APP_API_URL || 'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/';
 const CLIENT_PATH = 'http://localhost:3000/';
 const SERVER_WSPATH = 'ws://localhost:8000/';
 
