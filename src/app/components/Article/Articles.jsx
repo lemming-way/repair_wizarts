@@ -22,16 +22,23 @@ const Articles = () => {
   }, [articles]);
 
   const authors = useMemo(() => {
-    const names = new Map();
+    const byId = new Map();
     for (const article of articles) {
       const author = article.author;
-      if (!author?.name) continue;
-      const key = `${author.id}:${author.name}`;
-      const entry = names.get(key) || { key, name: author.name, count: 0 };
+      if (!author || author.id === null || author.id === undefined) continue;
+
+      const key = String(author.id);
+      const name = typeof author.name === 'string' ? author.name.trim() : '';
+      const role = Number(author.role);
+      const roleLabel = role === 2 ? 'Мастер' : role === 1 ? 'Клиент' : '';
+      const label = [name, roleLabel ? `(${roleLabel})` : '', !name ? `ID: ${author.id}` : '']
+        .filter(Boolean)
+        .join(' ');
+      const entry = byId.get(key) || { key, name: label, count: 0 };
       entry.count += 1;
-      names.set(key, entry);
+      byId.set(key, entry);
     }
-    return Array.from(names.values());
+    return Array.from(byId.values());
   }, [articles]);
 
   const visibleArticles = useMemo(
@@ -39,7 +46,7 @@ const Articles = () => {
       articles.filter(
         (article) =>
           (!activeTopic || article.topic_name === activeTopic) &&
-          (!activeAuthor || `${article.author?.id ?? ''}:${article.author?.name ?? ''}` === activeAuthor),
+          (!activeAuthor || String(article.author?.id ?? '') === activeAuthor),
       ),
     [activeAuthor, activeTopic, articles],
   );
@@ -222,7 +229,7 @@ const Articles = () => {
               onClick={() => selectAuthor(null)}
             >
               <span>Все авторы</span>
-              <span>{articles.length}</span>
+              <span>{authors.length}</span>
             </button>
             {authors.map((author) => (
               <button
