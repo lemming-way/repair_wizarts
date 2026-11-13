@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
+import { AnyImage } from '../../../shared/ui/AnyMedia';
 import {
   getYouTubeEmbedUrl,
   isSafeMediaUrl,
   resolveArticleMedia,
 } from '../../../shared/lib/articleContent';
 import styles from './ArticleRenderer.module.css';
-import { AnyImage } from '../../../shared/ui/AnyMedia';
 import { useFileById } from '../../../state/uploaded';
 
 const MODEL_VIEWER_SCRIPT =
@@ -76,6 +76,20 @@ function safeImageSrc(file, baseUrl) {
   return isSafeMediaUrl(src) ? src : '';
 }
 
+function getDropboxAssetId(file, assets) {
+  if (!file || !Array.isArray(assets)) return null;
+  const asset = assets.find((item) => item?.file === file);
+  const id = Number(asset?.dl_id);
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+function ArticleImage({ file, alt, className, mediaBaseUrl, assets }) {
+  const dlId = getDropboxAssetId(file, assets);
+  if (dlId) return <AnyImage src={dlId} alt={alt || ''} className={className} />;
+  const src = safeImageSrc(file, mediaBaseUrl);
+  return src ? <img className={className} src={src} alt={alt || ''} loading="lazy" /> : null;
+}
+
 function ParagraphBlock({ block }) {
   return <p className={styles.paragraph}>{block.text}</p>;
 }
@@ -88,9 +102,9 @@ function HeadingBlock({ block }) {
 
 function ImageBlock({ block, mediaBaseUrl, assets }) {
   const [open, setOpen] = useState(false);
-  const src = safeImageSrc(block.file, mediaBaseUrl);
-  const dlId = getAssetId(block.file, assets);
-  if (!src && !dlId) return null;
+  const dlId = getDropboxAssetId(block.file, assets);
+  const src = dlId ? null : safeImageSrc(block.file, mediaBaseUrl);
+  if (!dlId && !src) return null;
 
   return (
     <figure className={styles.figure}>
@@ -100,7 +114,13 @@ function ImageBlock({ block, mediaBaseUrl, assets }) {
         onClick={() => setOpen(true)}
         aria-label={block.alt ? `Увеличить: ${block.alt}` : 'Увеличить изображение'}
       >
-        {dlId ? <AnyImage src={dlId} className={styles.image} alt={block.alt || block.caption || ''} loading="lazy" /> : <img className={styles.image} src={src} alt={block.alt || block.caption || ''} loading="lazy" />}
+        <ArticleImage
+          file={block.file}
+          alt={block.alt || block.caption || ''}
+          className={styles.image}
+          mediaBaseUrl={mediaBaseUrl}
+          assets={assets}
+        />
       </button>
       {block.caption && <figcaption className={styles.caption}>{block.caption}</figcaption>}
       {open && (
@@ -121,8 +141,12 @@ function GalleryBlock({ block, mediaBaseUrl, assets }) {
   const [openImage, setOpenImage] = useState(null);
   const images = Array.isArray(block.images)
     ? block.images
-        .map((image) => ({ ...image, src: safeImageSrc(image.file, mediaBaseUrl), dlId: getAssetId(image.file, assets) }))
-        .filter((image) => image.src || image.dlId)
+        .map((image) => ({
+          ...image,
+          dlId: getDropboxAssetId(image.file, assets),
+          src: safeImageSrc(image.file, mediaBaseUrl),
+        }))
+        .filter((image) => image.dlId || image.src)
     : [];
 
   if (images.length === 0) return null;
@@ -165,7 +189,13 @@ function GalleryBlock({ block, mediaBaseUrl, assets }) {
               onClick={() => setOpenImage(image)}
               aria-label={image.alt ? `Увеличить: ${image.alt}` : 'Увеличить изображение'}
             >
-              {image.dlId ? <AnyImage src={image.dlId} className={styles.galleryImage} alt={image.alt || image.caption || ''} loading="lazy" /> : <img className={styles.galleryImage} src={image.src} alt={image.alt || image.caption || ''} loading="lazy" />}
+              <ArticleImage
+                file={image.file}
+                alt={image.alt || image.caption || ''}
+                className={styles.galleryImage}
+                mediaBaseUrl={mediaBaseUrl}
+                assets={assets}
+              />
             </button>
             {image.caption && <figcaption className={styles.caption}>{image.caption}</figcaption>}
           </figure>
@@ -273,7 +303,7 @@ function StepsBlock({ block, mediaBaseUrl, assets }) {
     <ol className={styles.steps}>
       {items.map((item, index) => {
         const imageSrc = safeImageSrc(item.image, mediaBaseUrl);
-        const imageDlId = getAssetId(item.image, assets);
+        const imageDlId = getDropboxAssetId(item.image, assets);
         return (
           <li className={styles.step} key={index}>
             <span className={styles.stepNumber} aria-hidden="true">
@@ -282,7 +312,15 @@ function StepsBlock({ block, mediaBaseUrl, assets }) {
             <div className={styles.stepBody}>
               <p className={styles.stepTitle}>{item.title}</p>
               {item.text && <p className={styles.stepText}>{item.text}</p>}
-              {imageDlId ? <AnyImage src={imageDlId} className={styles.stepImage} alt={item.title || ''} loading="lazy" /> : imageSrc ? <img className={styles.stepImage} src={imageSrc} alt={item.title || ''} loading="lazy" /> : null}
+              {(imageDlId || imageSrc) && (
+                <ArticleImage
+                  file={item.image}
+                  alt={item.title || ''}
+                  className={styles.stepImage}
+                  mediaBaseUrl={mediaBaseUrl}
+                  assets={assets}
+                />
+              )}
               {item.warning && (
                 <p className={styles.stepWarning}>
                   <span aria-hidden="true">⚠</span>
@@ -295,6 +333,7 @@ function StepsBlock({ block, mediaBaseUrl, assets }) {
       })}
     </ol>
   );
+}
 }
 
 function TableBlock({ block }) {
@@ -525,7 +564,7 @@ const BLOCK_COMPONENTS = {
  * Единый рендерер статей Article Format 1.3.
  * Используется и для локального каталога, и для статей из БД.
  */
-export default function ArticleRenderer({ blocks, mediaBaseUrl, assets, className }) {
+export default function ArticleRenderer({ blocks, assets, mediaBaseUrl, className }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
 
   return (
@@ -535,7 +574,7 @@ export default function ArticleRenderer({ blocks, mediaBaseUrl, assets, classNam
         const Component = BLOCK_COMPONENTS[block.type];
         if (!Component) return null;
 
-        return <Component block={block} key={index} mediaBaseUrl={mediaBaseUrl} assets={assets} />;
+        return <Component block={block} key={index} assets={assets} mediaBaseUrl={mediaBaseUrl} />;
       })}
     </div>
   );
