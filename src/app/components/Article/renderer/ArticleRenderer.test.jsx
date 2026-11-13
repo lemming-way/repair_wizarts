@@ -1,7 +1,6 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-container, no-script-url -- DOM structure and hostile URL assertions are intentional in renderer regression tests. */
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import ArticleRenderer from './ArticleRenderer';
 
 jest.mock('../../../shared/ui/AnyMedia', () => ({
   AnyImage: ({ src, alt, className }) => (
@@ -136,19 +135,6 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     expect(container.querySelector('pre code')).not.toBeNull();
     await user.click(screen.getByRole('button', { name: /Показать 3D-модель/ }));
     await waitFor(() => expect(container.querySelector('model-viewer')).not.toBeNull());
-  });
-
-<<<<<<< HEAD
-  it('renders Dropbox-backed images by dl_id when the legacy URL is unavailable', () => {
-    render(
-      <ArticleRenderer
-        blocks={[{ type: 'image', file: 'media/cover.svg', alt: 'Dropbox cover' }]}
-        mediaBaseUrl="https://invalid.example/"
-        assets={[{ file: 'media/cover.svg', type: 'image', dl_id: 73142 }]}
-      />,
-    );
-
-    expect(screen.getByAltText('Dropbox cover')).toHaveAttribute('data-dropbox-id', '73142');
   });
 
   it('resolves Dropbox asset IDs for image blocks and galleries', () => {
