@@ -94,9 +94,10 @@ POST {API_BASE_URL}/dropbox/file/{dl_id}
 
 **Проверенный backend-контракт (исходники найдены):**
 
-Реализация находится в `BuevichRoman/universal-backend`:
+Реализация находится в приватном репозитории `BuevichRoman/universal-backend`, ветка `audit/backend-pilot`, проверенный HEAD `3934234d1f30b70abb3213217e539de5acb76899`:
 - `public_html/taxi/controllers/c_api.php` — диспетчер маршрута `/dropbox/file/`;
-- `public_html/taxi/models/api.php` — методы `createDropboxFile()` (около строки 13972), `selectDropboxFile()` (около строки 14251), `deleteDropboxFile()` и `getDropboxFileData()`.
+- `public_html/taxi/models/api.php` — методы `createDropboxFile()` (строка 13972), `selectDropboxFile()` (строка 14251), `deleteDropboxFile()` и `getDropboxFileData()`;
+- `public_html/taxi/models/m_functions.php` — `upload_to_dropbox()` (строка 4753), `download_from_dropbox()` (строка 4812), `update_dropbox_access_token()` и `set_header_content_disposition()`.
 
 Диспетчер маршрутизирует:
 - `POST /dropbox/file/` при наличии `$_POST['file']` → `createDropboxFile($_POST['file'])`;
@@ -118,15 +119,16 @@ POST {API_BASE_URL}/dropbox/file/{dl_id}
 - `1` — авторизованному пользователю разрешено только при наличии связи с ним в `users_dropbox_link`;
 - удалённая запись (`deleted != 0`) не выдаётся.
 
-Следовательно, значение `0` из клиентского примера нельзя считать публичным для посетителей без входа. Для действительно анонимно доступного медиа backend требует `private=-1`. Значение для статьи №7 следует выбирать по фактическому режиму просмотра и проверять без авторизации.
+Следовательно, значение `0` из клиентского примера нельзя считать публичным для посетителей без входа: анонимный запрос с `private=0` отклоняется. Для действительно анонимно доступного медиа backend требует `private=-1`. Для авторизованного пользователя `private=0` не требует связи с владельцем; `private=1` требует запись в `users_dropbox_link`. Отдельное исключение — роль 4: в `selectDropboxFile()` для неё проверка `private` пропускается. Для статьи №7, доступной читателям без входа, при загрузке необходимо явно передавать `private=-1` и проверять чтение без авторизации.
 
-`selectDropboxFile()` получает `name_upload` и `type` из JSON и вызывает `download_from_dropbox(name_upload, dl_id, type)`. HTTP-заголовки и формат бинарного ответа определяются общей функцией `download_from_dropbox()`, а не самим методом. На тестовом Preview ранее уже подтверждён фактический ответ для `dl_id=213`: HTTP 200, `Content-Type: image/svg+xml`, `Content-Disposition: inline` и тело SVG.
+`selectDropboxFile()` получает `name_upload` и `type` из JSON и вызывает `download_from_dropbox(name_upload, dl_id, type)`. Метод сам не формирует JSON-ответ с файлом: `download_from_dropbox()` напрямую отправляет бинарное тело и завершает выполнение через `exit`, когда cURL возвращает `true`. Функция выставляет `Content-Type` из сохранённого MIME, `Content-Length` из ответа Dropbox, `Content-Disposition: inline` (с UTF-8 filename) и `Access-Control-Expose-Headers: Content-disposition`. При ошибке Dropbox возвращается API-ошибка. На тестовом Preview ранее уже подтверждён фактический ответ для `dl_id=213`: HTTP 200, `Content-Type: image/svg+xml`, `Content-Disposition: inline` и тело SVG.
 
 Удаление не является физическим удалением строки: `deleteDropboxFile()` удаляет объект через `delete_from_dropbox()`, удаляет связи пользователя, затем выставляет `deleted=1` и сохраняет данные удаления в JSON. Для миграции это действие не требуется.
 
 Источники:
-- [Диспетчер Universal API](https://github.com/BuevichRoman/universal-backend/blob/main/public_html/taxi/controllers/c_api.php)
-- [Реализация Dropbox API](https://github.com/BuevichRoman/universal-backend/blob/main/public_html/taxi/models/api.php)
+- [Диспетчер Universal API](https://github.com/BuevichRoman/universal-backend/blob/3934234d1f30b70abb3213217e539de5acb76899/public_html/taxi/controllers/c_api.php)
+- [Реализация Dropbox API](https://github.com/BuevichRoman/universal-backend/blob/3934234d1f30b70abb3213217e539de5acb76899/public_html/taxi/models/api.php)
+- [Dropbox upload/download helpers](https://github.com/BuevichRoman/universal-backend/blob/3934234d1f30b70abb3213217e539de5acb76899/public_html/taxi/models/m_functions.php)
 - [Клиентский Dropbox API](https://github.com/lemming-way/repair_wizarts/blob/feature/article-dropbox-media-v1.3/src/app/state/api/dropbox.ts)
 
 
