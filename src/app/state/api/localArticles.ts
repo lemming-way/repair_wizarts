@@ -17,7 +17,7 @@ export type ArticleAsset = {
   type: string;
   format?: string;
   size_bytes?: number;
-  dl_id?: number;
+  dl_id?: number | string;
 };
 
 export type ArticleTopic = {
