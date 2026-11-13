@@ -11,10 +11,10 @@ function BlogArticleCard({ article }) {
     <Link className={styles.articleCardLink} to={`/articles/${article.id}`}>
       <article className={styles.articleCard}>
         {article.cover_url ? (
-          /^dropbox:\\d+$/i.test(article.cover_url) ? (
+          /^dropbox:\d+$/i.test(article.cover_url) ? (
             <AnyImage
               className={styles.articleCardImage}
-              src={Number(article.cover_url.match(/^dropbox:(\\d+)$/i)?.[1])}
+              src={Number(article.cover_url.match(/^dropbox:(\d+)$/i)?.[1])}
               alt=""
               loading="lazy"
             />
