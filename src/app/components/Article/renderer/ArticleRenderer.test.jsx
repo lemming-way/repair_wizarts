@@ -2,6 +2,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
+jest.mock('../../../shared/ui/AnyMedia', () => ({
+  AnyImage: ({ src, alt, className }) => (
+    <img data-dropbox-id={src} src={`blob:dropbox-${src}`} alt={alt} className={className} />
+  ),
+}));
+
 import ArticleRenderer from './ArticleRenderer';
 
 jest.mock('../../../shared/ui/AnyMedia', () => {
@@ -141,6 +147,7 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     await waitFor(() => expect(container.querySelector('model-viewer')).not.toBeNull());
   });
 
+<<<<<<< HEAD
   it('renders Dropbox-backed images by dl_id when the legacy URL is unavailable', () => {
     render(
       <ArticleRenderer
@@ -151,6 +158,30 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     );
 
     expect(screen.getByAltText('Dropbox cover')).toHaveAttribute('data-dropbox-id', '73142');
+  });
+
+  it('resolves Dropbox asset IDs for image blocks and galleries', () => {
+    const assets = [
+      { file: 'media/cover.svg', type: 'image', dl_id: 73142 },
+      { file: 'media/terminal_layout.svg', type: 'image', dl_id: '73143' },
+    ];
+    const { container } = render(
+      <ArticleRenderer
+        assets={assets}
+        blocks={[
+          { type: 'image', file: 'media/terminal_layout.svg', alt: 'Схема' },
+          {
+            type: 'gallery',
+            images: [{ file: 'media/cover.svg', alt: 'Обложка' }],
+          },
+        ]}
+        mediaBaseUrl="/articles/demo/"
+      />,
+    );
+
+    expect(container.querySelector('[data-dropbox-id="73143"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-dropbox-id="73142"]')).toBeInTheDocument();
+    expect(container.querySelector('img[src="/articles/demo/media/terminal_layout.svg"]')).toBeNull();
   });
 
   it('renders ordered and unordered lists with their declared semantics', () => {
