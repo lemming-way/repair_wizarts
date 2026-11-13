@@ -1,14 +1,13 @@
 /* eslint-disable testing-library/no-node-access, testing-library/no-container, no-script-url -- DOM structure and hostile URL assertions are intentional in renderer regression tests. */
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import ArticleRenderer from './ArticleRenderer';
 
 jest.mock('../../../shared/ui/AnyMedia', () => ({
   AnyImage: ({ src, alt, className }) => (
     <img data-dropbox-id={src} src={`blob:dropbox-${src}`} alt={alt} className={className} />
   ),
 }));
-
-import ArticleRenderer from './ArticleRenderer';
 
 jest.mock('../../../state/uploaded', () => ({
   useFileById: () => ({ blob: null }),
