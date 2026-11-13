@@ -5,7 +5,7 @@
 -- Если в blog_post уже есть числовой статус (id_blog_status/status_id/id_status),
 -- без этой миграции публичные запросы возвращают 500 (fail closed), чтобы не
 -- отдавать черновики. После миграции используется строковый status='published'.
--- Альтернатива: задать $blog_published_status_id в script_templates/repair_api.php.
+-- Альтернатива: задать $blog_published_status_id в script_templates/repair_api_test_page.php.
 
 SET @schema_name = DATABASE();
 
