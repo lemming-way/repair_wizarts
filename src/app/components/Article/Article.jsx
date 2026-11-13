@@ -156,6 +156,7 @@ const Article = () => {
                     <ArticleRenderer
                       blocks={article.blocks}
                       mediaBaseUrl={article.media_base_url}
+                      assets={article.assets}
                     />
                   ) : (
                     <div dangerouslySetInnerHTML={{ __html: cleanContent }} />
