@@ -4,7 +4,7 @@
  * Действия сохранены по контракту AGENTS.md. Источник данных переключается
  * через CONFIG.BLOG.source / REACT_APP_BLOG_SOURCE:
  *  - "local" — каталог из public/articles, собранный из ZIP-архивов docs/;
- *  - "api"   — штатный бэкенд script/template/repair_api.
+ *  - "api"   — штатный бэкенд script/template/repair_api_test_page.
  *
  * В обоих режимах статьи формата 1.3 отдаются как blocks и рендерятся
  * единым ArticleRenderer.
@@ -153,7 +153,7 @@ export async function getBlogTopics(): Promise<BlogArticle[]> {
       action: 'getBlogTopics',
     },
   };
-  const articles = await post<BlogArticle[]>('script/template/repair_api', payload);
+  const articles = await post<BlogArticle[]>('script/template/repair_api_test_page', payload);
   return articles.map(normalizeBlogArticleContent);
 }
 
@@ -167,7 +167,7 @@ export async function getBlogTopicById(id: number): Promise<BlogArticle> {
       id,
     },
   };
-  const article = await post<BlogArticle>('script/template/repair_api', payload);
+  const article = await post<BlogArticle>('script/template/repair_api_test_page', payload);
   return normalizeBlogArticleContent(article);
 }
 
@@ -181,7 +181,7 @@ export async function getBlogPosts(articleId: number, viewerId = 0): Promise<Blo
       article_id: articleId,
     },
   };
-  return post<BlogComment[]>('script/template/repair_api', payload);
+  return post<BlogComment[]>('script/template/repair_api_test_page', payload);
 }
 
 export async function addBlogPost(params: {
@@ -208,7 +208,7 @@ export async function addBlogPost(params: {
       text: params.text,
     },
   };
-  return post<{ id: number }>('script/template/repair_api', payload);
+  return post<{ id: number }>('script/template/repair_api_test_page', payload);
 }
 
 export async function editBlogPost(params: {
@@ -232,7 +232,7 @@ export async function editBlogPost(params: {
       text: params.text,
     },
   };
-  return post<{ ok: boolean }>('script/template/repair_api', payload);
+  return post<{ ok: boolean }>('script/template/repair_api_test_page', payload);
 }
 
 export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: boolean }> {
@@ -247,5 +247,5 @@ export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: bo
       id,
     },
   };
-  return post<{ ok: boolean }>('script/template/repair_api', payload);
+  return post<{ ok: boolean }>('script/template/repair_api_test_page', payload);
 }
