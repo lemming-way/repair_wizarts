@@ -213,7 +213,7 @@ const Articles = () => {
                   onClick={() => selectTopic(null)}
                 >
                   <span>Все категории</span>
-                  <span>{articles.length}</span>
+                  <span>{topics.length}</span>
                 </button>
                 {topics.length <= LIST_THRESHOLD ? (
                   <div className={styles.asideList}>
