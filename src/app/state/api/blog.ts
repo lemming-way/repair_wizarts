@@ -161,7 +161,7 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
     media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
-    assets: parsed.assets,
+    assets,
     technical_knowledge: parsed.technical_knowledge,
   };
 }
