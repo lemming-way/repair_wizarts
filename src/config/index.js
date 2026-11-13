@@ -32,7 +32,7 @@ const CONFIG = {
   },
 
   API: {
-    url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
+    url: process.env.REACT_APP_API_URL || 'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/',
     userDataStaleTime: 15 * 60000,
     filesStaleTime: 30 * 60000,
     ordersListRefetchTime: 2 * 60000,
