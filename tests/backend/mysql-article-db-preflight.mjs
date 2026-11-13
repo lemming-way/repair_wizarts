@@ -91,6 +91,27 @@ try {
       console.log('TOPIC_SAMPLE ' + table_name + ' ' + JSON.stringify(rows));
     }
   }
+  if (identity.database_name !== 'aristotel_tutor') {
+    throw new Error('Refusing article-7 inspection: expected aristotel_tutor test database.');
+  }
+  const [articleColumns] = await connection.execute(
+    'SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?',
+    ['blog_post']
+  );
+  const columnNames = new Set(articleColumns.map((row) => row.name));
+  for (const requiredColumn of ['id_blog_post', 'title', 'value']) {
+    if (!columnNames.has(requiredColumn)) throw new Error('Expected blog_post column missing: ' + requiredColumn);
+  }
+  const [articleRows] = await connection.execute(
+    'SELECT id_blog_post, title, value FROM blog_post WHERE id_blog_post = ? LIMIT 1',
+    [7]
+  );
+  if (articleRows.length !== 1) throw new Error('Expected exactly one blog_post row with id_blog_post=7.');
+  console.log('ARTICLE_7_SOURCE ' + JSON.stringify({
+    id_blog_post: articleRows[0].id_blog_post,
+    title: articleRows[0].title,
+    value: articleRows[0].value,
+  }));
   console.log('PREFLIGHT_READ_ONLY_COMPLETE; no rows were inserted, updated, or deleted.');
 } catch (error) {
   const safeMessage = error?.code || error?.name || 'MYSQL_ERROR';
