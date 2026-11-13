@@ -43,7 +43,7 @@ function loadModelViewer() {
   return modelViewerLoader;
 }
 
-function Lightbox({ src, alt, caption, onClose }) {
+function Lightbox({ src, dlId, alt, caption, onClose }) {
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') onClose();
@@ -58,7 +58,7 @@ function Lightbox({ src, alt, caption, onClose }) {
         ×
       </button>
       <figure className={styles.lightboxFigure} onClick={(event) => event.stopPropagation()}>
-        <img className={styles.lightboxImage} src={src} alt={alt || caption || ''} />
+        {dlId ? <AnyImage src={dlId} className={styles.lightboxImage} alt={alt || caption || ''} /> : <img className={styles.lightboxImage} src={src} alt={alt || caption || ''} />}
         {caption && <figcaption className={styles.lightboxCaption}>{caption}</figcaption>}
       </figure>
     </div>
@@ -106,6 +106,7 @@ function ImageBlock({ block, mediaBaseUrl, assets }) {
       {open && (
         <Lightbox
           src={src}
+          dlId={dlId}
           alt={block.alt}
           caption={block.caption}
           onClose={() => setOpen(false)}
@@ -173,6 +174,7 @@ function GalleryBlock({ block, mediaBaseUrl, assets }) {
       {openImage && (
         <Lightbox
           src={openImage.src}
+          dlId={openImage.dlId}
           alt={openImage.alt}
           caption={openImage.caption}
           onClose={() => setOpenImage(null)}
