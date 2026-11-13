@@ -513,6 +513,17 @@ $out = call_user_func(function() {
       $article['content_version'] = (string)$row['content_version'];
     }
 
+    if ($decoded && isset($decoded['assets']) && is_array($decoded['assets'])) {
+      $cover_file = isset($decoded['cover']['file']) ? (string)$decoded['cover']['file'] : '';
+      foreach ($decoded['assets'] as $asset) {
+        if (!is_array($asset) || empty($asset['file']) || empty($asset['dl_id'])) continue;
+        if ($cover_file !== '' && (string)$asset['file'] === $cover_file) {
+          $article['cover_file_id'] = (int)$asset['dl_id'];
+          break;
+        }
+      }
+    }
+
     if ($with_content) {
       $article['content'] = (string)$content;
       if ($decoded) {
