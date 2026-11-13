@@ -748,6 +748,11 @@
   border-left: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+.commentChildrenFlat {
+  padding-left: 12px;
+  border-left: none;
+}
+
 .commentItem {
   padding: 24px 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);

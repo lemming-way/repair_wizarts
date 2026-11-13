@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 
 import { useBlogArticles } from '../../hooks/useBlog';
 import { ArrowLeftIcon, ChevronDownIcon, FilterIcon } from '../../shared/ui/BlogIcons';
+import { SearchableSelect } from '../../shared/ui/SearchableSelect';
 import BlogArticleCard from './BlogArticleCard';
 import styles from './Article.module.css';
+
+const LIST_THRESHOLD = 20;
 
 const Articles = () => {
   const { data: articles = [], isLoading, isError, error, refetch } = useBlogArticles();
@@ -18,7 +21,9 @@ const Articles = () => {
       if (article.topic_name)
         names.set(article.topic_name, (names.get(article.topic_name) || 0) + 1);
     }
-    return Array.from(names, ([name, count]) => ({ name, count }));
+    return Array.from(names, ([name, count]) => ({ name, count })).sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'),
+    );
   }, [articles]);
 
   const authors = useMemo(() => {
@@ -38,7 +43,9 @@ const Articles = () => {
       entry.count += 1;
       byId.set(key, entry);
     }
-    return Array.from(byId.values());
+    return Array.from(byId.values()).sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name, 'ru'),
+    );
   }, [articles]);
 
   const visibleArticles = useMemo(
@@ -62,11 +69,6 @@ const Articles = () => {
     setActiveAuthor(null);
   };
 
-  const selectAllFilters = () => {
-    resetFilters();
-    setFiltersOpen(false);
-  };
-
   const selectTopic = (name) => {
     setActiveTopic(name);
     setFiltersOpen(false);
@@ -81,13 +83,13 @@ const Articles = () => {
     if (activeTopic && !topics.some((topic) => topic.name === activeTopic)) {
       setActiveTopic(null);
     }
-  }, [activeTopic, topics]);
+  }, [activeTopic, topics, setActiveTopic]);
 
   useEffect(() => {
     if (activeAuthor && !authors.some((author) => author.key === activeAuthor)) {
       setActiveAuthor(null);
     }
-  }, [activeAuthor, authors]);
+  }, [activeAuthor, authors, setActiveAuthor]);
 
   return (
     <div className={styles.articlesPage}>
@@ -196,55 +198,103 @@ const Articles = () => {
             id="articles-filters"
             className={`${styles.articlesAside} ${filtersOpen ? styles.articlesAsideOpen : ''}`}
           >
-            <p className={styles.asideTitle}>Категории</p>
-            {topics.length === 0 && <p className={styles.asideMuted}>Нет категорий</p>}
-            <button
-              type="button"
-              className={`${styles.asideItem} ${!hasActiveFilters ? styles.asideItemSelected : ''}`}
-              aria-pressed={!hasActiveFilters}
-              onClick={selectAllFilters}
-            >
-              <span>Все статьи</span>
-              <span>{articles.length}</span>
-            </button>
-            {topics.map((topic) => (
-              <button
-                type="button"
-                className={`${styles.asideItem} ${activeTopic === topic.name ? styles.asideItemSelected : ''}`}
-                aria-pressed={activeTopic === topic.name}
-                key={topic.name}
-                onClick={() => selectTopic(topic.name)}
-              >
-                <span>{topic.name}</span>
-                <span>{topic.count}</span>
-              </button>
-            ))}
+            <p className={styles.asideTitle}>
+              Категории
+              {topics.length > 0 && <span className={styles.asideTitleCount}>{topics.length}</span>}
+            </p>
+            {topics.length === 0 ? (
+              <p className={styles.asideMuted}>Нет категорий</p>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`${styles.asideItem} ${!activeTopic ? styles.asideItemSelected : ''}`}
+                  aria-pressed={!activeTopic}
+                  onClick={() => selectTopic(null)}
+                >
+                  <span>Все категории</span>
+                  <span>{articles.length}</span>
+                </button>
+                {topics.length <= LIST_THRESHOLD ? (
+                  <div className={styles.asideList}>
+                    {topics.map((topic) => (
+                      <button
+                        type="button"
+                        className={`${styles.asideItem} ${activeTopic === topic.name ? styles.asideItemSelected : ''}`}
+                        aria-pressed={activeTopic === topic.name}
+                        key={topic.name}
+                        onClick={() => selectTopic(topic.name)}
+                      >
+                        <span>{topic.name}</span>
+                        <span>{topic.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SearchableSelect
+                    options={topics.map((t) => ({ value: t.name, label: t.name, count: t.count }))}
+                    value={activeTopic}
+                    onChange={selectTopic}
+                    placeholder="Все категории"
+                    searchPlaceholder="Поиск категории…"
+                    noOptionsMessage="Категории не найдены"
+                    aria-label="Выбор категории"
+                    className={styles.searchableSelect}
+                  />
+                )}
+              </>
+            )}
 
-            <p className={`${styles.asideTitle} ${styles.asideTitleSpaced}`}>Авторы</p>
-            {authors.length === 0 && <p className={styles.asideMuted}>Нет авторов</p>}
-            <button
-              type="button"
-              className={`${styles.asideItem} ${!activeAuthor ? styles.asideItemSelected : ''}`}
-              aria-pressed={!activeAuthor}
-              onClick={() => selectAuthor(null)}
-            >
-              <span>Все авторы</span>
-              <span>{authors.length}</span>
-            </button>
-            {authors.map((author) => (
-              <button
-                type="button"
-                className={`${styles.asideItem} ${activeAuthor === author.key ? styles.asideItemSelected : ''}`}
-                aria-pressed={activeAuthor === author.key}
-                key={author.key}
-                onClick={() => selectAuthor(author.key)}
-              >
-                <span>{author.name}</span>
-                <span>{author.count}</span>
-              </button>
-            ))}
+            <p className={`${styles.asideTitle} ${styles.asideTitleSpaced}`}>
+              Авторы
+              {authors.length > 0 && (
+                <span className={styles.asideTitleCount}>{authors.length}</span>
+              )}
+            </p>
+            {authors.length === 0 ? (
+              <p className={styles.asideMuted}>Нет авторов</p>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`${styles.asideItem} ${!activeAuthor ? styles.asideItemSelected : ''}`}
+                  aria-pressed={!activeAuthor}
+                  onClick={() => selectAuthor(null)}
+                >
+                  <span>Все авторы</span>
+                  <span>{authors.length}</span>
+                </button>
+                {authors.length <= LIST_THRESHOLD ? (
+                  <div className={styles.asideList}>
+                    {authors.map((author) => (
+                      <button
+                        type="button"
+                        className={`${styles.asideItem} ${activeAuthor === author.key ? styles.asideItemSelected : ''}`}
+                        aria-pressed={activeAuthor === author.key}
+                        key={author.key}
+                        onClick={() => selectAuthor(author.key)}
+                      >
+                        <span>{author.name}</span>
+                        <span>{author.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <SearchableSelect
+                    options={authors.map((a) => ({ value: a.key, label: a.name, count: a.count }))}
+                    value={activeAuthor}
+                    onChange={selectAuthor}
+                    placeholder="Все авторы"
+                    searchPlaceholder="Поиск автора…"
+                    noOptionsMessage="Авторы не найдены"
+                    aria-label="Выбор автора"
+                    className={styles.searchableSelect}
+                  />
+                )}
+              </>
+            )}
             {hasActiveFilters && (
-              <button type="button" className={styles.asideFooterLink} onClick={selectAllFilters}>
+              <button type="button" className={styles.asideFooterLink} onClick={resetFilters}>
                 Сбросить фильтр
               </button>
             )}

@@ -79,9 +79,15 @@ describe('Articles catalog', () => {
     expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
     expect(screen.getByText('Автор:')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: /Все статьи/ }));
+    // Click "Все авторы" to reset author filter (since category was never set)
+    await userEvent.click(screen.getByRole('button', { name: /Все авторы/ }));
+    // Wait for filter panel to close
+    const toggle = screen.getByRole('button', { name: /^Фильтры/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
 
-    expect(screen.getByRole('heading', { name: 'Чайник не включается' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Чайник не включается' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Смартфон не заряжается' })).toBeInTheDocument();
   });
 

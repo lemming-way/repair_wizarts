@@ -64,6 +64,7 @@ function ArticleComment({
   comment,
   currentUserId,
   allowGuestTesting = false,
+  depth = 0,
   onReply,
   onEdit,
   onDelete,
@@ -126,9 +127,13 @@ function ArticleComment({
   };
 
   return (
-    <li className={`${styles.commentItem} ${comment.can_edit ? styles.commentItemOwn : ''}`}>
-      <div className={styles.commentRow}>
-        <BlogAvatar name={comment.author.name} src={comment.author.avatar} size="lg" />
+    <li className={styles.commentItem}>
+      <div className={`${styles.commentRow} ${comment.can_edit ? styles.commentRowOwn : ''}`}>
+        <BlogAvatar
+          name={comment.author.name}
+          src={comment.author.avatar}
+          size={depth === 0 ? 'lg' : 'md'}
+        />
 
         <div className={styles.commentBody}>
           <div className={styles.commentHeader}>
@@ -233,24 +238,25 @@ function ArticleComment({
               )}
             </div>
           )}
-
-          {comment.children.length > 0 && (
-            <ol className={styles.commentChildren}>
-              {comment.children.map((child) => (
-                <ArticleComment
-                  comment={child}
-                  currentUserId={currentUserId}
-                  allowGuestTesting={allowGuestTesting}
-                  key={child.id}
-                  onReply={onReply}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                />
-              ))}
-            </ol>
-          )}
         </div>
       </div>
+
+      {comment.children.length > 0 && (
+        <ol className={`${styles.commentChildren} ${depth >= 3 ? styles.commentChildrenFlat : ''}`}>
+          {comment.children.map((child) => (
+            <ArticleComment
+              comment={child}
+              currentUserId={currentUserId}
+              allowGuestTesting={allowGuestTesting}
+              depth={depth + 1}
+              key={child.id}
+              onReply={onReply}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          ))}
+        </ol>
+      )}
     </li>
   );
 }
