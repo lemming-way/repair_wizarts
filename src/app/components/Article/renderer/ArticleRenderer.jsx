@@ -6,6 +6,8 @@ import {
   resolveArticleMedia,
 } from '../../../shared/lib/articleContent';
 import styles from './ArticleRenderer.module.css';
+import { AnyImage } from '../../../shared/ui/AnyMedia';
+import { useFileById } from '../../../state/uploaded';
 
 const MODEL_VIEWER_SCRIPT =
   'https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js';
@@ -63,6 +65,12 @@ function Lightbox({ src, alt, caption, onClose }) {
   );
 }
 
+function getAssetId(file, assets) {
+  if (!file || !Array.isArray(assets)) return null;
+  const asset = assets.find((item) => item?.file === file && Number(item?.dl_id) > 0);
+  return asset ? Number(asset.dl_id) : null;
+}
+
 function safeImageSrc(file, baseUrl) {
   const src = resolveArticleMedia(file, baseUrl);
   return isSafeMediaUrl(src) ? src : '';
@@ -78,10 +86,11 @@ function HeadingBlock({ block }) {
   return <Tag className={styles.heading}>{block.text}</Tag>;
 }
 
-function ImageBlock({ block, mediaBaseUrl }) {
+function ImageBlock({ block, mediaBaseUrl, assets }) {
   const [open, setOpen] = useState(false);
   const src = safeImageSrc(block.file, mediaBaseUrl);
-  if (!src) return null;
+  const dlId = getAssetId(block.file, assets);
+  if (!src && !dlId) return null;
 
   return (
     <figure className={styles.figure}>
@@ -91,12 +100,7 @@ function ImageBlock({ block, mediaBaseUrl }) {
         onClick={() => setOpen(true)}
         aria-label={block.alt ? `Увеличить: ${block.alt}` : 'Увеличить изображение'}
       >
-        <img
-          className={styles.image}
-          src={src}
-          alt={block.alt || block.caption || ''}
-          loading="lazy"
-        />
+        {dlId ? <AnyImage src={dlId} className={styles.image} alt={block.alt || block.caption || ''} loading="lazy" /> : <img className={styles.image} src={src} alt={block.alt || block.caption || ''} loading="lazy" />}
       </button>
       {block.caption && <figcaption className={styles.caption}>{block.caption}</figcaption>}
       {open && (
@@ -111,13 +115,13 @@ function ImageBlock({ block, mediaBaseUrl }) {
   );
 }
 
-function GalleryBlock({ block, mediaBaseUrl }) {
+function GalleryBlock({ block, mediaBaseUrl, assets }) {
   const trackRef = useRef(null);
   const [openImage, setOpenImage] = useState(null);
   const images = Array.isArray(block.images)
     ? block.images
-        .map((image) => ({ ...image, src: safeImageSrc(image.file, mediaBaseUrl) }))
-        .filter((image) => image.src)
+        .map((image) => ({ ...image, src: safeImageSrc(image.file, mediaBaseUrl), dlId: getAssetId(image.file, assets) }))
+        .filter((image) => image.src || image.dlId)
     : [];
 
   if (images.length === 0) return null;
@@ -160,12 +164,7 @@ function GalleryBlock({ block, mediaBaseUrl }) {
               onClick={() => setOpenImage(image)}
               aria-label={image.alt ? `Увеличить: ${image.alt}` : 'Увеличить изображение'}
             >
-              <img
-                className={styles.galleryImage}
-                src={image.src}
-                alt={image.alt || image.caption || ''}
-                loading="lazy"
-              />
+              {image.dlId ? <AnyImage src={image.dlId} className={styles.galleryImage} alt={image.alt || image.caption || ''} loading="lazy" /> : <img className={styles.galleryImage} src={image.src} alt={image.alt || image.caption || ''} loading="lazy" />}
             </button>
             {image.caption && <figcaption className={styles.caption}>{image.caption}</figcaption>}
           </figure>
@@ -265,13 +264,14 @@ function CalloutBlock({ block, tone: forcedTone }) {
   );
 }
 
-function StepsBlock({ block, mediaBaseUrl }) {
+function StepsBlock({ block, mediaBaseUrl, assets }) {
   const items = Array.isArray(block.items) ? block.items : [];
 
   return (
     <ol className={styles.steps}>
       {items.map((item, index) => {
         const imageSrc = safeImageSrc(item.image, mediaBaseUrl);
+        const imageDlId = getAssetId(item.image, assets);
         return (
           <li className={styles.step} key={index}>
             <span className={styles.stepNumber} aria-hidden="true">
@@ -280,14 +280,7 @@ function StepsBlock({ block, mediaBaseUrl }) {
             <div className={styles.stepBody}>
               <p className={styles.stepTitle}>{item.title}</p>
               {item.text && <p className={styles.stepText}>{item.text}</p>}
-              {imageSrc && (
-                <img
-                  className={styles.stepImage}
-                  src={imageSrc}
-                  alt={item.title || ''}
-                  loading="lazy"
-                />
-              )}
+              {imageDlId ? <AnyImage src={imageDlId} className={styles.stepImage} alt={item.title || ''} loading="lazy" /> : imageSrc ? <img className={styles.stepImage} src={imageSrc} alt={item.title || ''} loading="lazy" /> : null}
               {item.warning && (
                 <p className={styles.stepWarning}>
                   <span aria-hidden="true">⚠</span>
@@ -378,8 +371,17 @@ function CodeBlock({ block }) {
   );
 }
 
-function Model3DBlock({ block, mediaBaseUrl }) {
-  const src = resolveArticleMedia(block.file, mediaBaseUrl);
+function Model3DBlock({ block, mediaBaseUrl, assets }) {
+  const dlId = getAssetId(block.file, assets);
+  const { blob } = useFileById(dlId);
+  const [blobUrl, setBlobUrl] = useState('');
+  useEffect(() => {
+    if (!blob) { setBlobUrl(''); return undefined; }
+    const url = URL.createObjectURL(blob);
+    setBlobUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [blob]);
+  const src = dlId ? blobUrl : resolveArticleMedia(block.file, mediaBaseUrl);
   const figureRef = useRef(null);
   const viewerRef = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -521,7 +523,7 @@ const BLOCK_COMPONENTS = {
  * Единый рендерер статей Article Format 1.3.
  * Используется и для локального каталога, и для статей из БД.
  */
-export default function ArticleRenderer({ blocks, mediaBaseUrl, className }) {
+export default function ArticleRenderer({ blocks, mediaBaseUrl, assets, className }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
 
   return (
@@ -531,7 +533,7 @@ export default function ArticleRenderer({ blocks, mediaBaseUrl, className }) {
         const Component = BLOCK_COMPONENTS[block.type];
         if (!Component) return null;
 
-        return <Component block={block} key={index} mediaBaseUrl={mediaBaseUrl} />;
+        return <Component block={block} key={index} mediaBaseUrl={mediaBaseUrl} assets={assets} />;
       })}
     </div>
   );
