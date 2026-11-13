@@ -4,7 +4,7 @@
  * Действия сохранены по контракту AGENTS.md. Источник данных переключается
  * через CONFIG.BLOG.source / REACT_APP_BLOG_SOURCE:
  *  - "local" — каталог из public/articles, собранный из ZIP-архивов docs/;
- *  - "api"   — штатный бэкенд script/template/repair_api.
+ *  - "api"   — штатный бэкенд script/template/repair_api_test_page.
  *
  * В обоих режимах статьи формата 1.3 отдаются как blocks и рендерятся
  * единым ArticleRenderer.
@@ -44,6 +44,7 @@ export type BlogArticle = {
   content?: string;
   excerpt: string;
   cover_url: string | null;
+  cover_file_id?: number | null;
   author: BlogAuthor;
   created_at: string;
   published_at?: string | null;
@@ -78,6 +79,7 @@ type ParsedArticleContent = {
   assets?: ArticleAsset[];
   technical_knowledge?: unknown;
   cover?: { file?: string };
+  cover_file_id?: number;
 };
 
 function buildExcerpt(text: string, limit = 240): string {
@@ -116,6 +118,7 @@ export function parseArticleContent(content: string | undefined): ParsedArticleC
       assets: parsed.assets,
       technical_knowledge: parsed.technical_knowledge,
       cover: parsed.cover,
+      cover_file_id: typeof parsed.cover_file_id === 'number' ? parsed.cover_file_id : undefined,
     };
   } catch {
     return null;
@@ -136,6 +139,7 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
     ...article,
     excerpt: parsedText ? buildExcerpt(parsedText) : article.excerpt,
     cover_url: coverUrl || article.cover_url,
+    cover_file_id: parsed.cover_file_id || article.cover_file_id,
     media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
@@ -153,7 +157,7 @@ export async function getBlogTopics(): Promise<BlogArticle[]> {
       action: 'getBlogTopics',
     },
   };
-  const articles = await post<BlogArticle[]>('script/template/repair_api', payload);
+  const articles = await post<BlogArticle[]>('script/template/repair_api_test_page', payload);
   return articles.map(normalizeBlogArticleContent);
 }
 
@@ -167,7 +171,7 @@ export async function getBlogTopicById(id: number): Promise<BlogArticle> {
       id,
     },
   };
-  const article = await post<BlogArticle>('script/template/repair_api', payload);
+  const article = await post<BlogArticle>('script/template/repair_api_test_page', payload);
   return normalizeBlogArticleContent(article);
 }
 
@@ -181,7 +185,7 @@ export async function getBlogPosts(articleId: number, viewerId = 0): Promise<Blo
       article_id: articleId,
     },
   };
-  return post<BlogComment[]>('script/template/repair_api', payload);
+  return post<BlogComment[]>('script/template/repair_api_test_page', payload);
 }
 
 export async function addBlogPost(params: {
@@ -208,7 +212,7 @@ export async function addBlogPost(params: {
       text: params.text,
     },
   };
-  return post<{ id: number }>('script/template/repair_api', payload);
+  return post<{ id: number }>('script/template/repair_api_test_page', payload);
 }
 
 export async function editBlogPost(params: {
@@ -232,7 +236,7 @@ export async function editBlogPost(params: {
       text: params.text,
     },
   };
-  return post<{ ok: boolean }>('script/template/repair_api', payload);
+  return post<{ ok: boolean }>('script/template/repair_api_test_page', payload);
 }
 
 export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: boolean }> {
@@ -247,5 +251,5 @@ export async function deleteBlogPost(id: number, viewerId = 0): Promise<{ ok: bo
       id,
     },
   };
-  return post<{ ok: boolean }>('script/template/repair_api', payload);
+  return post<{ ok: boolean }>('script/template/repair_api_test_page', payload);
 }
