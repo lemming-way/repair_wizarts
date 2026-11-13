@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { getInitials, resolveMediaUrl } from '../../shared/lib/blog';
+import { AnyImage } from '../../shared/ui/AnyMedia';
 import { formatDate } from '../../shared/lib/formatDate';
 import { CalendarIcon, CommentIcon } from '../../shared/ui/BlogIcons';
 import styles from './Article.module.css';
@@ -9,7 +10,9 @@ function BlogArticleCard({ article }) {
   return (
     <Link className={styles.articleCardLink} to={`/articles/${article.id}`}>
       <article className={styles.articleCard}>
-        {article.cover_url ? (
+        {article.cover_file_id ? (
+          <AnyImage src={Number(article.cover_file_id)} className={styles.articleCardImage} alt="" loading="lazy" />
+        ) : article.cover_url ? (
           <img
             className={styles.articleCardImage}
             src={resolveMediaUrl(article.cover_url)}
