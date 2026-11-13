@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 import zlib from 'node:zlib';
 
-import { assertArticle, crc32, readArticleZip, readZipEntries } from './article-importer.mjs';
+import { assertArticle, buildCatalog, crc32, readArticleZip, readZipEntries } from './article-importer.mjs';
 
 function zipLocalEntries(entries) {
   return Buffer.concat(
@@ -212,4 +212,20 @@ test('imports a valid article ZIP and rejects missing article.json or media', ()
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+});
+
+
+test('builds feed cover URL from the matching Dropbox asset ID', () => {
+  const catalog = buildCatalog([
+    {
+      slug: 'sample',
+      sourceDate: '2026-11-13T00:00:00.000Z',
+      article: {
+        ...validArticle,
+        cover: { file: 'media/photo.png' },
+        assets: [{ file: 'media/photo.png', type: 'image', dl_id: 73142 }],
+      },
+    },
+  ]);
+  assert.equal(catalog.articles[0].cover_url, 'dropbox:73142');
 });
