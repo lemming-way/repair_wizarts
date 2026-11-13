@@ -4,6 +4,18 @@ import userEvent from '@testing-library/user-event';
 
 import ArticleRenderer from './ArticleRenderer';
 
+jest.mock('../../../shared/ui/AnyMedia', () => {
+  const React = require('react');
+  return {
+    AnyImage: ({ src, ...props }) =>
+      React.createElement('img', { ...props, 'data-dropbox-id': String(src) }),
+  };
+});
+
+jest.mock('../../../state/uploaded', () => ({
+  useFileById: () => ({ blob: null }),
+}));
+
 class IntersectionObserverStub {
   observe() {}
 
@@ -127,6 +139,18 @@ describe('ArticleRenderer — Article Format 1.3', () => {
     expect(container.querySelector('pre code')).not.toBeNull();
     await user.click(screen.getByRole('button', { name: /Показать 3D-модель/ }));
     await waitFor(() => expect(container.querySelector('model-viewer')).not.toBeNull());
+  });
+
+  it('renders Dropbox-backed images by dl_id when the legacy URL is unavailable', () => {
+    render(
+      <ArticleRenderer
+        blocks={[{ type: 'image', file: 'media/cover.svg', alt: 'Dropbox cover' }]}
+        mediaBaseUrl="https://invalid.example/"
+        assets={[{ file: 'media/cover.svg', type: 'image', dl_id: 73142 }]}
+      />,
+    );
+
+    expect(screen.getByAltText('Dropbox cover')).toHaveAttribute('data-dropbox-id', '73142');
   });
 
   it('renders ordered and unordered lists with their declared semantics', () => {
