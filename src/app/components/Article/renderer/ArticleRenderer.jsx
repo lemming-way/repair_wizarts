@@ -76,15 +76,8 @@ function safeImageSrc(file, baseUrl) {
   return isSafeMediaUrl(src) ? src : '';
 }
 
-function getDropboxAssetId(file, assets) {
-  if (!file || !Array.isArray(assets)) return null;
-  const asset = assets.find((item) => item?.file === file);
-  const id = Number(asset?.dl_id);
-  return Number.isSafeInteger(id) && id > 0 ? id : null;
-}
-
 function ArticleImage({ file, alt, className, mediaBaseUrl, assets }) {
-  const dlId = getDropboxAssetId(file, assets);
+  const dlId = getAssetId(file, assets);
   if (dlId) return <AnyImage src={dlId} alt={alt || ''} className={className} />;
   const src = safeImageSrc(file, mediaBaseUrl);
   return src ? <img className={className} src={src} alt={alt || ''} loading="lazy" /> : null;
@@ -102,7 +95,7 @@ function HeadingBlock({ block }) {
 
 function ImageBlock({ block, mediaBaseUrl, assets }) {
   const [open, setOpen] = useState(false);
-  const dlId = getDropboxAssetId(block.file, assets);
+  const dlId = getAssetId(block.file, assets);
   const src = dlId ? null : safeImageSrc(block.file, mediaBaseUrl);
   if (!dlId && !src) return null;
 
@@ -143,7 +136,7 @@ function GalleryBlock({ block, mediaBaseUrl, assets }) {
     ? block.images
         .map((image) => ({
           ...image,
-          dlId: getDropboxAssetId(image.file, assets),
+          dlId: getAssetId(image.file, assets),
           src: safeImageSrc(image.file, mediaBaseUrl),
         }))
         .filter((image) => image.dlId || image.src)
@@ -303,7 +296,7 @@ function StepsBlock({ block, mediaBaseUrl, assets }) {
     <ol className={styles.steps}>
       {items.map((item, index) => {
         const imageSrc = safeImageSrc(item.image, mediaBaseUrl);
-        const imageDlId = getDropboxAssetId(item.image, assets);
+        const imageDlId = getAssetId(item.image, assets);
         return (
           <li className={styles.step} key={index}>
             <span className={styles.stepNumber} aria-hidden="true">
@@ -564,7 +557,7 @@ const BLOCK_COMPONENTS = {
  * Единый рендерер статей Article Format 1.3.
  * Используется и для локального каталога, и для статей из БД.
  */
-export default function ArticleRenderer({ blocks, assets, mediaBaseUrl, className }) {
+export default function ArticleRenderer({ blocks, mediaBaseUrl, assets, className }) {
   if (!Array.isArray(blocks) || blocks.length === 0) return null;
 
   return (
@@ -574,7 +567,7 @@ export default function ArticleRenderer({ blocks, assets, mediaBaseUrl, classNam
         const Component = BLOCK_COMPONENTS[block.type];
         if (!Component) return null;
 
-        return <Component block={block} key={index} assets={assets} mediaBaseUrl={mediaBaseUrl} />;
+        return <Component block={block} key={index} mediaBaseUrl={mediaBaseUrl} assets={assets} />;
       })}
     </div>
   );
