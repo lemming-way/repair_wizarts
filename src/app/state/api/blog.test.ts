@@ -15,6 +15,22 @@ const baseArticle: BlogArticle = {
 };
 
 describe('API article JSON normalization', () => {
+  it('uses the Dropbox ID for a feed cover when its asset is registered at article level', () => {
+    const content = JSON.stringify({
+      format_version: '1.3',
+      cover: { file: 'media/cover.svg' },
+      blocks: [{ type: 'paragraph', text: 'Текст' }],
+    });
+
+    const article = normalizeBlogArticleContent({
+      ...baseArticle,
+      content,
+      assets: [{ file: 'media/cover.svg', type: 'image', dl_id: 73142 }],
+    });
+
+    expect(article.cover_url).toBe('dropbox:73142');
+  });
+
   it('returns null for legacy HTML content', () => {
     expect(parseArticleContent('<p>Текст</p>')).toBeNull();
   });
