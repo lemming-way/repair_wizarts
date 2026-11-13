@@ -1,0 +1,41 @@
+name: Migrate article 7 media to Dropbox
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'tests/backend/migrate-article-7-dropbox.mjs'
+      - '.github/workflows/migrate-article-7-dropbox.yml'
+permissions:
+  contents: read
+jobs:
+  migrate-article-7:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install MySQL client
+        run: npm install --no-save --no-package-lock mysql2
+      - name: Migrate only article 7
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_SSL: ${{ secrets.MYSQL_SSL }}
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/migrate-article-7-dropbox.mjs
+      - name: Upload backup and audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: article-7-dropbox-migration-${{ github.run_id }}
+          path: article-7-backup/
+          if-no-files-found: warn
+          retention-days: 30
