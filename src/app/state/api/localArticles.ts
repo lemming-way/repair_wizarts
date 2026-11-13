@@ -72,6 +72,9 @@ function withPublicUrl(pathname: string): string {
 }
 
 function toAbsoluteUrl(pathname: string): string {
+  // Dropbox IDs are resolved by AnyImage through the authenticated file API.
+  // Do not turn this custom scheme into a same-origin /dropbox:... URL.
+  if (/^dropbox:\d+$/i.test(pathname)) return pathname;
   if (/^(?:https?:)?\/\//i.test(pathname) || /^(?:data|blob):/i.test(pathname)) return pathname;
   if (typeof window === 'undefined') return pathname;
   return new URL(withPublicUrl(pathname), window.location.href).toString();
