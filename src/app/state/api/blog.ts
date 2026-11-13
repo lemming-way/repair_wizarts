@@ -140,9 +140,15 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
   if (!parsed) return article;
 
   const mediaBaseUrl = parsed.media_base_url || article.media_base_url;
-  const coverUrl = parsed.cover?.file
-    ? resolveArticleMedia(parsed.cover.file, mediaBaseUrl)
-    : article.cover_url;
+  const coverAsset = parsed.cover?.file
+    ? [...(Array.isArray(article.assets) ? article.assets : []), ...(Array.isArray(parsed.assets) ? parsed.assets : [])]
+        .find((asset) => asset?.file === parsed.cover?.file && Number.isSafeInteger(Number(asset.dl_id)) && Number(asset.dl_id) > 0)
+    : undefined;
+  const coverUrl = coverAsset
+    ? `dropbox:${Number(coverAsset.dl_id)}`
+    : parsed.cover?.file
+      ? resolveArticleMedia(parsed.cover.file, mediaBaseUrl)
+      : article.cover_url;
   const parsedText = parsed.summary?.trim() || getBlocksPlainText(parsed.blocks);
   // API may return Dropbox assets beside `content`, while older Article Format 1.3
   // payloads embed them inside the JSON content. Keep both shapes working.
