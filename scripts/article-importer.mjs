@@ -268,7 +268,17 @@ export function buildCatalog(imported) {
       summary: article.summary,
       topic: article.topic,
       cover: article.cover?.file ?? null,
-      cover_url: article.cover ? `/articles/${slug}/${article.cover.file}` : null,
+      // Keep the Dropbox ID in the feed catalog as well as in article.json.
+      // The feed does not load the full article, so it cannot resolve this later.
+      cover_url: article.cover
+        ? (() => {
+            const asset = article.assets.find((item) => item.file === article.cover.file);
+            const dlId = Number(asset?.dl_id);
+            return Number.isSafeInteger(dlId) && dlId > 0
+              ? `dropbox:${dlId}`
+              : `/articles/${slug}/${article.cover.file}`;
+          })()
+        : null,
       base_path: `/articles/${slug}/`,
       author: {
         id: 0,
