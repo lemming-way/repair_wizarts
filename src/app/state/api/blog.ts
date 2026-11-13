@@ -44,6 +44,7 @@ export type BlogArticle = {
   content?: string;
   excerpt: string;
   cover_url: string | null;
+  cover_file_id?: number | null;
   author: BlogAuthor;
   created_at: string;
   published_at?: string | null;
@@ -78,6 +79,7 @@ type ParsedArticleContent = {
   assets?: ArticleAsset[];
   technical_knowledge?: unknown;
   cover?: { file?: string };
+  cover_file_id?: number;
 };
 
 function buildExcerpt(text: string, limit = 240): string {
@@ -116,6 +118,7 @@ export function parseArticleContent(content: string | undefined): ParsedArticleC
       assets: parsed.assets,
       technical_knowledge: parsed.technical_knowledge,
       cover: parsed.cover,
+      cover_file_id: typeof parsed.cover_file_id === 'number' ? parsed.cover_file_id : undefined,
     };
   } catch {
     return null;
@@ -136,6 +139,7 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
     ...article,
     excerpt: parsedText ? buildExcerpt(parsedText) : article.excerpt,
     cover_url: coverUrl || article.cover_url,
+    cover_file_id: parsed.cover_file_id || article.cover_file_id,
     media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
