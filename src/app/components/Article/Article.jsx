@@ -155,6 +155,7 @@ const Article = () => {
                   {hasBlocks ? (
                     <ArticleRenderer
                       blocks={article.blocks}
+                      assets={article.assets}
                       mediaBaseUrl={article.media_base_url}
                       assets={article.assets}
                     />
