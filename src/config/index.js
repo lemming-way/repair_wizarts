@@ -25,13 +25,14 @@ const CONFIG = {
     // в script_templates/repair_api.php.
     allowGuestTesting: false,
     // "local" — статьи из public/articles (собираются из docs/**/*.zip),
-    // "api"   — статьи из БД через script/template/repair_api.
+    // "api"   — статьи из БД через script/template/repair_api_test_page.
+    // "local" — локальный каталог public/articles (резервный режим).
     // Переопределяется переменной окружения REACT_APP_BLOG_SOURCE.
-    source: 'local',
+    source: 'api',
   },
 
   API: {
-    url: 'https://ibronevik.ru/taxi/c/tutor/api/v1/',
+    url: process.env.REACT_APP_API_URL || 'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/',
     userDataStaleTime: 15 * 60000,
     filesStaleTime: 30 * 60000,
     ordersListRefetchTime: 2 * 60000,
