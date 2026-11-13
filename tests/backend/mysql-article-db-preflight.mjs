@@ -99,22 +99,22 @@ try {
     ['blog_post']
   );
   const columnNames = new Set(articleColumns.map((row) => row.name));
-  for (const requiredColumn of ['id_blog_post', 'title', 'value']) {
+  for (const requiredColumn of ['id_blog_post', 'name', 'value']) {
     if (!columnNames.has(requiredColumn)) throw new Error('Expected blog_post column missing: ' + requiredColumn);
   }
   const [articleRows] = await connection.execute(
-    'SELECT id_blog_post, title, value FROM blog_post WHERE id_blog_post = ? LIMIT 1',
+    'SELECT id_blog_post, name, value FROM blog_post WHERE id_blog_post = ? LIMIT 1',
     [7]
   );
   if (articleRows.length !== 1) throw new Error('Expected exactly one blog_post row with id_blog_post=7.');
   console.log('ARTICLE_7_SOURCE ' + JSON.stringify({
     id_blog_post: articleRows[0].id_blog_post,
-    title: articleRows[0].title,
+    name: articleRows[0].name,
     value: articleRows[0].value,
   }));
   console.log('PREFLIGHT_READ_ONLY_COMPLETE; no rows were inserted, updated, or deleted.');
 } catch (error) {
-  const safeMessage = error?.code || error?.name || 'MYSQL_ERROR';
+  const safeMessage = error?.code || (error?.message || error?.name || 'MYSQL_ERROR').replace(/[\r\n]+/g, ' ').slice(0, 240);
   console.error('MYSQL_PREFLIGHT_FAILED ' + safeMessage);
   if (error?.code === 'ER_ACCESS_DENIED_ERROR') {
     console.error('Check MYSQL_USER/MYSQL_PASSWORD and grants for the runner host.');
