@@ -1,0 +1,57 @@
+name: Read repair template ID (read only)
+
+on:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - '.github/workflows/read-repair-template-id.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Read existing template ID
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: |
+          node <<'NODE'
+          const base = process.env.REPAIR_API_BASE.replace(/\\/+$/, '');
+          const url = new URL(base + '/api/v1/data');
+          const form = new URLSearchParams({
+            private: '1',
+            token: process.env.REPAIR_API_TOKEN,
+            u_hash: process.env.REPAIR_API_U_HASH
+          });
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8','Accept':'application/json'},
+            body: form,
+            redirect: 'error',
+            signal: AbortSignal.timeout(30000)
+          });
+          const raw = await response.text();
+          let data;
+          try { data = JSON.parse(raw); } catch { throw new Error('Backend returned non-JSON HTTP ' + response.status); }
+          if (!response.ok || data?.status === 'error' || String(data?.code) !== '200') {
+            throw new Error('Backend rejected read: HTTP ' + response.status + ', code ' + data?.code + ', message ' + (data?.message || 'not provided'));
+          }
+          const rows = data?.data?.script_templates;
+          if (!rows) throw new Error('script_templates missing from private response; top-level keys: ' + Object.keys(data?.data || {}).join(','));
+          const entries = Array.isArray(rows) ? rows.map((v,i)=>[i,v]) : Object.entries(rows);
+          const match = entries.find(([id, row]) => row?.var === 'repair_api_test_page');
+          if (!match) {
+            console.log('NOT FOUND; script_templates count=' + entries.length);
+            console.log('Available vars: ' + entries.map(([id,row])=>row?.var).filter(Boolean).join(', '));
+            process.exit(2);
+          }
+          console.log('FOUND repair_api_test_page');
+          console.log('id_script_template=' + match[0]);
+          console.log('var=' + match[1].var);
+          NODE
