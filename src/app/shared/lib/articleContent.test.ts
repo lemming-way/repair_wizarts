@@ -1,4 +1,9 @@
-import { getBlocksPlainText, getYouTubeEmbedUrl, isSafeMediaUrl, resolveArticleMedia } from './articleContent';
+import {
+  getBlocksPlainText,
+  getYouTubeEmbedUrl,
+  isSafeMediaUrl,
+  resolveArticleMedia,
+} from './articleContent';
 
 describe('article content helpers', () => {
   it('builds YouTube embed urls for supported link formats', () => {
@@ -35,15 +40,17 @@ describe('article content helpers', () => {
       'https://cdn.example.com/a.png',
     );
     expect(resolveArticleMedia('media/a.png')).toBe(
-      'https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png',
+      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/media/a.png',
     );
     expect(resolveArticleMedia('dropbox:12345')).toBe(
-      'https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/12345',
+      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/dropbox/file/12345',
     );
     expect(resolveArticleMedia('dropbox:not-a-number')).toBe('');
     expect(resolveArticleMedia('javascript:alert(1)', '/articles/x/')).toBe('');
     expect(resolveArticleMedia('vbscript:msgbox(1)', '/articles/x/')).toBe('');
-    expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
+    expect(resolveArticleMedia('https://cdn.example.com/a.png')).toBe(
+      'https://cdn.example.com/a.png',
+    );
     expect(resolveArticleMedia('data:image/png;base64,AAAA')).toBe('data:image/png;base64,AAAA');
     expect(resolveArticleMedia('data:text/html;base64,AAAA')).toBe('');
   });
