@@ -30,14 +30,29 @@ const auth = { token: process.env.REPAIR_API_TOKEN, u_hash: process.env.REPAIR_A
 const inventoryForm = new URLSearchParams({ private: '1', fields: 'script_templates', ...auth });
 const inventory = await post('/api/v1/data', inventoryForm, 'Template preflight read');
 const recordsValue = inventory?.data?.script_templates;
-const records = Array.isArray(recordsValue) ? recordsValue :
-  recordsValue && typeof recordsValue === 'object' ? Object.values(recordsValue) : [];
+let records;
+let existingKey = null;
+if (Array.isArray(recordsValue)) {
+  records = recordsValue;
+} else if (recordsValue && typeof recordsValue === 'object') {
+  const entries = Object.entries(recordsValue);
+  records = entries.map(([key, value]) => {
+    if (value && typeof value === 'object' && value.var === 'repair_api_test_page') existingKey = key;
+    return value;
+  });
+} else {
+  records = [];
+}
 const existing = records.find(item => item && item.var === 'repair_api_test_page');
 if (!existing) throw new Error('repair_api_test_page is absent from script_templates; refusing to create or overwrite a new record');
 
 // Extract the ID (key in the object or id_script_template field) for UPDATE
-const templateId = existing.id_script_template ?? existing.id ?? existing.id_script_template;
-if (!templateId) throw new Error('Existing template record has no identifiable ID; cannot update safely.');
+const templateId = existingKey ?? existing.id_script_template ?? existing.id ?? existing.id_script_template;
+if (!templateId) {
+  console.log('DEBUG: existing record keys:', Object.keys(existing));
+  console.log('DEBUG: existing record:', JSON.stringify(existing, null, 2));
+  throw new Error('Existing template record has no identifiable ID; cannot update safely.');
+}
 
 const source = fs.readFileSync('script_templates/repair_api_test_page.php', 'utf8');
 if (!source.startsWith('<?php')) throw new Error('Template source is not PHP');
