@@ -54,9 +54,14 @@ const inventory = await post({
 const recordsValue = inventory?.data?.script_templates;
 if (recordsValue == null) throw new Error('Preflight did not return script_templates; refusing to write.');
 const records = Array.isArray(recordsValue)
-  ? recordsValue
-  : typeof recordsValue === 'object' ? Object.values(recordsValue) : [];
-const existing = records.find((item) => item && item.var === 'repair_api_test_page');
+  ? recordsValue.map((item) => [item?.id_script_template ?? item?.id, item])
+  : typeof recordsValue === 'object' ? Object.entries(recordsValue) : [];
+const existingEntry = records.find(([, item]) => item && item.var === 'repair_api_test_page');
+const existingId = existingEntry ? Number(existingEntry[0]) : null;
+const existing = existingEntry?.[1] ?? null;
+if (existing && (!Number.isInteger(existingId) || existingId <= 0)) {
+  throw new Error('Template exists but its numeric ID could not be determined; refusing to INSERT a duplicate.');
+}
 
 const fs = await import('node:fs/promises');
 const file = await fs.readFile('script_templates/repair_api_test_page.php', 'utf8');
@@ -78,6 +83,7 @@ if (existing) {
 
 const payload = {
   script_templates: [{
+    ...(existing ? { id: existingId } : {}),
     var: 'repair_api_test_page',
     file,
   }],
