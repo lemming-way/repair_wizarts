@@ -58,7 +58,11 @@ function Lightbox({ src, dlId, alt, caption, onClose }) {
         ×
       </button>
       <figure className={styles.lightboxFigure} onClick={(event) => event.stopPropagation()}>
-        {dlId ? <AnyImage src={dlId} className={styles.lightboxImage} alt={alt || caption || ''} /> : <img className={styles.lightboxImage} src={src} alt={alt || caption || ''} />}
+        {dlId ? (
+          <AnyImage src={dlId} className={styles.lightboxImage} alt={alt || caption || ''} />
+        ) : (
+          <img className={styles.lightboxImage} src={src} alt={alt || caption || ''} />
+        )}
         {caption && <figcaption className={styles.lightboxCaption}>{caption}</figcaption>}
       </figure>
     </div>
@@ -410,7 +414,10 @@ function Model3DBlock({ block, mediaBaseUrl, assets }) {
   const { blob } = useFileById(dlId);
   const [blobUrl, setBlobUrl] = useState('');
   useEffect(() => {
-    if (!blob) { setBlobUrl(''); return undefined; }
+    if (!blob) {
+      setBlobUrl('');
+      return undefined;
+    }
     const url = URL.createObjectURL(blob);
     setBlobUrl(url);
     return () => URL.revokeObjectURL(url);

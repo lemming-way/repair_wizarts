@@ -98,8 +98,7 @@ function deriveMediaBaseUrl(coverUrl: string | null | undefined): string | undef
 }
 
 const BLOG_SOURCE = process.env.REACT_APP_BLOG_SOURCE || CONFIG.BLOG?.source || 'local';
-const BLOG_API_PATH =
-  process.env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api_test_page';
+const BLOG_API_PATH = process.env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api_test_page';
 const BLOG_API_IS_VAR = process.env.REACT_APP_BLOG_API_IS_VAR !== '0';
 
 function buildBlogPayload(data: Record<string, unknown>) {
@@ -141,8 +140,15 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
 
   const mediaBaseUrl = parsed.media_base_url || article.media_base_url;
   const coverAsset = parsed.cover?.file
-    ? [...(Array.isArray(article.assets) ? article.assets : []), ...(Array.isArray(parsed.assets) ? parsed.assets : [])]
-        .find((asset) => asset?.file === parsed.cover?.file && Number.isSafeInteger(Number(asset.dl_id)) && Number(asset.dl_id) > 0)
+    ? [
+        ...(Array.isArray(article.assets) ? article.assets : []),
+        ...(Array.isArray(parsed.assets) ? parsed.assets : []),
+      ].find(
+        (asset) =>
+          asset?.file === parsed.cover?.file &&
+          Number.isSafeInteger(Number(asset.dl_id)) &&
+          Number(asset.dl_id) > 0,
+      )
     : undefined;
   const coverUrl = coverAsset
     ? `dropbox:${Number(coverAsset.dl_id)}`
@@ -153,7 +159,10 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
   // API may return Dropbox assets beside `content`, while older Article Format 1.3
   // payloads embed them inside the JSON content. Keep both shapes working.
   const assetsByFile = new Map();
-  for (const asset of [...(Array.isArray(article.assets) ? article.assets : []), ...(Array.isArray(parsed.assets) ? parsed.assets : [])]) {
+  for (const asset of [
+    ...(Array.isArray(article.assets) ? article.assets : []),
+    ...(Array.isArray(parsed.assets) ? parsed.assets : []),
+  ]) {
     if (asset?.file) assetsByFile.set(asset.file, asset);
   }
   const assets = Array.from(assetsByFile.values());
@@ -166,7 +175,6 @@ export function normalizeBlogArticleContent(article: BlogArticle): BlogArticle {
     media_base_url: mediaBaseUrl || deriveMediaBaseUrl(coverUrl),
     format_version: parsed.format_version || article.format_version || '1.3',
     blocks: parsed.blocks,
-    assets,
     technical_knowledge: parsed.technical_knowledge,
   };
 }
