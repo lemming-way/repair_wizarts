@@ -35,9 +35,13 @@ const records = Array.isArray(recordsValue) ? recordsValue :
 const existing = records.find(item => item && item.var === 'repair_api_test_page');
 if (!existing) throw new Error('repair_api_test_page is absent from script_templates; refusing to create or overwrite a new record');
 
+// Extract the ID (key in the object or id_script_template field) for UPDATE
+const templateId = existing.id_script_template ?? existing.id ?? existing.id_script_template;
+if (!templateId) throw new Error('Existing template record has no identifiable ID; cannot update safely.');
+
 const source = fs.readFileSync('script_templates/repair_api_test_page.php', 'utf8');
 if (!source.startsWith('<?php')) throw new Error('Template source is not PHP');
-const updatedRecord = { ...existing, file: source };
+const updatedRecord = { id: templateId, var: 'repair_api_test_page', file: source };
 const updateForm = new URLSearchParams({
   private: '1',
   data: JSON.stringify({ script_templates: [updatedRecord] }),
