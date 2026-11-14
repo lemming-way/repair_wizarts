@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Re-run preflight/create after comment-flow test found the server template missing.
+// Uses content hash to detect changes and update the template when the source file differs.
 
+const crypto = await import('node:crypto');
 const required = ['REPAIR_API_BASE', 'REPAIR_API_TOKEN', 'REPAIR_API_U_HASH'];
 const missing = required.filter((key) => !process.env[key]);
 if (missing.length) throw new Error('Missing required GitHub Actions secrets: ' + missing.join(', '));
@@ -36,6 +38,10 @@ async function post(fields, label) {
   return result;
 }
 
+function hashContent(content) {
+  return crypto.createHash('sha256').update(content, 'utf8').digest('hex');
+}
+
 console.log('Backend host: ' + url.origin);
 console.log('Preflight: reading script_templates to avoid duplicate creation.');
 
@@ -52,15 +58,23 @@ const records = Array.isArray(recordsValue)
   : typeof recordsValue === 'object' ? Object.values(recordsValue) : [];
 const existing = records.find((item) => item && item.var === 'repair_api_test_page');
 
-if (existing) {
-  console.log('NO-OP: repair_api_test_page already exists; no write performed.');
-  process.exit(0);
-}
-
 const fs = await import('node:fs/promises');
 const file = await fs.readFile('script_templates/repair_api_test_page.php', 'utf8');
 if (!file.startsWith('<?php')) throw new Error('Template source is not a PHP file.');
 if (!file.includes('repair_api_test_page.php')) throw new Error('Template source does not contain the agreed template name.');
+
+const localHash = hashContent(file);
+
+if (existing) {
+  const serverHash = existing.hash || existing.file_hash || null;
+  if (serverHash && serverHash === localHash) {
+    console.log('NO-OP: repair_api_test_page already up to date (hash matches).');
+    process.exit(0);
+  }
+  console.log('Template exists but hash differs (server: ' + (serverHash?.slice(0, 12) || 'unknown') + ', local: ' + localHash.slice(0, 12) + '); updating.');
+} else {
+  console.log('Template does not exist; creating.');
+}
 
 const payload = {
   script_templates: [{
@@ -69,14 +83,14 @@ const payload = {
   }],
 };
 
-console.log('Creating one script_templates record: repair_api_test_page.');
+console.log('Writing script_templates record: repair_api_test_page.');
 const created = await post({
   private: '1',
   data: JSON.stringify(payload),
   ...auth,
-}, 'Template creation');
+}, existing ? 'Template update' : 'Template creation');
 
-console.log('Creation request accepted by backend.');
+console.log('Request accepted by backend.');
 console.log('API status: ' + String(created?.status));
 console.log('API code: ' + String(created?.code));
 console.log('Response data keys: ' + Object.keys(created?.data || {}).join(', '));

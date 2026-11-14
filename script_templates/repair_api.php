@@ -358,6 +358,12 @@ $out = call_user_func(function() {
       }
     }
   }
+  else {
+    // Нет колонки статуса — fail closed, чтобы не отдать черновики.
+    $blog_public_config_error =
+      'Blog publication status column not found. ' .
+      'Apply sql/blog_article_publication.sql or add a status column to blog_post.';
+  }
 
   $blog_published_at_select = $blog_published_at_column
     ? 'DATE_FORMAT(CONVERT_TZ(`p`.`' . $blog_published_at_column . '`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `published_at`,'
@@ -3250,7 +3256,9 @@ $out = call_user_func(function() {
           '`c`.`deleted`,' .
           'DATE_FORMAT(CONVERT_TZ(`c`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
           'DATE_FORMAT(CONVERT_TZ(`c`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
-          'MAX(`c`.`id_blog_comment`) OVER (PARTITION BY `c`.`id_blog_post`,`c`.`parent_id`) AS `last_id`,' .
+          '(SELECT MAX(`c2`.`id_blog_comment`) FROM `blog_comment` `c2` ' .
+            'WHERE `c2`.`id_blog_post`=`c`.`id_blog_post` ' .
+            '  AND ((`c2`.`parent_id` IS NULL AND `c`.`parent_id` IS NULL) OR `c2`.`parent_id`=`c`.`parent_id`)) AS `last_id`,' .
           '`u`.`name` AS `author_name`,' .
           '`u`.`middle` AS `author_middle`,' .
           '`u`.`family` AS `author_family`,' .

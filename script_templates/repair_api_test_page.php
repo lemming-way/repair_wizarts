@@ -358,6 +358,12 @@ $out = call_user_func(function() {
       }
     }
   }
+  else {
+    // Нет колонки статуса — fail closed, чтобы не отдать черновики.
+    $blog_public_config_error =
+      'Blog publication status column not found. ' .
+      'Apply sql/blog_article_publication.sql or add a status column to blog_post.';
+  }
 
   $blog_published_at_select = $blog_published_at_column
     ? 'DATE_FORMAT(CONVERT_TZ(`p`.`' . $blog_published_at_column . '`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `published_at`,'
@@ -596,6 +602,20 @@ $out = call_user_func(function() {
     // Получаем контекст
     $context = $get_context();
     $data = $context['data'];
+
+    // Whitelist of allowed actions for this template (articles and comments only).
+    $allowed_actions = [
+      'getBlogTopics',
+      'getBlogTopicById',
+      'getBlogPosts',
+      'addBlogPost',
+      'editBlogPost',
+      'deleteBlogPost',
+      'inspectBlogDb'
+    ];
+    if (!in_array($context['action'], $allowed_actions, true)) {
+      $die(403, 'Action is not available in the test page template.');
+    }
 
     /********************************************************************
                              Выполнение действий
@@ -3250,7 +3270,9 @@ $out = call_user_func(function() {
           '`c`.`deleted`,' .
           'DATE_FORMAT(CONVERT_TZ(`c`.`create_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `created_at`,' .
           'DATE_FORMAT(CONVERT_TZ(`c`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
-          'MAX(`c`.`id_blog_comment`) OVER (PARTITION BY `c`.`id_blog_post`,`c`.`parent_id`) AS `last_id`,' .
+          '(SELECT MAX(`c2`.`id_blog_comment`) FROM `blog_comment` `c2` ' .
+            'WHERE `c2`.`id_blog_post`=`c`.`id_blog_post` ' .
+            '  AND ((`c2`.`parent_id` IS NULL AND `c`.`parent_id` IS NULL) OR `c2`.`parent_id`=`c`.`parent_id`)) AS `last_id`,' .
           '`u`.`name` AS `author_name`,' .
           '`u`.`middle` AS `author_middle`,' .
           '`u`.`family` AS `author_family`,' .
@@ -3380,9 +3402,9 @@ $out = call_user_func(function() {
       if ((int)$context['u_role'] !== 4) $die(403, 'Administrator role required.');
       $post_columns = $query('SHOW COLUMNS FROM `blog_post`', []);
       $topic_columns = $query('SHOW COLUMNS FROM `blog_topic`', []);
-      $topic_rows = $query('SELECT * FROM `blog_topic` ORDER BY `id_blog_topic`', []);
-      $post_fields = ['id_blog_post', 'id_blog_topic', 'id_user', 'title'];
-      foreach (['status', 'published_at', 'content_json', 'content_format', 'content_version', 'value', 'create_datetime'] as $field) {
+      $topic_rows = $query('SELECT `id_blog_topic`,`name` FROM `blog_topic` ORDER BY `id_blog_topic`', []);
+      $post_fields = ['id_blog_post', 'id_blog_topic', 'id_user', 'name'];
+      foreach (['status', 'published_at', 'content_json', 'content_format', 'content_version', 'create_datetime'] as $field) {
         if (isset($blog_post_columns[$field])) $post_fields[] = $field;
       }
       $post_fields = array_values(array_unique(array_filter($post_fields, function($field) use($blog_post_columns) {

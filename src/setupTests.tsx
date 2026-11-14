@@ -1,3 +1,4 @@
+import React from 'react';
 import '@testing-library/jest-dom';
 
 class ResizeObserver {
@@ -17,14 +18,10 @@ jest.mock('app/state/language', () => ({
 
 // Mock AnyMedia which uses language
 jest.mock('app/shared/ui/AnyMedia', () => ({
-  AnyImage: ({ src, alt, className }) => (
-    <img src={src} alt={alt} className={className} />
-  ),
+  AnyImage: ({ src, alt, className }) => <img src={src} alt={alt} className={className} />,
 }));
 
 // Mock react-multilevel-dropdown if needed
 jest.mock('react-multilevel-dropdown', () => ({
   MultiLevelMenu: ({ children }) => <div>{children}</div>,
 }));
-
-import React from 'react';

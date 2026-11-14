@@ -39,7 +39,9 @@ jobs:
       - name: PHP syntax check (article APIs)
         run: |
           php -l script_templates/repair_api.php
+          php -l script_templates/repair_api_test.php
           php -l script_templates/repair_api_test_page.php
+          php -l script_templates/repair_api_comments_public.php
 
       - name: ESLint (article renderer, catalog, API and helpers)
         run: >-
