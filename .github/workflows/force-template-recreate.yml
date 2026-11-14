@@ -1,0 +1,40 @@
+name: Force template recreate and inspect
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - docs/repair-wizards-article-format-v1.3
+    paths:
+      - 'script_templates/repair_api_test_page.php'
+      - 'tests/backend/force-template-recreate.mjs'
+      - '.github/workflows/force-template-recreate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  force-recreate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Force template recreate
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/force-template-recreate.mjs
+
+  deploy-inspect:
+    needs: force-recreate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect article DB
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/deploy-inspect-article-db.mjs
