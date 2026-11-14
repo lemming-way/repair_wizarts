@@ -331,7 +331,6 @@ function StepsBlock({ block, mediaBaseUrl, assets }) {
     </ol>
   );
 }
-}
 
 function TableBlock({ block }) {
   const headers = Array.isArray(block.headers) ? block.headers : [];
