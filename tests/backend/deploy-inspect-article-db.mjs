@@ -68,6 +68,9 @@ console.log('Template update accepted: ' + JSON.stringify({
   affected_fields: updated.data?.affected_fields, version: updated.data?.version,
 }));
 
+// Wait for server to write PHP file and OPcache to refresh
+await new Promise(r => setTimeout(r, 3000));
+
 const inspectForm = new URLSearchParams({
   is_var: '1',
   s_t_data: JSON.stringify({ action: 'inspectBlogDb' }),
