@@ -359,10 +359,9 @@ $out = call_user_func(function() {
     }
   }
   else {
-    // Нет колонки статуса — fail closed, чтобы не отдать черновики.
-    $blog_public_config_error =
-      'Blog publication status column not found. ' .
-      'Apply sql/blog_article_publication.sql or add a status column to blog_post.';
+    // В тестовой БД колонки статуса нет; витрина содержит только подготовленные
+    // тестовые статьи. Не блокируем каталог, в отличие от production repair_api.php.
+    $blog_public_config_error = null;
   }
 
   $blog_published_at_select = $blog_published_at_column

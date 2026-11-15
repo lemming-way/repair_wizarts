@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: repair-api-test-page-template
+  cancel-in-progress: false
+
 jobs:
   create-template:
     runs-on: ubuntu-latest

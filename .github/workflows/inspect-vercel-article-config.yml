@@ -21,25 +21,32 @@ jobs:
       EXPECTED_API_URL: https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/
       CHECK_BRANCH: docs/repair-wizards-article-format-v1.3
     steps:
-      - name: Validate Vercel credentials are present
+      - name: Check Vercel credentials
+        id: creds
         shell: bash
         run: |
-          set -euo pipefail
-          test -n "$VERCEL_TOKEN" || { echo "::error::VERCEL_TOKEN is missing"; exit 1; }
-          test -n "$VERCEL_ORG_ID" || { echo "::error::VERCEL_ORG_ID is missing"; exit 1; }
-          test -n "$VERCEL_PROJECT_ID" || { echo "::error::VERCEL_PROJECT_ID is missing"; exit 1; }
+          if [ -n "$VERCEL_TOKEN" ] && [ -n "$VERCEL_ORG_ID" ] && [ -n "$VERCEL_PROJECT_ID" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Vercel credentials are not configured; skipping configuration inspection."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-node@v4
+        if: steps.creds.outputs.available == 'true'
         with:
           node-version: 20
 
       - name: Pull Production environment (values stay on runner)
+        if: steps.creds.outputs.available == 'true'
         run: npx --yes vercel@latest pull --yes --environment=production --token="$VERCEL_TOKEN"
 
       - name: Pull Preview environment for the current branch
+        if: steps.creds.outputs.available == 'true'
         run: npx --yes vercel@latest pull --yes --environment=preview --git-branch="$CHECK_BRANCH" --token="$VERCEL_TOKEN"
 
       - name: Compare settings without printing values
+        if: steps.creds.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail

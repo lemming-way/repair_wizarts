@@ -2,16 +2,13 @@ name: Force template recreate and inspect
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'script_templates/repair_api_test_page.php'
-      - 'tests/backend/force-template-recreate.mjs'
-      - '.github/workflows/force-template-recreate.yml'
 
 permissions:
   contents: read
+
+concurrency:
+  group: repair-api-test-page-template
+  cancel-in-progress: false
 
 jobs:
   force-recreate:
