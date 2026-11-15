@@ -1,13 +1,6 @@
 name: Test PHP article importer on repair_api_test_page
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/deploy-and-test-article-import-api.mjs'
-      - '.github/workflows/deploy-and-test-article-import-api.yml'
-      - 'script_templates/blog_import_actions.php'
 
 permissions:
   contents: read

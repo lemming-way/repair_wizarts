@@ -1,13 +1,7 @@
 name: Create repair_api_test_page server template
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - '.github/workflows/create-repair-api-test-page.yml'
-      - 'tests/backend/create-template.mjs'
-      - 'script_templates/repair_api_test_page.php'
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -1,5 +1,6 @@
 name: Deploy and inspect article DB test template
 on:
+  workflow_dispatch:
   push:
     branches:
       - docs/repair-wizards-article-format-v1.3
