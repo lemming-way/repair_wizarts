@@ -1,0 +1,23 @@
+name: Diagnose template UPDATE request
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Capture sanitized script_templates UPDATE request and response
+        env:
+          REPAIR_API_BASE: ${{ secrets.REPAIR_API_BASE }}
+          REPAIR_API_TOKEN: ${{ secrets.REPAIR_API_TOKEN }}
+          REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
+        run: node tests/backend/diagnose-template-update.mjs

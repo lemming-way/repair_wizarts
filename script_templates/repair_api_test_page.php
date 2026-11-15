@@ -3401,14 +3401,17 @@ $out = call_user_func(function() {
     case 'inspectBlogDb':
       if ((int)$context['u_role'] !== 4) $die(403, 'Administrator role required.');
       $post_columns = $query('SHOW COLUMNS FROM `blog_post`', []);
+      if (!is_array($post_columns)) $post_columns = [];
       $topic_columns = $query('SHOW COLUMNS FROM `blog_topic`', []);
+      if (!is_array($topic_columns)) $topic_columns = [];
       $topic_rows = $query('SELECT `id_blog_topic`,`name` FROM `blog_topic` ORDER BY `id_blog_topic`', []);
+      if (!is_array($topic_rows)) $topic_rows = [];
       $post_fields = ['id_blog_post', 'id_blog_topic', 'id_user', 'name'];
       foreach (['status', 'published_at', 'content_json', 'content_format', 'content_version', 'create_datetime'] as $field) {
-        if (isset($blog_post_columns[$field])) $post_fields[] = $field;
+        if (isset($post_columns[$field])) $post_fields[] = $field;
       }
-      $post_fields = array_values(array_unique(array_filter($post_fields, function($field) use($blog_post_columns) {
-        return isset($blog_post_columns[$field]);
+      $post_fields = array_values(array_unique(array_filter($post_fields, function($field) use($post_columns) {
+        return isset($post_columns[$field]);
       })));
       $posts = $query(
         'SELECT ' . join(',', array_map(function($field) { return '`' . $field . '`'; }, $post_fields)) .
