@@ -90,6 +90,12 @@ const payload = {
 };
 
 console.log('Writing script_templates record: repair_api_test_page.');
+console.log('Update payload: ' + JSON.stringify({
+  id: existing ? existingId : null,
+  var: 'repair_api_test_page',
+  file_length: file.length,
+  file_sha256: localHash.slice(0, 16),
+}));
 const created = await post({
   private: '1',
   data: JSON.stringify(payload),
@@ -100,3 +106,27 @@ console.log('Request accepted by backend.');
 console.log('API status: ' + String(created?.status));
 console.log('API code: ' + String(created?.code));
 console.log('Response data keys: ' + Object.keys(created?.data || {}).join(', '));
+console.log('API data: ' + JSON.stringify({
+  affected_fields: created?.data?.affected_fields,
+  forbidden_fields: created?.data?.forbidden_fields,
+  created_id: created?.data?.created_id,
+  deleted_id: created?.data?.deleted_id,
+  version: created?.data?.version,
+}));
+
+const afterInventory = await post({
+  private: '1',
+  fields: 'script_templates',
+  ...auth,
+}, 'Post-update read');
+const afterValue = afterInventory?.data?.script_templates;
+const afterRecords = Array.isArray(afterValue)
+  ? afterValue.map((item) => [item?.id_script_template ?? item?.id, item])
+  : afterValue && typeof afterValue === 'object' ? Object.entries(afterValue) : [];
+const afterEntry = afterRecords.find(([, item]) => item && item.var === 'repair_api_test_page');
+const afterRecord = afterEntry?.[1] ?? null;
+console.log('Post-update record: ' + JSON.stringify({
+  value: afterRecord?.value ?? null,
+  hash: afterRecord?.hash ?? afterRecord?.file_hash ?? null,
+  file_length: typeof afterRecord?.file === 'string' ? afterRecord.file.length : null,
+}));
