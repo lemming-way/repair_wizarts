@@ -3433,7 +3433,7 @@ $out = call_user_func(function() {
         'blog_post_columns' => $post_columns,
         'blog_topic_columns' => $topic_columns,
         'topics' => $topic_rows,
-        'blog_post_total' => (int)$count['total'],
+        'blog_post_total' => (int)$count,
         'recent_posts' => $posts
       ];
 
