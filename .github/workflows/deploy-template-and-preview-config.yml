@@ -39,7 +39,8 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       PREVIEW_BRANCH: docs/repair-wizards-article-format-v1.3
-      BLOG_API_PATH: script/template/repair_api_test_page
+      BLOG_API_PATH: script/template/repair_api
+      PRODUCTION_API_URL: https://ibronevik.ru/taxi/c/tutor/api/v1/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -55,13 +56,14 @@ jobs:
             echo "::warning::Vercel credentials are not configured; skipping Preview configuration."
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Link project and set only this Preview branch variable
+      - name: Link project and set Preview branch variables
         if: steps.creds.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
           npx --yes vercel@latest pull --yes --environment=preview --git-branch="$PREVIEW_BRANCH" --token="$VERCEL_TOKEN"
           printf '%s\n' "$BLOG_API_PATH" | npx --yes vercel@latest env add REACT_APP_BLOG_API_PATH preview "$PREVIEW_BRANCH" --force --token="$VERCEL_TOKEN"
+          printf '%s\n' "$PRODUCTION_API_URL" | npx --yes vercel@latest env add REACT_APP_API_URL preview "$PREVIEW_BRANCH" --force --token="$VERCEL_TOKEN"
       - name: Verify branch-specific Preview configuration without exposing other values
         if: steps.creds.outputs.available == 'true'
         shell: bash
@@ -73,13 +75,21 @@ jobs:
           const file = '.vercel/.env.preview.local';
           if (!fs.existsSync(file)) throw new Error('Vercel Preview env file was not created');
           const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
-          const line = lines.find((entry) => entry.startsWith('REACT_APP_BLOG_API_PATH='));
-          if (!line) throw new Error('REACT_APP_BLOG_API_PATH is missing from branch Preview');
-          let value = line.slice('REACT_APP_BLOG_API_PATH='.length).trim();
-          if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-          if (value !== process.env.BLOG_API_PATH) throw new Error('Preview path verification failed');
+          const read = (key) => {
+            const line = lines.find((entry) => entry.startsWith(key + '='));
+            if (!line) throw new Error(key + ' is missing from branch Preview');
+            let value = line.slice(key.length + 1).trim();
+            if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+            return value;
+          };
+          const path = read('REACT_APP_BLOG_API_PATH');
+          const apiUrl = read('REACT_APP_API_URL').replace(/\/+$/, '');
+          const expectedApiUrl = process.env.PRODUCTION_API_URL.replace(/\/+$/, '');
+          if (path !== process.env.BLOG_API_PATH) throw new Error('Preview path verification failed');
+          if (apiUrl !== expectedApiUrl) throw new Error('Preview API URL verification failed');
           console.log('Preview branch: ' + process.env.PREVIEW_BRANCH);
-          console.log('REACT_APP_BLOG_API_PATH: ' + value + ' [OK]');
+          console.log('REACT_APP_BLOG_API_PATH: ' + path + ' [OK]');
+          console.log('REACT_APP_API_URL: production [OK]');
           NODE
       - name: Build a new Preview deployment (never Production)
         if: steps.creds.outputs.available == 'true'

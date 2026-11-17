@@ -588,7 +588,8 @@ $out = call_user_func(function() {
     // даже если у него уже есть ответы.
     $last_id = $query_one(
       'SELECT MAX(`id_blog_comment`) AS `last_id` FROM `blog_comment` ' .
-      'WHERE `id_blog_post`=:article AND ((`parent_id` IS NULL AND :parent IS NULL) OR `parent_id`=:parent)',
+      'WHERE `id_blog_post`=:article AND `deleted`=0 ' .
+      '  AND ((`parent_id` IS NULL AND :parent IS NULL) OR `parent_id`=:parent)',
       [ 'article' => $article_id, 'parent' => $comment['parent_id'] ],
       [ 'numeric_fields' => [ 'last_id' ] ]
     );
@@ -3258,6 +3259,7 @@ $out = call_user_func(function() {
           'DATE_FORMAT(CONVERT_TZ(`c`.`last_edit_datetime`,@@time_zone,\'+00:00\'),\'%Y-%m-%dT%H:%i:%sZ\') AS `updated_at`,' .
           '(SELECT MAX(`c2`.`id_blog_comment`) FROM `blog_comment` `c2` ' .
             'WHERE `c2`.`id_blog_post`=`c`.`id_blog_post` ' .
+            '  AND `c2`.`deleted`=0 ' .
             '  AND ((`c2`.`parent_id` IS NULL AND `c`.`parent_id` IS NULL) OR `c2`.`parent_id`=`c`.`parent_id`)) AS `last_id`,' .
           '`u`.`name` AS `author_name`,' .
           '`u`.`middle` AS `author_middle`,' .

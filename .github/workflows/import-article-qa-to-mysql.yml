@@ -1,12 +1,7 @@
 name: One-article production SQL import verification
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/import-article-qa-to-mysql.mjs'
-      - '.github/workflows/import-article-qa-to-mysql.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

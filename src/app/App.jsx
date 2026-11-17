@@ -59,6 +59,7 @@ import CreateDirect from './features/orders/client/create/CreateDirect';
 import BalanceClient from './components/Settings/BalanceClient';
 import Footer from './layout/Footer';
 import Toolbar from './layout/Header';
+import { useProducts } from './state/site-data';
 import { setGlobal } from './state/global';
 import { useNotifications } from './state/notifications/NotificationsContext';
 
@@ -69,6 +70,8 @@ function App() {
   const location = useLocation();
   const { connect: connectNotifications } = useNotifications();
   const queryClient = useQueryClient();
+
+  const { categories, isLoading: areCategoriesLoading } = useProducts();
 
   const isAuthorized = !!user.id;
   const isContractor = user.role === UserRole.Contractor;
@@ -136,6 +139,13 @@ function App() {
       connectNotifications();
     }
   }, [connectNotifications, status, user.id]);
+
+  const isBlogRoute =
+    location.pathname === '/articles' || location.pathname.startsWith('/articles/');
+
+  if (!isBlogRoute && Object.keys(categories).length === 0 && areCategoriesLoading) {
+    return 'Loading...';
+  }
 
   return (
     <>

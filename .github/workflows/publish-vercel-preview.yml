@@ -1,10 +1,6 @@
 name: Publish Vercel preview URL
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-      - 'work/**'
   workflow_dispatch:
 
 permissions:

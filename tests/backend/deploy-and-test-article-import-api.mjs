@@ -55,13 +55,14 @@ let deployedSource=source.replace(contextAnchor, "\n"+helper+"\n"+contextAnchor)
 deployedSource=deployedSource.replace(dispatchAnchor, importActions+dispatchAnchor);
 if(deployedSource.length<source.length+20000 || !deployedSource.includes("case 'validateBlogImport'")) throw new Error('Combined test template validation failed');
 const templateVar='repair_api_test_page';
-const templateId=2;
 
 const inventoryJson=await post('/data',{private:'1',fields:'script_templates'},'Template inventory read');
 const inventory=dataOf(inventoryJson)?.script_templates;
 const records=Array.isArray(inventory)?inventory:inventory&&typeof inventory==='object'?Object.values(inventory):[];
 const matches=records.filter(x=>x?.var===templateVar&&typeof x.file==='string');
 if(matches.length!==1) throw new Error('Expected exactly one existing '+templateVar+' template, found '+matches.length);
+const templateId=Number(matches[0]?.id_script_template??matches[0]?.id);
+if(!Number.isSafeInteger(templateId)||templateId<=0) throw new Error('Template exists but its numeric ID could not be determined; refusing to update.');
 const original={...matches[0],id:templateId,id_script_template:templateId};
 fs.mkdirSync('artifacts',{recursive:true});
 fs.writeFileSync('artifacts/repair_api_test_page.before-import-e2e.php',original.file,'utf8');

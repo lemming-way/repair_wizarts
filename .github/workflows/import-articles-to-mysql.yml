@@ -1,12 +1,6 @@
 name: Import six v1.3 articles and migrate all media to Dropbox
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/import-articles-to-mysql.mjs'
-      - '.github/workflows/import-articles-to-mysql.yml'
   workflow_dispatch:
 
 permissions:

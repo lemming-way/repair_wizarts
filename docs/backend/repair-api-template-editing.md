@@ -8,10 +8,10 @@
 |---|---|
 | Таблица API | `script_templates` |
 | Имя шаблона (`var`) | `repair_api_test_page` |
-| ID записи (`id_script_template`) в проверенном тестовом окружении | `2` |
+| ID записи (`id_script_template`) | Искать по `var` перед каждым изменением |
 | Исходный PHP-файл в репозитории | `script_templates/repair_api_test_page.php` |
 
-ID `2` подтверждён чтением приватных данных API в GitHub Actions 14.11.2026. В другом tenant/окружении ID может отличаться. Перед изменением сначала найдите запись по `var`, не полагайтесь только на сохранённый ID.
+ID записи не является стабильным: после удаления и повторного INSERT он меняется. Перед изменением всегда находите запись по `var`, не полагайтесь на сохранённый ID.
 
 ## URL API
 
@@ -21,16 +21,23 @@ Workflow собирает адрес так:
 {REPAIR_API_BASE}/api/v1/data
 ```
 
-Для тестового окружения ранее использовался адрес API:
+Основное (production) окружение:
 
 ```text
 https://ibronevik.ru/taxi/c/tutor/api/v1/data
 ```
 
-В GitHub Secret `REPAIR_API_BASE` должна лежать базовая часть без завершающего `/api/v1`, поскольку скрипт добавляет `/api/v1/data` самостоятельно. Ожидаемая базовая часть для указанного URL:
+Тестовый tenant:
 
 ```text
-https://ibronevik.ru/taxi/c/tutor
+https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/data
+```
+
+В GitHub Secret `REPAIR_API_BASE` должна лежать базовая часть без завершающего `/api/v1`, поскольку скрипт добавляет `/api/v1/data` самостоятельно. Ожидаемые базовые части:
+
+```text
+production: https://ibronevik.ru/taxi/c/tutor
+test:       https://ibronevik.itest24.com/taxi_dev2/c/tutor
 ```
 
 Фактическое значение секрета из GitHub не читается и здесь не проверяется. При смене tenant меняйте Secret, а не зашивайте URL в скрипты.
@@ -76,24 +83,23 @@ var = repair_api_test_page
 В репозитории есть read-only workflow:
 `.github/workflows/read-repair-template-id.yml`
 
-Он выполняет только чтение и печатает найденный ID. Успешная проверка ID `2`:
-https://github.com/lemming-way/repair_wizarts/actions/runs/43630728473
+Он выполняется вручную (`workflow_dispatch`), ничего не изменяет и печатает найденный ID.
 
 ## Как редактировать шаблон через /data
 
 Маршрут `/data` принимает POST-поле `data` с JSON. Для обновления существующей записи ID должен находиться **внутри объекта** массива `script_templates`.
 
-Пример для проверенного тестового окружения:
+Пример для тестового окружения (ID берётся из поиска по `var`):
 
 ```json
 {
   "script_templates": [
     {
-      "id": 2,
+      "id": 123,
       "var": "repair_api_test_page",
       "file": "<?php\\n// Новая версия шаблона\\n",
       "active": 1,
-      "only_admin": 1
+      "only_admin": 0
     }
   ]
 }
@@ -112,7 +118,7 @@ data={JSON.stringify(payload)}
 
 Важно:
 
-- `id: 2` направляет операцию на существующую запись; без ID API может пойти по ветке INSERT и получить ошибку уникальности по `var`.
+- `id` из поиска по `var` направляет операцию на существующую запись; без ID API может пойти по ветке INSERT и получить ошибку уникальности по `var`.
 - Поле `var` должно остаться `repair_api_test_page`.
 - Поле `file` содержит PHP-код. Backend сохраняет его в отдельный PHP-файл, а в `script_template.value` хранит имя созданного файла.
 - Используйте только HTTPS и URL из `REPAIR_API_BASE`.
@@ -133,13 +139,19 @@ Workflow:
 
 `tests/backend/create-template.mjs`
 
-Workflow запускается при изменении этих файлов в ветке `docs/repair-wizards-article-format-v1.3`. Он читает список шаблонов, ищет запись по `var`, сравнивает SHA-256 при наличии хэша сервера и затем создаёт или обновляет запись.
+Workflow запускается вручную (`workflow_dispatch`). Он читает список шаблонов, ищет запись по `var`, сравнивает SHA-256 при наличии хэша сервера и затем создаёт или обновляет запись.
+
+Все workflow, которые пишут в БД, шаблоны, Vercel env или выполняют deploy, запускаются только вручную. Push-триггеры остаются у read-only проверок (`ci`, inspect/probe, smoke).
 
 Перед использованием проверьте вывод workflow. Если запись уже существует, операция обновления обязана передавать её ID. Если ID не удалось определить — безопасное поведение: остановиться, а не выполнять INSERT.
 
 ## Права доступа и ограничения
 
 Операция требует авторизованного пользователя. Право редактирования `script_templates` дополнительно зависит от серверной настройки прав `data_edit_users_roles_rights` и роли пользователя. Ошибка доступа не исправляется изменением JSON-полей.
+
+Для доступа клиентов и мастеров к тестовому шаблону поле `only_admin` должно быть `0`. Значение `1` оставляет шаблон только для администратора и даёт `not enough rights` даже авторизованным пользователям.
+
+Тестовый шаблон `repair_api_test_page` не является дефолтным для фронтенда: по умолчанию используется production-шаблон `script/template/repair_api`. Тестовый путь включается только через `REACT_APP_BLOG_API_PATH`.
 
 Секреты GitHub Actions дают workflow доступ к backend от имени настроенной учётной записи. Не расширяйте их область применения и не печатайте значения в логах.
 
@@ -148,12 +160,12 @@ Workflow запускается при изменении этих файлов 
 1. Изменить `script_templates/repair_api_test_page.php`.
 2. Убедиться, что целевой backend задан через `REPAIR_API_BASE`.
 3. Проверить наличие трёх Actions Secrets: `REPAIR_API_BASE`, `REPAIR_API_TOKEN`, `REPAIR_API_U_HASH`.
-4. Найти запись по `var=repair_api_test_page`; в проверенном тестовом tenant её ID — `2`.
-5. При ручном POST передать `id: 2` внутри объекта `script_templates[0]`.
+4. Найти запись по `var=repair_api_test_page` и взять её ID из ответа.
+5. При ручном POST передать этот ID внутри объекта `script_templates[0]`.
 6. Проверить результат workflow и затем проверить работу шаблона на тестовом API.
 
 Связанные файлы:
 - `script_templates/repair_api_test_page.php`
 - `tests/backend/create-template.mjs`
 - `.github/workflows/create-repair-api-test-page.yml`
-- `.github/workflows/read-repair-template-id.yml`
+- `.github/workflows/read-repair-template-id.yml` (ручной запуск)

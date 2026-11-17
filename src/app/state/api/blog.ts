@@ -4,7 +4,7 @@
  * Действия сохранены по контракту AGENTS.md. Источник данных переключается
  * через CONFIG.BLOG.source / REACT_APP_BLOG_SOURCE:
  *  - "local" — каталог из public/articles, собранный из ZIP-архивов docs/;
- *  - "api"   — штатный бэкенд script/template/repair_api_test_page.
+ *  - "api"   — штатный бэкенд script/template/repair_api.
  *
  * В обоих режимах статьи формата 1.3 отдаются как blocks и рендерятся
  * единым ArticleRenderer.
@@ -98,7 +98,7 @@ function deriveMediaBaseUrl(coverUrl: string | null | undefined): string | undef
 }
 
 const BLOG_SOURCE = process.env.REACT_APP_BLOG_SOURCE || CONFIG.BLOG?.source || 'local';
-const BLOG_API_PATH = process.env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api_test_page';
+const BLOG_API_PATH = process.env.REACT_APP_BLOG_API_PATH || 'script/template/repair_api';
 const BLOG_API_IS_VAR = process.env.REACT_APP_BLOG_API_IS_VAR !== '0';
 
 function buildBlogPayload(data: Record<string, unknown>) {

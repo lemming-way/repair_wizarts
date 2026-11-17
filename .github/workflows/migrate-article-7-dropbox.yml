@@ -1,11 +1,6 @@
 name: Migrate article 7 media to Dropbox
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/migrate-article-7-dropbox.mjs'
-      - '.github/workflows/migrate-article-7-dropbox.yml'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

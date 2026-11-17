@@ -78,13 +78,13 @@ describe('blog helpers', () => {
 
   it('resolves relative media urls through the server path', () => {
     expect(resolveMediaUrl('files/avatar.png')).toBe(
-      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/files/avatar.png',
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/files/avatar.png',
     );
     expect(resolveMediaUrl('/files/avatar.png')).toBe(
-      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/files/avatar.png',
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/files/avatar.png',
     );
     expect(resolveMediaUrl('dropbox:209')).toBe(
-      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/dropbox/file/209',
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/209',
     );
     expect(resolveMediaUrl('https://cdn.example.com/a.png')).toBe('https://cdn.example.com/a.png');
     expect(resolveMediaUrl('data:image/png;base64,abc')).toBe('data:image/png;base64,abc');

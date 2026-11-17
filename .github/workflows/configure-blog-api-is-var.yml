@@ -1,11 +1,6 @@
 name: Configure blog API is_var for Preview
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - '.github/workflows/configure-blog-api-is-var.yml'
   workflow_dispatch:
 
 permissions:

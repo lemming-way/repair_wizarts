@@ -63,8 +63,9 @@ SPA-маршруты (`/articles/<id>`) обслуживаются через `r
    - Output Directory: `build`;
    - Install Command: `npm ci`.
 5. Environment Variables:
-   - `REACT_APP_BLOG_SOURCE=local` — статьи из `public/articles` (по умолчанию);
-   - `REACT_APP_API_URL` — только если нужен реальный backend.
+   - `REACT_APP_BLOG_SOURCE=api` — статьи из backend (значение приложения по умолчанию);
+   - `REACT_APP_API_URL` — можно не задавать: приложение по умолчанию использует production `https://ibronevik.ru/taxi/c/tutor/api/v1/`;
+   - `REACT_APP_BLOG_API_PATH` — можно не задавать: по умолчанию `script/template/repair_api`.
 6. Deploy.
 7. Settings → Git → Production Branch:
    - если production должен быть именно эта ветка — указать
@@ -199,14 +200,17 @@ jobs:
 
 ## 6. Переменные окружения
 
-| Переменная              | Когда нужна      | Значение                                               |
-| ----------------------- | ---------------- | ------------------------------------------------------ |
-| `REACT_APP_BLOG_SOURCE` | всегда           | `local` для статей из ZIP; `api` для реального backend |
-| `REACT_APP_API_URL`     | только для `api` | URL backend API                                        |
-| `CI`                    | настройка сборки | `false` для `react-scripts build`                      |
+| Переменная                 | Когда нужна | Значение                                                     |
+| -------------------------- | ----------- | ------------------------------------------------------------ |
+| `REACT_APP_BLOG_SOURCE`    | опционально | `api` по умолчанию; `local` для статей из `public/articles`   |
+| `REACT_APP_API_URL`        | опционально | по умолчанию production `https://ibronevik.ru/taxi/c/tutor/api/v1/` |
+| `REACT_APP_BLOG_API_PATH`  | опционально | по умолчанию `script/template/repair_api`                     |
+| `REACT_APP_BLOG_API_IS_VAR`| опционально | `0`, если backend ожидает не переменную, а JSON-поле `data`   |
+| `CI`                       | сборка      | `false` для `react-scripts build`                             |
 
-Для текущего тестового контура достаточно `local`: статьи лежат в
-`public/articles`, backend не нужен.
+Для production backend не нужен тестовый контур: приложение по умолчанию
+ходит в `https://ibronevik.ru/taxi/c/tutor/`. Тестовый путь включается
+только явным `REACT_APP_BLOG_API_PATH=script/template/repair_api_test_page`.
 
 ---
 

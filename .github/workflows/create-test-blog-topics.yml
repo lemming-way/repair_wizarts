@@ -1,12 +1,6 @@
 name: Create test blog topics
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/create-test-blog-topics.mjs'
-      - '.github/workflows/create-test-blog-topics.yml'
   workflow_dispatch:
 
 permissions:

@@ -1,12 +1,6 @@
 name: Create public article comments template
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - '.github/workflows/create-public-comments-template.yml'
-      - 'tests/backend/create-public-comments-template.mjs'
-      - 'script_templates/repair_api_comments_public.php'
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:

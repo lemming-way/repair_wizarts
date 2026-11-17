@@ -71,7 +71,10 @@ function Lightbox({ src, dlId, alt, caption, onClose }) {
 
 function getAssetId(file, assets) {
   if (!file || !Array.isArray(assets)) return null;
-  const asset = assets.find((item) => item?.file === file && Number(item?.dl_id) > 0);
+  const asset = assets.find(
+    (item) =>
+      item?.file === file && Number.isSafeInteger(Number(item?.dl_id)) && Number(item?.dl_id) > 0,
+  );
   return asset ? Number(asset.dl_id) : null;
 }
 

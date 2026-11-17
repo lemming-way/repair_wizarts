@@ -1,11 +1,7 @@
 name: Read repair template ID (read only)
 
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - '.github/workflows/read-repair-template-id.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read

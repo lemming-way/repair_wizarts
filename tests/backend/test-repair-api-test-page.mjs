@@ -120,6 +120,9 @@ for (const article of articles) {
   const deleted = comments.find((c) => Number(c.id) === probeId);
   check(deleted && deleted.deleted === true && deleted.text === '',
     'Soft delete/read failed for article ' + articleId);
+  const previousReply = comments.find((c) => Number(c.id) === replyId);
+  check(previousReply && previousReply.can_edit === true && previousReply.can_delete === true,
+    'Previous reply lost edit/delete rights after latest reply was deleted; article ' + articleId);
   console.log('PASS article ' + articleId + ': root insert/read/edit; reply insert/read/edit; soft delete');
 }
 

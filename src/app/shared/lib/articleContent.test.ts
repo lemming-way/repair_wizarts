@@ -40,10 +40,10 @@ describe('article content helpers', () => {
       'https://cdn.example.com/a.png',
     );
     expect(resolveArticleMedia('media/a.png')).toBe(
-      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/media/a.png',
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/media/a.png',
     );
     expect(resolveArticleMedia('dropbox:12345')).toBe(
-      'https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/dropbox/file/12345',
+      'https://ibronevik.ru/taxi/c/tutor/api/v1/dropbox/file/12345',
     );
     expect(resolveArticleMedia('dropbox:not-a-number')).toBe('');
     expect(resolveArticleMedia('javascript:alert(1)', '/articles/x/')).toBe('');

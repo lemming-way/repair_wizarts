@@ -1,11 +1,5 @@
 name: Allow client and master access to article test template
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/set-article-template-access.mjs'
-      - '.github/workflows/set-article-template-access.yml'
   workflow_dispatch:
 permissions:
   contents: read

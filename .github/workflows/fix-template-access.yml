@@ -1,11 +1,5 @@
 name: Fix repair API test template access and verify roles
 on:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'tests/backend/fix-template-access.mjs'
-      - '.github/workflows/fix-template-access.yml'
   workflow_dispatch:
 permissions:
   contents: read

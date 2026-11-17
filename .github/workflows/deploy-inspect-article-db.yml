@@ -1,14 +1,6 @@
 name: Deploy and inspect article DB test template
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - docs/repair-wizards-article-format-v1.3
-    paths:
-      - 'script_templates/repair_api_test_page.php'
-      - 'tests/backend/create-template.mjs'
-      - 'tests/backend/deploy-inspect-article-db.mjs'
-      - '.github/workflows/deploy-inspect-article-db.yml'
 permissions:
   contents: read
 

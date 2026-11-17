@@ -18,7 +18,7 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      EXPECTED_API_URL: https://ibronevik.itest24.com/taxi_dev2/c/tutor/api/v1/
+      EXPECTED_API_URL: https://ibronevik.ru/taxi/c/tutor/api/v1/
       CHECK_BRANCH: docs/repair-wizards-article-format-v1.3
     steps:
       - name: Check Vercel credentials
