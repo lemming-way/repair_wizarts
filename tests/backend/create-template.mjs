@@ -86,6 +86,7 @@ const payload = {
     ...(existing ? { id: existingId } : {}),
     var: 'repair_api_test_page',
     file,
+    only_admin: 0,
   }],
 };
 

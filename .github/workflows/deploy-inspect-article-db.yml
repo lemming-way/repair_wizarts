@@ -29,4 +29,5 @@ jobs:
           REPAIR_API_U_HASH: ${{ secrets.REPAIR_API_U_HASH }}
         run: |
           node tests/backend/create-template.mjs
+          node tests/backend/set-article-template-access.mjs
           node tests/backend/deploy-inspect-article-db.mjs
